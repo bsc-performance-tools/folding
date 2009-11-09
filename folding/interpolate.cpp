@@ -315,7 +315,11 @@ void runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 
 		if (feedTrace)
 		{
+
 #warning "Controlar els negatius de deltaValue"
+#warning "Afegir els POINTS a la trasa"
+#warning "Que passa amb els callstacks?"
+
 			unsigned long long newCounterID = 600000000 + atoll (counterID.c_str());
 			unsigned long long deltaTime = (prvEndTime - prvStartTime) / outcount;
 			DumpParaverLine (prv, newCounterID, 0, prvStartTime, task+1, thread+1);
