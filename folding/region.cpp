@@ -20,15 +20,15 @@
 \*****************************************************************************/
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/mpitrace/fusion/trunk/src/tracer/xml-parse.c $
+ | @file: $HeadURL$
  | 
- | @last_commit: $Date: 2009-10-29 13:06:27 +0100 (dj, 29 oct 2009) $
- | @version:     $Revision: 15 $
+ | @last_commit: $Date$
+ | @version:     $Revision$
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char UNUSED rcsid[] = "$Id: xml-parse.c 15 2009-10-29 12:06:27Z harald $";
+static char UNUSED rcsid[] = "$Id$";
 
 
 #include "region.h"
