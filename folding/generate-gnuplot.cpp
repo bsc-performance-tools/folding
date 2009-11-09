@@ -28,7 +28,7 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char UNUSED rcsid[] = "$Id$";
+static char rcsid[] = "$Id$";
 
 #include <stdlib.h>
 #include <iostream>
