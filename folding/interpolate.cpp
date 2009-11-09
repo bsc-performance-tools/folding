@@ -131,7 +131,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples)
 			if (removeOutliers && inRegion)
 				Outlier = fabs (meanRegion[any_region?0:lastRegion] - Duration) > NumOfSigmaTimes*sigmaRegion[any_region?0:lastRegion];
 
-#ifdef DEBUG
+#if defined(DEBUG)
 			cout << "DURATION " << Duration << " REGION (" << strRegion << ")= "<< lastRegion << (Outlier?" is":" is not") << " an outlier " << endl;
 			cout << "MEAN_REGION = " << meanRegion[any_region?0:lastRegion] << " ABS = " << fabs (meanRegion[any_region?0:lastRegion] - Duration) << endl;
 			cout << NumOfSigmaTimes << " * " << sigmaRegion[any_region?0:lastRegion] << endl;
@@ -147,7 +147,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples)
 			file >> s.counterValue;
 			s.Region = lastRegion;
 
-#ifdef DEBUG
+#if defined(DEBUG)
 			if (inRegion)
 			{
 				cout << "REGION " << lastRegion << " TIME " << s.Time << " COUNTERID " << s.counterID << " COUNTERVALUE " << s.counterValue << endl;
@@ -341,7 +341,7 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 	unsigned posCounterID, unsigned long long startTime,
 	unsigned long long endTime, list<Region*> &lRegions)
 {
-#ifdef DEBUG
+#if defined(DEBUG)
 	cout << "doInterpolation_PRV (..) with numRegions = " << (SeparateValues?numRegions:1) << endl;
 #endif
 
@@ -468,7 +468,7 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &vsamples,
 	unsigned posCounterID)
 {
-#ifdef DEBUG
+#if defined(DEBUG)
 	cout << "doInterpolation (..) with numRegions = " << (SeparateValues?numRegions:1) << endl;
 #endif
 
