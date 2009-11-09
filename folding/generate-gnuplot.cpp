@@ -62,7 +62,7 @@ void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
 		  << "set y2tics;" << endl
 		  << "set x2tics;" << endl
 		  << "set key bottom right" << endl
-			<< "set title ' Task " << task << " Thread " << thread << " -- "<< nameRegion[i] << "' ;" << endl
+			<< "set title 'Task " << task << " Thread " << thread << " -- "<< nameRegion[i] << "' ;" << endl
 			<< "set ylabel '" << counterID << "';" << endl
 			<< "set y2label 'Slope of " << counterID << "';" << endl
 			<< "set xlabel 'Normalized time';" << endl
@@ -102,7 +102,7 @@ void createSingleGNUPLOT (unsigned task, unsigned thread, string file,
 	list<string>::iterator it = GNUPLOTinfo_points.begin();
 	for (int i = 0; i < numRegions; i++, it++)
 		gnuplot_out
-			<< "set title ' Task " << task << " Thread " << thread << " -- "<< nameRegion[i] << "' ;" << endl
+			<< "set title 'Task " << task << " Thread " << thread << " -- "<< nameRegion[i] << "' ;" << endl
 			<< "set ylabel '" << counterID << "';" << endl
 			<< "set y2label 'Slope of " << counterID << "';" << endl
 			<< "set xlabel 'Normalized time';" << endl
