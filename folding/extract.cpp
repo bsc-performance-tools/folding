@@ -367,7 +367,7 @@ int ProcessParameters (int argc, char *argv[])
     {
 			i++;
 			if (atoi (argv[i]) == 0)
-				cerr << "Invalid number of iteration" << endl;
+				cerr << "Invalid number of separator" << endl;
 			else 
 				RegionSeparator = atoi(argv[i]);
 			continue;
