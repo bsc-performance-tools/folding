@@ -315,8 +315,6 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 
 		if (feedTrace)
 		{
-
-#warning "Controlar els negatius de deltaValue"
 #warning "Afegir els POINTS a la trasa"
 #warning "Que passa amb els callstacks?"
 
@@ -324,10 +322,20 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			unsigned long long deltaTime = (prvEndTime - prvStartTime) / outcount;
 			DumpParaverLine (prv, newCounterID, 0, prvStartTime, task+1, thread+1);
 
+			bool first_zero = true;
 			for (unsigned j = 1; j < outcount; j++)
 			{
 				double deltaValue = outpoints[j]-outpoints[j-1];
-				DumpParaverLine (prv, newCounterID, deltaValue*prvAccumCounter, prvStartTime+j*deltaTime, task+1, thread+1);
+				if (deltaValue > 0)
+				{
+					DumpParaverLine (prv, newCounterID, deltaValue*prvAccumCounter, prvStartTime+j*deltaTime, task+1, thread+1);
+					first_zero = false;
+				}
+				else
+				{
+					if (!first_zero)
+						DumpParaverLine (prv, newCounterID, 0, prvStartTime+j*deltaTime, task+1, thread+1);
+				}
 			}
 		}
 
