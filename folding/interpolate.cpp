@@ -76,11 +76,11 @@ double meanRegion[MAX_REGIONS];
 double sigmaRegion[MAX_REGIONS];
 double NumOfSigmaTimes;
 
-bool joinGNUplots = false;
 bool removeOutliers = false;
 bool SeparateValues = true;
 vector<string> wantedCounters;
 list<string> GNUPLOTinfo_points;
+list<bool> GNUPLOTinfo_interpolated;
 
 int TranslateRegion (string &RegionName)
 {
@@ -262,7 +262,7 @@ void DumpParaverLine (ofstream &f, unsigned long long type,
   f << "2:" << task << ":1:" << task << ":" << thread << ":" << time << ":" << type << ":" << value << endl;
 }
 
-void runInterpolation (int task, int thread, ofstream &points, ofstream &interpolation,
+bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpolation,
 	ofstream &slope, ofstream &prv, vector<Sample> &vsamples, string counterID,
 	bool anyRegion, unsigned RegionID, unsigned outcount,
 	unsigned long long prvStartTime, unsigned long long prvEndTime,
@@ -335,6 +335,8 @@ void runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 		free (inpoints_y);
 		free (outpoints);
 	}
+
+	return incount > 0;
 }
 
 void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample> &vsamples,
@@ -389,13 +391,11 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 				exit (-1);
 			}
 
-			GNUPLOTinfo_points.push_back (completefilePrefix);
-
 			unsigned long long num_out_points = 1000;
 
 			unsigned long long target_num_points = num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime);
 
-			runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
+			bool interpolated = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
 				vsamples, counterID, false, regionIndex, target_num_points, (*i)->Tstart, (*i)->Tend, (*i)->HWCvalues[posCounterID]);
 
 			if (feedTrace)
@@ -403,6 +403,16 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 			output_slope.close();
 			output_points.close();
 			output_kriger.close();
+
+			if (!interpolated)
+			{
+				remove ((completefilePrefix+"."+counterID+".points").c_str());
+				remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
+				remove ((completefilePrefix+"."+counterID+".slope").c_str());
+			}
+
+			GNUPLOTinfo_points.push_back (completefilePrefix);
+			GNUPLOTinfo_interpolated.push_back (interpolated);
 		}
 	}
 	else
@@ -447,13 +457,11 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 				exit (-1);
 			}
 
-			GNUPLOTinfo_points.push_back (completefilePrefix);
-
 			unsigned long long num_out_points = 1000;
 
 			unsigned long long target_num_points = num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime);
 
-			runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
+			bool interpolated = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
 				vsamples, counterID, true, 0, target_num_points, (*i)->Tstart, (*i)->Tend, (*i)->HWCvalues[posCounterID]);
 
 			if (feedTrace)
@@ -461,6 +469,16 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 			output_slope.close();
 			output_points.close();
 			output_kriger.close();
+
+			if (!interpolated)
+			{
+				remove ((completefilePrefix+"."+counterID+".points").c_str());
+				remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
+				remove ((completefilePrefix+"."+counterID+".slope").c_str());
+			}
+
+			GNUPLOTinfo_points.push_back (completefilePrefix);
+			GNUPLOTinfo_interpolated.push_back (interpolated);
 		}
 	}
 }
@@ -503,14 +521,22 @@ void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &v
 				exit (-1);
 			}
 
-			GNUPLOTinfo_points.push_back (completefilePrefix);
-
-			runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
+			bool interpolated = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
 				vsamples, counterID, false, i, 1000, 0, 0, 0);
 
 			output_slope.close();
 			output_points.close();
 			output_kriger.close();
+
+			if (!interpolated)
+			{
+				remove ((completefilePrefix+"."+counterID+".points").c_str());
+				remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
+				remove ((completefilePrefix+"."+counterID+".slope").c_str());
+			}
+
+			GNUPLOTinfo_points.push_back (completefilePrefix);
+			GNUPLOTinfo_interpolated.push_back (interpolated);
 		}
 	}
 	else
@@ -538,14 +564,22 @@ void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &v
 			exit (-1);
 		}
 
-		GNUPLOTinfo_points.push_back (completefilePrefix);
-
-		runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
+		bool interpolated = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
 			vsamples, counterID, true, 0, 1000, 0, 0, 0);
 
 		output_slope.close();
 		output_points.close();
 		output_kriger.close();
+
+		if (!interpolated)	
+		{
+			remove ((completefilePrefix+"."+counterID+".points").c_str());
+			remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
+			remove ((completefilePrefix+"."+counterID+".slope").c_str());
+		}
+
+		GNUPLOTinfo_points.push_back (completefilePrefix);
+		GNUPLOTinfo_interpolated.push_back (interpolated);
 	}
 }
 
@@ -561,20 +595,16 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-feed [TRACE.prv]" << endl
 		     << "-feed-region TYPE VALUE" << endl
 		     << "-feed-fold-type TYPE" << endl
-		     << "-joinplots" << endl
 		     << endl;
     exit (-1);
   }
 
   for (int i = 1; i < argc-1; i++)
   {
-    if (strcmp ("-separator-value",  argv[i]) == 0)
-    {
-      i++;
+		if (strcmp ("-separator-value",  argv[i]) == 0)
+		{
+			i++;
 			SeparateValues = strcmp (argv[i], "yes") == 0;
-			if (!SeparateValues)
-				joinGNUplots = true;
-			
 			continue;
 		}
 		else if (strcmp ("-counter", argv[i]) == 0)
@@ -629,12 +659,7 @@ int ProcessParameters (int argc, char *argv[])
 				exit (-1);
 			}
 		}
-		else if (strcmp ("-joinplots", argv[i]) == 0)
-		{
-			joinGNUplots = true;
-			continue;
-		}
-  }
+	}
 
 	if (feedTrace && !feedTraceRegion)
 	{
@@ -717,29 +742,20 @@ int main (int argc, char *argv[])
 	vector<Sample> vsamples;
 	FillData (InputFile, !SeparateValues, vsamples);
 
-	if (feedTrace)
-	{
-		for (unsigned i = 0; i < wantedCounters.size(); i++)
+	for (unsigned i = 0; i < wantedCounters.size(); i++)
+		if (feedTrace)
 			doInterpolation_PRV (task, thread, argv[res], vsamples, i, prv_out_start,
 			  prv_out_end, prvRegions);	
-	}
-	else
-	{
-		for (unsigned i = 0; i < wantedCounters.size(); i++)
+		else
 			doInterpolation (task, thread, argv[res], vsamples, i);	
-	}
-
-/*
-	for (vector<string>::iterator it = wantedCounters.begin(); it != wantedCounters.end(); it++)
-		doInterpolation (argv[res], vsamples, *it);	
-*/
 
 	if (GNUPLOTinfo_points.size() > 0)
 		for (vector<string>::iterator it = wantedCounters.begin(); it != wantedCounters.end(); it++)
-			if (joinGNUplots)
-				createSingleGNUPLOT (task, thread, argv[res], *it, SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points);
-			else
-				createMultipleGNUPLOT (task, thread, argv[res], *it, SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points);
+		{
+			createSingleGNUPLOT (task, thread, argv[res], *it, SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points, GNUPLOTinfo_interpolated);
+			if (SeparateValues)
+				createMultipleGNUPLOT (task, thread, argv[res], *it, SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points, GNUPLOTinfo_interpolated);
+		}
 
 	return 0;
 }
