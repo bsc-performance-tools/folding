@@ -38,10 +38,10 @@ using namespace std;
 
 void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
 	string &counterID, int numRegions, string *nameRegion,
-	list<string> &GNUPLOTinfo_points);
+	list<string> &GNUPLOTinfo_points, list<bool> &GNUPLOTinfo_interpolated);
 
 void createSingleGNUPLOT (unsigned task, unsigned thread, string file,
 	string &counterID, int numRegions, string *nameRegion,
-	list<string> &GNUPLOTinfo_points);
+	list<string> &GNUPLOTinfo_points, list<bool> &GNUPLOTinfo_interpolated);
 
 #endif

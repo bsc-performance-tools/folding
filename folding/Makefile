@@ -1,8 +1,9 @@
+#DEBUG= -DDEBUG
 CXX = g++
 BOOST = /home/harald/aplic/boost/1.40
 COMMON = ../common-files
 COMMONFILESFLAGS = -I $(COMMON) -I $(COMMON)/pcfparser -I $(COMMON)/prvparser -I .
-CXXFLAGS = -O -Wall -g
+CXXFLAGS = -O -Wall -g $(DEBUG)
 PRV_PCF_PARSERS = $(COMMON)/prvparser/*.cpp $(COMMON)/pcfparser/*.cpp $(COMMON)/LibException.cpp
 
 TARGETS = fuse extract interpolate
