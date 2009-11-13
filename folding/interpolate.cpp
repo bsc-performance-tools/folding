@@ -758,11 +758,11 @@ int main (int argc, char *argv[])
 			doInterpolation (task, thread, argv[res], vsamples, i);	
 
 	if (GNUPLOTinfo_points.size() > 0)
-		for (vector<string>::iterator it = wantedCounters.begin(); it != wantedCounters.end(); it++)
+		for (unsigned i = 0; i < wantedCounters.size(); i++)
 		{
-			createSingleGNUPLOT (task, thread, argv[res], *it, SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points, GNUPLOTinfo_interpolated);
+			createSingleGNUPLOT (task, thread, argv[res], wantedCounters[i], SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points, GNUPLOTinfo_interpolated, pcf);
 			if (SeparateValues)
-				createMultipleGNUPLOT (task, thread, argv[res], *it, SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points, GNUPLOTinfo_interpolated);
+				createMultipleGNUPLOT (task, thread, argv[res], wantedCounters[i], SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points, GNUPLOTinfo_interpolated, pcf);
 		}
 
 	return 0;
