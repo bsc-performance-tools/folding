@@ -760,9 +760,9 @@ int main (int argc, char *argv[])
 	if (GNUPLOTinfo_points.size() > 0)
 		for (unsigned i = 0; i < wantedCounters.size(); i++)
 		{
-			createSingleGNUPLOT (task, thread, argv[res], wantedCounters[i], SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points, GNUPLOTinfo_interpolated, pcf);
+			createSingleGNUPLOT (task, thread, argv[res], wantedCounters[i], SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points, GNUPLOTinfo_interpolated);
 			if (SeparateValues)
-				createMultipleGNUPLOT (task, thread, argv[res], wantedCounters[i], SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points, GNUPLOTinfo_interpolated, pcf);
+				createMultipleGNUPLOT (task, thread, argv[res], wantedCounters[i], SeparateValues?numRegions:1, nameRegion, GNUPLOTinfo_points, GNUPLOTinfo_interpolated);
 		}
 
 	return 0;

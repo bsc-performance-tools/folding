@@ -29,6 +29,9 @@ interpolate: region-analyzer.o region.o generate-gnuplot.o interpolate.cpp
 	cd service-kriger; gmake ; cd ..
 	$(CXX) -o $@ interpolate.cpp $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include -I $(PWD)/service-kriger -L $(PWD)/service-kriger -lkriger -lgfortran region.o region-analyzer.o generate-gnuplot.o
 
+sort_pcf:
+	$(CXX) $(CXXFLAGS) $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include sort_pcf.cpp -o  sort_pcf
+
 clean:
 	cd service-kriger; gmake clean; cd ..
 	rm -f *.o $(TARGETS)

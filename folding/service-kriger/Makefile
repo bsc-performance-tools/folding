@@ -6,7 +6,7 @@ MODFILES1= def_kinrea.f90
 MODFILES2= def_kriger.f90
 SRCFILES = Kriger.f90 kri_openfi.f90 kri_indata.f90 kri_interp.f90 kri_mstock.f90 kri_defgri.f90 kri_defgri.f90 kri_solsys.f90 kri_findpi.f90 kri_covarm.f90 kri_oudata.f90 kri_memall.f90 call_Kriger.f90
 
-ALL = kriger libkriger.a libkriger_test
+ALL = libkriger.a 
 
 target: $(ALL)
 
