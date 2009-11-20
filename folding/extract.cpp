@@ -35,7 +35,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "ParaverTraceTask.h"
 #include "ParaverTraceApplication.h"
 #include "UIParaverTraceConfig.h"
-#include "common.h"
+#include "common.H"
 
 #include <sstream>
 #include <iostream>

@@ -30,7 +30,7 @@
 
 static char __attribute__ ((unused)) rcsid[] = "$Id: xml-parse.c 15 2009-10-29 12:06:27Z harald $";
 
-#include "common.h"
+#include "common.H"
 
 #define PAPI_MIN_COUNTER   42000000
 #define PAPI_MAX_COUNTER   42009998
