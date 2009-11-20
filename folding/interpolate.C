@@ -43,10 +43,10 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <list>
 #include <algorithm>
 
-#include "kriger_wrapper.h"
-#include "generate-gnuplot.h"
-#include "region-analyzer.h"
 #include "UIParaverTraceConfig.h"
+#include "kriger_wrapper.h"
+#include "generate-gnuplot.H"
+#include "region-analyzer.H"
 #include "common.H"
 
 #define MAX_REGIONS 1024

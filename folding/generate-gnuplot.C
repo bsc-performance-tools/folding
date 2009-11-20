@@ -33,7 +33,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
-#include "generate-gnuplot.h"
+
+#include "generate-gnuplot.H"
 
 void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
 	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info,

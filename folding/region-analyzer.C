@@ -41,7 +41,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <math.h>
 #include <string.h>
 #include <list>
-#include "region-analyzer.h"
+
+#include "region-analyzer.H"
 #include "common.H"
 
 #define UNREFERENCED(a)    ((a) = (a))

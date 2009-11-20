@@ -28,31 +28,21 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef FEEDTRACE_H_INCLUDED
-#define FEEDTRACE_H_INCLUDED
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
-#include "region.h"
+#include "region.H"
 
-#include <vector>
-#include <list>
-#include <string>
-#include "UIParaverTraceConfig.h"
+Region::Region (unsigned long long Tstart, unsigned long long Type,
+	unsigned long long Value)
+{
+	this->Tstart = Tstart;
+	this->Tend = Tend;
+	this->Type = Type;
+	this->Value = Value;
+	this->HWCvalues = HWCvalues;
+}
 
-using namespace std;
-using namespace libparaver;
+Region::~Region ()
+{
+}
 
-
-using namespace std;
-void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thread,
-	unsigned long long Type, unsigned long long TimeType, unsigned long long TimeValue,
-	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &lCounters, list<Region*> &foundRegions,
-	UIParaverTraceConfig *pcf);
-
-void SearchForRegionsWithinTime (string tracename, unsigned task, unsigned thread,
-	unsigned long long Type, unsigned long long Tstart, unsigned long long Tend,
-	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &lCounters, list<Region*> &lRegions,
-	UIParaverTraceConfig *pcf);
-
-#endif
