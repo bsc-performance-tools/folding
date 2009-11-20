@@ -6,31 +6,34 @@ COMMONFILESFLAGS = -I $(COMMON) -I $(COMMON)/pcfparser -I $(COMMON)/prvparser -I
 CXXFLAGS = -O -Wall -g $(DEBUG)
 PRV_PCF_PARSERS = $(COMMON)/prvparser/*.cpp $(COMMON)/pcfparser/*.cpp $(COMMON)/LibException.cpp
 
-TARGETS = fuse extract interpolate
+TARGETS = fuse extract interpolate sort_pcf
 
 all: $(TARGETS)
+
+sort_pcf:	sort_pcf.cpp
+	$(CXX) -o $@ $< $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include
+
+common.o: common.C
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
 
 fuse: fuse.cpp
 	$(CXX) -o $@ $< $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include
 
-extract: extract.cpp
-	$(CXX) -o $@ $< $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include
+extract: extract.cpp common.o
+	$(CXX) -o $@ extract.cpp $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include common.o
 
 generate-gnuplot.o: generate-gnuplot.cpp
-	$(CXX) -O -c -o $@ $<
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
 
 region.o: region.cpp
-	$(CXX) -O -c -o $@ $<
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 region-analyzer.o: region-analyzer.cpp
-	$(CXX) -O -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include
 
-interpolate: region-analyzer.o region.o generate-gnuplot.o interpolate.cpp
+interpolate: region-analyzer.o region.o generate-gnuplot.o common.o interpolate.cpp
 	cd service-kriger; gmake ; cd ..
-	$(CXX) -o $@ interpolate.cpp $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include -I $(PWD)/service-kriger -L $(PWD)/service-kriger -lkriger -lgfortran region.o region-analyzer.o generate-gnuplot.o
-
-sort_pcf:
-	$(CXX) $(CXXFLAGS) $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include sort_pcf.cpp -o  sort_pcf
+	$(CXX) -o $@ interpolate.cpp $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include -I $(PWD)/service-kriger -L $(PWD)/service-kriger -lkriger -lgfortran region.o region-analyzer.o generate-gnuplot.o common.o
 
 clean:
 	cd service-kriger; gmake clean; cd ..

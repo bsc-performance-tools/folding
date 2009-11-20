@@ -20,39 +20,43 @@
 \*****************************************************************************/
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/mpitrace/fusion/trunk/src/tracer/xml-parse.c $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2009-10-29 13:06:27 +0100 (dj, 29 oct 2009) $
+ | @version:     $Revision: 15 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef GENERATE_GNUPLOT_H
-#define GENERATE_GNUPLOT_H
+static char __attribute__ ((unused)) rcsid[] = "$Id: xml-parse.c 15 2009-10-29 12:06:27Z harald $";
 
-#include <list>
-#include <string>
-#include "UIParaverTraceConfig.h"
+#include "common.h"
 
-using namespace std;
-using namespace libparaver;
+#define PAPI_MIN_COUNTER   42000000
+#define PAPI_MAX_COUNTER   42009998
 
-class GNUPLOTinfo
+string common::removeSpaces (string &in)
 {
-	public:
-	bool interpolated;
-	string title;
-	string fileprefix;
-	string counter;
-};
+	string tmp = in;
+	for (string::iterator it = tmp.begin(); it != tmp.end(); it++)
+		if (*it == ' ')
+			*it = '_';
+	return tmp;
+}
 
-void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
-	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info,
-	UIParaverTraceConfig *pcf);
+unsigned common::lookForCounter (string &name, UIParaverTraceConfig *pcf)
+{
+	/* Look for every counter in the vector its code within the PCF file */
+	for (unsigned j = PAPI_MIN_COUNTER; j <= PAPI_MAX_COUNTER; j++)
+	{
+		string s = pcf->getEventType (j);
+		if (s.length() > 0)
+		{
+			string tmp = s.substr (s.find ('(')+1, s.rfind (')') - (s.find ('(') + 1));
+			if (tmp == name)
+				return j;
+		}
+	}
+	return 0;
+}
 
-void createSingleGNUPLOT (unsigned task, unsigned thread, string file,
-	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info,
-	UIParaverTraceConfig *pcf);
-
-#endif

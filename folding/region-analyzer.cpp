@@ -28,7 +28,7 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char rcsid[] = "$Id$";
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "ParaverTrace.h"
 #include "ParaverTraceThread.h"
@@ -36,13 +36,13 @@ static char rcsid[] = "$Id$";
 #include "ParaverTraceApplication.h"
 #include "UIParaverTraceConfig.h"
 
-#include <sstream>
 #include <iostream>
 #include <fstream>
 #include <math.h>
 #include <string.h>
 #include <list>
 #include "region-analyzer.h"
+#include "common.h"
 
 #define UNREFERENCED(a)    ((a) = (a))
 #define PAPI_MIN_COUNTER   42000000
@@ -56,7 +56,7 @@ class Process : public ParaverTrace
 {
 	private:
 	Region *currentRegion;
-	string *CounterIDs;
+	unsigned long long *CounterIDs;
 
 	unsigned long long TimeLimit_Type;
 	unsigned long long TimeLimit_Value;
@@ -70,7 +70,7 @@ class Process : public ParaverTrace
 	bool TimeRegionLimit_exited;
 	unsigned numCounterIDs;
 	
-	bool LookupCounter (string Counter, unsigned *index);
+	bool LookupCounter (unsigned long long Counter, unsigned *index);
 
 	public:
 	list<Region*> foundRegions;
@@ -79,7 +79,7 @@ class Process : public ParaverTrace
 	void setTimeLimit (unsigned long long Tstart, unsigned long long Tend);
 	void setTimeRegionLimit (unsigned long long Type, unsigned long long Value);
 
-	Process (string prvFile, bool multievents, int task, int thread, vector<string> &CounterList, unsigned long long Separator);
+	Process (string prvFile, bool multievents, int task, int thread, vector<unsigned long long> &CounterList, unsigned long long Separator);
 
 	void processState (struct state_t &s);
 	void processMultiEvent (struct multievent_t &e);
@@ -89,17 +89,18 @@ class Process : public ParaverTrace
 	void processComment (string &c);
 };
 
-Process::Process (string prvFile, bool multievents, int task, int thread, vector<string> &CounterList, unsigned long long Separator) : ParaverTrace (prvFile, multievents)
+Process::Process (string prvFile, bool multievents, int task, int thread, vector<unsigned long long> &CounterList, unsigned long long Separator) : ParaverTrace (prvFile, multievents)
 {
 	numCounterIDs = CounterList.size();
-	CounterIDs = new string[numCounterIDs];
+	CounterIDs = new unsigned long long[numCounterIDs];
 
-	int j = 0;
-	for (vector<string>::iterator i = CounterList.begin(); i != CounterList.end(); j++, i++)
-		CounterIDs[j] = *i;
+	for (unsigned i = 0; i < CounterList.size(); i++)
+		CounterIDs[i] = CounterList[i];
 
 	currentRegion = NULL;
 	this->Separator = Separator;
+	this->task = task;
+	this->thread = thread;
 }
 
 void Process::processComment (string &c)
@@ -117,7 +118,7 @@ void Process::processState (struct state_t &s)
 	UNREFERENCED(s);
 }
 
-bool Process::LookupCounter (string Counter, unsigned *index)
+bool Process::LookupCounter (unsigned long long Counter, unsigned *index)
 {
 	for (unsigned i = 0; i < numCounterIDs; i++)
 		if (CounterIDs[i] == Counter)
@@ -153,6 +154,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 			{
 				TimeLimit_out_Start = e.Timestamp;
 				TimeRegionLimit_entered = true;
+#if defined(DEBUG)
+				cout << "ENTERING PRV REGION @ " << TimeLimit_out_Start << endl;
+#endif
 			}
 		/* If we haven't entered the time region, return! */
 		if (!TimeRegionLimit_entered)
@@ -187,9 +191,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 					if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER)
 					{
 						unsigned index;
-						stringstream tmp;
-						tmp << (*it).Type;
-						if (LookupCounter (tmp.str(), &index))
+						if (LookupCounter ((*it).Type, &index))
 							currentRegion->HWCvalues[index] += (*it).Value;
 					}
 				}
@@ -209,10 +211,13 @@ void Process::processMultiEvent (struct multievent_t &e)
 	if (!useTimeLimit && TimeRegionLimit_entered && !TimeRegionLimit_exited)
 	{
 		for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
-			if ((*it).Type == TimeLimit_Type && (*it).Value == 0)
+			if ((*it).Type == TimeLimit_Type && (*it).Value != TimeLimit_Value)
 			{
 				TimeLimit_out_End = e.Timestamp;
 				TimeRegionLimit_exited = true;
+#if defined(DEBUG)
+				cout << "LEAVING PRV REGION @ " << TimeLimit_out_End << endl;
+#endif
 			}
 	}
 }
@@ -248,12 +253,35 @@ void Process::setTimeRegionLimit (unsigned long long Type, unsigned long long Va
 using namespace::libparaver;
 using namespace::std;
 
+static vector<unsigned long long> convertCountersToID (vector<string> &lCounters, UIParaverTraceConfig *pcf)
+{
+	vector<unsigned long long> result;
+
+	/* Look for every counter in the vector its code within the PCF file */
+	for (unsigned i = 0; i < lCounters.size(); i++)
+	{
+		unsigned ctr = common::lookForCounter (lCounters[i], pcf);
+		if (ctr == 0)
+		{
+			cerr << "FATAL ERROR! Cannot find counter " << lCounters[i] << " within the PCF file " << endl;
+			exit (-1);
+		}
+		else
+			result.push_back (ctr);
+	}
+
+	return result;
+}
+
 void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thread,
 	unsigned long long Type, unsigned long long TimeType, unsigned long long TimeValue,
 	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &lCounters, list<Region*> &foundRegions)
+	vector<string> &lCounters, list<Region*> &foundRegions,
+	UIParaverTraceConfig *pcf)
 {
-	Process *p = new Process (tracename, true, task, thread, lCounters, Type);
+	vector<unsigned long long> lIDCounters = convertCountersToID (lCounters, pcf);
+
+	Process *p = new Process (tracename, true, task, thread, lIDCounters, Type);
 	p->setTimeRegionLimit (TimeType, TimeValue);
 
 	p->parseBody();
@@ -263,6 +291,7 @@ void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thr
 	foundRegions = p->foundRegions;
 
 #if defined(DEBUG)
+	cout << "# Regions found = " << p->foundRegions.size() << " from " << p->TimeLimit_out_Start << " to " << p->TimeLimit_out_End << endl;
 	for (list<Region *>::iterator i = p->foundRegions.begin();
 	  i != p->foundRegions.end(); i++)
 	{
@@ -280,9 +309,12 @@ void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thr
 void SearchForRegionsWithinTime (string tracename, unsigned task, unsigned thread,
 	unsigned long long Type, unsigned long long Tstart, unsigned long long Tend,
 	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &lCounters, list<Region*> &foundRegions)
+	vector<string> &lCounters, list<Region*> &foundRegions,
+	UIParaverTraceConfig *pcf)
 {
-	Process *p = new Process (tracename, true, task, thread, lCounters, Type);
+	vector<unsigned long long> lIDCounters = convertCountersToID (lCounters, pcf);
+
+	Process *p = new Process (tracename, true, task, thread, lIDCounters, Type);
 	p->setTimeLimit (Tstart, Tend);
 
 	p->parseBody();
