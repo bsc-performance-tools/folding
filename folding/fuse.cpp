@@ -28,7 +28,7 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char rcsid[] = "$Id$";
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "ParaverTrace.h"
 #include "ParaverTraceThread.h"

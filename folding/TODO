@@ -1,14 +1,6 @@
-
-
 *** Afegir els punts foldejats a la trasa (debug)
 *** Afegir els callstacks a la trasa
 +++ Reordenacio dels callstacks a la trasa
-*** Usar els noms dels comptadors i de rutines en la generacio de plots
-    ->> fitxer de control per
-    * tipus separador
-    * trasa
-    * ntasks / nthreads ? -> interpolate nomes treballa amb 1
-*** Els noms no haurien de tenir caracters extranys (espais, brackets)
 
 
 *** Comptadors a les MPIs si no es separen les MPIs!? Shaurien d'eliminar?

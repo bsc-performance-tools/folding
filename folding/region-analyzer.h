@@ -31,21 +31,28 @@
 #ifndef FEEDTRACE_H_INCLUDED
 #define FEEDTRACE_H_INCLUDED
 
+#include "region.h"
+
 #include <vector>
 #include <list>
 #include <string>
+#include "UIParaverTraceConfig.h"
 
-#include "region.h"
+using namespace std;
+using namespace libparaver;
+
 
 using namespace std;
 void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thread,
 	unsigned long long Type, unsigned long long TimeType, unsigned long long TimeValue,
 	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &lCounters, list<Region*> &foundRegions);
+	vector<string> &lCounters, list<Region*> &foundRegions,
+	UIParaverTraceConfig *pcf);
 
 void SearchForRegionsWithinTime (string tracename, unsigned task, unsigned thread,
 	unsigned long long Type, unsigned long long Tstart, unsigned long long Tend,
 	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &lCounters, list<Region*> &lRegions);
+	vector<string> &lCounters, list<Region*> &lRegions,
+	UIParaverTraceConfig *pcf);
 
 #endif

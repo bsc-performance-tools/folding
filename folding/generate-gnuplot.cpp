@@ -28,7 +28,7 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char rcsid[] = "$Id$";
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include <stdlib.h>
 #include <iostream>
@@ -36,17 +36,16 @@ static char rcsid[] = "$Id$";
 #include "generate-gnuplot.h"
 
 void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
-	string &counterID, int numRegions, string *nameRegion,
-	list<string> &GNUPLOTinfo_points, list<bool> &GNUPLOTinfo_interpolated)
+	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info,
+	UIParaverTraceConfig *pcf)
 {
-	list<string>::iterator it_p = GNUPLOTinfo_points.begin();
-	list<bool>::iterator it_i = GNUPLOTinfo_interpolated.begin();
-	for (int i = 0; i < numRegions; i++, it_p++, it_i++)
+	for (list<GNUPLOTinfo*>::iterator it = info.begin(); it != info.end() ; it++)
 	{
-		if (*it_i)
+		if ((*it)->interpolated)
 		{
-			string choppedNameRegion = nameRegion[i].substr (0, nameRegion[i].find(":"));
-			string GNUPLOTfile = file+"."+choppedNameRegion+"."+counterID+".gnuplot";
+			string file = (*it)->fileprefix;
+			string counter = (*it)->counter;
+			string GNUPLOTfile = file + "." + counter + ".gnuplot";
 
 			ofstream gnuplot_out (GNUPLOTfile.c_str());
 			if (!gnuplot_out.is_open())
@@ -59,19 +58,19 @@ void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
 				<< "set xrange [0:1];" << endl
 			  << "set yrange [0:1];" << endl
 			  << "set x2range [0:1];" << endl
-			  << "set y2range [0:2];" << endl
+			  << "set y2range [0:*];" << endl
 			  << "set ytics nomirror;" << endl
 			  << "set xtics nomirror;" << endl
 			  << "set y2tics;" << endl
 			  << "set x2tics;" << endl
 			  << "set key bottom right" << endl
-				<< "set title ' Task " << task << " Thread " << thread << " -- "<< nameRegion[i] << "' ;" << endl
-				<< "set ylabel '" << counterID << "';" << endl
-				<< "set y2label 'Slope of " << counterID << "';" << endl
+				<< "set title '" << (*it)->title << "';" << endl
+				<< "set ylabel '" << counter << "';" << endl
+				<< "set y2label 'Slope of " << counter << "';" << endl
 				<< "set xlabel 'Normalized time';" << endl
-				<< "plot '" << (*it_p) << "." << counterID << ".points' using 2:3 title 'Samples',\\" << endl
-				<< "     '" << (*it_p) << "." << counterID << ".interpolation' using 2:3 title 'Curve fitting' w lines lw 2,\\" << endl
-			 	<< "     '" << (*it_p) << "." << counterID << ".slope' using 2:3 title 'Curve fitting slope' axes x2y2 w lines lw 2;" << endl
+				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples',\\" << endl
+				<< "     '" << file << "." << counter << ".interpolation' using 2:3 title 'Curve fitting' w lines lw 2,\\" << endl
+			 	<< "     '" << file << "." << counter << ".slope' using 2:3 title 'Curve fitting slope' axes x2y2 w lines lw 2;" << endl
 				<< endl;
 
 			gnuplot_out.close();
@@ -80,10 +79,10 @@ void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
 }
 
 void createSingleGNUPLOT (unsigned task, unsigned thread, string file,
-	string &counterID, int numRegions, string *nameRegion,
-	list<string> &GNUPLOTinfo_points, list<bool> &GNUPLOTinfo_interpolated)
+	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info,
+	UIParaverTraceConfig *pcf)
 {
-	string GNUPLOTfile = file+"."+counterID+".gnuplot";
+	string GNUPLOTfile = file+".gnuplot";
 
 	ofstream gnuplot_out (GNUPLOTfile.c_str());
 	if (!gnuplot_out.is_open())
@@ -96,28 +95,31 @@ void createSingleGNUPLOT (unsigned task, unsigned thread, string file,
 		<< "set xrange [0:1];" << endl
 	  << "set yrange [0:1];" << endl
 	  << "set x2range [0:1];" << endl
-	  << "set y2range [0:2];" << endl
+	  << "set y2range [0:*];" << endl
 	  << "set ytics nomirror;" << endl
 	  << "set xtics nomirror;" << endl
 	  << "set y2tics;" << endl
 	  << "set x2tics;" << endl
 	  << "set key bottom right;" << endl;
 
-	list<string>::iterator it_p = GNUPLOTinfo_points.begin();
-	list<bool>::iterator it_i = GNUPLOTinfo_interpolated.begin();
-	for (int i = 0; i < numRegions; i++, it_p++, it_i++)
+	for (list<GNUPLOTinfo*>::iterator it = info.begin(); it != info.end() ; it++)
 	{
-		if (*it_i)
+		if ((*it)->interpolated)
+		{
+			string file = (*it)->fileprefix;
+			string counter = (*it)->counter;
+
 			gnuplot_out
-				<< "set title ' Task " << task << " Thread " << thread << " -- "<< nameRegion[i] << "' ;" << endl
-				<< "set ylabel '" << counterID << "';" << endl
-				<< "set y2label 'Slope of " << counterID << "';" << endl
+				<< "set title '" << (*it)->title << "';" << endl
+				<< "set ylabel '" << counter << "';" << endl
+				<< "set y2label 'Slope of " << counter << "';" << endl
 				<< "set xlabel 'Normalized time';" << endl
-				<< "plot '" << (*it_p) << "." << counterID << ".points' using 2:3 title 'Samples',\\" << endl
-				<< "     '" << (*it_p) << "." << counterID << ".interpolation' using 2:3 title 'Curve fitting' w lines lw 2,\\" << endl
-			 	<< "     '" << (*it_p) << "." << counterID << ".slope' using 2:3 title 'Curve fitting slope' axes x2y2 w lines lw 2;" << endl
+				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples',\\" << endl
+				<< "     '" << file << "." << counter << ".interpolation' using 2:3 title 'Curve fitting' w lines lw 2,\\" << endl
+			 	<< "     '" << file << "." << counter << ".slope' using 2:3 title 'Curve fitting slope' axes x2y2 w lines lw 2;" << endl
 				<< "pause -1;" << endl
 				<< endl;
+		}
 	}
 
 	gnuplot_out.close();

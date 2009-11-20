@@ -28,13 +28,14 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char rcsid[] = "$Id$";
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "ParaverTrace.h"
 #include "ParaverTraceThread.h"
 #include "ParaverTraceTask.h"
 #include "ParaverTraceApplication.h"
 #include "UIParaverTraceConfig.h"
+#include "common.h"
 
 #include <sstream>
 #include <iostream>
@@ -151,12 +152,13 @@ class Process : public ParaverTrace
 {
 	private:
 	ofstream traceout;
+	string *CounterIDNames;
 	unsigned long long *CounterIDs;
-	unsigned numCounterIDs;
 	unsigned long long LookupCounter (unsigned long long Counter);
+	UIParaverTraceConfig *pcf;
 
 	public:
-	Process (string prvFile, bool multievents, list<unsigned long long> CounterList);
+	Process (string prvFile, bool multievents);
 	~Process ();
 
 	void processState (struct state_t &s);
@@ -166,16 +168,39 @@ class Process : public ParaverTrace
 	void processCommunicator (string &c);
 	void processComment (string &c);
 	InformationHolder IH;
+	unsigned numCounterIDs;
 };
 
-Process::Process (string prvFile, bool multievents, list<unsigned long long> CounterList) : ParaverTrace (prvFile, multievents)
+Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, multievents)
 {
-	numCounterIDs = CounterList.size();
-	CounterIDs = new unsigned long long[numCounterIDs];
+	unsigned found_counters = 0;
 
-	int j = 0;
-	for (list<unsigned long long>::iterator i = CounterList.begin(); i != CounterList.end(); j++, i++)
-		CounterIDs[j] = *i;
+	/* Look for hw counters */
+  string pcffile = prvFile.substr (0, prvFile.length()-3) + string ("pcf");
+  pcf = new UIParaverTraceConfig (pcffile);
+
+	for (int i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
+	{
+		string s = pcf->getEventType (i);
+		if (s.length() > 0)
+			found_counters++;
+	}
+
+	numCounterIDs = found_counters;
+	CounterIDs = new unsigned long long[numCounterIDs];
+	CounterIDNames = new string[numCounterIDs];
+
+	unsigned j = 0;
+	for (unsigned i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
+	{
+		string s = pcf->getEventType (i);
+		if (s.length() > 0)
+		{
+			CounterIDs[j] = i;
+			CounterIDNames[j] = s.substr (s.find ('(')+1, s.rfind (')') - (s.find ('(') + 1));
+			j++;
+		}
+	}
 }
 
 unsigned long long Process::LookupCounter (unsigned long long Counter)
@@ -282,7 +307,20 @@ void Process::processMultiEvent (struct multievent_t &e)
 			unsigned long long TotalTime = e.Timestamp - thi->StartRegion;
 
 			if (thi->TimeSamples.size() > 0)
-				thi->output << "T " << thi->CurrentRegion << " " << TotalTime << endl;
+			{
+				string RegionNameValue = pcf->getEventValue (RegionSeparator, thi->CurrentRegion);
+
+				if (RegionNameValue.length() > 0 && RegionNameValue != "Not found")
+					thi->output << "T " << common::removeSpaces (RegionNameValue) << " " << TotalTime << endl;
+				else
+				{
+					string RegionName = pcf->getEventType (RegionSeparator);
+					if (RegionName.length() > 0)
+						thi->output << "T " << common::removeSpaces (RegionName) << "_" << thi->CurrentRegion << " " << TotalTime << endl;
+					else
+						thi->output << "T Unkown_" << thi->CurrentRegion << " " << TotalTime << endl;
+				}
+			}
 
 			for (unsigned cnt = 0; cnt < numCounterIDs; cnt++)
 			{
@@ -313,9 +351,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 						double NCounter = ::NormalizeValue (AccumCounter + (*Counter_iter), 0, TotalCounter);
 
 #if defined(DEBUG)
-						cout << "S " << CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
+						cout << "S " << " " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
 #else
-						thi->output << "S " << CounterIDs[cnt] << " " << NTime << " " << NCounter << endl;
+						thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << endl;
 #endif
 					}
 
@@ -392,19 +430,7 @@ int main (int argc, char *argv[])
 
 	string tracename = string(argv[res]);
 
-	/* Look for hw counters */
-  string pcffile = tracename.substr (0, tracename.length()-3) + string ("pcf");
-  UIParaverTraceConfig *pcf = new UIParaverTraceConfig (pcffile);
-
-	list<unsigned long long> CountersList;
-	for (int i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
-	{
-		string s = pcf->getEventType (i);
-		if (s.length() > 0)
-			CountersList.push_back (i);
-	}
-
-	Process *p = new Process (tracename, true,CountersList);
+	Process *p = new Process (tracename, true);
 
 	vector<ParaverTraceApplication *> va = p->get_applications();
 	if (va.size() != 1)
@@ -424,7 +450,7 @@ int main (int argc, char *argv[])
 			for (unsigned int k = 0; k < vt[j]->get_threads().size(); k++)
 			{
 				ThreadInformation *thi = &((ti[j].getThreadsInformation())[k]);
-				thi->AllocateBufferCounters (CountersList.size());
+				thi->AllocateBufferCounters (p->numCounterIDs);
 
 				stringstream tasknumber, threadnumber;
 				tasknumber << j;
@@ -448,6 +474,12 @@ int main (int argc, char *argv[])
 				thi->output.close();
 			}
 	}
+
+	string ControlFile = tracename.substr (0, tracename.length()-4) + ".control";
+	ofstream cfile (ControlFile.c_str());
+	cfile << tracename << endl;
+	cfile << RegionSeparator << endl;
+	cfile.close ();
 
 	return 0;
 }
