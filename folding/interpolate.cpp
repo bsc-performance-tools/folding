@@ -47,7 +47,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "generate-gnuplot.h"
 #include "region-analyzer.h"
 #include "UIParaverTraceConfig.h"
-#include "common.h"
+#include "common.H"
 
 #define MAX_REGIONS 1024
 
