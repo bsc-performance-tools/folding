@@ -10,30 +10,30 @@ TARGETS = fuse extract interpolate sort_pcf
 
 all: $(TARGETS)
 
-sort_pcf:	sort_pcf.cpp
+sort_pcf:	sort_pcf.C
 	$(CXX) -o $@ $< $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include
 
 common.o: common.C
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
 
-fuse: fuse.cpp
+fuse: fuse.C
 	$(CXX) -o $@ $< $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include
 
-extract: extract.cpp common.o
-	$(CXX) -o $@ extract.cpp $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include common.o
+extract: extract.C common.o
+	$(CXX) -o $@ extract.C $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include common.o
 
-generate-gnuplot.o: generate-gnuplot.cpp
+generate-gnuplot.o: generate-gnuplot.C
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
 
-region.o: region.cpp
+region.o: region.C
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
-region-analyzer.o: region-analyzer.cpp
+region-analyzer.o: region-analyzer.C
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include
 
-interpolate: region-analyzer.o region.o generate-gnuplot.o common.o interpolate.cpp
+interpolate: region-analyzer.o region.o generate-gnuplot.o common.o interpolate.C
 	cd service-kriger; gmake ; cd ..
-	$(CXX) -o $@ interpolate.cpp $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include -I $(PWD)/service-kriger -L $(PWD)/service-kriger -lkriger -lgfortran region.o region-analyzer.o generate-gnuplot.o common.o
+	$(CXX) -o $@ interpolate.C $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(BOOST)/include -I $(PWD)/service-kriger -L $(PWD)/service-kriger -lkriger -lgfortran region.o region-analyzer.o generate-gnuplot.o common.o
 
 clean:
 	cd service-kriger; gmake clean; cd ..
