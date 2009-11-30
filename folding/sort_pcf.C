@@ -280,4 +280,14 @@ int main (int argc, char *argv[])
 	/* Feed the new PCF with the remaining events / header */
 	MergePCFs (pcf, sorted_pcf, sortedPCFfile);
 	sortedPCFfile.close();
+
+	/* Copy the .ROW file */
+	ifstream ifs_row ((PRVfile.substr (0, PRVfile.rfind(".prv"))+string(".row")).c_str());
+	if (ifs_row.is_open())
+	{
+		ofstream ofs_row ((PRVfile.substr (0, PRVfile.rfind(".prv"))+string(".sorted.row")).c_str());
+		ofs_row << ifs_row.rdbuf();
+		ifs_row.close();
+		ofs_row.close();
+	}
 }
