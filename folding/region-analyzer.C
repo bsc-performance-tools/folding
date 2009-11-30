@@ -45,7 +45,6 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "region-analyzer.H"
 #include "common.H"
 
-#define UNREFERENCED(a)    ((a) = (a))
 #define PAPI_MIN_COUNTER   42000000
 #define PAPI_MAX_COUNTER   42009998
 
