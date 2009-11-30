@@ -20,40 +20,41 @@
 \*****************************************************************************/
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/folding/extract.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2009-11-20 19:13:28 +0100 (dv, 20 nov 2009) $
+ | @version:     $Revision: 39 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef GENERATE_GNUPLOT_H
-#define GENERATE_GNUPLOT_H
-
-#include <list>
-#include <string>
+#include "ParaverTrace.h"
+#include "ParaverTraceThread.h"
+#include "ParaverTraceTask.h"
+#include "ParaverTraceApplication.h"
 #include "UIParaverTraceConfig.h"
+#include "common.H"
 
-using namespace std;
-using namespace libparaver;
+namespace libparaver {
 
-class GNUPLOTinfo
+class Process : public ParaverTrace
 {
+	private:
+	ofstream traceout;
+	UIParaverTraceConfig *pcf_original;
+	UIParaverTraceConfig *pcf_reference;
+
 	public:
-	bool done;
-	bool interpolated;
-	string title;
-	string fileprefix;
-	string what;
+	Process (string prvFile, string outname, UIParaverTraceConfig *pcf_original, UIParaverTraceConfig *pcf_reference, bool multievents = true);
+	~Process ();
+
+	void processState (struct state_t &s);
+	void processMultiEvent (struct multievent_t &e);
+	void processEvent (struct singleevent_t &e);
+	void processCommunication (struct comm_t &c);
+	void processCommunicator (string &c);
+	void processComment (string &c);
 };
 
-void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
-	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info,
-	UIParaverTraceConfig *pcf);
+} /* namespace libparaver */
 
-void createSingleGNUPLOT (unsigned task, unsigned thread, string file,
-	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info,
-	UIParaverTraceConfig *pcf);
-
-#endif

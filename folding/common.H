@@ -4,6 +4,8 @@
 #include <string>
 #include "UIParaverTraceConfig.h"
 
+#define UNREFERENCED(a) ((a) = (a))
+
 using namespace std;
 using namespace libparaver;
 

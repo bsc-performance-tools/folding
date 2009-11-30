@@ -44,7 +44,6 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <string.h>
 #include <list>
 
-#define UNREFERENCED(a)    ((a) = (a))
 #define PAPI_MIN_COUNTER   42000000
 #define PAPI_MAX_COUNTER   42009998
 
@@ -65,12 +64,22 @@ double DenormalizeValue (double normalized, double min, double max)
 
 namespace libparaver {
 
+class LineCodeInformation
+{
+	public:
+	unsigned line;
+	unsigned lineid_type;
+	unsigned lineid_value;
+	unsigned long long time;
+};
+
 class ThreadInformation
 {
 	public:
 	list<unsigned long long> TimeSamples;
 	list<bool> SkipSamples;
 	list<unsigned long long> * CounterSamples;
+	list<LineCodeInformation*> LineSamples;
 	ofstream output;
 
 	unsigned long long CurrentRegion;
@@ -151,15 +160,15 @@ void InformationHolder::AllocateTasks (int numTasks)
 class Process : public ParaverTrace
 {
 	private:
-	ofstream traceout;
+	list<unsigned> CallerCut;
 	string *CounterIDNames;
 	unsigned long long *CounterIDs;
 	unsigned long long LookupCounter (unsigned long long Counter);
 	UIParaverTraceConfig *pcf;
+	void ReadCallerLinesIntoList (string file, UIParaverTraceConfig *pcf);
 
 	public:
 	Process (string prvFile, bool multievents);
-	~Process ();
 
 	void processState (struct state_t &s);
 	void processMultiEvent (struct multievent_t &e);
@@ -176,7 +185,8 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 	unsigned found_counters = 0;
 
 	/* Look for hw counters */
-  string pcffile = prvFile.substr (0, prvFile.length()-3) + string ("pcf");
+  string pcffile = prvFile.substr (0, prvFile.rfind(".prv")) + string (".pcf");
+
   pcf = new UIParaverTraceConfig (pcffile);
 
 	for (int i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
@@ -201,6 +211,48 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 			j++;
 		}
 	}
+
+	ReadCallerLinesIntoList ("list", pcf);
+}
+
+void Process::ReadCallerLinesIntoList (string file, UIParaverTraceConfig *pcf)
+{
+	string str;
+	list<string> l_tmp;
+	fstream file_op (file.c_str(), ios::in);
+
+
+	if (file_op.is_open())
+	{
+		while (file_op >> str)
+		{
+			/* Add element into list if it didn't exist */
+			list<string>::iterator iter = find (l_tmp.begin(), l_tmp.end(), str);
+			if (iter == l_tmp.end())
+				l_tmp.push_back (str);
+		}
+		file_op.close();
+	
+		vector<unsigned> v = pcf->getEventValuesFromEventTypeKey (30000000);
+		unsigned i = 2;
+		while (i != v.size())
+		{
+			string str = pcf->getEventValue (30000000, v[i]);
+			string func_name = str.substr (0, str.find(' '));
+			if (find (l_tmp.begin(), l_tmp.end(), func_name) != l_tmp.end())
+			{
+				cout << "Adding identifier " << i << " for caller " << pcf->getEventValue (30000000, i) << endl;
+				CallerCut.push_back (i);
+			}
+			i++;
+		}
+	}
+	else
+	{
+		cout << "WARNING: No callstack segment cut given!" << endl;
+		return;
+	}
+
 }
 
 unsigned long long Process::LookupCounter (unsigned long long Counter)
@@ -210,11 +262,6 @@ unsigned long long Process::LookupCounter (unsigned long long Counter)
 			return i;
 
 	return numCounterIDs;
-}
-
-Process::~Process ()
-{
-	traceout.close ();
 }
 
 void Process::processComment (string &c)
@@ -290,11 +337,109 @@ void Process::processMultiEvent (struct multievent_t &e)
 			thi->TimeSamples.push_back (e.Timestamp);
 			thi->SkipSamples.push_back (skip);
 		}
+
+		bool found_min_level = false;
+		unsigned MinCallerLevel = 0, MinCallerLevelValue = 0;
+
+		for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
+		{
+			if ((*it).Type >= 30000000 && (*it).Type <= 30000099)
+			{
+				if (find (CallerCut.begin(), CallerCut.end(), (*it).Value) != CallerCut.end())
+				{
+					if (!found_min_level)
+					{
+						found_min_level = true;
+						MinCallerLevel = (*it).Type;
+					}
+					else if (found_min_level && MinCallerLevel > (*it).Type)
+					{
+						MinCallerLevel = (*it).Type;
+					}
+				}
+			}
+		}
+
+		if (found_min_level)
+		{
+			bool found = false;
+			for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
+			{
+				if (MinCallerLevel + 100 == (*it).Type)
+				{
+					MinCallerLevel = (*it).Type;
+					MinCallerLevelValue = (*it).Value;
+					found = true;
+				}
+			}
+			if (!found)
+			{
+				cerr << "Couldn't find callerline pair for caller " << MinCallerLevel << ":" << MinCallerLevelValue << " at timestamp " << e.Timestamp << endl;
+				exit (-1);
+			}
+		}
+
+
+#if 0
+		bool found_min_level = false;
+		unsigned MinCallerLevel = 0, MinCallerLevelValue = 0;
+		for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
+		{
+			bool skip = false;
+
+			/* Search for sampling caller lines which aren't not found or unresolved */
+			if ((*it).Type >= 30000100 && (*it).Type <= 30000199 && (*it).Value > 2)
+			{
+				string CallerLine = pcf->getEventValue ((*it).Type, (*it).Value);
+				if (CallerLine.length() > 0 && CallerLine != "Not found")
+				{
+					skip = CallerLine.find ("(mpi_wrapper.c)") != string::npos ||
+					       CallerLine.find ("(mpi_interface.c)") != string::npos;
+				}
+
+				if (!skip)
+				{
+					if (!found_min_level)
+					{
+						MinCallerLevel = (*it).Type;
+						MinCallerLevelValue = (*it).Value;
+						found_min_level = true;
+					}
+					else
+					{
+						if (MinCallerLevel > (*it).Type)
+						{
+							MinCallerLevel = (*it).Type;
+							MinCallerLevelValue = (*it).Value;
+						}
+					}
+				}
+			}
+		}
+#endif
+
+		if (found_min_level)
+		{
+			string CallerLine = pcf->getEventValue (MinCallerLevel, MinCallerLevelValue);
+			if (CallerLine.length() > 0 && CallerLine != "Not found")
+			{
+				LineCodeInformation *lci = new LineCodeInformation;
+				lci->line = atoi ((CallerLine.substr (0, CallerLine.find (" "))).c_str());
+				lci->lineid_value = MinCallerLevelValue;
+				lci->lineid_type = MinCallerLevel;
+				lci->time = e.Timestamp;
+				thi->LineSamples.push_back (lci);
+			}
+		}
+
 	}
 
 	/* If we found an end of a region, dump normalized samples */
 	if (FoundSeparator && ValueSeparator == 0)
 	{
+		unsigned long long TotalTime = e.Timestamp - thi->StartRegion;
+
+		/* First dump HW counters */
 		if (thi->TimeSamples.size() <= 1)
 		{
 			thi->TimeSamples.clear();
@@ -304,8 +449,6 @@ void Process::processMultiEvent (struct multievent_t &e)
 		}
 		else
 		{
-			unsigned long long TotalTime = e.Timestamp - thi->StartRegion;
-
 			if (thi->TimeSamples.size() > 0)
 			{
 				string RegionNameValue = pcf->getEventValue (RegionSeparator, thi->CurrentRegion);
@@ -351,7 +494,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 						double NCounter = ::NormalizeValue (AccumCounter + (*Counter_iter), 0, TotalCounter);
 
 #if defined(DEBUG)
-						cout << "S " << " " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
+						cout << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
 #else
 						thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << endl;
 #endif
@@ -365,6 +508,22 @@ void Process::processMultiEvent (struct multievent_t &e)
 			thi->TimeSamples.clear();
 			thi->SkipSamples.clear();
 		}
+
+		/* Then dump caller line information */
+		for (list<LineCodeInformation*>::iterator it = thi->LineSamples.begin(); it != thi->LineSamples.end(); it++)
+		{
+			double NTime = ::NormalizeValue ((*it)->time - thi->StartRegion, 0, TotalTime);
+
+#if defined(DEBUG)
+			cout << "S LINE " << NTime << " " << (*it)->line << " at timestamp " << (*it)->time << endl;
+			cout << "S LINEID " << NTime << " " << (*it)->lineid_value << " at timestamp " << (*it)->time << endl;
+#else
+			thi->output << "S LINE " << NTime << " " << (*it)->line << endl;
+			thi->output << "S LINEID " << NTime << " " << (*it)->lineid_value << endl;
+#endif
+		}
+		thi->LineSamples.clear();
+
 	}
 
 	if (FoundSeparator)
@@ -424,6 +583,7 @@ int ProcessParameters (int argc, char *argv[])
 }
 
 
+
 int main (int argc, char *argv[])
 {
 	int res = ProcessParameters (argc, argv);
@@ -437,6 +597,12 @@ int main (int argc, char *argv[])
 	{
 		cerr << "ERROR Cannot parse traces with more than one application" << endl;
 		return -1;
+	}
+
+	if (p->numCounterIDs == 0)
+	{
+		cerr << "ERROR! Cannot find performance counters in the PCF file" << endl;
+		exit (-1);
 	}
 
   for (unsigned int i = 0; i < va.size(); i++)

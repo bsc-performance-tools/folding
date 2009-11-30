@@ -271,13 +271,16 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 {
 	int incount = 0;
 
-	vector<Sample>::iterator it = vsamples.begin();
-	for (; it != vsamples.end(); it++)
+	if (outcount > 0)
 	{
-		if (!anyRegion && (*it).counterID == counterID && (*it).Region == RegionID)
-			incount++;
-		else if (anyRegion && (*it).counterID == counterID)
-			incount++;
+		vector<Sample>::iterator it = vsamples.begin();
+		for (; it != vsamples.end(); it++)
+		{
+			if (!anyRegion && (*it).counterID == counterID && (*it).Region == RegionID)
+				incount++;
+			else if (anyRegion && (*it).counterID == counterID)
+				incount++;
+		}
 	}
 
 	if (incount > 0 && outcount > 0)
@@ -288,6 +291,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 
 		inpoints_x[0] = inpoints_y[0] = 0.0f;
 		inpoints_x[1] = inpoints_y[1] = 1.0f;
+		vector<Sample>::iterator it = vsamples.begin();
 		for (incount = 2, it = vsamples.begin(); it != vsamples.end(); it++)
 			if ((!anyRegion && (*it).counterID == counterID && (*it).Region == RegionID) || 
 			    (anyRegion && (*it).counterID == counterID))
@@ -349,6 +353,231 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 	}
 
 	return incount > 0 && outcount > 0;
+}
+
+bool runLineFolding (int task, int thread, ofstream &points, ofstream &prv,
+	vector<Sample> &vsamples, string counterID, bool anyRegion, unsigned RegionID,
+	unsigned outcount, unsigned long long prvStartTime, unsigned long long prvEndTime,
+	unsigned long long prvAccumCounter)
+{
+	bool found = false;
+
+	vector<Sample>::iterator it = vsamples.begin();
+	for (; it != vsamples.end(); it++)
+	{
+		if (!anyRegion && (*it).counterID == counterID && (*it).Region == RegionID)
+		{
+			points << "INPOINTS " << (*it).Time << " " << (*it).counterValue << endl;
+			DumpParaverLine (prv, 0 /* TYPE */, 0 /* VALUE */, 0 /* TIME */, task+1, thread+1);
+			found = true;
+		}
+		else if (anyRegion && (*it).counterID == counterID)
+		{
+			points << "INPOINTS " << (*it).Time << " " << (*it).counterValue << endl;
+			DumpParaverLine (prv, 0 /* TYPE */, 0 /* VALUE */, 0 /* TIME */, task+1, thread+1);
+			found = true;
+		}
+	}
+
+	return found;
+}
+
+void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsamples,
+	unsigned long long startTime, unsigned long long endTime, list<Region*> &lRegions,
+	UIParaverTraceConfig *pcf, string what)
+{
+	stringstream taskstream, threadstream;
+	taskstream << task;
+	threadstream << thread;
+	string task_str = taskstream.str();
+	string thread_str = threadstream.str();
+
+	if (SeparateValues)
+	{
+		for (int i = 0; i < numRegions; i++)
+		{
+			string choppedNameRegion = nameRegion[i].substr (0, nameRegion[i].find(":"));
+			string completefilePrefix = filePrefix + "." + choppedNameRegion;
+
+			ofstream output_points ((completefilePrefix+"."+what+".points").c_str());
+			ofstream output_prv;
+
+			if (feedTrace)
+				output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
+
+			if (!output_points.is_open())
+			{
+				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
+				exit (-1);
+			}
+			if (feedTrace && !output_prv.is_open())
+			{
+				cerr << "Cannot append to " << TraceToFeed << " file " << endl;
+				exit (-1);
+			}
+
+			bool done = runLineFolding (task, thread, output_points, output_prv,
+			  vsamples, what, false, i, 0, 0, 0, 0);
+
+			if (feedTrace)
+				output_prv.close();
+			output_points.close();
+
+			if (!done)
+			{
+				remove (completefilePrefix.c_str());
+			}
+
+			GNUPLOTinfo *info = new GNUPLOTinfo;
+			info->done = done;
+			info->interpolated = false;
+			info->title = "Task " + task_str + " Thread " + thread_str + " - " + nameRegion[i];
+			info->fileprefix = completefilePrefix;
+			info->what = what;
+			GNUPLOT.push_back (info);
+		}
+	}
+	else
+	{
+		string completefilePrefix = filePrefix + ".all.lines.points";
+
+		ofstream output_points (completefilePrefix.c_str());
+		ofstream output_prv;
+
+		if (feedTrace)
+			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
+
+		if (!output_points.is_open())
+		{
+			cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
+			exit (-1);
+		}
+		if (feedTrace && !output_prv.is_open())
+		{
+			cerr << "Cannot append to " << TraceToFeed << " file " << endl;
+			exit (-1);
+		}
+
+		bool done = runLineFolding (task, thread, output_points, output_prv,
+		  vsamples, what, true, 0, 0, 0, 0, 0);
+
+		if (feedTrace)
+			output_prv.close();
+		output_points.close();
+
+		if (!done)
+		{
+			remove (completefilePrefix.c_str());
+		}
+
+		GNUPLOTinfo *info = new GNUPLOTinfo;
+		info->done = done;
+		info->interpolated = false;
+		info->title = "Task " + task_str + " Thread " + thread_str + " - all ";
+		info->fileprefix = completefilePrefix;
+		info->what = what;
+		GNUPLOT.push_back (info);
+	}
+}
+
+void doLineFolding_PRV (int task, int thread, string filePrefix, vector<Sample> &vsamples,
+	unsigned long long startTime, unsigned long long endTime, list<Region*> &lRegions,
+	UIParaverTraceConfig *pcf, string what)
+{
+	stringstream taskstream, threadstream;
+	taskstream << task;
+	threadstream << thread;
+	string task_str = taskstream.str();
+	string thread_str = threadstream.str();
+	if (SeparateValues)
+	{
+		for (list<Region*>::iterator i = lRegions.begin();
+		     i != lRegions.end(); i++)
+		{
+			string completefilePrefix = filePrefix + "." + "XXXX";
+			ofstream output_points ((completefilePrefix+"."+what+".points").c_str());
+			ofstream output_prv;
+
+			if (feedTrace)
+				output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
+
+			if (!output_points.is_open())
+			{
+				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
+				exit (-1);
+			}
+			if (feedTrace && !output_prv.is_open())
+			{
+				cerr << "Cannot append to " << TraceToFeed << " file " << endl;
+				exit (-1);
+			}
+
+			bool done = runLineFolding (task, thread, output_points, output_prv,
+			  vsamples, what, false, (*i)->Value, 0, 0, 0, 0);
+
+			if (feedTrace)
+				output_prv.close();
+			output_points.close();
+
+			if (!done)
+			{
+				remove (completefilePrefix.c_str());
+			}
+
+			GNUPLOTinfo *info = new GNUPLOTinfo;
+			info->done = done;
+			info->interpolated = false;
+			info->title = "Task " + task_str + " Thread " + thread_str + " - " + "XXXX";
+			info->fileprefix = completefilePrefix;
+			info->what = what;
+			GNUPLOT.push_back (info);
+		}
+	}
+	else
+	{
+		for (list<Region*>::iterator i = lRegions.begin();
+		     i != lRegions.end(); i++)
+		{
+			string completefilePrefix = filePrefix + ".all";
+
+			ofstream output_points ((completefilePrefix+"."+what+".points").c_str());
+			ofstream output_prv;
+
+			if (feedTrace)
+				output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
+
+			if (!output_points.is_open())
+			{
+				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
+				exit (-1);
+			}
+			if (feedTrace && !output_prv.is_open())
+			{
+				cerr << "Cannot append to " << TraceToFeed << " file " << endl;
+				exit (-1);
+			}
+
+			bool done = runLineFolding (task, thread, output_points, output_prv,
+			  vsamples, what, true, 0, 0, 0, 0, 0);
+
+			if (feedTrace)
+				output_prv.close();
+			output_points.close();
+
+			if (!done)
+			{
+				remove (completefilePrefix.c_str());
+			}
+
+			GNUPLOTinfo *info = new GNUPLOTinfo;
+			info->done = done;
+			info->interpolated = false;
+			info->title = "Task " + task_str + " Thread " + thread_str + " - all ";
+			info->fileprefix = completefilePrefix;
+			info->what = what;
+			GNUPLOT.push_back (info);
+		}
+	}
 }
 
 void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample> &vsamples,
@@ -434,7 +663,7 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 
 #warning "Accumulate several equal clusters!"
 
-			bool interpolated = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
+			bool done = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
 				vsamples, counterID, counterCode, false, regionIndex, target_num_points, (*i)->Tstart, (*i)->Tend, (*i)->HWCvalues[posCounterID]);
 
 			if (feedTrace)
@@ -443,7 +672,7 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 			output_points.close();
 			output_kriger.close();
 
-			if (!interpolated)
+			if (!done)
 			{
 				remove ((completefilePrefix+"."+counterID+".points").c_str());
 				remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
@@ -451,10 +680,11 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 			}
 
 			GNUPLOTinfo *info = new GNUPLOTinfo;
-			info->interpolated = interpolated;
+			info->done = done;
+			info->interpolated = true;
 			info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
 			info->fileprefix = completefilePrefix;
-			info->counter = counterID;
+			info->what = counterID;
 			GNUPLOT.push_back (info);
 		}
 	}
@@ -506,7 +736,7 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 
 #warning "Accumulate several equal clusters!"
 
-			bool interpolated = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
+			bool done = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
 				vsamples, counterID, counterCode, true, 0, target_num_points, (*i)->Tstart, (*i)->Tend, (*i)->HWCvalues[posCounterID]);
 
 			if (feedTrace)
@@ -515,7 +745,7 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 			output_points.close();
 			output_kriger.close();
 
-			if (!interpolated)
+			if (!done)
 			{
 				remove ((completefilePrefix+"."+counterID+".points").c_str());
 				remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
@@ -523,10 +753,11 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 			}
 
 			GNUPLOTinfo *info = new GNUPLOTinfo;
-			info->interpolated = interpolated;
+			info->done = done;
+			info->interpolated = true;
 			info->title = "Task " + task_str + " Thread " + thread_str + " - all ";
 			info->fileprefix = completefilePrefix;
-			info->counter = counterID;
+			info->what = counterID;
 			GNUPLOT.push_back (info);
 		}
 	}
@@ -571,14 +802,14 @@ void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &v
 				exit (-1);
 			}
 
-			bool interpolated = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
+			bool done = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
 				vsamples, counterID, 0, false, i, 1000, 0, 0, 0);
 
 			output_slope.close();
 			output_points.close();
 			output_kriger.close();
 
-			if (!interpolated)
+			if (!done)
 			{
 				remove ((completefilePrefix+"."+counterID+".points").c_str());
 				remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
@@ -586,10 +817,11 @@ void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &v
 			}
 
 			GNUPLOTinfo *info = new GNUPLOTinfo;
-			info->interpolated = interpolated;
+			info->done = done;
+			info->interpolated = true;
 			info->title = "Task " + task_str + " Thread " + thread_str + " - " + choppedNameRegion;
 			info->fileprefix = completefilePrefix;
-			info->counter = counterID;
+			info->what = counterID;
 			GNUPLOT.push_back (info);
 		}
 	}
@@ -618,14 +850,14 @@ void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &v
 			exit (-1);
 		}
 
-		bool interpolated = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
+		bool done = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
 			vsamples, counterID, 0, true, 0, 1000, 0, 0, 0);
 
 		output_slope.close();
 		output_points.close();
 		output_kriger.close();
 
-		if (!interpolated)	
+		if (!done)	
 		{
 			remove ((completefilePrefix+"."+counterID+".points").c_str());
 			remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
@@ -633,10 +865,11 @@ void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &v
 		}
 
 		GNUPLOTinfo *info = new GNUPLOTinfo;
-		info->interpolated = interpolated;
+		info->done = done;
+		info->interpolated = true;
 		info->title = "Task " + task_str + " Thread " + thread_str + " - all ";
 		info->fileprefix = completefilePrefix;
-		info->counter = counterID;
+		info->what = counterID;
 		GNUPLOT.push_back (info);
 	}
 }
@@ -832,6 +1065,21 @@ int main (int argc, char *argv[])
 			  prv_out_end, prvRegions, pcf);	
 		else
 			doInterpolation (task, thread, argv[res], vsamples, i, pcf);	
+	}
+
+#warning "This should be optional"
+	if (1 /* should be optional */)
+	{
+		if (feedTrace)
+		{
+			doLineFolding_PRV (task, thread, argv[res], vsamples, 0, 0, prvRegions, pcf, "LINE");
+			doLineFolding_PRV (task, thread, argv[res], vsamples, 0, 0, prvRegions, pcf, "LINEID");
+		}
+		else
+		{
+			doLineFolding (task, thread, argv[res], vsamples, 0, 0, prvRegions, pcf, "LINE");
+			doLineFolding (task, thread, argv[res], vsamples, 0, 0, prvRegions, pcf, "LINEID");
+		}
 	}
 
 	if (GNUPLOT.size() > 0)
