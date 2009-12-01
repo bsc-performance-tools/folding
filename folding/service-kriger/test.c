@@ -6,6 +6,7 @@
 int main (int argc, char *argv[])
 {
 	int i;
+	double X1, Y1, X2, Y2, X3, Y3, X4, Y4;
 	double px[2000], py[2000];
 	double ox[2000], oy[2000];
 
@@ -1532,15 +1533,29 @@ px[1519]=0.999592; py[1519]=4.01666e+08;
 px[1520]=0.999832; py[1520]=402862000.000000;
 px[1521]=1; py[1521]=4.15681e+08;
 
-	Kriger_Wrapper (1522, px, py, 1001, oy, 0.0f, 1.0f);
-
-//	fflush (stderr);
-//	fflush (stdout);
-
-//	sleep (1);
+	printf ("About calling Kriger_Region\n");
+	Kriger_Region (1522, px, py, 1001, oy, 0.0f, 1.0f);
 
 	for (i = 0; i < 1001; i++)
 		printf ("res[%d].x = %lf res[%d].y = %lf\n", i, (double)i/(double)1000, i, oy[i]);
+
+  X1 = 0.1;
+  X2 = 0.25;
+  X3 = 0.5;
+  X4 = 0.95;
+	printf ("About calling Kriger_Point 1/4\n");
+	Kriger_Point (1522, px, py, &X1, &Y1, 0.0f, 1.0f);
+	printf ("About calling Kriger_Point 2/4\n");
+	Kriger_Point (1522, px, py, &X2, &Y2, 0.0f, 1.0f);
+	printf ("About calling Kriger_Point 3/4\n");
+	Kriger_Point (1522, px, py, &X3, &Y3, 0.0f, 1.0f);
+	printf ("About calling Kriger_Point 4/4\n");
+	Kriger_Point (1522, px, py, &X4, &Y4, 0.0f, 1.0f);
+
+	printf ("X1 = %lf - Y1 = %lf\n", X1, Y1);
+	printf ("X2 = %lf - Y2 = %lf\n", X2, Y2);
+	printf ("X3 = %lf - Y3 = %lf\n", X3, Y3);
+	printf ("X4 = %lf - Y4 = %lf\n", X4, Y4);
 
 	return 0;
 }
