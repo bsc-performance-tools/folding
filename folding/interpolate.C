@@ -309,7 +309,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			cout << RegionID << " / " << nameRegion[RegionID];
 		cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << counterID << ")" << endl;
 
-		Kriger_Wrapper (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f);
+		Kriger_Region (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f);
 
 		interpolation << "KRIGER " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
 		slope << "SLOPE 0 0 " << endl;

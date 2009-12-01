@@ -132,6 +132,7 @@ write (*,*) "mgrid_kri = ", mgrid_kri
 write (*,*) "dkrig_kri(1,1) =", dkrig_kri(1,1)
 write (*,*) "dkrig_kri(1,2) =", dkrig_kri(1,2)
 write (*,*) "nkrdi_kri(1) = ", nkrdi_kri(1)
+write (*,*) "xnbva_kri(1,1) = ", xnbva_kri(1,1)
 
  case(4)  !Block 'plot' !PIERRE
      
