@@ -2,7 +2,6 @@
 *** Afegir els callstacks a la trasa
 +++ Reordenacio dels callstacks a la trasa
 
-
 *** Comptadors a les MPIs si no es separen les MPIs!? Shaurien d'eliminar?
       --> Comptadors de MPIs
 
@@ -14,3 +13,5 @@ TALLATS!
 *** Stack de UF -> split com si fos MPI?
 
 *** Normalitzat? o real?
+
+*** Calcular error / corba amb punts

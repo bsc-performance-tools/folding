@@ -424,9 +424,7 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 			output_points.close();
 
 			if (!done)
-			{
 				remove (completefilePrefix.c_str());
-			}
 
 			GNUPLOTinfo *info = new GNUPLOTinfo;
 			info->done = done;
@@ -466,9 +464,7 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 		output_points.close();
 
 		if (!done)
-		{
 			remove (completefilePrefix.c_str());
-		}
 
 		GNUPLOTinfo *info = new GNUPLOTinfo;
 		info->done = done;
@@ -520,9 +516,7 @@ void doLineFolding_PRV (int task, int thread, string filePrefix, vector<Sample> 
 			output_points.close();
 
 			if (!done)
-			{
 				remove (completefilePrefix.c_str());
-			}
 
 			GNUPLOTinfo *info = new GNUPLOTinfo;
 			info->done = done;
@@ -535,48 +529,42 @@ void doLineFolding_PRV (int task, int thread, string filePrefix, vector<Sample> 
 	}
 	else
 	{
-		for (list<Region*>::iterator i = lRegions.begin();
-		     i != lRegions.end(); i++)
+		string completefilePrefix = filePrefix + ".all";
+
+		ofstream output_points ((completefilePrefix+"."+what+".points").c_str());
+		ofstream output_prv;
+
+		if (feedTrace)
+			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
+
+		if (!output_points.is_open())
 		{
-			string completefilePrefix = filePrefix + ".all";
-
-			ofstream output_points ((completefilePrefix+"."+what+".points").c_str());
-			ofstream output_prv;
-
-			if (feedTrace)
-				output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
-
-			if (!output_points.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
-				exit (-1);
-			}
-			if (feedTrace && !output_prv.is_open())
-			{
-				cerr << "Cannot append to " << TraceToFeed << " file " << endl;
-				exit (-1);
-			}
-
-			bool done = runLineFolding (task, thread, output_points, output_prv,
-			  vsamples, what, true, 0, 0, 0, 0, 0);
-
-			if (feedTrace)
-				output_prv.close();
-			output_points.close();
-
-			if (!done)
-			{
-				remove (completefilePrefix.c_str());
-			}
-
-			GNUPLOTinfo *info = new GNUPLOTinfo;
-			info->done = done;
-			info->interpolated = false;
-			info->title = "Task " + task_str + " Thread " + thread_str + " - all ";
-			info->fileprefix = completefilePrefix;
-			info->what = what;
-			GNUPLOT.push_back (info);
+			cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
+			exit (-1);
 		}
+		if (feedTrace && !output_prv.is_open())
+		{
+			cerr << "Cannot append to " << TraceToFeed << " file " << endl;
+			exit (-1);
+		}
+
+		bool done = runLineFolding (task, thread, output_points, output_prv,
+		  vsamples, what, true, 0, 0, 0, 0, 0);
+
+		if (feedTrace)
+			output_prv.close();
+		output_points.close();
+
+		if (!done)
+			remove (completefilePrefix.c_str());
+
+		GNUPLOTinfo *info = new GNUPLOTinfo;
+		info->done = done;
+		info->interpolated = false;
+		info->title = "Task " + task_str + " Thread " + thread_str + " - all ";
+		info->fileprefix = completefilePrefix;
+		info->what = what;
+		GNUPLOT.push_back (info);
 	}
 }
 
