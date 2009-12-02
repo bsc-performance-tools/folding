@@ -48,10 +48,8 @@ class GNUPLOTinfo
 	string what;
 };
 
-void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
-	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info);
+void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info);
 
-void createSingleGNUPLOT (unsigned task, unsigned thread, string file,
-	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info);
+void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info);
 
 #endif
