@@ -41,8 +41,6 @@
 using namespace std;
 using namespace libparaver;
 
-
-using namespace std;
 void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thread,
 	unsigned long long Type, unsigned long long TimeType, unsigned long long TimeValue,
 	unsigned long long *out_Tstart, unsigned long long *out_Tend,
