@@ -49,11 +49,9 @@ class GNUPLOTinfo
 };
 
 void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
-	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info,
-	UIParaverTraceConfig *pcf);
+	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info);
 
 void createSingleGNUPLOT (unsigned task, unsigned thread, string file,
-	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info,
-	UIParaverTraceConfig *pcf);
+	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info);
 
 #endif
