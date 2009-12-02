@@ -312,7 +312,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 		for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 			skip = (find (SkipTypes.begin(), SkipTypes.end(), (*it).Type ) != SkipTypes.end()) || skip;
 
-#if 0
+#if defined(DEBUG)
 		if (!skip)
 		{
 			cout << "will not skip @ " << e.Timestamp << " : ";
@@ -378,45 +378,6 @@ void Process::processMultiEvent (struct multievent_t &e)
 				exit (-1);
 			}
 		}
-
-
-#if 0
-		bool found_min_level = false;
-		unsigned MinCallerLevel = 0, MinCallerLevelValue = 0;
-		for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
-		{
-			bool skip = false;
-
-			/* Search for sampling caller lines which aren't not found or unresolved */
-			if ((*it).Type >= 30000100 && (*it).Type <= 30000199 && (*it).Value > 2)
-			{
-				string CallerLine = pcf->getEventValue ((*it).Type, (*it).Value);
-				if (CallerLine.length() > 0 && CallerLine != "Not found")
-				{
-					skip = CallerLine.find ("(mpi_wrapper.c)") != string::npos ||
-					       CallerLine.find ("(mpi_interface.c)") != string::npos;
-				}
-
-				if (!skip)
-				{
-					if (!found_min_level)
-					{
-						MinCallerLevel = (*it).Type;
-						MinCallerLevelValue = (*it).Value;
-						found_min_level = true;
-					}
-					else
-					{
-						if (MinCallerLevel > (*it).Type)
-						{
-							MinCallerLevel = (*it).Type;
-							MinCallerLevelValue = (*it).Value;
-						}
-					}
-				}
-			}
-		}
-#endif
 
 		if (found_min_level)
 		{
