@@ -323,8 +323,6 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 		if (feedTrace)
 		{
 #warning "Afegir els POINTS a la trasa"
-#warning "Que passa amb els callstacks?"
-
 			unsigned long long newCounterID = 600000000 + counterCode;
 			unsigned long long deltaTime = (prvEndTime - prvStartTime) / outcount;
 			DumpParaverLine (prv, newCounterID, 0, prvStartTime, task+1, thread+1);
@@ -485,20 +483,34 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 	string task_str = taskstream.str();
 	string thread_str = threadstream.str();
 
+	unsigned counterCode = 0;
+	string counterID = wantedCounters[posCounterID];
+	if (feedTrace)
+	{
+		for (unsigned i = 0; i < regions.HWCnames.size(); i++)
+			if (regions.HWCnames[i] == counterID)
+			{
+				counterCode = regions.HWCcodes[i];
+				break;
+			}
+		if (counterCode == 0)
+		{
+			cerr << "FATAL ERROR! Cannot find counter " << counterID << " within the PCF file " << endl;
+			exit (-1);
+		}
+	}
+
+#if 0
 	string counterID = wantedCounters[posCounterID];
 	unsigned counterCode = common::lookForCounter (counterID, pcf);
-
-	if (counterCode == 0)
-	{
-		cerr << "FATAL ERROR! Cannot find counter " << counterID << " within the PCF file " << endl;
-		exit (-1);
-	}
+#endif
 
 	if (SeparateValues)
 	{
 		for (list<Region*>::iterator i = regions.foundRegions.begin();
 		     i != regions.foundRegions.end(); i++)
 		{
+#if 0
 			string RegionName;
 			string tmp = pcf->getEventValue ((*i)->Type, (*i)->Value);
 
@@ -516,9 +528,10 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 				else
 						RegionName = string("Unknown_") + regionstream.str();
 			}
+#endif
 
-			int regionIndex = TranslateRegion (RegionName);
-			RegionName = common::removeSpaces (RegionName);
+			int regionIndex = TranslateRegion ((*i)->RegionName);
+			string RegionName = common::removeSpaces ((*i)->RegionName);
 
 			string completefilePrefix = filePrefix + "." + RegionName;
 

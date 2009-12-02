@@ -8,6 +8,7 @@ class RegionInfo
 	public:
 	list<Region*> foundRegions;
 	vector<string> HWCnames;
+	vector<unsigned> HWCcodes;
 };
 
 #endif

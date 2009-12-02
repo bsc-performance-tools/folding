@@ -38,6 +38,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <math.h>
 #include <string.h>
 #include <list>
@@ -56,7 +57,7 @@ class Process : public ParaverTrace
 {
 	private:
 	Region *currentRegion;
-	unsigned long long *CounterIDs;
+	unsigned *CounterIDs;
 
 	unsigned long long TimeLimit_Type;
 	unsigned long long TimeLimit_Value;
@@ -70,7 +71,7 @@ class Process : public ParaverTrace
 	bool TimeRegionLimit_exited;
 	unsigned numCounterIDs;
 	
-	bool LookupCounter (unsigned long long Counter, unsigned *index);
+	bool LookupCounter (unsigned Counter, unsigned *index);
 
 	public:
 	list<Region*> foundRegions;
@@ -79,7 +80,7 @@ class Process : public ParaverTrace
 	void setTimeLimit (unsigned long long Tstart, unsigned long long Tend);
 	void setTimeRegionLimit (unsigned long long Type, unsigned long long Value);
 
-	Process (string prvFile, bool multievents, int task, int thread, vector<unsigned long long> &CounterList, unsigned long long Separator);
+	Process (string prvFile, bool multievents, int task, int thread, vector<unsigned> &CounterList, unsigned long long Separator);
 
 	void processState (struct state_t &s);
 	void processMultiEvent (struct multievent_t &e);
@@ -89,10 +90,10 @@ class Process : public ParaverTrace
 	void processComment (string &c);
 };
 
-Process::Process (string prvFile, bool multievents, int task, int thread, vector<unsigned long long> &CounterList, unsigned long long Separator) : ParaverTrace (prvFile, multievents)
+Process::Process (string prvFile, bool multievents, int task, int thread, vector<unsigned> &CounterList, unsigned long long Separator) : ParaverTrace (prvFile, multievents)
 {
 	numCounterIDs = CounterList.size();
-	CounterIDs = new unsigned long long[numCounterIDs];
+	CounterIDs = new unsigned [numCounterIDs];
 
 	for (unsigned i = 0; i < CounterList.size(); i++)
 		CounterIDs[i] = CounterList[i];
@@ -118,7 +119,7 @@ void Process::processState (struct state_t &s)
 	UNREFERENCED(s);
 }
 
-bool Process::LookupCounter (unsigned long long Counter, unsigned *index)
+bool Process::LookupCounter (unsigned Counter, unsigned *index)
 {
 	for (unsigned i = 0; i < numCounterIDs; i++)
 		if (CounterIDs[i] == Counter)
@@ -253,9 +254,9 @@ void Process::setTimeRegionLimit (unsigned long long Type, unsigned long long Va
 using namespace::libparaver;
 using namespace::std;
 
-static vector<unsigned long long> convertCountersToID (vector<string> &lCounters, UIParaverTraceConfig *pcf)
+static vector<unsigned> convertCountersToID (vector<string> &lCounters, UIParaverTraceConfig *pcf)
 {
-	vector<unsigned long long> result;
+	vector<unsigned> result;
 
 	/* Look for every counter in the vector its code within the PCF file */
 	for (unsigned i = 0; i < lCounters.size(); i++)
@@ -279,17 +280,34 @@ void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thr
 	vector<string> &vCounters, RegionInfo &regions,
 	UIParaverTraceConfig *pcf)
 {
-	vector<unsigned long long> lIDCounters = convertCountersToID (vCounters, pcf);
+	vector<unsigned> vIDCounters = convertCountersToID (vCounters, pcf);
 
-	Process *p = new Process (tracename, true, task, thread, lIDCounters, Type);
+	Process *p = new Process (tracename, true, task, thread, vIDCounters, Type);
 	p->setTimeRegionLimit (TimeType, TimeValue);
 
 	p->parseBody();
 
 	*out_Tstart = p->TimeLimit_out_Start;
 	*out_Tend = p->TimeLimit_out_End;
-	regions.foundRegions = p->foundRegions;
 	regions.HWCnames = vCounters;
+	regions.HWCcodes = vIDCounters;
+	regions.foundRegions = p->foundRegions;
+	for (list<Region*>::iterator i = regions.foundRegions.begin();
+	  i != regions.foundRegions.end(); i++)
+	{
+		string tmp = pcf->getEventValue ((*i)->Type, (*i)->Value);
+		if (tmp == "Not found" || tmp.length() == 0)
+		{
+			stringstream regionstream;
+			regionstream << (*i)->Value;
+			tmp = pcf->getEventType ((*i)->Type);
+			if (tmp.length() > 0)
+				tmp = tmp + "_" + regionstream.str();
+			else
+				tmp = string("Unknown_") + regionstream.str();
+		}
+		(*i)->RegionName = tmp;
+	}
 
 #if defined(DEBUG)
 	cout << "# Regions found = " << p->foundRegions.size() << " from " << p->TimeLimit_out_Start << " to " << p->TimeLimit_out_End << endl;
@@ -313,17 +331,34 @@ void SearchForRegionsWithinTime (string tracename, unsigned task, unsigned threa
 	vector<string> &vCounters, RegionInfo &regions,
 	UIParaverTraceConfig *pcf)
 {
-	vector<unsigned long long> lIDCounters = convertCountersToID (vCounters, pcf);
+	vector<unsigned> vIDCounters = convertCountersToID (vCounters, pcf);
 
-	Process *p = new Process (tracename, true, task, thread, lIDCounters, Type);
+	Process *p = new Process (tracename, true, task, thread, vIDCounters, Type);
 	p->setTimeLimit (Tstart, Tend);
 
 	p->parseBody();
 
 	*out_Tstart = Tstart;
 	*out_Tend = Tend;
-	regions.foundRegions = p->foundRegions;
 	regions.HWCnames = vCounters;
+	regions.HWCcodes = vIDCounters;
+	regions.foundRegions = p->foundRegions;
+	for (list<Region*>::iterator i = regions.foundRegions.begin();
+	  i != regions.foundRegions.end(); i++)
+	{
+		string tmp = pcf->getEventValue ((*i)->Type, (*i)->Value);
+		if (tmp == "Not found" || tmp.length() == 0)
+		{
+			stringstream regionstream;
+			regionstream << (*i)->Value;
+			tmp = pcf->getEventType ((*i)->Type);
+			if (tmp.length() > 0)
+				tmp = tmp + "_" + regionstream.str();
+			else
+				tmp = string("Unknown_") + regionstream.str();
+		}
+		(*i)->RegionName = tmp;
+	}
 
 #if defined(DEBUG)
 	for (list<Region *>::iterator i = regions.foundRegions.begin();
