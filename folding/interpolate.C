@@ -652,119 +652,6 @@ void doInterpolation (int task, int thread, string filePrefix,
 	}
 }
 
-#if 0
-void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &vsamples,
-	unsigned posCounterID)
-{
-	stringstream taskstream, threadstream;
-	taskstream << task;
-	threadstream << thread;
-	string task_str = taskstream.str();
-	string thread_str = threadstream.str();
-
-	string counterID = wantedCounters[posCounterID];
-
-	if (SeparateValues)
-	{
-		for (int i = 0; i < numRegions; i++)
-		{
-			string RegionName = nameRegion[i].substr (0, nameRegion[i].find(":"));
-			string completefilePrefix = filePrefix + "." + RegionName;
-
-			ofstream output_points ((completefilePrefix+"."+counterID+".points").c_str());
-			ofstream output_kriger ((completefilePrefix+"."+counterID+".interpolation").c_str());
-			ofstream output_slope ((completefilePrefix+"."+counterID+".slope").c_str());
-			ofstream output_prv;
-
-			if (!output_points.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
-				exit (-1);
-			}
-			if (!output_kriger.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".interpolation" << " file " << endl;
-				exit (-1);
-			}
-			if (!output_slope.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".slope" << " file " << endl;
-				exit (-1);
-			}
-
-			bool done = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
-				vsamples, counterID, 0, false, i, 1000, 0, 0, 0);
-
-			output_slope.close();
-			output_points.close();
-			output_kriger.close();
-
-			if (!done)
-			{
-				remove ((completefilePrefix+"."+counterID+".points").c_str());
-				remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
-				remove ((completefilePrefix+"."+counterID+".slope").c_str());
-			}
-
-			GNUPLOTinfo *info = new GNUPLOTinfo;
-			info->done = done;
-			info->interpolated = true;
-			info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
-			info->fileprefix = completefilePrefix;
-			info->what = counterID;
-			GNUPLOT.push_back (info);
-		}
-	}
-	else
-	{
-		string completefilePrefix = filePrefix + ".all";
-
-		ofstream output_points ((completefilePrefix+"."+counterID+".points").c_str());
-		ofstream output_kriger ((completefilePrefix+"."+counterID+".interpolation").c_str());
-		ofstream output_slope ((completefilePrefix+"."+counterID+".slope").c_str());
-		ofstream output_prv;
-
-		if (!output_points.is_open())
-		{
-			cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
-			exit (-1);
-		}
-		if (!output_kriger.is_open())
-		{
-			cerr << "Cannot create " << completefilePrefix+".interpolation" << " file " << endl;
-			exit (-1);
-		}
-		if (!output_slope.is_open())
-		{
-			cerr << "Cannot create " << completefilePrefix+".slope" << " file " << endl;
-			exit (-1);
-		}
-
-		bool done = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
-			vsamples, counterID, 0, true, 0, 1000, 0, 0, 0);
-
-		output_slope.close();
-		output_points.close();
-		output_kriger.close();
-
-		if (!done)	
-		{
-			remove ((completefilePrefix+"."+counterID+".points").c_str());
-			remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
-			remove ((completefilePrefix+"."+counterID+".slope").c_str());
-		}
-
-		GNUPLOTinfo *info = new GNUPLOTinfo;
-		info->done = done;
-		info->interpolated = true;
-		info->title = "Task " + task_str + " Thread " + thread_str + " - all ";
-		info->fileprefix = completefilePrefix;
-		info->what = counterID;
-		GNUPLOT.push_back (info);
-	}
-}
-#endif
-
 int ProcessParameters (int argc, char *argv[])
 {
   if (argc < 2)
@@ -962,14 +849,6 @@ int main (int argc, char *argv[])
 	{
 #if defined(DEBUG)
 		cout << "Working on counter " << i << " - " << wantedCounters[i] << endl;
-#endif
-
-#if 0
-		if (feedTrace)
-			doInterpolation_PRV (task, thread, argv[res], vsamples, i, prv_out_start,
-			  prv_out_end, regions);	
-		else
-			doInterpolation (task, thread, argv[res], vsamples, i);	
 #endif
 
 		doInterpolation (task, thread, argv[res], vsamples, i, prv_out_start,
