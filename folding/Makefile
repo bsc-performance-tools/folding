@@ -2,8 +2,8 @@
 CXX = g++
 BOOST = /home/harald/aplic/boost/1.40
 COMMON = ../common-files
-COMMONFILESFLAGS = -I $(COMMON) -I $(COMMON)/pcfparser -I $(COMMON)/prvparser -I . -I $(BOOST)/include
-CXXFLAGS = -O -Wall -g $(DEBUG)
+COMMONFILESFLAGS = -I $(COMMON) -I $(COMMON)/pcfparser -I $(COMMON)/prvparser -I $(BOOST)/include
+CXXFLAGS = -O -Wall -g $(DEBUG) -I .
 PRV_PCF_PARSERS = $(COMMON)/prvparser/*.cpp $(COMMON)/pcfparser/*.cpp $(COMMON)/LibException.cpp
 
 TARGETS = fuse sort_pcf extract interpolate
@@ -27,6 +27,9 @@ extract: extract.C common.o
 
 generate-gnuplot.o: generate-gnuplot.C
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
+
+region-info.o:	region-info.C
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 region.o: region.C
 	$(CXX) -c -o $@ $< $(CXXFLAGS)

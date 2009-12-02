@@ -276,10 +276,10 @@ static vector<unsigned long long> convertCountersToID (vector<string> &lCounters
 void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thread,
 	unsigned long long Type, unsigned long long TimeType, unsigned long long TimeValue,
 	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &lCounters, list<Region*> &foundRegions,
+	vector<string> &vCounters, RegionInfo &regions,
 	UIParaverTraceConfig *pcf)
 {
-	vector<unsigned long long> lIDCounters = convertCountersToID (lCounters, pcf);
+	vector<unsigned long long> lIDCounters = convertCountersToID (vCounters, pcf);
 
 	Process *p = new Process (tracename, true, task, thread, lIDCounters, Type);
 	p->setTimeRegionLimit (TimeType, TimeValue);
@@ -288,16 +288,17 @@ void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thr
 
 	*out_Tstart = p->TimeLimit_out_Start;
 	*out_Tend = p->TimeLimit_out_End;
-	foundRegions = p->foundRegions;
+	regions.foundRegions = p->foundRegions;
+	regions.HWCnames = vCounters;
 
 #if defined(DEBUG)
 	cout << "# Regions found = " << p->foundRegions.size() << " from " << p->TimeLimit_out_Start << " to " << p->TimeLimit_out_End << endl;
-	for (list<Region *>::iterator i = p->foundRegions.begin();
-	  i != p->foundRegions.end(); i++)
+	for (list<Region *>::iterator i = regions.foundRegions.begin();
+	  i != regions.foundRegions.end(); i++)
 	{
 		cout << "Found region " << (*i)->Type << ":" << (*i)->Value << " from " << (*i)->Tstart << " to " << (*i)->Tend << endl;
 		cout << "COUNTERS:";
-		vector<string>::iterator n = lCounters.begin();
+		vector<string>::iterator n = vCounters.begin();
 		for (vector<unsigned long long>::iterator j = (*i)->HWCvalues.begin();
 		  j != (*i)->HWCvalues.end(); j++, n++)
 			cout << " "<< *n << "=>" << *j;
@@ -309,10 +310,10 @@ void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thr
 void SearchForRegionsWithinTime (string tracename, unsigned task, unsigned thread,
 	unsigned long long Type, unsigned long long Tstart, unsigned long long Tend,
 	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &lCounters, list<Region*> &foundRegions,
+	vector<string> &vCounters, RegionInfo &regions,
 	UIParaverTraceConfig *pcf)
 {
-	vector<unsigned long long> lIDCounters = convertCountersToID (lCounters, pcf);
+	vector<unsigned long long> lIDCounters = convertCountersToID (vCounters, pcf);
 
 	Process *p = new Process (tracename, true, task, thread, lIDCounters, Type);
 	p->setTimeLimit (Tstart, Tend);
@@ -321,15 +322,16 @@ void SearchForRegionsWithinTime (string tracename, unsigned task, unsigned threa
 
 	*out_Tstart = Tstart;
 	*out_Tend = Tend;
-	foundRegions = p->foundRegions;
+	regions.foundRegions = p->foundRegions;
+	regions.HWCnames = vCounters;
 
 #if defined(DEBUG)
-	for (list<Region *>::iterator i = p->foundRegions.begin();
-	  i != p->foundRegions.end(); i++)
+	for (list<Region *>::iterator i = regions.foundRegions.begin();
+	  i != regions.foundRegions.end(); i++)
 	{
 		cout << "Found region " << (*i)->Type << ":" << (*i)->Value << " from " << (*i)->Tstart << " to " << (*i)->Tend << endl;
 		cout << "COUNTERS:";
-		vector<string>::iterator n = lCounters.begin();
+		vector<string>::iterator n = vCounters.begin();
 		for (vector<unsigned long long>::iterator j = (*i)->HWCvalues.begin();
 		  j != (*i)->HWCvalues.end(); j++, n++)
 			cout << " "<< *n << "=>" << *j;

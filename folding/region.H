@@ -32,12 +32,14 @@
 #define REGION_H_INCLUDED
 
 #include <vector>
+#include <string>
 
 using namespace std;
 
 class Region
 {
 	public:
+	string RegionName;
 	unsigned long long Tstart;
 	unsigned long long Tend;
 	unsigned long long Type;

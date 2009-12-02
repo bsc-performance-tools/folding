@@ -104,7 +104,6 @@ int TranslateRegion (string &RegionName)
 	return result;
 }
 
-
 void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples)
 {
 	bool inRegion = false;
@@ -382,9 +381,10 @@ bool runLineFolding (int task, int thread, ofstream &points, ofstream &prv,
 	return found;
 }
 
+#if 0
 void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsamples,
-	unsigned long long startTime, unsigned long long endTime, list<Region*> &lRegions,
-	UIParaverTraceConfig *pcf, string what)
+	unsigned long long startTime, unsigned long long endTime, RegionInfo &regions,
+	string what)
 {
 	stringstream taskstream, threadstream;
 	taskstream << task;
@@ -437,9 +437,9 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 	}
 	else
 	{
-		string completefilePrefix = filePrefix + ".all.lines.points";
+		string completefilePrefix = filePrefix + ".all";
 
-		ofstream output_points (completefilePrefix.c_str());
+		ofstream output_points ((completefilePrefix+"."+what+".points").c_str());
 		ofstream output_prv;
 
 		if (feedTrace)
@@ -475,22 +475,24 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 		GNUPLOT.push_back (info);
 	}
 }
+#endif
 
-void doLineFolding_PRV (int task, int thread, string filePrefix, vector<Sample> &vsamples,
-	unsigned long long startTime, unsigned long long endTime, list<Region*> &lRegions,
-	UIParaverTraceConfig *pcf, string what)
+void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsamples,
+	unsigned long long startTime, unsigned long long endTime, RegionInfo &regions,
+	string what)
 {
 	stringstream taskstream, threadstream;
 	taskstream << task;
 	threadstream << thread;
 	string task_str = taskstream.str();
 	string thread_str = threadstream.str();
+
 	if (SeparateValues)
 	{
-		for (list<Region*>::iterator i = lRegions.begin();
-		     i != lRegions.end(); i++)
+		for (list<Region*>::iterator i = regions.foundRegions.begin();
+		     i != regions.foundRegions.end(); i++)
 		{
-			string completefilePrefix = filePrefix + "." + "XXXX";
+			string completefilePrefix = filePrefix + "." + (*i)->RegionName;
 			ofstream output_points ((completefilePrefix+"."+what+".points").c_str());
 			ofstream output_prv;
 
@@ -521,7 +523,7 @@ void doLineFolding_PRV (int task, int thread, string filePrefix, vector<Sample> 
 			GNUPLOTinfo *info = new GNUPLOTinfo;
 			info->done = done;
 			info->interpolated = false;
-			info->title = "Task " + task_str + " Thread " + thread_str + " - " + "XXXX";
+			info->title = "Task " + task_str + " Thread " + thread_str + " - " + (*i)->RegionName;
 			info->fileprefix = completefilePrefix;
 			info->what = what;
 			GNUPLOT.push_back (info);
@@ -570,7 +572,7 @@ void doLineFolding_PRV (int task, int thread, string filePrefix, vector<Sample> 
 
 void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample> &vsamples,
 	unsigned posCounterID, unsigned long long startTime,
-	unsigned long long endTime, list<Region*> &lRegions,
+	unsigned long long endTime, RegionInfo &regions,
 	UIParaverTraceConfig *pcf)
 {
 	stringstream taskstream, threadstream;
@@ -590,8 +592,8 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 
 	if (SeparateValues)
 	{
-		for (list<Region*>::iterator i = lRegions.begin();
-		     i != lRegions.end(); i++)
+		for (list<Region*>::iterator i = regions.foundRegions.begin();
+		     i != regions.foundRegions.end(); i++)
 		{
 			string RegionName;
 			string tmp = pcf->getEventValue ((*i)->Type, (*i)->Value);
@@ -679,10 +681,10 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 	else
 	{
 #if defined(DEBUG)
-		cout << "Treating " << lRegions.size() << " regions found in paraver trace" << endl;
+		cout << "Treating " << regions.foundRegions.size() << " regions found in paraver trace" << endl;
 #endif
-		for (list<Region*>::iterator i = lRegions.begin();
-		     i != lRegions.end(); i++)
+		for (list<Region*>::iterator i = regions.foundRegions.begin();
+		     i != regions.foundRegions.end(); i++)
 		{
 #if defined(DEBUG)
 			cout << "Treating region found on paraver trace: from " << (*i)->Tstart << " to " << (*i)->Tend << endl;
@@ -986,7 +988,7 @@ void GetTaskThreadFromFile (string file, unsigned *task, unsigned *thread)
 int main (int argc, char *argv[])
 {
 	UIParaverTraceConfig *pcf = NULL;
-	list<Region*> prvRegions;
+	RegionInfo regions;
 	unsigned long long prv_out_start, prv_out_end;
 	unsigned task, thread;
 	int res = ProcessParameters (argc, argv);
@@ -1032,11 +1034,10 @@ int main (int argc, char *argv[])
 		pcf = new UIParaverTraceConfig (pcffile);
 
 		SearchForRegionsWithinRegion (TraceToFeed, task, thread, feedTraceFoldType_Value, feedTraceRegion_Type,
-		  feedTraceRegion_Value, &prv_out_start, &prv_out_end, wantedCounters, prvRegions, pcf);
-
+		  feedTraceRegion_Value, &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
 
 #if defined(DEBUG)
-		cout << "Found " << prvRegions.size() << " regions of type " << feedTraceFoldType_Value<< " in the tracefile " << endl;
+		cout << "Found " << regions.foundRegions.size() << " regions of type " << feedTraceFoldType_Value << " in the tracefile " << endl;
 #endif
 	}
 
@@ -1050,7 +1051,7 @@ int main (int argc, char *argv[])
 #endif
 		if (feedTrace)
 			doInterpolation_PRV (task, thread, argv[res], vsamples, i, prv_out_start,
-			  prv_out_end, prvRegions, pcf);	
+			  prv_out_end, regions, pcf);	
 		else
 			doInterpolation (task, thread, argv[res], vsamples, i, pcf);	
 	}
@@ -1058,16 +1059,18 @@ int main (int argc, char *argv[])
 #warning "This should be optional"
 	if (1 /* should be optional */)
 	{
-		if (feedTrace)
+		if (!feedTrace)
 		{
-			doLineFolding_PRV (task, thread, argv[res], vsamples, 0, 0, prvRegions, pcf, "LINE");
-			doLineFolding_PRV (task, thread, argv[res], vsamples, 0, 0, prvRegions, pcf, "LINEID");
+			/* Prepare regions, as a fake param for doLineFolding */
+			for (int i = 0; i < numRegions; i++)
+			{
+				Region *r = new Region (0, 0, i);
+				r->RegionName = nameRegion[i].substr (0, nameRegion[i].find(":"));
+				regions.foundRegions.push_back (r);
+			}
 		}
-		else
-		{
-			doLineFolding (task, thread, argv[res], vsamples, 0, 0, prvRegions, pcf, "LINE");
-			doLineFolding (task, thread, argv[res], vsamples, 0, 0, prvRegions, pcf, "LINEID");
-		}
+		doLineFolding (task, thread, argv[res], vsamples, 0, 0, regions, "LINE");
+		doLineFolding (task, thread, argv[res], vsamples, 0, 0, regions, "LINEID");
 	}
 
 	if (GNUPLOT.size() > 0)

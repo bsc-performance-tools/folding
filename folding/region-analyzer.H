@@ -31,7 +31,7 @@
 #ifndef FEEDTRACE_H_INCLUDED
 #define FEEDTRACE_H_INCLUDED
 
-#include "region.H"
+#include "region-info.H"
 
 #include <vector>
 #include <list>
@@ -46,13 +46,13 @@ using namespace std;
 void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thread,
 	unsigned long long Type, unsigned long long TimeType, unsigned long long TimeValue,
 	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &lCounters, list<Region*> &foundRegions,
+	vector<string> &vCounters, RegionInfo &regions,
 	UIParaverTraceConfig *pcf);
 
 void SearchForRegionsWithinTime (string tracename, unsigned task, unsigned thread,
 	unsigned long long Type, unsigned long long Tstart, unsigned long long Tend,
 	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &lCounters, list<Region*> &lRegions,
+	vector<string> &vCounters, RegionInfo &regions,
 	UIParaverTraceConfig *pcf);
 
 #endif
