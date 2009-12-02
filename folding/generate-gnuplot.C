@@ -37,8 +37,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "generate-gnuplot.H"
 
 void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
-	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info,
-	UIParaverTraceConfig *pcf)
+	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info)
 {
 	for (list<GNUPLOTinfo*>::iterator it = info.begin(); it != info.end() ; it++)
 	{
@@ -94,8 +93,7 @@ void createMultipleGNUPLOT (unsigned task, unsigned thread, string file,
 }
 
 void createSingleGNUPLOT (unsigned task, unsigned thread, string file,
-	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info,
-	UIParaverTraceConfig *pcf)
+	int numRegions, string *nameRegion, list<GNUPLOTinfo*> &info)
 {
 	string GNUPLOTfile = file+".gnuplot";
 

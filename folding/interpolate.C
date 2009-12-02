@@ -47,7 +47,6 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "kriger_wrapper.h"
 #include "generate-gnuplot.H"
 #include "region-analyzer.H"
-#include "common.H"
 
 #define MAX_REGIONS 1024
 
@@ -472,10 +471,10 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 	}
 }
 
-void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample> &vsamples,
-	unsigned posCounterID, unsigned long long startTime,
-	unsigned long long endTime, RegionInfo &regions,
-	UIParaverTraceConfig *pcf)
+void doInterpolation (int task, int thread, string filePrefix,
+	vector<Sample> &vsamples, unsigned posCounterID,
+	unsigned long long startTime, unsigned long long endTime,
+	RegionInfo &regions)
 {
 	stringstream taskstream, threadstream;
 	taskstream << task;
@@ -500,38 +499,15 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 		}
 	}
 
-#if 0
-	string counterID = wantedCounters[posCounterID];
-	unsigned counterCode = common::lookForCounter (counterID, pcf);
-#endif
-
 	if (SeparateValues)
 	{
 		for (list<Region*>::iterator i = regions.foundRegions.begin();
 		     i != regions.foundRegions.end(); i++)
 		{
-#if 0
-			string RegionName;
-			string tmp = pcf->getEventValue ((*i)->Type, (*i)->Value);
+			string RegionName = (*i)->RegionName;
+			RegionName = RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
 
-			if (tmp.length() > 0 && tmp != "Not found")
-			{
-				RegionName = tmp;
-			}
-			else
-			{
-				stringstream regionstream;
-				regionstream << (*i)->Value;
-				tmp = pcf->getEventType ((*i)->Type);
-				if (tmp.length() > 0)
-						RegionName = tmp + "_" + regionstream.str();
-				else
-						RegionName = string("Unknown_") + regionstream.str();
-			}
-#endif
-
-			int regionIndex = TranslateRegion ((*i)->RegionName);
-			string RegionName = common::removeSpaces ((*i)->RegionName);
+			int regionIndex = TranslateRegion (RegionName);
 
 			string completefilePrefix = filePrefix + "." + RegionName;
 
@@ -565,8 +541,11 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 			}
 
 			unsigned long long num_out_points = 1000;
-
-			unsigned long long target_num_points = 2+(num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime));
+			unsigned long long target_num_points;
+			if (feedTrace)
+				target_num_points = 2+(num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime));
+			else
+				target_num_points = num_out_points;
 
 #warning "Accumulate several equal clusters!"
 
@@ -638,8 +617,11 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 			}
 
 			unsigned long long num_out_points = 1000;
-
-			unsigned long long target_num_points = 2+(num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime));
+			unsigned long long target_num_points;
+			if (feedTrace)
+				target_num_points = 2+(num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime));
+			else
+				target_num_points = num_out_points;
 
 #warning "Accumulate several equal clusters!"
 
@@ -670,8 +652,9 @@ void doInterpolation_PRV (int task, int thread, string filePrefix, vector<Sample
 	}
 }
 
+#if 0
 void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &vsamples,
-	unsigned posCounterID, UIParaverTraceConfig *pcf)
+	unsigned posCounterID)
 {
 	stringstream taskstream, threadstream;
 	taskstream << task;
@@ -685,8 +668,8 @@ void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &v
 	{
 		for (int i = 0; i < numRegions; i++)
 		{
-			string choppedNameRegion = nameRegion[i].substr (0, nameRegion[i].find(":"));
-			string completefilePrefix = filePrefix + "." + choppedNameRegion;
+			string RegionName = nameRegion[i].substr (0, nameRegion[i].find(":"));
+			string completefilePrefix = filePrefix + "." + RegionName;
 
 			ofstream output_points ((completefilePrefix+"."+counterID+".points").c_str());
 			ofstream output_kriger ((completefilePrefix+"."+counterID+".interpolation").c_str());
@@ -726,7 +709,7 @@ void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &v
 			GNUPLOTinfo *info = new GNUPLOTinfo;
 			info->done = done;
 			info->interpolated = true;
-			info->title = "Task " + task_str + " Thread " + thread_str + " - " + choppedNameRegion;
+			info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
 			info->fileprefix = completefilePrefix;
 			info->what = counterID;
 			GNUPLOT.push_back (info);
@@ -780,6 +763,7 @@ void doInterpolation (int task, int thread, string filePrefix, vector<Sample> &v
 		GNUPLOT.push_back (info);
 	}
 }
+#endif
 
 int ProcessParameters (int argc, char *argv[])
 {
@@ -945,6 +929,9 @@ int main (int argc, char *argv[])
 		}
 	}
 
+	vector<Sample> vsamples;
+	FillData (InputFile, !SeparateValues, vsamples);
+
 	if (feedTrace)
 	{
 		string pcffile = TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf");
@@ -957,44 +944,50 @@ int main (int argc, char *argv[])
 		cout << "Found " << regions.foundRegions.size() << " regions of type " << feedTraceFoldType_Value << " in the tracefile " << endl;
 #endif
 	}
-
-	vector<Sample> vsamples;
-	FillData (InputFile, !SeparateValues, vsamples);
+	else
+	{
+		/* Prepare regions, as fake params for doLineFolding and doInterpolation*/
+		int max = SeparateValues?numRegions:1;
+		for (int i = 0; i < max; i++)
+		{
+			Region *r = new Region (0, 0, i);
+			r->RegionName = nameRegion[i].substr (0, nameRegion[i].find_first_of (":[]{}() "));
+			for (unsigned j = 0; j < wantedCounters.size(); j++)
+				r->HWCvalues.push_back (0);
+			regions.foundRegions.push_back (r);
+		}
+	}
 
 	for (unsigned i = 0; i < wantedCounters.size(); i++)
 	{
 #if defined(DEBUG)
 		cout << "Working on counter " << i << " - " << wantedCounters[i] << endl;
 #endif
+
+#if 0
 		if (feedTrace)
 			doInterpolation_PRV (task, thread, argv[res], vsamples, i, prv_out_start,
-			  prv_out_end, regions, pcf);	
+			  prv_out_end, regions);	
 		else
-			doInterpolation (task, thread, argv[res], vsamples, i, pcf);	
+			doInterpolation (task, thread, argv[res], vsamples, i);	
+#endif
+
+		doInterpolation (task, thread, argv[res], vsamples, i, prv_out_start,
+		  prv_out_end, regions);	
 	}
 
 #warning "This should be optional"
 	if (1 /* should be optional */)
 	{
-		if (!feedTrace)
-		{
-			/* Prepare regions, as a fake param for doLineFolding */
-			for (int i = 0; i < numRegions; i++)
-			{
-				Region *r = new Region (0, 0, i);
-				r->RegionName = nameRegion[i].substr (0, nameRegion[i].find(":"));
-				regions.foundRegions.push_back (r);
-			}
-		}
 		doLineFolding (task, thread, argv[res], vsamples, 0, 0, regions, "LINE");
 		doLineFolding (task, thread, argv[res], vsamples, 0, 0, regions, "LINEID");
 	}
 
 	if (GNUPLOT.size() > 0)
 	{
-		createSingleGNUPLOT (task, thread, argv[res], SeparateValues?numRegions:1, nameRegion, GNUPLOT, pcf);
+		createSingleGNUPLOT (task, thread, argv[res], SeparateValues?numRegions:1, nameRegion, GNUPLOT);
 		if (SeparateValues)
-			createMultipleGNUPLOT (task, thread, argv[res], numRegions, nameRegion, GNUPLOT, pcf);
+			createMultipleGNUPLOT (task, thread, argv[res], numRegions, nameRegion, GNUPLOT);
 	}
 
 	return 0;
