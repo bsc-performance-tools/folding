@@ -47,6 +47,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "kriger_wrapper.h"
 #include "generate-gnuplot.H"
 #include "region-analyzer.H"
+#include "common.H"
 
 #define MAX_REGIONS 1024
 
@@ -357,6 +358,11 @@ bool runLineFolding (int task, int thread, ofstream &points, ofstream &prv,
 	unsigned long long prvAccumCounter)
 {
 	bool found = false;
+
+	UNREFERENCED(outcount);
+	UNREFERENCED(prvStartTime);
+	UNREFERENCED(prvEndTime);
+	UNREFERENCED(prvAccumCounter);
 
 	vector<Sample>::iterator it = vsamples.begin();
 	for (; it != vsamples.end(); it++)
@@ -743,12 +749,13 @@ void GetTaskThreadFromFile (string file, unsigned *task, unsigned *thread)
 	tmp = file.substr (file.rfind ('.')+1, string::npos);
 	if (tmp.length() > 0)
 	{
-		*thread = atoi (tmp.c_str());
-		if (*thread < 0)
+		if (atoi (tmp.c_str()) < 0)
 		{
 			cerr << "Invalid thread marker in file " << file << endl;
 			exit (-1);
 		}
+		else
+			*thread = atoi (tmp.c_str());
 	}
 	else
 	{
@@ -759,12 +766,13 @@ void GetTaskThreadFromFile (string file, unsigned *task, unsigned *thread)
 	tmp = file.substr (file.rfind ('.', file.rfind('.')-1)+1, file.rfind ('.') - (file.rfind ('.', file.rfind('.')-1)+1));
 	if (tmp.length() > 0)
 	{
-		*task = atoi (tmp.c_str());
-		if (*task < 0)
+		if (atoi (tmp.c_str()) < 0)
 		{
 			cerr << "Invalid task marker in file " << file << endl;
 			exit (-1);
 		}
+		else
+			*task = atoi (tmp.c_str());
 	}
 	else
 	{
@@ -864,9 +872,9 @@ int main (int argc, char *argv[])
 
 	if (GNUPLOT.size() > 0)
 	{
-		createSingleGNUPLOT (task, thread, argv[res], SeparateValues?numRegions:1, nameRegion, GNUPLOT);
+		createSingleGNUPLOT (argv[res], GNUPLOT);
 		if (SeparateValues)
-			createMultipleGNUPLOT (task, thread, argv[res], numRegions, nameRegion, GNUPLOT);
+			createMultipleGNUPLOT (GNUPLOT);
 	}
 
 	return 0;

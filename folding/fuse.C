@@ -62,7 +62,7 @@ class TaskInformation
 	ThreadInformation *ThreadsInfo;
 
 	public:
-	const int getNumThreads (void)
+	int getNumThreads (void)
 	{ return numThreads; };
 
 	ThreadInformation* getThreadsInformation (void)
@@ -91,7 +91,7 @@ class InformationHolder
 	TaskInformation *TasksInfo;
 	
 	public:
-	const int getNumTasks (void)
+	int getNumTasks (void)
 	{ return numTasks; };
 
 	TaskInformation* getTasksInformation (void)
