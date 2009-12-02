@@ -73,7 +73,7 @@ do i=1,nkrig_kri
 	do j=1,nsamp_kri
 
 		distr=0
-		do k=1,ndesi_kri	
+		do k=1,ndesi_kri
 			distr = distr + (xsamp_kri(k,j)-xkrig_kri(k,i))**2
 		end do 
 		
@@ -130,7 +130,7 @@ do i=1,nkrig_kri
 
 	!Reorder rhsii about order vector
 	do k=1,naugm
-		rhsio(k,1)=rhsii(order_kri(k,1),1)		
+		rhsio(k,1)=rhsii(order_kri(k,1),1)
 	end do 
 
 
@@ -142,7 +142,7 @@ do i=1,nkrig_kri
 
 
 	!Kriging equation
-	sumkr=0.0		
+	sumkr=0.0
 	do isamp=1,nsamp_kri
 		sumkr=sumkr + xlamb(isamp,1)*xobje_kri(1,isamp)
 	end do

@@ -36,10 +36,11 @@ Region::Region (unsigned long long Tstart, unsigned long long Type,
 	unsigned long long Value)
 {
 	this->Tstart = Tstart;
-	this->Tend = Tend;
+	this->Tend = 0;
 	this->Type = Type;
 	this->Value = Value;
 	this->HWCvalues = HWCvalues;
+	this->RegionName = "";
 }
 
 Region::~Region ()
