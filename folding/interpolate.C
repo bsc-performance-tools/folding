@@ -395,7 +395,8 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 	for (list<Region*>::iterator i = regions.foundRegions.begin();
 	     i != regions.foundRegions.end(); i++)
 	{
-		string completefilePrefix = filePrefix + "." + (*i)->RegionName;
+		string RegionName = (*i)->RegionName;
+		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
 		ofstream output_points ((completefilePrefix+"."+what+".points").c_str());
 		ofstream output_prv;
 
@@ -426,7 +427,7 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 		GNUPLOTinfo *info = new GNUPLOTinfo;
 		info->done = done;
 		info->interpolated = false;
-		info->title = "Task " + task_str + " Thread " + thread_str + " - " + (*i)->RegionName;
+		info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
 		info->fileprefix = completefilePrefix;
 		info->what = what;
 		GNUPLOT.push_back (info);
@@ -464,13 +465,14 @@ void doInterpolation (int task, int thread, string filePrefix,
 	for (list<Region*>::iterator i = regions.foundRegions.begin();
 	     i != regions.foundRegions.end(); i++)
 	{
-#if defined(DEBUG)
-		cout << "Treating region found on paraver trace: from " << (*i)->Tstart << " to " << (*i)->Tend << endl;
-#endif
 		string RegionName = (*i)->RegionName;
 		int regionIndex = TranslateRegion (RegionName);
 
-		string completefilePrefix = filePrefix + "." + RegionName;
+#if defined(DEBUG)
+		cout << "Treating region called " << RegionName << " (index = " << regionIndex << ")" << endl;
+#endif
+
+		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
 
 		ofstream output_points ((completefilePrefix+"."+counterID+".points").c_str());
 		ofstream output_kriger ((completefilePrefix+"."+counterID+".interpolation").c_str());
@@ -700,7 +702,10 @@ int main (int argc, char *argv[])
 		{
 			Region *r = new Region (0, 0, i);
 			if (SeparateValues)
-				r->RegionName = nameRegion[i].substr (0, nameRegion[i].find_first_of (":[]{}() "));
+			{
+				// r->RegionName = nameRegion[i].substr (0, nameRegion[i].find_first_of (":[]{}() "));
+				r->RegionName = nameRegion[i];
+			}
 			else
 				r->RegionName = "all";
 			for (unsigned j = 0; j < wantedCounters.size(); j++)
