@@ -63,14 +63,8 @@ class Sample
 	float counterValue;
 };
 
-#if 0
-bool feedTrace = false;
-#endif
 string TraceToFeed;
 bool feedTraceRegion = false;
-#if 0
-bool feedTraceFoldType = false;
-#endif
 unsigned long long feedTraceRegion_Type;
 unsigned long long feedTraceRegion_Value;
 unsigned long long feedTraceFoldType_Value;
@@ -586,28 +580,6 @@ int ProcessParameters (int argc, char *argv[])
 				NumOfSigmaTimes = atof(argv[i]);
 			continue;
 		}
-#if 0
-		else if (strcmp ("-feed", argv[i]) == 0)
-		{
-			feedTrace = true;
-			i++;
-			TraceToFeed = string(argv[i]);
-			continue;
-		}
-		else if (strcmp ("-feed-fold-type", argv[i]) == 0)
-		{
-			feedTraceFoldType = true;
-			i++;
-			feedTraceFoldType_Value = atoll (argv[i]);
-
-			if (feedTraceFoldType_Value == 0)
-			{
-				cerr << "Invalid -feed-fold-type type" << endl;
-				exit (-1);
-			}
-			continue;
-		}
-#endif
 		else if (strcmp ("-feed-region", argv[i]) == 0)
 		{
 			feedTraceRegion = true;
@@ -623,6 +595,8 @@ int ProcessParameters (int argc, char *argv[])
 			}
 			continue;
 		}
+		else
+			cout << "Misunderstood parameter: " << argv[i] << endl;
   }
 
   return argc-1;
