@@ -306,7 +306,8 @@ void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thr
 			else
 				tmp = string("Unknown_") + regionstream.str();
 		}
-		(*i)->RegionName = common::removeSpaces (tmp);
+		tmp = common::removeSpaces (tmp);
+		(*i)->RegionName = tmp.substr (0, tmp.find_first_of (":[]{}() "));
 	}
 
 #if defined(DEBUG)
@@ -357,7 +358,8 @@ void SearchForRegionsWithinTime (string tracename, unsigned task, unsigned threa
 			else
 				tmp = string("Unknown_") + regionstream.str();
 		}
-		(*i)->RegionName = common::removeSpaces (tmp);
+		tmp = common::removeSpaces (tmp);
+		(*i)->RegionName = tmp.substr (0, tmp.find_first_of (":[]{}() "));
 	}
 
 #if defined(DEBUG)

@@ -63,10 +63,14 @@ class Sample
 	float counterValue;
 };
 
+#if 0
 bool feedTrace = false;
+#endif
 string TraceToFeed;
 bool feedTraceRegion = false;
+#if 0
 bool feedTraceFoldType = false;
+#endif
 unsigned long long feedTraceRegion_Type;
 unsigned long long feedTraceRegion_Value;
 unsigned long long feedTraceFoldType_Value;
@@ -320,7 +324,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			slope << "SLOPE " << d_j / d_outcount << " " << (outpoints[j]-outpoints[j-1])/ (d_j/d_outcount - (d_j-1)/d_outcount) << endl; 
 		}
 
-		if (feedTrace)
+		if (feedTraceRegion)
 		{
 #warning "Afegir els POINTS a la trasa"
 			unsigned long long newCounterID = 600000000 + counterCode;
@@ -394,56 +398,14 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 	string task_str = taskstream.str();
 	string thread_str = threadstream.str();
 
-	if (SeparateValues)
+	for (list<Region*>::iterator i = regions.foundRegions.begin();
+	     i != regions.foundRegions.end(); i++)
 	{
-		for (list<Region*>::iterator i = regions.foundRegions.begin();
-		     i != regions.foundRegions.end(); i++)
-		{
-			string completefilePrefix = filePrefix + "." + (*i)->RegionName;
-			ofstream output_points ((completefilePrefix+"."+what+".points").c_str());
-			ofstream output_prv;
-
-			if (feedTrace)
-				output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
-
-			if (!output_points.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
-				exit (-1);
-			}
-			if (feedTrace && !output_prv.is_open())
-			{
-				cerr << "Cannot append to " << TraceToFeed << " file " << endl;
-				exit (-1);
-			}
-
-			bool done = runLineFolding (task, thread, output_points, output_prv,
-			  vsamples, what, false, (*i)->Value, 0, 0, 0, 0);
-
-			if (feedTrace)
-				output_prv.close();
-			output_points.close();
-
-			if (!done)
-				remove (completefilePrefix.c_str());
-
-			GNUPLOTinfo *info = new GNUPLOTinfo;
-			info->done = done;
-			info->interpolated = false;
-			info->title = "Task " + task_str + " Thread " + thread_str + " - " + (*i)->RegionName;
-			info->fileprefix = completefilePrefix;
-			info->what = what;
-			GNUPLOT.push_back (info);
-		}
-	}
-	else
-	{
-		string completefilePrefix = filePrefix + ".all";
-
+		string completefilePrefix = filePrefix + "." + (*i)->RegionName;
 		ofstream output_points ((completefilePrefix+"."+what+".points").c_str());
 		ofstream output_prv;
 
-		if (feedTrace)
+		if (feedTraceRegion)
 			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
 
 		if (!output_points.is_open())
@@ -451,16 +413,16 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 			cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
 			exit (-1);
 		}
-		if (feedTrace && !output_prv.is_open())
+		if (feedTraceRegion && !output_prv.is_open())
 		{
 			cerr << "Cannot append to " << TraceToFeed << " file " << endl;
-			exit (-1);
+		exit (-1);
 		}
 
 		bool done = runLineFolding (task, thread, output_points, output_prv,
-		  vsamples, what, true, 0, 0, 0, 0, 0);
+		  vsamples, what, !SeparateValues, (*i)->Value, 0, 0, 0, 0);
 
-		if (feedTrace)
+		if (feedTraceRegion)
 			output_prv.close();
 		output_points.close();
 
@@ -470,7 +432,7 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 		GNUPLOTinfo *info = new GNUPLOTinfo;
 		info->done = done;
 		info->interpolated = false;
-		info->title = "Task " + task_str + " Thread " + thread_str + " - all ";
+		info->title = "Task " + task_str + " Thread " + thread_str + " - " + (*i)->RegionName;
 		info->fileprefix = completefilePrefix;
 		info->what = what;
 		GNUPLOT.push_back (info);
@@ -490,7 +452,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 
 	unsigned counterCode = 0;
 	string counterID = wantedCounters[posCounterID];
-	if (feedTrace)
+	if (feedTraceRegion)
 	{
 		for (unsigned i = 0; i < regions.HWCnames.size(); i++)
 			if (regions.HWCnames[i] == counterID)
@@ -505,156 +467,80 @@ void doInterpolation (int task, int thread, string filePrefix,
 		}
 	}
 
-	if (SeparateValues)
+	for (list<Region*>::iterator i = regions.foundRegions.begin();
+	     i != regions.foundRegions.end(); i++)
 	{
-		for (list<Region*>::iterator i = regions.foundRegions.begin();
-		     i != regions.foundRegions.end(); i++)
+#if defined(DEBUG)
+		cout << "Treating region found on paraver trace: from " << (*i)->Tstart << " to " << (*i)->Tend << endl;
+#endif
+		string RegionName = (*i)->RegionName;
+		int regionIndex = TranslateRegion (RegionName);
+
+		string completefilePrefix = filePrefix + "." + RegionName;
+
+		ofstream output_points ((completefilePrefix+"."+counterID+".points").c_str());
+		ofstream output_kriger ((completefilePrefix+"."+counterID+".interpolation").c_str());
+		ofstream output_slope ((completefilePrefix+"."+counterID+".slope").c_str());
+		ofstream output_prv;
+
+		if (feedTraceRegion)
+			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
+
+		if (!output_points.is_open())
 		{
-			string RegionName = (*i)->RegionName;
-			RegionName = RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
+			cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
+			exit (-1);
+		}
+		if (!output_kriger.is_open())
+		{
+			cerr << "Cannot create " << completefilePrefix+".interpolation" << " file " << endl;
+			exit (-1);
+		}
+		if (!output_slope.is_open())
+		{
+			cerr << "Cannot create " << completefilePrefix+".slope" << " file " << endl;
+			exit (-1);
+		}
+		if (feedTraceRegion && !output_prv.is_open())
+		{
+			cerr << "Cannot append to " << TraceToFeed << " file " << endl;
+			exit (-1);
+		}
 
-			int regionIndex = TranslateRegion (RegionName);
-
-			string completefilePrefix = filePrefix + "." + RegionName;
-
-			ofstream output_points ((completefilePrefix+"."+counterID+".points").c_str());
-			ofstream output_kriger ((completefilePrefix+"."+counterID+".interpolation").c_str());
-			ofstream output_slope ((completefilePrefix+"."+counterID+".slope").c_str());
-			ofstream output_prv;
-
-			if (feedTrace)
-				output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
-
-			if (!output_points.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
-				exit (-1);
-			}
-			if (!output_kriger.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".interpolation" << " file " << endl;
-				exit (-1);
-			}
-			if (!output_slope.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".slope" << " file " << endl;
-				exit (-1);
-			}
-			if (feedTrace && !output_prv.is_open())
-			{
-				cerr << "Cannot append to " << TraceToFeed << " file " << endl;
-				exit (-1);
-			}
-
-			unsigned long long num_out_points = 1000;
-			unsigned long long target_num_points;
-			if (feedTrace)
-				target_num_points = 2+(num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime));
-			else
-				target_num_points = num_out_points;
+		unsigned long long num_out_points = 1000;
+		unsigned long long target_num_points;
+		if (feedTraceRegion)
+			target_num_points = 2+(num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime));
+		else
+			target_num_points = num_out_points;
 
 #warning "Accumulate several equal clusters!"
 
-			bool done = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
-				vsamples, counterID, counterCode, false, regionIndex, target_num_points, (*i)->Tstart, (*i)->Tend, (*i)->HWCvalues[posCounterID]);
+		bool done = runInterpolation (task, thread, output_points, output_kriger,
+		  output_slope, output_prv, vsamples, counterID, counterCode,
+		  !SeparateValues, regionIndex, target_num_points, (*i)->Tstart,
+		  (*i)->Tend, (*i)->HWCvalues[posCounterID]);
 
-			if (feedTrace)
-				output_prv.close();
-			output_slope.close();
-			output_points.close();
-			output_kriger.close();
+		if (feedTraceRegion)
+			output_prv.close();
+		output_slope.close();
+		output_points.close();
+		output_kriger.close();
 
-			if (!done)
-			{
-				remove ((completefilePrefix+"."+counterID+".points").c_str());
-				remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
-				remove ((completefilePrefix+"."+counterID+".slope").c_str());
-			}
-
-			GNUPLOTinfo *info = new GNUPLOTinfo;
-			info->done = done;
-			info->interpolated = true;
-			info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
-			info->fileprefix = completefilePrefix;
-			info->what = counterID;
-			GNUPLOT.push_back (info);
-		}
-	}
-	else
-	{
-#if defined(DEBUG)
-		cout << "Treating " << regions.foundRegions.size() << " regions found in paraver trace" << endl;
-#endif
-		for (list<Region*>::iterator i = regions.foundRegions.begin();
-		     i != regions.foundRegions.end(); i++)
+		if (!done)
 		{
-#if defined(DEBUG)
-			cout << "Treating region found on paraver trace: from " << (*i)->Tstart << " to " << (*i)->Tend << endl;
-#endif
-			string completefilePrefix = filePrefix + ".all";
-
-			ofstream output_points ((completefilePrefix+"."+counterID+".points").c_str());
-			ofstream output_kriger ((completefilePrefix+"."+counterID+".interpolation").c_str());
-			ofstream output_slope ((completefilePrefix+"."+counterID+".slope").c_str());
-			ofstream output_prv;
-
-			if (feedTrace)
-				output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
-
-			if (!output_points.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
-				exit (-1);
-			}
-			if (!output_kriger.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".interpolation" << " file " << endl;
-				exit (-1);
-			}
-			if (!output_slope.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".slope" << " file " << endl;
-				exit (-1);
-			}
-			if (feedTrace && !output_prv.is_open())
-			{
-				cerr << "Cannot append to " << TraceToFeed << " file " << endl;
-				exit (-1);
-			}
-
-			unsigned long long num_out_points = 1000;
-			unsigned long long target_num_points;
-			if (feedTrace)
-				target_num_points = 2+(num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime));
-			else
-				target_num_points = num_out_points;
-
-#warning "Accumulate several equal clusters!"
-
-			bool done = runInterpolation (task, thread, output_points, output_kriger, output_slope, output_prv,
-				vsamples, counterID, counterCode, true, 0, target_num_points, (*i)->Tstart, (*i)->Tend, (*i)->HWCvalues[posCounterID]);
-
-			if (feedTrace)
-				output_prv.close();
-			output_slope.close();
-			output_points.close();
-			output_kriger.close();
-
-			if (!done)
-			{
-				remove ((completefilePrefix+"."+counterID+".points").c_str());
-				remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
-				remove ((completefilePrefix+"."+counterID+".slope").c_str());
-			}
-
-			GNUPLOTinfo *info = new GNUPLOTinfo;
-			info->done = done;
-			info->interpolated = true;
-			info->title = "Task " + task_str + " Thread " + thread_str + " - all ";
-			info->fileprefix = completefilePrefix;
-			info->what = counterID;
-			GNUPLOT.push_back (info);
+			remove ((completefilePrefix+"."+counterID+".points").c_str());
+			remove ((completefilePrefix+"."+counterID+".interpolation").c_str());
+			remove ((completefilePrefix+"."+counterID+".slope").c_str());
 		}
+
+		GNUPLOTinfo *info = new GNUPLOTinfo;
+		info->done = done;
+		info->interpolated = true;
+		info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
+		info->fileprefix = completefilePrefix;
+		info->what = counterID;
+		GNUPLOT.push_back (info);
 	}
 }
 
@@ -700,7 +586,7 @@ int ProcessParameters (int argc, char *argv[])
 				NumOfSigmaTimes = atof(argv[i]);
 			continue;
 		}
-#if defined(DEAD_CODE)
+#if 0
 		else if (strcmp ("-feed", argv[i]) == 0)
 		{
 			feedTrace = true;
@@ -816,28 +702,21 @@ int main (int argc, char *argv[])
 		{
 			cerr << "Error! Cannot open file " << TraceToFeed << endl;
 			exit (-1);
-		}	
-		else
-		{
-			feedTraceFoldType = feedTrace = true;
-			test.close();
 		}
+		test.close();	
 	}
 
 	vector<Sample> vsamples;
 	FillData (InputFile, !SeparateValues, vsamples);
 
-	if (feedTrace)
+	if (feedTraceRegion)
 	{
 		string pcffile = TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf");
 		pcf = new UIParaverTraceConfig (pcffile);
 
-		SearchForRegionsWithinRegion (TraceToFeed, task, thread, feedTraceFoldType_Value, feedTraceRegion_Type,
-		  feedTraceRegion_Value, &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
-
-#if defined(DEBUG)
-		cout << "Found " << regions.foundRegions.size() << " regions of type " << feedTraceFoldType_Value << " in the tracefile " << endl;
-#endif
+		SearchForRegionsWithinRegion (TraceToFeed, task, thread,
+		  feedTraceFoldType_Value, feedTraceRegion_Type, feedTraceRegion_Value,
+		  &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
 	}
 	else
 	{
@@ -846,12 +725,19 @@ int main (int argc, char *argv[])
 		for (int i = 0; i < max; i++)
 		{
 			Region *r = new Region (0, 0, i);
-			r->RegionName = nameRegion[i].substr (0, nameRegion[i].find_first_of (":[]{}() "));
+			if (SeparateValues)
+				r->RegionName = nameRegion[i].substr (0, nameRegion[i].find_first_of (":[]{}() "));
+			else
+				r->RegionName = "all";
 			for (unsigned j = 0; j < wantedCounters.size(); j++)
 				r->HWCvalues.push_back (0);
 			regions.foundRegions.push_back (r);
 		}
 	}
+
+#if defined(DEBUG)
+		cout << "# of regions: " << regions.foundRegions.size() << endl;
+#endif
 
 	for (unsigned i = 0; i < wantedCounters.size(); i++)
 	{
