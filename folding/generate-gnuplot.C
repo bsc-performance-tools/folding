@@ -209,5 +209,8 @@ void createMultiSlopeGNUPLOT (string file, string regionName, list<GNUPLOTinfo*>
 		gnuplot_out << ";" << endl;
 
 	gnuplot_out.close();
+
+	if (!found)
+		remove (GNUPLOTfile.c_str());
 }
 
