@@ -69,7 +69,7 @@ unsigned long long feedTraceRegion_Type;
 unsigned long long feedTraceRegion_Value;
 unsigned long long feedTraceFoldType_Value;
 
-int numRegions = 0;
+unsigned numRegions = 0;
 string nameRegion[MAX_REGIONS];
 int countRegion[MAX_REGIONS];
 double meanRegion[MAX_REGIONS];
@@ -81,15 +81,15 @@ bool SeparateValues = true;
 vector<string> wantedCounters;
 list<GNUPLOTinfo*> GNUPLOT;
 
-int TranslateRegion (string &RegionName)
+unsigned TranslateRegion (string &RegionName)
 {
 	/* Look for region in the translation table */
-	for (int i = 0; i < numRegions; i++)
+	for (unsigned i = 0; i < numRegions; i++)
 		if (nameRegion[i] == RegionName)
 			return i;
 
 	/* If it can't be find, add it */
-	int result = numRegions;
+	unsigned result = numRegions;
 	nameRegion[result] = RegionName;
 	numRegions++;
 
@@ -202,7 +202,7 @@ void CalculateSigmaFromFile (ifstream &file, bool any_region)
 	}
 
 	/* Now calculate the means */
-	for (int i = 0; i < numRegions; i++)
+	for (unsigned i = 0; i < numRegions; i++)
 		if (countRegion[i] > 0)
 			meanRegion[i] = meanRegion[i]/countRegion[i];
 
@@ -242,7 +242,7 @@ void CalculateSigmaFromFile (ifstream &file, bool any_region)
 		}
 	}
 
-	for (int i = 0; i < numRegions; i++)
+	for (unsigned i = 0; i < numRegions; i++)
 		if (countRegion[i] > 1)
 			sigmaRegion[i] = sqrt ((sigmaRegion[i]) / (countRegion[i] - 1));
 		else
@@ -384,7 +384,7 @@ bool runLineFolding (int task, int thread, ofstream &points, ofstream &prv,
 
 void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsamples,
 	unsigned long long startTime, unsigned long long endTime, RegionInfo &regions,
-	string what)
+	string metric)
 {
 	stringstream taskstream, threadstream;
 	taskstream << task;
@@ -397,7 +397,7 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 	{
 		string RegionName = (*i)->RegionName;
 		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
-		ofstream output_points ((completefilePrefix+"."+what+".points").c_str());
+		ofstream output_points ((completefilePrefix+"."+metric+".points").c_str());
 		ofstream output_prv;
 
 		if (feedTraceRegion)
@@ -415,7 +415,7 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 		}
 
 		bool done = runLineFolding (task, thread, output_points, output_prv,
-		  vsamples, what, !SeparateValues, (*i)->Value, 0, 0, 0, 0);
+		  vsamples, metric, !SeparateValues, (*i)->Value, 0, 0, 0, 0);
 
 		if (feedTraceRegion)
 			output_prv.close();
@@ -429,7 +429,8 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 		info->interpolated = false;
 		info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
 		info->fileprefix = completefilePrefix;
-		info->what = what;
+		info->metric = metric;
+		info->nameregion = (*i)->RegionName;
 		GNUPLOT.push_back (info);
 	}
 }
@@ -535,7 +536,8 @@ void doInterpolation (int task, int thread, string filePrefix,
 		info->interpolated = true;
 		info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
 		info->fileprefix = completefilePrefix;
-		info->what = counterID;
+		info->metric = counterID;
+		info->nameregion = (*i)->RegionName;
 		GNUPLOT.push_back (info);
 	}
 }
@@ -740,6 +742,8 @@ int main (int argc, char *argv[])
 		createSingleGNUPLOT (argv[res], GNUPLOT);
 		if (SeparateValues)
 			createMultipleGNUPLOT (GNUPLOT);
+		for (unsigned j = 0; j < numRegions; j++)
+			createMultiSlopeGNUPLOT (argv[res], nameRegion[j], GNUPLOT, wantedCounters);
 	}
 
 	return 0;

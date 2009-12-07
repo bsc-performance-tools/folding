@@ -33,6 +33,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 #include "generate-gnuplot.H"
 
@@ -43,7 +44,7 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 		if ((*it)->done)
 		{
 			string file = (*it)->fileprefix;
-			string counter = (*it)->what;
+			string counter = (*it)->metric;
 			string GNUPLOTfile = file + "." + counter + ".gnuplot";
 
 			ofstream gnuplot_out (GNUPLOTfile.c_str());
@@ -53,7 +54,7 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 				exit (-1);
 			}
 
-			string Y1Limit = ((*it)->what == "LINE" || (*it)->what == "LINEID")?"*":"1";
+			string Y1Limit = ((*it)->metric == "LINE" || (*it)->metric == "LINEID")?"*":"1";
 
 			if ((*it)->interpolated)
 			{
@@ -109,7 +110,7 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 	{
 		if ((*it)->done)
 		{
-			string Y1Limit = ((*it)->what == "LINE" || (*it)->what == "LINEID")?"*":"1";
+			string Y1Limit = ((*it)->metric == "LINE" || (*it)->metric == "LINEID")?"*":"1";
 
 			if ((*it)->interpolated)
 			{
@@ -133,7 +134,7 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 			}
 
 			string file = (*it)->fileprefix;
-			string counter = (*it)->what;
+			string counter = (*it)->metric;
 
 			gnuplot_out
 				<< "set title '" << (*it)->title << "';" << endl
@@ -155,6 +156,57 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 			gnuplot_out << "pause -1;" << endl << endl;
 		}
 	}
+
+	gnuplot_out.close();
+}
+
+void createMultiSlopeGNUPLOT (string file, string regionName, list<GNUPLOTinfo*> &info, vector <string> &wantedCounters)
+{
+	string GNUPLOTfile = file+"."+regionName.substr (0, regionName.find_first_of (":[]{}() "))+".slopes.gnuplot";
+
+	ofstream gnuplot_out (GNUPLOTfile.c_str());
+	if (!gnuplot_out.is_open())
+	{
+		cerr << "Cannot create " << GNUPLOTfile << " file " << endl;
+		exit (-1);
+	}
+
+	gnuplot_out
+	  << "set key top right;" << endl
+	  << "set xrange [0:1];" << endl
+	  << "set yrange [0:*];" << endl
+	  << "set ytics mirror;" << endl
+	  << "set xtics mirror;" << endl
+		<< "set ylabel 'Slope of performance metric';" << endl
+		<< "set xlabel 'Normalized time';" << endl;
+
+	bool found = false;
+	bool first = true;
+	for (list<GNUPLOTinfo*>::iterator it = info.begin(); it != info.end() ; it++)
+	{
+		string counter = (*it)->metric;
+		string file = (*it)->fileprefix;
+
+		if ((*it)->nameregion == regionName)
+		{
+			if (!found)
+			{
+				gnuplot_out << "set title '" << (*it)->title << "';" << endl;
+  			gnuplot_out << "plot ";
+				found = true;
+			}
+			if ((*it)->interpolated && (*it)->done &&
+		    find (wantedCounters.begin(), wantedCounters.end(), counter) != wantedCounters.end())
+			{
+				if (!first)
+					gnuplot_out << ",";
+				gnuplot_out << "\\" << endl << "     '" << file << "." << counter << ".slope' using 2:3 title '" << counter << "' w lines lw 2";
+				first = false;
+			}
+		}
+	}
+	if (found)
+		gnuplot_out << ";" << endl;
 
 	gnuplot_out.close();
 }

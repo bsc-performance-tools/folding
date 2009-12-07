@@ -45,11 +45,14 @@ class GNUPLOTinfo
 	bool interpolated;
 	string title;
 	string fileprefix;
-	string what;
+	string metric;
+	string nameregion;
 };
 
 void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info);
 
 void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info);
+
+void createMultiSlopeGNUPLOT (string file, string regionName, list<GNUPLOTinfo*> &info, vector <string> &wantedCounters);
 
 #endif
