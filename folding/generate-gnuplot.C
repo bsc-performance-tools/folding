@@ -34,6 +34,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <iomanip>
 
 #include "generate-gnuplot.H"
 
@@ -54,9 +55,6 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 				exit (-1);
 			}
 
-			/* Set precision for floating point values */
-			gnuplot_out.precision (3);
-
 			string Y1Limit = ((*it)->metric == "LINE" || (*it)->metric == "LINEID")?"*":"1";
 
 			if ((*it)->interpolated)
@@ -75,7 +73,7 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 			  << "set ytics nomirror;" << endl
 			  << "set xtics nomirror;" << endl
 			  << "set key bottom right" << endl
-				<< "set title '" << (*it)->title << " - with " << (*it)->error << " error';" << endl
+				<< "set title '" << (*it)->title << " - with " << fixed << setprecision(3) << (*it)->error << " error';" << endl
 				<< "set ylabel '" << counter << "';" << endl
 				<< "set xlabel 'Normalized time';" << endl
 				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples'";
@@ -105,9 +103,6 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 		cerr << "Cannot create " << GNUPLOTfile << " file " << endl;
 		exit (-1);
 	}
-
-	/* Set precision for floating point values */
-	gnuplot_out.precision (3);
 
 	gnuplot_out
 	  << "set key bottom right;" << endl;
@@ -143,7 +138,7 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 			string counter = (*it)->metric;
 
 			gnuplot_out
-				<< "set title '" << (*it)->title << " - with " << (*it)->error << " error';" << endl
+				<< "set title '" << (*it)->title << " - with " << fixed << setprecision(3) << (*it)->error << " error';" << endl
 				<< "set ylabel '" << counter << "';" << endl
 				<< "set y2label 'Slope of " << counter << "';" << endl
 				<< "set xlabel 'Normalized time';" << endl
