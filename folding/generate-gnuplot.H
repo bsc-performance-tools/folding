@@ -43,6 +43,7 @@ class GNUPLOTinfo
 	public:
 	bool done;
 	bool interpolated;
+	double error;
 	string title;
 	string fileprefix;
 	string metric;

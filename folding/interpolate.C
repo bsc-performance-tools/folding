@@ -76,6 +76,8 @@ double meanRegion[MAX_REGIONS];
 double sigmaRegion[MAX_REGIONS];
 double NumOfSigmaTimes;
 
+bool option_doLineFolding = true;
+int option_InterpolationErrorLevel = 2;
 bool removeOutliers = false;
 bool SeparateValues = true;
 vector<string> wantedCounters;
@@ -260,11 +262,46 @@ void DumpParaverLine (ofstream &f, unsigned long long type,
   f << "2:" << task << ":1:" << task << ":" << thread << ":" << time << ":" << type << ":" << value << endl;
 }
 
+double runInterpolationError (int depth, double position, double divider,
+	int num_in_samples, double *X_samples, double *Y_samples, double min_value,
+	double max_value)
+{
+	/* Look for the closer position to the value 'position' within
+	   X_samples */
+	int close_position = 0;
+	for (int i = 1; i < num_in_samples; i++)
+		if (fabs(X_samples[i]-position) < fabs(X_samples[close_position]-position))
+			close_position = i;
+
+	/* Calculate value for closer value in X_samples to the 'position' value */
+	double Kriger_result;
+	Kriger_Point (num_in_samples, X_samples, Y_samples, X_samples[close_position],
+	  &Kriger_result, min_value, max_value);
+
+	double result = (Kriger_result - Y_samples[close_position]) * 
+	                (Kriger_result - Y_samples[close_position]);
+
+	/* Apply recursively */
+	if (depth > 0)
+	{
+		double new_position = position - 0.5 / divider;
+		result += runInterpolationError (depth-1, new_position, 2*divider,
+			num_in_samples, X_samples, Y_samples, min_value, max_value);
+
+		new_position = position + 0.5 / divider;
+		result += runInterpolationError (depth-1, new_position, 2*divider,
+			num_in_samples, X_samples, Y_samples, min_value, max_value);
+	}
+
+	return result;
+}
+
+
 bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpolation,
 	ofstream &slope, ofstream &prv, vector<Sample> &vsamples, string counterID,
 	unsigned counterCode, bool anyRegion, unsigned RegionID, unsigned outcount,
 	unsigned long long prvStartTime, unsigned long long prvEndTime,
-	unsigned long long prvAccumCounter)
+	unsigned long long prvAccumCounter, double *error)
 {
 	int incount = 0;
 
@@ -341,6 +378,17 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 				}
 			}
 		}
+
+		if (option_InterpolationErrorLevel > 0)
+		{
+			cout << "Checking interpolation error (" << (1 << (1+option_InterpolationErrorLevel))-1 << " steps)" << endl;
+
+			*error = sqrt (runInterpolationError (option_InterpolationErrorLevel,
+				0.5f, 2.0f, incount, inpoints_x, inpoints_y, 0.0f, 1.0f ));
+			cout << "Error is " << *error << endl;
+		}
+		else
+			*error = 0.0f;
 
 		free (inpoints_x);
 		free (inpoints_y);
@@ -504,6 +552,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 			exit (-1);
 		}
 
+		double error;
 		unsigned long long num_out_points = 1000;
 		unsigned long long target_num_points;
 		if (feedTraceRegion)
@@ -516,7 +565,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 		bool done = runInterpolation (task, thread, output_points, output_kriger,
 		  output_slope, output_prv, vsamples, counterID, counterCode,
 		  !SeparateValues, regionIndex, target_num_points, (*i)->Tstart,
-		  (*i)->Tend, (*i)->HWCvalues[posCounterID]);
+		  (*i)->Tend, (*i)->HWCvalues[posCounterID], &error);
 
 		if (feedTraceRegion)
 			output_prv.close();
@@ -538,6 +587,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 		info->fileprefix = completefilePrefix;
 		info->metric = counterID;
 		info->nameregion = (*i)->RegionName;
+		info->error = error;
 		GNUPLOT.push_back (info);
 	}
 }
@@ -552,6 +602,8 @@ int ProcessParameters (int argc, char *argv[])
          << "-counter ID"<< endl
          << "-separator-value [yes/no]" << endl
 		     << "-feed-region TYPE VALUE" << endl
+		     << "-do-line-folding [yes/no]" << endl
+		     << "-interpolate-error [level (2 by default)]" << endl
 		     << endl;
     exit (-1);
   }
@@ -562,6 +614,24 @@ int ProcessParameters (int argc, char *argv[])
     {
       i++;
 			SeparateValues = strcmp (argv[i], "yes") == 0;
+			continue;
+		}
+		if (strcmp ("-do-line-folding", argv[i]) == 0)
+		{
+			i++;
+			option_doLineFolding = strcmp (argv[i], "yes") == 0;
+			continue;
+		}
+		else if (strcmp (argv[i], "-interpolate-error") == 0)
+		{
+			i++;
+			if (atoi (argv[i]) < 0)
+			{
+				cerr << "Invalid -interpolate-error level value (should be >= 0)" << endl;
+				exit (-1);
+			}
+			else
+				option_InterpolationErrorLevel = atoi (argv[i]);
 			continue;
 		}
 		else if (strcmp ("-counter", argv[i]) == 0)
@@ -730,8 +800,7 @@ int main (int argc, char *argv[])
 		  prv_out_end, regions);	
 	}
 
-#warning "This should be optional"
-	if (1 /* should be optional */)
+	if (option_doLineFolding)
 	{
 		doLineFolding (task, thread, argv[res], vsamples, 0, 0, regions, "LINE");
 		doLineFolding (task, thread, argv[res], vsamples, 0, 0, regions, "LINEID");
