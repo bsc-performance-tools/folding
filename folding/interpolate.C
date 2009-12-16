@@ -42,6 +42,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <vector>
 #include <list>
 #include <algorithm>
+#include <iomanip>
 
 #include "UIParaverTraceConfig.h"
 #include "kriger_wrapper.h"
@@ -381,11 +382,10 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 
 		if (option_InterpolationErrorLevel > 0)
 		{
-			cout << "Checking interpolation error (" << (1 << (1+option_InterpolationErrorLevel))-1 << " steps)" << endl;
-
+			cout << "Checking interpolation error (" << (1 << (1+option_InterpolationErrorLevel))-1 << " steps): " << flush;
 			*error = sqrt (runInterpolationError (option_InterpolationErrorLevel,
 				0.5f, 2.0f, incount, inpoints_x, inpoints_y, 0.0f, 1.0f ));
-			cout << "Error is " << *error << endl;
+			cout << fixed << setprecision(3) << *error << endl;
 		}
 		else
 			*error = 0.0f;
