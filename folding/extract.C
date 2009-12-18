@@ -185,9 +185,9 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 	unsigned found_counters = 0;
 
 	/* Look for hw counters */
-  string pcffile = prvFile.substr (0, prvFile.rfind(".prv")) + string (".pcf");
+	string pcffile = prvFile.substr (0, prvFile.rfind(".prv")) + string (".pcf");
 
-  pcf = new UIParaverTraceConfig (pcffile);
+	pcf = new UIParaverTraceConfig (pcffile);
 
 	for (int i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
 	{
@@ -510,26 +510,26 @@ using namespace::std;
 
 int ProcessParameters (int argc, char *argv[])
 {
-  if (argc < 2)
-  {
-    cerr << "Insufficient number of parameters" << endl;
-    cerr << "Available options are: " << endl
-         << "-separator S" << endl
+	if (argc < 2)
+	{
+		cerr << "Insufficient number of parameters" << endl
+		     << "Available options are: " << endl
+		     << "-separator S" << endl
 		     << "-skip-type T" <<  endl;
-    exit (-1);
-  }
+		exit (-1);
+	}
 
-  for (int i = 1; i < argc-1; i++)
-  {
-    if (strcmp ("-separator",  argv[i]) == 0)
-    {
+	for (int i = 1; i < argc-1; i++)
+	{
+		if (strcmp ("-separator",  argv[i]) == 0)
+		{
 			i++;
 			if (atoi (argv[i]) == 0)
 				cerr << "Invalid number of separator" << endl;
 			else 
 				RegionSeparator = atoi(argv[i]);
 			continue;
-    }
+		}
 		else if (strcmp ("-skip-type", argv[i]) == 0)
 		{
 			i++;
@@ -566,14 +566,14 @@ int main (int argc, char *argv[])
 		exit (-1);
 	}
 
-  for (unsigned int i = 0; i < va.size(); i++)
-  {
-    vector<ParaverTraceTask *> vt = va[i]->get_tasks();
-    p->IH.AllocateTasks (vt.size());
-    TaskInformation *ti = p->IH.getTasksInformation();
-    for (unsigned int j = 0; j < vt.size(); j++)
+	for (unsigned int i = 0; i < va.size(); i++)
+	{
+		vector<ParaverTraceTask *> vt = va[i]->get_tasks();
+		p->IH.AllocateTasks (vt.size());
+		TaskInformation *ti = p->IH.getTasksInformation();
+		for (unsigned int j = 0; j < vt.size(); j++)
 		{
-      ti[j].AllocateThreads (vt[j]->get_threads().size());
+			ti[j].AllocateThreads (vt[j]->get_threads().size());
 			for (unsigned int k = 0; k < vt[j]->get_threads().size(); k++)
 			{
 				ThreadInformation *thi = &((ti[j].getThreadsInformation())[k]);
@@ -590,11 +590,11 @@ int main (int argc, char *argv[])
 
 	p->parseBody();
 
-  for (unsigned int i = 0; i < va.size(); i++)
-  {
-    vector<ParaverTraceTask *> vt = va[i]->get_tasks();
-    TaskInformation *ti = p->IH.getTasksInformation();
-    for (unsigned int j = 0; j < vt.size(); j++)
+	for (unsigned int i = 0; i < va.size(); i++)
+	{
+		vector<ParaverTraceTask *> vt = va[i]->get_tasks();
+		TaskInformation *ti = p->IH.getTasksInformation();
+		for (unsigned int j = 0; j < vt.size(); j++)
 			for (unsigned int k = 0; k < vt[j]->get_threads().size(); k++)
 			{
 				ThreadInformation *thi = &((ti[j].getThreadsInformation())[k]);

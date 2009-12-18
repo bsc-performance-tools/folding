@@ -160,8 +160,8 @@ void Process::processCommunicator (string &c)
 void Process::processState (struct state_t &s)
 {
 	traceout << "1:"
-		<< s.ObjectID.cpu << ":" << s.ObjectID.ptask << ":" << s.ObjectID.task << ":" << s.ObjectID.thread << ":"
-		<< s.Begin_Timestamp << ":" << s.End_Timestamp << ":" << s.State << endl; 
+	         << s.ObjectID.cpu << ":" << s.ObjectID.ptask << ":" << s.ObjectID.task << ":" << s.ObjectID.thread << ":"
+	         << s.Begin_Timestamp << ":" << s.End_Timestamp << ":" << s.State << endl; 
 } 
 
 void Process::processMultiEvent (struct multievent_t &e)
@@ -176,7 +176,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 	if (thread >= ti[task].getNumThreads())
 		return;
 
-  ThreadInformation *thi = &((ti[task].getThreadsInformation())[thread]);
+	ThreadInformation *thi = &((ti[task].getThreadsInformation())[thread]);
 
 	if (thi->LastEvents.Timestamp < e.Timestamp)
 	{
@@ -270,14 +270,14 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
-  for (unsigned int i = 0; i < va.size(); i++)
-  {
-    vector<ParaverTraceTask *> vt = va[i]->get_tasks();
-    p->ih.AllocateTasks (vt.size());
-    TaskInformation *ti = p->ih.getTasksInformation();
-    for (unsigned int j = 0; j < vt.size(); j++)
-      ti[j].AllocateThreads (vt[j]->get_threads().size());
-  }
+	for (unsigned int i = 0; i < va.size(); i++)
+	{
+		vector<ParaverTraceTask *> vt = va[i]->get_tasks();
+		p->ih.AllocateTasks (vt.size());
+		TaskInformation *ti = p->ih.getTasksInformation();
+		for (unsigned int j = 0; j < vt.size(); j++)
+			ti[j].AllocateThreads (vt[j]->get_threads().size());
+	}
 
 	p->parseBody();
 

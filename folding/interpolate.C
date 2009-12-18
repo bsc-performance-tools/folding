@@ -188,7 +188,7 @@ void CalculateSigmaFromFile (ifstream &file, bool any_region)
 			file >> strRegion;
 			file >> Duration;
 
-      int Region = TranslateRegion (strRegion);
+			int Region = TranslateRegion (strRegion);
 
 			meanRegion[any_region?0:Region] += Duration;
 			countRegion[any_region?0:Region] ++;
@@ -594,25 +594,25 @@ void doInterpolation (int task, int thread, string filePrefix,
 
 int ProcessParameters (int argc, char *argv[])
 {
-  if (argc < 2)
-  {
-    cerr << "Insufficient number of parameters" << endl;
-    cerr << "Available options are: " << endl
+	if (argc < 2)
+	{
+		cerr << "Insufficient number of parameters" <<
+		     << "Available options are: " << endl
 		     << "-remove-outliers [SIGMA]" << endl
-         << "-counter ID"<< endl
-         << "-separator-value [yes/no]" << endl
+		     << "-counter ID"<< endl
+		     << "-separator-value [yes/no]" << endl
 		     << "-feed-region TYPE VALUE" << endl
 		     << "-do-line-folding [yes/no]" << endl
 		     << "-interpolate-error [level (2 by default)]" << endl
 		     << endl;
-    exit (-1);
-  }
+		exit (-1);
+	}
 
-  for (int i = 1; i < argc-1; i++)
-  {
-    if (strcmp ("-separator-value",  argv[i]) == 0)
-    {
-      i++;
+	for (int i = 1; i < argc-1; i++)
+	{
+		if (strcmp ("-separator-value",  argv[i]) == 0)
+		{
+			i++;
 			SeparateValues = strcmp (argv[i], "yes") == 0;
 			continue;
 		}
@@ -671,9 +671,9 @@ int ProcessParameters (int argc, char *argv[])
 		}
 		else
 			cout << "Misunderstood parameter: " << argv[i] << endl;
-  }
+	}
 
-  return argc-1;
+	return argc-1;
 }
 
 void GetTaskThreadFromFile (string file, unsigned *task, unsigned *thread)
