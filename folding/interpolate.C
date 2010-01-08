@@ -596,7 +596,7 @@ int ProcessParameters (int argc, char *argv[])
 {
 	if (argc < 2)
 	{
-		cerr << "Insufficient number of parameters" <<
+		cerr << "Insufficient number of parameters" << endl
 		     << "Available options are: " << endl
 		     << "-remove-outliers [SIGMA]" << endl
 		     << "-counter ID"<< endl
