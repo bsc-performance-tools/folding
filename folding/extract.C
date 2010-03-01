@@ -414,6 +414,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 			{
 				string RegionNameValue = pcf->getEventValue (RegionSeparator, thi->CurrentRegion);
 
+				/* Write the total time spent in this region */
 				if (RegionNameValue.length() > 0 && RegionNameValue != "Not found")
 					thi->output << "T " << common::removeSpaces (RegionNameValue) << " " << TotalTime << endl;
 				else
@@ -423,6 +424,17 @@ void Process::processMultiEvent (struct multievent_t &e)
 						thi->output << "T " << common::removeSpaces (RegionName) << "_" << thi->CurrentRegion << " " << TotalTime << endl;
 					else
 						thi->output << "T Unkown_" << thi->CurrentRegion << " " << TotalTime << endl;
+				}
+
+				/* Write total counters spent in this region */
+				for (unsigned cnt = 0; cnt < numCounterIDs; cnt++)
+				{
+					unsigned long long TotalCounter = 0;
+					list<unsigned long long>::iterator Counter_iter = thi->CounterSamples[cnt].begin();
+					for ( ; Counter_iter != thi->CounterSamples[cnt].end(); Counter_iter++)
+						TotalCounter += (*Counter_iter);
+					if (TotalCounter > 0)
+						thi->output << "A " << CounterIDNames[cnt] << " " << TotalCounter << endl;
 				}
 			}
 
@@ -440,7 +452,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 				list<bool>::iterator Skip_iter = thi->SkipSamples.begin();
 
 #if defined(DEBUG)
-				cout << "TOTAL TIME = " << TotalTime << " from " << thi->StartRegion << " to " << e.Timestamp << " TOTAL COUNTER[" << CounterIDs[cnt] << "/"<< cnt << "]= " << TotalCounter << endl;
+				thi->outut << "TOTAL TIME = " << TotalTime << " from " << thi->StartRegion << " to " << e.Timestamp << " TOTAL COUNTER[" << CounterIDs[cnt] << "/"<< cnt << "]= " << TotalCounter << endl;
 #endif
 
 				unsigned long long AccumCounter = 0;
@@ -451,13 +463,14 @@ void Process::processMultiEvent (struct multievent_t &e)
 				{
 					if (!(*Skip_iter))
 					{
+
 						double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
 						double NCounter = ::NormalizeValue (AccumCounter + (*Counter_iter), 0, TotalCounter);
 
 #if defined(DEBUG)
-						cout << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
+						thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
 #else
-						thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << endl;
+						thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << (AccumCounter + (*Counter_iter)) << endl;
 #endif
 					}
 
@@ -476,11 +489,11 @@ void Process::processMultiEvent (struct multievent_t &e)
 			double NTime = ::NormalizeValue ((*it)->time - thi->StartRegion, 0, TotalTime);
 
 #if defined(DEBUG)
-			cout << "S LINE " << NTime << " " << (*it)->line << " at timestamp " << (*it)->time << endl;
-			cout << "S LINEID " << NTime << " " << (*it)->lineid_value << " at timestamp " << (*it)->time << endl;
+			thi->output << "S LINE " << NTime << " " << (*it)->line << " at timestamp " << (*it)->time << endl;
+			thi->output << "S LINEID " << NTime << " " << (*it)->lineid_value << " at timestamp " << (*it)->time << endl;
 #else
-			thi->output << "S LINE " << NTime << " " << (*it)->line << endl;
-			thi->output << "S LINEID " << NTime << " " << (*it)->lineid_value << endl;
+			thi->output << "S LINE " << NTime << " " << (*it)->line << " " << (*it)->time << " 0" << endl;
+			thi->output << "S LINEID " << NTime << " " << (*it)->lineid_value << " " << (*it)->time << " 0" << endl;
 #endif
 		}
 		thi->LineSamples.clear();

@@ -34,6 +34,7 @@
 #include <list>
 #include <string>
 #include "UIParaverTraceConfig.h"
+#include "point.H"
 
 using namespace std;
 using namespace libparaver;
@@ -55,5 +56,7 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info);
 void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info);
 
 void createMultiSlopeGNUPLOT (string file, string regionName, list<GNUPLOTinfo*> &info, vector <string> &wantedCounters);
+
+void createAccumulatedCounterGNUPLOT (string file, string regionName, vector<Point> &points, vector <string> &wantedCounters);
 
 #endif
