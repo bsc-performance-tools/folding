@@ -215,3 +215,58 @@ void createMultiSlopeGNUPLOT (string file, string regionName, list<GNUPLOTinfo*>
 		remove (GNUPLOTfile.c_str());
 }
 
+#if 0
+void createAccumulatedCounterGNUPLOT (string file, string regionName, vector<Point> &points, vector <string> &wantedCounters)
+{
+	string GNUPLOTfile = file+"."+regionName.substr (0, regionName.find_first_of (":[]{}() "))+".totals.gnuplot";
+
+	ofstream gnuplot_out (GNUPLOTfile.c_str());
+	if (!gnuplot_out.is_open())
+	{
+		cerr << "Cannot create " << GNUPLOTfile << " file " << endl;
+		exit (-1);
+	}
+
+	gnuplot_out
+	  << "set key top right;" << endl
+	  << "set xrange [0:*];" << endl
+	  << "set yrange [0:*];" << endl
+	  << "set ytics mirror;" << endl
+	  << "set xtics mirror;" << endl
+		<< "set ylabel 'Accumulated performance metric per region';" << endl
+		<< "set xlabel 'Time';" << endl;
+
+	bool found = false;
+	bool first = true;
+	for (vector<Point>::iterator it = points.begin(); it != points.end() ; it++)
+	{
+		string counter = (*it)->metric;
+		string file = (*it)->fileprefix;
+
+		if ((*it)->nameregion == regionName)
+		{
+			if (!found)
+			{
+				gnuplot_out << "set title '" << (*it)->title << "';" << endl;
+  			gnuplot_out << "plot ";
+				found = true;
+			}
+			if ((*it)->interpolated && (*it)->done &&
+		    find (wantedCounters.begin(), wantedCounters.end(), counter) != wantedCounters.end())
+			{
+				if (!first)
+					gnuplot_out << ",";
+				gnuplot_out << "\\" << endl << "     '" << file << "." << counter << ".slope' using 2:3 title '" << counter << "' w lines lw 2";
+				first = false;
+			}
+		}
+	}
+	if (found)
+		gnuplot_out << ";" << endl;
+
+	gnuplot_out.close();
+
+	if (!found)
+		remove (GNUPLOTfile.c_str());
+}
+#endif

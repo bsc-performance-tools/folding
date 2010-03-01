@@ -1,6 +1,4 @@
 *** Afegir els punts foldejats a la trasa (debug)
-*** Afegir els callstacks a la trasa
-+++ Reordenacio dels callstacks a la trasa
 
 *** Comptadors a les MPIs si no es separen les MPIs!? Shaurien d'eliminar?
       --> Comptadors de MPIs
