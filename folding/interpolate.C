@@ -67,6 +67,8 @@ class Sample
 	float CounterValue;
 	unsigned long long DeTime;
 	unsigned long long DeCounterValue;
+
+	unsigned iteration;
 };
 
 string TraceToFeed;
@@ -80,8 +82,8 @@ unsigned long long feedTraceTimes_Begin, feedTraceTimes_End;
 unsigned numRegions = 0;
 string nameRegion[MAX_REGIONS];
 int countRegion[MAX_REGIONS];
-double meanRegion[MAX_REGIONS];
-double sigmaRegion[MAX_REGIONS];
+double meanRegion[MAX_REGIONS], meanRegion_tot_ins[MAX_REGIONS];
+double sigmaRegion[MAX_REGIONS], sigmaRegion_tot_ins[MAX_REGIONS];
 double NumOfSigmaTimes;
 
 bool option_doLineFolding = true;
@@ -90,6 +92,8 @@ bool removeOutliers = false;
 bool SeparateValues = true;
 vector<string> wantedCounters;
 list<GNUPLOTinfo*> GNUPLOT;
+
+bool generateGNUPLOTfiles = false;
 
 unsigned TranslateRegion (string &RegionName)
 {
@@ -148,6 +152,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			cout << "MEAN_REGION = " << meanRegion[any_region?0:lastRegion] << " ABS = " << fabs (meanRegion[any_region?0:lastRegion] - Duration) << endl;
 			cout << NumOfSigmaTimes << " * " << sigmaRegion[any_region?0:lastRegion] << endl;
 #endif
+
 		}
 		else if (type == 'A')
 		{
@@ -156,6 +161,19 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			p.Duration = lastDuration;
 			file >> p.CounterID;
 			file >> p.TotalCounter;
+
+			/* Outlier could be inherited from T type */
+			if (p.CounterID == "PAPI_TOT_INS" && removeOutliers && inRegion)
+				Outlier = Outlier || fabs (meanRegion_tot_ins[any_region?0:lastRegion] - p.TotalCounter) > NumOfSigmaTimes*sigmaRegion_tot_ins[any_region?0:lastRegion];
+
+#if defined(DEBUG)
+			if (p.CounterID == "PAPI_TOT_INS")
+			{
+				cout << "ACCUMULATED " << p.TotalCounter << " REGION (" << nameRegion[lastRegion] << ")= "<< lastRegion << (Outlier?" is":" is not") << " an outlier " << endl;
+				cout << "MEAN_REGION = " << meanRegion_tot_ins[any_region?0:lastRegion] << " ABS = " << fabs (meanRegion_tot_ins[any_region?0:lastRegion] - p.TotalCounter) << endl;
+				cout << NumOfSigmaTimes << " * " << sigmaRegion_tot_ins[any_region?0:lastRegion] << endl;
+			}
+#endif
 
 			for (unsigned i = 0 ; i < wantedCounters.size(); i++)
 				if (wantedCounters[i] == p.CounterID)
@@ -171,6 +189,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			file >> s.CounterValue;
 			file >> s.DeTime;
 			file >> s.DeCounterValue;
+			file >> s.iteration;
 			s.Region = lastRegion;
 
 #if defined(DEBUG)
@@ -192,12 +211,14 @@ void CalculateSigmaFromFile (ifstream &file, bool any_region)
 
 	for (int i = 0; i < MAX_REGIONS; i++)
 	{
-		meanRegion[i] = 0.0f;
+		meanRegion[i] = meanRegion_tot_ins[i] = 0.0f;
 		countRegion[i] = 0;
-		sigmaRegion[i] = 0.0f;
+		sigmaRegion[i] = sigmaRegion_tot_ins[i] = 0.0f;
 	}
 
 	/* Calculate totals and number of presence of each region */
+
+	int Region = 0;
 	while (true)
 	{
 		file >> type;
@@ -213,7 +234,7 @@ void CalculateSigmaFromFile (ifstream &file, bool any_region)
 			file >> strRegion;
 			file >> Duration;
 
-			int Region = TranslateRegion (strRegion);
+			Region = TranslateRegion (strRegion);
 
 			meanRegion[any_region?0:Region] += Duration;
 			countRegion[any_region?0:Region] ++;
@@ -225,6 +246,10 @@ void CalculateSigmaFromFile (ifstream &file, bool any_region)
 
 			file >> unused_s;
 			file >> unused_ll;
+
+			if (unused_s == "PAPI_TOT_INS")
+				meanRegion_tot_ins[any_region?0:Region] += unused_ll;
+
 		}
 		else if (type == 'S')
 		{
@@ -234,13 +259,19 @@ void CalculateSigmaFromFile (ifstream &file, bool any_region)
 			file >> unused_s;
 			file >> unused_f;
 			file >> unused_f;
+			file >> unused_f;
+			file >> unused_f;
+			file >> unused_f;
 		}
 	}
 
 	/* Now calculate the means */
 	for (unsigned i = 0; i < numRegions; i++)
 		if (countRegion[i] > 0)
+		{
 			meanRegion[i] = meanRegion[i]/countRegion[i];
+			meanRegion_tot_ins[i] = meanRegion_tot_ins[i]/countRegion[i];
+		}
 
 	file.clear ();
 	file.seekg (0, ios::beg);
@@ -256,7 +287,6 @@ void CalculateSigmaFromFile (ifstream &file, bool any_region)
 		if (type == 'T')
 		{
 			string strRegion;
-			int Region;
 			unsigned long long Duration;
 
 			file >> strRegion;
@@ -267,6 +297,18 @@ void CalculateSigmaFromFile (ifstream &file, bool any_region)
 			sigmaRegion[(any_region?0:Region)] +=
 			 (((double)Duration) - meanRegion[any_region?0:Region]) * (((double)Duration) - meanRegion[any_region?0:Region]);
 		}
+		else if (type == 'A')
+		{
+			unsigned long long unused_ll;
+			string unused_s;
+
+			file >> unused_s;
+			file >> unused_ll;
+
+			if (unused_s == "PAPI_TOT_INS")
+				sigmaRegion_tot_ins[any_region?0:Region] += 
+					(((double)unused_ll) - meanRegion_tot_ins[any_region?0:Region]) * (((double)unused_ll) - meanRegion_tot_ins[any_region?0:Region]);
+		}
 		else if (type == 'S')
 		{
 			double unused_f;
@@ -275,14 +317,24 @@ void CalculateSigmaFromFile (ifstream &file, bool any_region)
 			file >> unused_s;
 			file >> unused_f;
 			file >> unused_f;
+			file >> unused_f;
+			file >> unused_f;
+			file >> unused_f;
 		}
 	}
 
 	for (unsigned i = 0; i < numRegions; i++)
+	{
 		if (countRegion[i] > 1)
+		{
 			sigmaRegion[i] = sqrt ((sigmaRegion[i]) / (countRegion[i] - 1));
+			sigmaRegion_tot_ins[i] = sqrt ((sigmaRegion_tot_ins[i]) / (countRegion[i] - 1));
+		}
 		else
-			sigmaRegion[i] = 0;
+		{
+			sigmaRegion[i] = sigmaRegion_tot_ins[i] = 0.0f;
+		}
+	}
 
 	file.clear ();
 	file.seekg (0, ios::beg);
@@ -354,6 +406,9 @@ double newInterpolationError (int num_in_samples,
 	double *X_samples, double *Y_samples, double min_value, double max_value)
 {
 	double result = 0.0f;
+
+	return result;
+
 	for (int i = 0; i < num_in_samples; i += 8)
 	{
 		double Kriger_result;
@@ -400,7 +455,9 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 				inpoints_x[incount] = (*it).Time;
 				inpoints_y[incount] = (*it).CounterValue;
 				incount++;
-				points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << endl;
+
+				if (points.is_open())
+					points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << " " << (*it).iteration << endl;
 			}
 
 		cout << "CALL_KRIGER (region=";
@@ -412,14 +469,17 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 
 		Kriger_Region (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f);
 
-		interpolation << "KRIGER " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
-		slope << "SLOPE 0 0 " << endl;
-		for (unsigned j = 1; j < outcount; j++)
+		if (interpolation.is_open() && slope.is_open())
 		{
-			double d_j = (double) j;
-			double d_outcount = (double) outcount;	
-			interpolation << "KRIGER " << d_j / d_outcount << " " << outpoints[j] << endl;
-			slope << "SLOPE " << d_j / d_outcount << " " << (outpoints[j]-outpoints[j-1])/ (d_j/d_outcount - (d_j-1)/d_outcount) << endl; 
+			interpolation << "KRIGER " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
+			slope << "SLOPE 0 0 " << endl;
+			for (unsigned j = 1; j < outcount; j++)
+			{
+				double d_j = (double) j;
+				double d_outcount = (double) outcount;	
+				interpolation << "KRIGER " << d_j / d_outcount << " " << outpoints[j] << endl;
+				slope << "SLOPE " << d_j / d_outcount << " " << (outpoints[j]-outpoints[j-1])/ (d_j/d_outcount - (d_j-1)/d_outcount) << endl; 
+			}
 		}
 
 		if (feedTraceRegion || feedTraceTimes)
@@ -512,14 +572,18 @@ bool runLineFolding (int task, int thread, ofstream &points, ofstream &prv,
 
 		if (!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID)
 		{
-			points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << endl;
+			if (points.is_open())
+				points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << endl;
+
 			DumpParaverLine (prv, type, (*it).CounterValue, (unsigned long long) time,
 			  task+1, thread+1);
 			found = true;
 		}
 		else if (anyRegion && (*it).CounterID == CounterID)
 		{
-			points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << endl;
+			if (points.is_open())
+				points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << endl;
+
 			DumpParaverLine (prv, type, (*it).CounterValue, (unsigned long long) time,
 			  task+1, thread+1);
 			found = true;
@@ -545,17 +609,23 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 		string RegionName = (*i)->RegionName;
 		int regionIndex = TranslateRegion (RegionName);
 		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
-		ofstream output_points ((completefilePrefix+"."+metric+".points").c_str());
+
+		ofstream output_points;
+		if (generateGNUPLOTfiles)
+		{
+			output_points.open ((completefilePrefix+"."+metric+".points").c_str());
+			if (!output_points.is_open())
+			{
+				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
+				exit (-1);
+			}
+		}
+
 		ofstream output_prv;
 
 		if (feedTraceRegion || feedTraceTimes)
 			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
 
-		if (!output_points.is_open())
-		{
-			cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
-			exit (-1);
-		}
 		if ((feedTraceRegion || feedTraceTimes) && !output_prv.is_open())
 		{
 			cerr << "Cannot append to " << TraceToFeed << " file " << endl;
@@ -568,19 +638,24 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 
 		if (feedTraceRegion || feedTraceTimes)
 			output_prv.close();
-		output_points.close();
+
+		if (generateGNUPLOTfiles)
+			output_points.close();
 
 		if (!done)
 			remove (completefilePrefix.c_str());
 
-		GNUPLOTinfo *info = new GNUPLOTinfo;
-		info->done = done;
-		info->interpolated = false;
-		info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
-		info->fileprefix = completefilePrefix;
-		info->metric = metric;
-		info->nameregion = (*i)->RegionName;
-		GNUPLOT.push_back (info);
+		if (generateGNUPLOTfiles)
+		{
+			GNUPLOTinfo *info = new GNUPLOTinfo;
+			info->done = done;
+			info->interpolated = false;
+			info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
+			info->fileprefix = completefilePrefix;
+			info->metric = metric;
+			info->nameregion = (*i)->RegionName;
+			GNUPLOT.push_back (info);
+		}
 	}
 }
 
@@ -624,28 +699,35 @@ void doInterpolation (int task, int thread, string filePrefix,
 
 		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
 
-		ofstream output_points ((completefilePrefix+"."+CounterID+".points").c_str());
-		ofstream output_kriger ((completefilePrefix+"."+CounterID+".interpolation").c_str());
-		ofstream output_slope ((completefilePrefix+"."+CounterID+".slope").c_str());
+		ofstream output_points, output_kriger, output_slope;
+		if (generateGNUPLOTfiles)
+		{
+			output_points.open ((completefilePrefix+"."+CounterID+".points").c_str());
+			output_kriger.open ((completefilePrefix+"."+CounterID+".interpolation").c_str());
+			output_slope.open ((completefilePrefix+"."+CounterID+".slope").c_str());
+		}
 		ofstream output_prv;
 
 		if (feedTraceRegion || feedTraceTimes)
 			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
 
-		if (!output_points.is_open())
+		if (generateGNUPLOTfiles)
 		{
-			cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
-			exit (-1);
-		}
-		if (!output_kriger.is_open())
-		{
-			cerr << "Cannot create " << completefilePrefix+".interpolation" << " file " << endl;
-			exit (-1);
-		}
-		if (!output_slope.is_open())
-		{
-			cerr << "Cannot create " << completefilePrefix+".slope" << " file " << endl;
-			exit (-1);
+			if (!output_points.is_open())
+			{
+				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
+				exit (-1);
+			}
+			if (!output_kriger.is_open())
+			{
+				cerr << "Cannot create " << completefilePrefix+".interpolation" << " file " << endl;
+				exit (-1);
+			}
+			if (!output_slope.is_open())
+			{
+				cerr << "Cannot create " << completefilePrefix+".slope" << " file " << endl;
+				exit (-1);
+			}
 		}
 		if ((feedTraceRegion || feedTraceTimes) && !output_prv.is_open())
 		{
@@ -659,7 +741,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 		if (feedTraceRegion || feedTraceTimes)
 			target_num_points = 2+(num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime));
 		else
-			target_num_points = num_out_points;
+			target_num_points = 1000;
 
 #warning "Accumulate several equal clusters!"
 
@@ -670,9 +752,13 @@ void doInterpolation (int task, int thread, string filePrefix,
 
 		if (feedTraceRegion || feedTraceTimes)
 			output_prv.close();
-		output_slope.close();
-		output_points.close();
-		output_kriger.close();
+
+		if (generateGNUPLOTfiles)
+		{
+			output_slope.close();
+			output_points.close();
+			output_kriger.close();
+		}
 
 		if (!done)
 		{
@@ -681,15 +767,18 @@ void doInterpolation (int task, int thread, string filePrefix,
 			remove ((completefilePrefix+"."+CounterID+".slope").c_str());
 		}
 
-		GNUPLOTinfo *info = new GNUPLOTinfo;
-		info->done = done;
-		info->interpolated = true;
-		info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
-		info->fileprefix = completefilePrefix;
-		info->metric = CounterID;
-		info->nameregion = (*i)->RegionName;
-		info->error = error;
-		GNUPLOT.push_back (info);
+		if (generateGNUPLOTfiles)
+		{
+			GNUPLOTinfo *info = new GNUPLOTinfo;
+			info->done = done;
+			info->interpolated = true;
+			info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
+			info->fileprefix = completefilePrefix;
+			info->metric = CounterID;
+			info->nameregion = (*i)->RegionName;
+			info->error = error;
+			GNUPLOT.push_back (info);
+		}
 	}
 }
 
@@ -716,12 +805,16 @@ void dumpAccumulatedCounterData (int task, int thread, string filePrefix,
 
 		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
 
-		ofstream output_data ((completefilePrefix+"."+CounterID+".acc.points").c_str());
-
-		if (!output_data.is_open())
+		ofstream output_data;
+		if (generateGNUPLOTfiles)
 		{
-			cerr << "Cannot create " << completefilePrefix+".acc.points" << " file " << endl;
-			exit (-1);
+			output_data.open ((completefilePrefix+"."+CounterID+".acc.points").c_str());
+
+			if (!output_data.is_open())
+			{
+				cerr << "Cannot create " << completefilePrefix+".acc.points" << " file " << endl;
+				exit (-1);
+			}
 		}
 
 #if 1
@@ -734,7 +827,8 @@ void dumpAccumulatedCounterData (int task, int thread, string filePrefix,
 			if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
 				output_data << (*it).Duration << " " << (*it).TotalCounter << endl;
 
-		output_data.close();
+		if (generateGNUPLOTfiles)
+			output_data.close();
 	}
 }
 
@@ -751,12 +845,19 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-feed-time TIME1 TIME2" << endl
 		     << "-do-line-folding [yes/no]" << endl
 		     << "-interpolate-error [level (2 by default)]" << endl
+		     << "-generate-gnuplot [yes/no]" << endl
 		     << endl;
 		exit (-1);
 	}
 
 	for (int i = 1; i < argc-1; i++)
 	{
+		if (strcmp ("-generate-gnuplot", argv[i]) == 0)
+		{
+			i++;
+			generateGNUPLOTfiles = strcmp (argv[i], "yes") == 0;
+			continue;
+		}
 		if (strcmp ("-separator-value",  argv[i]) == 0)
 		{
 			i++;

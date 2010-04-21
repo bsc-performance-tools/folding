@@ -85,6 +85,8 @@ class ThreadInformation
 	unsigned long long CurrentRegion;
 	unsigned long long StartRegion;
 
+	unsigned long long CurrentIteration;
+
 	void AllocateBufferCounters (int numCounters);
 	ThreadInformation ();
 };
@@ -92,6 +94,7 @@ class ThreadInformation
 ThreadInformation::ThreadInformation ()
 {
 	CurrentRegion = 0;
+	CurrentIteration = 0;
 }
 
 void ThreadInformation::AllocateBufferCounters (int numCounters)
@@ -295,6 +298,15 @@ void Process::processMultiEvent (struct multievent_t &e)
 
   ThreadInformation *thi = &((ti[task].getThreadsInformation())[thread]);
 
+#if 1
+	/* This is a way to know on which iteration we are */
+	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
+		if ((*it).Type == 90000001 &&  (*it).Value == 6)
+		{
+			thi->CurrentIteration++;
+		}
+#endif
+
 	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 		if ((*it).Type == RegionSeparator)
 		{
@@ -463,14 +475,19 @@ void Process::processMultiEvent (struct multievent_t &e)
 				{
 					if (!(*Skip_iter))
 					{
-
 						double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
+#if 1
+						/* ACCUMULATED HWC */
 						double NCounter = ::NormalizeValue (AccumCounter + (*Counter_iter), 0, TotalCounter);
+#else
+						/* TRACE HWC */
+						double NCounter = *Counter_iter;
+#endif
 
 #if defined(DEBUG)
 						thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
 #else
-						thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << (AccumCounter + (*Counter_iter)) << endl;
+						thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << (AccumCounter + (*Counter_iter)) << " " << thi->CurrentIteration << endl;
 #endif
 					}
 
