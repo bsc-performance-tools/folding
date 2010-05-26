@@ -121,8 +121,7 @@ class TaskInformation
 
 TaskInformation::~TaskInformation()
 {
-	for (int i = 0; i < numThreads; i++)
-		delete [] ThreadsInfo;
+	delete [] ThreadsInfo;
 }
 
 void TaskInformation::AllocateThreads (int numThreads)
@@ -150,8 +149,7 @@ class InformationHolder
 
 InformationHolder::~InformationHolder()
 {
-	for (int i = 0; i < numTasks; i++)
-		delete [] TasksInfo;
+	delete [] TasksInfo;
 }
 
 void InformationHolder::AllocateTasks (int numTasks)
