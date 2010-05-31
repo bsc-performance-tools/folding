@@ -44,11 +44,12 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <string.h>
 #include <list>
 
-#define PAPI_MIN_COUNTER   42000000
+#define PAPI_MIN_COUNTER   42000001
 #define PAPI_MAX_COUNTER   42009998
 
 unsigned long long RegionSeparator = 123456;
 vector<unsigned long long> SkipTypes;
+vector<unsigned long long> PhaseSeparators;
 
 using namespace std;
 
@@ -82,10 +83,10 @@ class ThreadInformation
 	list<LineCodeInformation*> LineSamples;
 	ofstream output;
 
+	unsigned long long CurrentIteration;
+	unsigned long long CurrentPhase;
 	unsigned long long CurrentRegion;
 	unsigned long long StartRegion;
-
-	unsigned long long CurrentIteration;
 
 	void AllocateBufferCounters (int numCounters);
 	ThreadInformation ();
@@ -93,8 +94,7 @@ class ThreadInformation
 
 ThreadInformation::ThreadInformation ()
 {
-	CurrentRegion = 0;
-	CurrentIteration = 0;
+	CurrentRegion = CurrentPhase = CurrentIteration = 0;
 }
 
 void ThreadInformation::AllocateBufferCounters (int numCounters)
@@ -283,6 +283,7 @@ void Process::processState (struct state_t &s)
 void Process::processMultiEvent (struct multievent_t &e)
 {
 	bool FoundSeparator = false;
+	bool FoundPhaseSeparator = false;
 	unsigned long long ValueSeparator = 0;
 	int task = e.ObjectID.task - 1;
 	int thread = e.ObjectID.thread - 1;
@@ -296,22 +297,16 @@ void Process::processMultiEvent (struct multievent_t &e)
 
   ThreadInformation *thi = &((ti[task].getThreadsInformation())[thread]);
 
-#if 1
-	/* This is a way to know on which iteration we are */
 	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
-		if ((*it).Type == 90000001 &&  (*it).Value == 6)
-		{
-			thi->CurrentIteration++;
-		}
-#endif
-
-	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
+	{
 		if ((*it).Type == RegionSeparator)
 		{
 			FoundSeparator = true;
 			ValueSeparator = (*it).Value;
 			break;
 		}
+		FoundPhaseSeparator = FoundPhaseSeparator || find (PhaseSeparators.begin(), PhaseSeparators.end(), (*it).Type) != PhaseSeparators.end();
+	}
 
 	/* If we haven't found a separator, or it's and end separator, add counters to
 	   the existing working set */
@@ -402,11 +397,10 @@ void Process::processMultiEvent (struct multievent_t &e)
 				thi->LineSamples.push_back (lci);
 			}
 		}
-
 	}
 
-	/* If we found an end of a region, dump normalized samples */
-	if (FoundSeparator && ValueSeparator == 0)
+	/* If we found an end of a region or a phase change inside a region, dump normalized samples */
+	if ((FoundSeparator && ValueSeparator == 0) || FoundPhaseSeparator)
 	{
 		unsigned long long TotalTime = e.Timestamp - thi->StartRegion;
 
@@ -426,14 +420,16 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 				/* Write the total time spent in this region */
 				if (RegionNameValue.length() > 0 && RegionNameValue != "Not found")
-					thi->output << "T " << common::removeSpaces (RegionNameValue) << " " << TotalTime << endl;
+				{
+					thi->output << "T " << common::removeSpaces (RegionNameValue) << "." << thi->CurrentPhase << " " << TotalTime << endl;
+				}
 				else
 				{
 					string RegionName = pcf->getEventType (RegionSeparator);
 					if (RegionName.length() > 0)
-						thi->output << "T " << common::removeSpaces (RegionName) << "_" << thi->CurrentRegion << " " << TotalTime << endl;
+						thi->output << "T " << common::removeSpaces (RegionName) << "_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
 					else
-						thi->output << "T Unkown_" << thi->CurrentRegion << " " << TotalTime << endl;
+						thi->output << "T Unkown_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
 				}
 
 				/* Write total counters spent in this region */
@@ -462,7 +458,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 				list<bool>::iterator Skip_iter = thi->SkipSamples.begin();
 
 #if defined(DEBUG)
-				thi->outut << "TOTAL TIME = " << TotalTime << " from " << thi->StartRegion << " to " << e.Timestamp << " TOTAL COUNTER[" << CounterIDs[cnt] << "/"<< cnt << "]= " << TotalCounter << endl;
+				thi->output << "TOTAL TIME = " << TotalTime << " from " << thi->StartRegion << " to " << e.Timestamp << " TOTAL COUNTER[" << CounterIDs[cnt] << "/"<< cnt << "]= " << TotalCounter << endl;
 #endif
 
 				unsigned long long AccumCounter = 0;
@@ -474,13 +470,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 					if (!(*Skip_iter))
 					{
 						double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
-#if 1
-						/* ACCUMULATED HWC */
 						double NCounter = ::NormalizeValue (AccumCounter + (*Counter_iter), 0, TotalCounter);
-#else
-						/* TRACE HWC */
-						double NCounter = *Counter_iter;
-#endif
 
 #if defined(DEBUG)
 						thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
@@ -515,9 +505,18 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 	}
 
+	/* If we found a phase separator, increase current phase */
+	if (FoundPhaseSeparator)
+		thi->CurrentPhase++;
+
+	/* If we found a region separator, increase current region and reset the phase */
 	if (FoundSeparator)
+	{
 		thi->CurrentRegion = ValueSeparator;
-	if (FoundSeparator && ValueSeparator != 0)
+		thi->CurrentPhase = 0;
+	}
+
+	if ((FoundSeparator && ValueSeparator != 0) || FoundPhaseSeparator)
 		thi->StartRegion = e.Timestamp;
 }
 
@@ -543,6 +542,7 @@ int ProcessParameters (int argc, char *argv[])
 		cerr << "Insufficient number of parameters" << endl
 		     << "Available options are: " << endl
 		     << "-separator S" << endl
+		     << "-phase-separator S" << endl
 		     << "-skip-type T" <<  endl;
 		exit (-1);
 	}
@@ -565,6 +565,14 @@ int ProcessParameters (int argc, char *argv[])
 				cerr << "Invalid number of type in '-skip-type' option" << endl;
 			else
 				SkipTypes.push_back (atoi(argv[i]));
+		}
+		else if (strcmp ("-phase-separator", argv[i]) == 0)
+		{
+			i++;
+			if (atoi (argv[i]) == 0)
+				cerr << "Invalid number of type in '-phase-separator' option" << endl;
+			else
+				PhaseSeparators.push_back (atoi(argv[i]));
 		}
 	}
 
