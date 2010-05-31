@@ -205,7 +205,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 	}
 }
 
-void CalculateSigmaFromFile (ifstream &file, bool any_region)
+void CalculateStatsFromFile (ifstream &file, bool any_region)
 {
 	char type;
 
@@ -654,13 +654,15 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 			info->fileprefix = completefilePrefix;
 			info->metric = metric;
 			info->nameregion = (*i)->RegionName;
+			info->mean_duration = 0;
+			info->mean_counter = 0;
 			GNUPLOT.push_back (info);
 		}
 	}
 }
 
 void doInterpolation (int task, int thread, string filePrefix,
-	vector<Sample> &vsamples, unsigned posCounterID,
+	vector<Point> &vpoints, vector<Sample> &vsamples, unsigned posCounterID,
 	unsigned long long startTime, unsigned long long endTime,
 	RegionInfo &regions)
 {
@@ -741,7 +743,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 		if (feedTraceRegion || feedTraceTimes)
 			target_num_points = 2+(num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime));
 		else
-			target_num_points = 1000;
+			target_num_points = 100;
 
 #warning "Accumulate several equal clusters!"
 
@@ -769,6 +771,8 @@ void doInterpolation (int task, int thread, string filePrefix,
 
 		if (generateGNUPLOTfiles)
 		{
+			unsigned tmp = 0;
+
 			GNUPLOTinfo *info = new GNUPLOTinfo;
 			info->done = done;
 			info->interpolated = true;
@@ -776,6 +780,21 @@ void doInterpolation (int task, int thread, string filePrefix,
 			info->fileprefix = completefilePrefix;
 			info->metric = CounterID;
 			info->nameregion = (*i)->RegionName;
+
+			info->mean_counter = 0;
+			for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
+				if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
+				{
+					info->mean_counter += (*it).TotalCounter;
+					info->mean_duration += (*it).Duration;
+					tmp++;
+				}
+			if (tmp > 0)
+			{
+				info->mean_counter = info->mean_counter / tmp;
+				info->mean_duration = info->mean_duration / tmp;
+			}
+
 			info->error = error;
 			GNUPLOT.push_back (info);
 		}
@@ -997,8 +1016,7 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
-	if (removeOutliers)
-		CalculateSigmaFromFile (InputFile, !SeparateValues);
+	CalculateStatsFromFile (InputFile, !SeparateValues);
 
 	if (feedTraceRegion || feedTraceTimes)
 	{
@@ -1073,8 +1091,8 @@ int main (int argc, char *argv[])
 		cout << "Working on counter " << i << " - " << wantedCounters[i] << endl;
 #endif
 
-		doInterpolation (task, thread, argv[res], vsamples, i, prv_out_start,
-		  prv_out_end, regions);
+		doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
+		  vsamples, i, prv_out_start, prv_out_end, regions);
 		dumpAccumulatedCounterData (task, thread, argv[res], i,
 		  accumulatedCounterPoints, vsamples, regions);
 	}
