@@ -1,14 +1,19 @@
 #DEBUG= -DDEBUG
+CC = gcc
 CXX = g++
 BOOST = /home/harald/aplic/boost/1.40
 COMMON = ../common-files
 COMMONFILESFLAGS = -I $(COMMON) -I $(COMMON)/pcfparser -I $(COMMON)/prvparser -I $(BOOST)/include
 CXXFLAGS = -O -Wall -g $(DEBUG) -I .
+CFLAGS = -O -Wall
 PRV_PCF_PARSERS = $(COMMON)/prvparser/*.cpp $(COMMON)/pcfparser/*.cpp $(COMMON)/LibException.cpp
 
-TARGETS = fuse sort_pcf extract interpolate
+TARGETS = fuse sort_pcf extract interpolate max-diff-interpolation-points
 
 all: $(TARGETS)
+
+max-diff-interpolation-points: max-diff-interpolation-points.c
+	$(CC) $(CFLAGS) $< -o $@
 
 translate_prv.o: translate_prv.C
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
