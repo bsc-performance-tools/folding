@@ -1064,6 +1064,7 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
+	cout << "Calculating stats" << endl;
 	CalculateStatsFromFile (InputFile, !SeparateValues);
 
 	if (feedTraceRegion || feedTraceTimes)
@@ -1084,6 +1085,8 @@ int main (int argc, char *argv[])
 		}
 		test.close();	
 	}
+
+	cout << "Filling data" << endl;
 
 	vector<Sample> vsamples;
 	vector<Point> accumulatedCounterPoints;
