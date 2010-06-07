@@ -34,7 +34,6 @@ int main (int argc, char *argv[])
 		current_read++;
 		acc_diff += fabs(ypoint[1] - ypoint[0]);
 	}
-	printf ("\n");
 	total_read = current_read;
 	mean = acc_diff / total_read;
 
@@ -51,7 +50,7 @@ int main (int argc, char *argv[])
 		if (res[0] != 3 || res[1] != 3)
 			break;
 			
-		acc_diff += ((ypoint[1] - ypoint[0]) - mean) * ((ypoint[1] - ypoint[0] - mean));
+		acc_diff += ((ypoint[1] - ypoint[0]) - mean) * ((ypoint[1] - ypoint[0]) - mean);
 	}
 	std_dev = sqrt ((1.0f/((double)total_read-1))*acc_diff);
 

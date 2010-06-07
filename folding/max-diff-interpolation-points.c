@@ -36,7 +36,7 @@ int main (int argc, char *argv[])
 		}
 	}
 
-	printf ("max_diff = %lf at %d\n", max_diff, max_position);
+	printf ("%lf\n", max_diff);
 
 	fclose (f[0]);
 	fclose (f[1]);
