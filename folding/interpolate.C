@@ -71,6 +71,9 @@ class Sample
 	unsigned iteration;
 };
 
+bool FilterMinDuration = false;
+double MinDuration;
+
 string TraceToFeed;
 bool feedTraceRegion = false;
 bool feedTraceTimes = false;
@@ -131,7 +134,13 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 		if (file.eof())
 			break;
 
-		if (type == 'T')
+		if (type == 'D')
+		{
+			string strRegion;
+			file >> strRegion;
+			TranslateRegion (strRegion);
+		}
+		else if (type == 'T')
 		{
 			string strRegion;
 			unsigned long long Duration;
@@ -226,7 +235,13 @@ void CalculateStatsFromFile (ifstream &file, bool any_region)
 		if (file.eof())
 			break;
 
-		if (type == 'T')
+		if (type == 'D')
+		{
+			string strRegion;
+			file >> strRegion;
+			TranslateRegion (strRegion);
+		}
+		else if (type == 'T')
 		{
 			string strRegion;
 			unsigned long long Duration;
@@ -284,7 +299,13 @@ void CalculateStatsFromFile (ifstream &file, bool any_region)
 		if (file.eof())
 			break;
 
-		if (type == 'T')
+		if (type == 'D')
+		{
+			string strRegion;
+			file >> strRegion;
+			TranslateRegion (strRegion);
+		}
+		else if (type == 'T')
 		{
 			string strRegion;
 			unsigned long long Duration;
@@ -743,7 +764,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 		if (feedTraceRegion || feedTraceTimes)
 			target_num_points = 2+(num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime));
 		else
-			target_num_points = 100;
+			target_num_points = 1000;
 
 #warning "Accumulate several equal clusters!"
 
@@ -794,9 +815,21 @@ void doInterpolation (int task, int thread, string filePrefix,
 				info->mean_counter = info->mean_counter / tmp;
 				info->mean_duration = info->mean_duration / tmp;
 			}
-
 			info->error = error;
-			GNUPLOT.push_back (info);
+
+			if (FilterMinDuration)
+			{
+				if (info->mean_duration < MinDuration)
+				{
+					remove ((completefilePrefix+"."+CounterID+".points").c_str());
+					remove ((completefilePrefix+"."+CounterID+".interpolation").c_str());
+					remove ((completefilePrefix+"."+CounterID+".slope").c_str());
+				}
+				else
+					GNUPLOT.push_back (info);
+			}
+			else 
+				GNUPLOT.push_back (info);
 		}
 	}
 }
@@ -865,6 +898,7 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-do-line-folding [yes/no]" << endl
 		     << "-interpolate-error [level (2 by default)]" << endl
 		     << "-generate-gnuplot [yes/no]" << endl
+		     << "-min-duration [T in ms]" << endl
 		     << endl;
 		exit (-1);
 	}
@@ -875,6 +909,20 @@ int ProcessParameters (int argc, char *argv[])
 		{
 			i++;
 			generateGNUPLOTfiles = strcmp (argv[i], "yes") == 0;
+			continue;
+		}
+		if (strcmp ("-min-duration", argv[i]) == 0)
+		{
+			unsigned tmp;
+			i++;
+			FilterMinDuration = true;
+			tmp = atoi(argv[i]);
+			if (tmp == 0)
+			{
+				cerr << "Invalid --min-duration value (should be > 0)" << endl;
+				exit (-1);
+			}
+			MinDuration = ((double)tmp) * 1000000;
 			continue;
 		}
 		if (strcmp ("-separator-value",  argv[i]) == 0)
