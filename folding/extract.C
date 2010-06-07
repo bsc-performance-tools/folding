@@ -44,7 +44,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <string.h>
 #include <list>
 
-#define PAPI_MIN_COUNTER   42000001
+#define PAPI_MIN_COUNTER   42000000
 #define PAPI_MAX_COUNTER   42009998
 
 unsigned long long RegionSeparator = 123456;
@@ -461,28 +461,31 @@ void Process::processMultiEvent (struct multievent_t &e)
 				thi->output << "TOTAL TIME = " << TotalTime << " from " << thi->StartRegion << " to " << e.Timestamp << " TOTAL COUNTER[" << CounterIDs[cnt] << "/"<< cnt << "]= " << TotalCounter << endl;
 #endif
 
-				unsigned long long AccumCounter = 0;
-
-				/* Last pair is always 1 - 1, skip them! */
-				for (; Counter_iter_next != thi->CounterSamples[cnt].end();
-					Counter_iter_next++, Counter_iter++, Times_iter++, Skip_iter++)
+				if (TotalCounter > 0)
 				{
-					if (!(*Skip_iter))
+					unsigned long long AccumCounter = 0;
+
+					/* Last pair is always 1 - 1, skip them! */
+					for (; Counter_iter_next != thi->CounterSamples[cnt].end();
+						Counter_iter_next++, Counter_iter++, Times_iter++, Skip_iter++)
 					{
-						double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
-						double NCounter = ::NormalizeValue (AccumCounter + (*Counter_iter), 0, TotalCounter);
-
+						if (!(*Skip_iter))
+						{
+							double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
+							double NCounter = ::NormalizeValue (AccumCounter + (*Counter_iter), 0, TotalCounter);
+	
 #if defined(DEBUG)
-						thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
+							thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
 #else
-						thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << (AccumCounter + (*Counter_iter)) << " " << thi->CurrentIteration << endl;
+							thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << (AccumCounter + (*Counter_iter)) << " " << thi->CurrentIteration << endl;
 #endif
-					}
+						}
 
-					/* Always! accumulate counters, even for skipped records! */
-					AccumCounter += (*Counter_iter);
-				}
-				thi->CounterSamples[cnt].clear();
+						/* Always! accumulate counters, even for skipped records! */
+						AccumCounter += (*Counter_iter);
+					}
+					thi->CounterSamples[cnt].clear();
+				} /* TotalCounter > 0 */
 			} /* !Skip */
 			thi->TimeSamples.clear();
 			thi->SkipSamples.clear();
