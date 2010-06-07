@@ -8,9 +8,12 @@ CXXFLAGS = -O -Wall -g $(DEBUG) -I .
 CFLAGS = -O -Wall
 PRV_PCF_PARSERS = $(COMMON)/prvparser/*.cpp $(COMMON)/pcfparser/*.cpp $(COMMON)/LibException.cpp
 
-TARGETS = fuse sort_pcf extract interpolate max-diff-interpolation-points
+TARGETS = fuse sort_pcf extract interpolate max-diff-interpolation-points mean-diff-interpolation-points
 
 all: $(TARGETS)
+
+mean-diff-interpolation-points: mean-diff-interpolation-points.c
+	$(CC) $(CFLAGS) $< -o $@ -lm
 
 max-diff-interpolation-points: max-diff-interpolation-points.c
 	$(CC) $(CFLAGS) $< -o $@
