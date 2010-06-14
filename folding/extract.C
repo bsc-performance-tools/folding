@@ -298,6 +298,10 @@ void Process::processMultiEvent (struct multievent_t &e)
   ThreadInformation *thi = &((ti[task].getThreadsInformation())[thread]);
 
 	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
+		if ((*it).Type == 123456)
+			thi->CurrentIteration = (*it).Value;
+
+	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 	{
 		if ((*it).Type == RegionSeparator)
 		{
@@ -429,7 +433,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 					if (RegionName.length() > 0)
 						thi->output << "T " << common::removeSpaces (RegionName) << "_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
 					else
-						thi->output << "T Unkown_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
+						thi->output << "T Unknown_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
 				}
 
 				/* Write total counters spent in this region */

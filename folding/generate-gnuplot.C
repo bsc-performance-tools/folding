@@ -74,15 +74,15 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 			  << "set xtics nomirror;" << endl
 			  << "set key bottom right" << endl
 				<< "set title \"" << (*it)->title << "\\n" << 
-			     "Duration = " << fixed << setprecision(3) << (*it)->mean_duration / 1000000 << " ms" << 
-				   " Counter = " << fixed << setprecision(0) << (*it)->mean_counter/1000 <<  " Kevents" << 
-				   " Error = " << fixed << setprecision(3) << (*it)->error << "\"" << endl
+			     "Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << " ms" << 
+				   " Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents" << 
+				   " Error = " << fixed << setprecision(2) << (*it)->error << "\"" << endl
 
-				//<< "set title '" << (*it)->title << " - with " << fixed << setprecision(3) << (*it)->error << " error';" << endl
+				//<< "set title '" << (*it)->title << " - with " << fixed << setprecision(2) << (*it)->error << " error';" << endl
 				<< "set ylabel '" << counter << "';" << endl
 				<< "set xlabel 'Normalized time';" << endl
-//			  << "set label 'Duration = " << fixed << setprecision(3) << (*it)->mean_duration / 1000000 <<  "ms' at 0.05,0.96;" << endl
-//			  << "set label 'Counter = " << fixed << setprecision(0) << (*it)->mean_counter/1000 <<  " Kevents' at 0.05,0.91;" << endl
+//			  << "set label 'Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 <<  "ms' at 0.05,0.96;" << endl
+//			  << "set label 'Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents' at 0.05,0.91;" << endl
 				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples'";
 
 			if ((*it)->interpolated)
@@ -146,17 +146,17 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 
 			gnuplot_out
 				<< "set title \"" << (*it)->title << "\\n" << 
-			     "Duration = " << fixed << setprecision(3) << (*it)->mean_duration / 1000000 << " ms" << 
-				   " Counter = " << fixed << setprecision(0) << (*it)->mean_counter/1000 <<  " Kevents" << 
-				   " Error = " << fixed << setprecision(3) << (*it)->error << "\"" << endl
-//				<< "set title '" << (*it)->title << " - with " << fixed << setprecision(3) << (*it)->error << " error';" << endl
+			     "Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << " ms" << 
+				   " Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents" << 
+				   " Error = " << fixed << setprecision(2) << (*it)->error << "\"" << endl
+//				<< "set title '" << (*it)->title << " - with " << fixed << setprecision(2) << (*it)->error << " error';" << endl
 				<< "set ylabel '" << counter << "';" << endl
 				<< "set y2label 'Slope of " << counter << "';" << endl
 				<< "set xlabel 'Normalized time';" << endl
 			  << "unset label;" << endl
-//			  << "set label 'Duration = " << fixed << setprecision(3) << (*it)->mean_duration / 1000000 <<  "ms' at 0.05,0.96;" << endl
-//			  << "set label 'Counter = " << fixed << setprecision(0) << (*it)->mean_counter/1000 <<  " Kevents' at 0.05,0.91;" << endl
-			  << "set label 'Duration = " << fixed << setprecision(3) << (*it)->mean_duration / 1000000 <<  "ms, Counter = " << fixed << setprecision(0) << (*it)->mean_counter/1000 <<  " Kevents' at graph -0.2,0.8;" << endl
+//			  << "set label 'Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 <<  "ms' at 0.05,0.96;" << endl
+//			  << "set label 'Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents' at 0.05,0.91;" << endl
+			  << "set label 'Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 <<  "ms, Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents' at graph -0.2,0.8;" << endl
 				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples'";
 
 			if ((*it)->interpolated)

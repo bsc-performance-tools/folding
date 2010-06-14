@@ -9,6 +9,7 @@ int main (int argc, char *argv[])
 	int total_read;
 	double xpoint[2], ypoint[2], mean, std_dev;
 	double acc_diff;
+	double diff;
 	char unused[1024];
 
 	f[0] = fopen (argv[1], "r");
@@ -23,7 +24,7 @@ int main (int argc, char *argv[])
 	fscanf (f[0], "%s %lf %lf", unused, &xpoint[0], &ypoint[0]);
 	fscanf (f[1], "%s %lf %lf", unused, &xpoint[1], &ypoint[1]);
 	current_read = 1;
-	acc_diff = fabs (ypoint[1] - ypoint[0]);
+	acc_diff = ypoint[1] - ypoint[0];
 	while (!feof(f[0]))
 	{
 		res[0] = fscanf (f[0], "%s %lf %lf", unused, &xpoint[0], &ypoint[0]);
@@ -32,7 +33,7 @@ int main (int argc, char *argv[])
 			break;
 
 		current_read++;
-		acc_diff += fabs(ypoint[1] - ypoint[0]);
+		acc_diff += ypoint[1] - ypoint[0];
 	}
 	total_read = current_read;
 	mean = acc_diff / total_read;
@@ -42,7 +43,8 @@ int main (int argc, char *argv[])
 	rewind (f[1]);
 	fscanf (f[0], "%s %lf %lf", unused, &xpoint[0], &ypoint[0]);
 	fscanf (f[1], "%s %lf %lf", unused, &xpoint[1], &ypoint[1]);
-	acc_diff = ((ypoint[1] - ypoint[0]) - mean) * ((ypoint[1] - ypoint[0]) - mean);
+	diff = ypoint[1] - ypoint[0];
+	acc_diff = (diff - mean) * (diff - mean);
 	while (!feof(f[0]))
 	{
 		res[0] = fscanf (f[0], "%s %lf %lf", unused, &xpoint[0], &ypoint[0]);
@@ -50,7 +52,8 @@ int main (int argc, char *argv[])
 		if (res[0] != 3 || res[1] != 3)
 			break;
 			
-		acc_diff += ((ypoint[1] - ypoint[0]) - mean) * ((ypoint[1] - ypoint[0]) - mean);
+		diff = ypoint[1] - ypoint[0];
+		acc_diff += (diff - mean) * (diff - mean);
 	}
 	std_dev = sqrt ((1.0f/((double)total_read-1))*acc_diff);
 

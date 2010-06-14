@@ -446,6 +446,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 	unsigned long long prvStartTime, unsigned long long prvEndTime,
 	unsigned long long prvAccumCounter, double *error)
 {
+	bool all_zeroes = true;
 	int incount = 0;
 
 	if (outcount > 0)
@@ -475,31 +476,59 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			{
 				inpoints_x[incount] = (*it).Time;
 				inpoints_y[incount] = (*it).CounterValue;
-				incount++;
+
+				all_zeroes = inpoints_y[incount] == 0.0f && all_zeroes;
 
 				if (points.is_open())
 					points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << " " << (*it).iteration << endl;
+
+				incount++;
 			}
 
-		cout << "CALL_KRIGER (region=";
-		if (anyRegion)
-			cout << "any";
-		else
-			cout << RegionID << " / " << nameRegion[RegionID];
-		cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ")" << endl;
-
-		Kriger_Region (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f);
-
-		if (interpolation.is_open() && slope.is_open())
+		if (!all_zeroes)
 		{
-			interpolation << "KRIGER " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
-			slope << "SLOPE 0 0 " << endl;
-			for (unsigned j = 1; j < outcount; j++)
+			/* If the region is not filled with 0s, run the regular countoring algorithm */
+			cout << "CALL_KRIGER (region=";
+			if (anyRegion)
+				cout << "any";
+			else
+				cout << RegionID << " / " << nameRegion[RegionID];
+			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ")" << endl;
+
+			Kriger_Region (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f);
+
+			if (interpolation.is_open() && slope.is_open())
 			{
-				double d_j = (double) j;
-				double d_outcount = (double) outcount;	
-				interpolation << "KRIGER " << d_j / d_outcount << " " << outpoints[j] << endl;
-				slope << "SLOPE " << d_j / d_outcount << " " << (outpoints[j]-outpoints[j-1])/ (d_j/d_outcount - (d_j-1)/d_outcount) << endl; 
+				interpolation << "KRIGER " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
+				slope << "SLOPE 0 0" << endl;
+				for (unsigned j = 1; j < outcount; j++)
+				{
+					double d_j = (double) j;
+					double d_outcount = (double) outcount;	
+					interpolation << "KRIGER " << d_j / d_outcount << " " << outpoints[j] << endl;
+					slope << "SLOPE " << d_j / d_outcount << " " << (outpoints[j]-outpoints[j-1])/ (d_j/d_outcount - (d_j-1)/d_outcount) << endl; 
+				}
+			}
+		}
+		else
+		{
+			/* If the region are only zeroes, skip interpolating and place 0s directly.
+			   This will save some badly formed countoring results because of the implied
+			   added 1.0f in inpoints_y[1] */
+
+			cout << "CALL_KRIGER (region=";
+			if (anyRegion)
+				cout << "any";
+			else
+				cout << RegionID << " / " << nameRegion[RegionID];
+			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ") -- filled with zeroes" << endl;
+			if (interpolation.is_open() && slope.is_open())
+			{
+				for (unsigned j = 0; j < outcount; j++)
+				{
+					interpolation << "KRIGER 0 0" << endl;
+					slope << "SLOPE 0 0" << endl;
+				}
 			}
 		}
 
@@ -803,6 +832,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 			info->nameregion = (*i)->RegionName;
 
 			info->mean_counter = 0;
+			info->mean_duration = 0;
 			for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
 				if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
 				{
