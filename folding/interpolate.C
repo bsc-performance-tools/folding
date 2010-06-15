@@ -74,6 +74,9 @@ class Sample
 bool FilterMinDuration = false;
 double MinDuration;
 
+unsigned MaxIteration = 0;
+bool hasMaxIteration = false;
+
 string TraceToFeed;
 bool feedTraceRegion = false;
 bool feedTraceTimes = false;
@@ -208,8 +211,11 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			}
 #endif
 
-			if (!Outlier && inRegion)
-				vsamples.push_back (s);
+			if (hasMaxIteration && s.iteration <= MaxIteration)
+			{
+				if (!Outlier && inRegion)
+					vsamples.push_back (s);
+			}
 		}
 	}
 }
@@ -929,6 +935,7 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-interpolate-error [level (2 by default)]" << endl
 		     << "-generate-gnuplot [yes/no]" << endl
 		     << "-min-duration [T in ms]" << endl
+		     << "-max-iteration IT" << endl
 		     << endl;
 		exit (-1);
 	}
@@ -967,7 +974,7 @@ int ProcessParameters (int argc, char *argv[])
 			option_doLineFolding = strcmp (argv[i], "yes") == 0;
 			continue;
 		}
-		else if (strcmp (argv[i], "-interpolate-error") == 0)
+		if (strcmp (argv[i], "-interpolate-error") == 0)
 		{
 			i++;
 			if (atoi (argv[i]) < 0)
@@ -979,14 +986,14 @@ int ProcessParameters (int argc, char *argv[])
 				option_InterpolationErrorLevel = atoi (argv[i]);
 			continue;
 		}
-		else if (strcmp ("-counter", argv[i]) == 0)
+		if (strcmp ("-counter", argv[i]) == 0)
 		{
 			i++;
 			if (i < argc-1)
 				wantedCounters.push_back (string(argv[i]));
 			continue;
 		}
-		else if (strcmp ("-remove-outliers", argv[i]) == 0)
+		if (strcmp ("-remove-outliers", argv[i]) == 0)
 		{
 			i++;
 			removeOutliers = true;
@@ -999,7 +1006,7 @@ int ProcessParameters (int argc, char *argv[])
 				NumOfSigmaTimes = atof(argv[i]);
 			continue;
 		}
-		else if (strcmp ("-feed-region", argv[i]) == 0)
+		if (strcmp ("-feed-region", argv[i]) == 0)
 		{
 			feedTraceRegion = true;
 			feedTraceTimes = false;
@@ -1015,7 +1022,7 @@ int ProcessParameters (int argc, char *argv[])
 			}
 			continue;
 		}
-		else if (strcmp ("-feed-time", argv[i]) == 0)
+		if (strcmp ("-feed-time", argv[i]) == 0)
 		{
 			feedTraceTimes = true;
 			feedTraceRegion = false;
@@ -1030,6 +1037,18 @@ int ProcessParameters (int argc, char *argv[])
 				exit (-1);
 			}
 			continue;
+		}
+		if (strcmp ("-max-iteration", argv[i]) == 0)
+		{
+			i++;
+			MaxIteration = atoi (argv[i]);
+			if (MaxIteration == 0)
+			{
+				cerr << "Invalid -max-iteration parameter" << endl;
+				exit (-1);
+			}
+			else
+				hasMaxIteration = true;
 		}
 		else
 			cout << "Misunderstood parameter: " << argv[i] << endl;
