@@ -211,7 +211,12 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			}
 #endif
 
-			if (hasMaxIteration && s.iteration <= MaxIteration)
+			if (hasMaxIteration)
+			{
+				if (!Outlier && inRegion && s.iteration <= MaxIteration)
+					vsamples.push_back (s);
+			}
+			else
 			{
 				if (!Outlier && inRegion)
 					vsamples.push_back (s);
