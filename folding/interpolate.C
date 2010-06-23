@@ -511,7 +511,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			if (interpolation.is_open() && slope.is_open())
 			{
 				interpolation << "KRIGER " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
-				slope << "SLOPE 0 0" << endl;
+				// slope << "SLOPE 0 0" << endl; /* force to start at 0? no! */
 				for (unsigned j = 1; j < outcount; j++)
 				{
 					double d_j = (double) j;
