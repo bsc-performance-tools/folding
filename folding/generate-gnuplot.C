@@ -84,7 +84,7 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 				<< "set xlabel 'Normalized time';" << endl
 //			  << "set label 'Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 <<  "ms' at 0.05,0.96;" << endl
 //			  << "set label 'Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents' at 0.05,0.91;" << endl
-				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples'";
+				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples' w points";
 
 			if ((*it)->interpolated)
 			{
@@ -159,7 +159,7 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 //			  << "set label 'Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 <<  "ms' at 0.05,0.96;" << endl
 //			  << "set label 'Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents' at 0.05,0.91;" << endl
 			  << "set label 'Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 <<  "ms, Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents' at graph -0.2,0.8;" << endl
-				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples'";
+				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples' w points";
 
 			if ((*it)->interpolated)
 			{
