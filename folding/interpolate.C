@@ -452,10 +452,11 @@ double newInterpolationError (int num_in_samples,
 }
 
 bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpolation,
-	ofstream &slope, ofstream &prv, vector<Sample> &vsamples, string CounterID,
-	unsigned counterCode, bool anyRegion, unsigned RegionID, unsigned outcount,
-	unsigned long long prvStartTime, unsigned long long prvEndTime,
-	unsigned long long prvAccumCounter, double *error)
+	ofstream &slope, double slope_factor, ofstream &prv, vector<Sample> &vsamples,
+	string CounterID, unsigned counterCode, bool anyRegion, unsigned RegionID,
+	unsigned outcount, unsigned long long prvStartTime,
+	unsigned long long prvEndTime, unsigned long long prvAccumCounter,
+	double *error)
 {
 	bool all_zeroes = true;
 	int incount = 0;
@@ -517,7 +518,9 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 					double d_j = (double) j;
 					double d_outcount = (double) outcount;	
 					interpolation << "KRIGER " << d_j / d_outcount << " " << outpoints[j] << endl;
-					slope << "SLOPE " << d_j / d_outcount << " " << (outpoints[j]-outpoints[j-1])/ (d_j/d_outcount - (d_j-1)/d_outcount) << endl; 
+					slope << "SLOPE " << d_j / d_outcount << " " <<
+						slope_factor * (outpoints[j]-outpoints[j-1]) / (d_j/d_outcount - (d_j-1)/d_outcount)
+						<< endl; 
 				}
 			}
 		}
@@ -535,7 +538,8 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ") -- filled with zeroes" << endl;
 			if (interpolation.is_open() && slope.is_open())
 			{
-				for (unsigned j = 0; j < outcount; j++)
+				interpolation << "KRIGER 0 0" << endl;
+				for (unsigned j = 1; j < outcount; j++)
 				{
 					interpolation << "KRIGER 0 0" << endl;
 					slope << "SLOPE 0 0" << endl;
@@ -756,6 +760,31 @@ void doInterpolation (int task, int thread, string filePrefix,
 		string RegionName = (*i)->RegionName;
 		int regionIndex = TranslateRegion (RegionName);
 
+		double slope_factor = 0; /* computed as mean(number of hwc events) / mean (time) */
+		double this_mean_counter = 0;
+		double this_mean_duration = 0;
+		unsigned count_this = 0;
+
+		for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
+			if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
+			{
+				this_mean_counter += (*it).TotalCounter;
+				this_mean_duration += (*it).Duration;
+				count_this++;
+			}
+		if (count_this > 0)
+		{
+			this_mean_counter = this_mean_counter / count_this;
+			this_mean_duration = this_mean_duration / count_this;
+			slope_factor = this_mean_counter / (this_mean_duration / 1000);
+		}
+
+		if (FilterMinDuration)
+		{
+			if (this_mean_duration < MinDuration)
+				continue;
+		}
+
 #if defined(DEBUG)
 		cout << "Treating region called " << RegionName << " (index = " << regionIndex << ")" << endl;
 #endif
@@ -809,7 +838,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 #warning "Accumulate several equal clusters!"
 
 		bool done = runInterpolation (task, thread, output_points, output_kriger,
-		  output_slope, output_prv, vsamples, CounterID, counterCode,
+		  output_slope, slope_factor, output_prv, vsamples, CounterID, counterCode,
 		  !SeparateValues, regionIndex, target_num_points, (*i)->Tstart,
 		  (*i)->Tend, (*i)->HWCvalues[posCounterID], &error);
 

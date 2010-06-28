@@ -62,9 +62,10 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 				gnuplot_out
 			    << "set x2range [0:1];" << endl
 			    << "set y2range [0:*];" << endl
-			    << "set y2tics;" << endl
+			    << "set ytics nomirror;" << endl
+			    << "set y2tics nomirror;" << endl
 			    << "set x2tics;" << endl
-				  << "set y2label 'Slope of " << counter << "';" << endl;
+				  << "set y2label 'Slope of " << counter << " (in Mevents/s)';" << endl;
 			}
 
 			gnuplot_out
@@ -127,7 +128,8 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 				  << "set yrange [0:" << Y1Limit << "];" << endl
 				  << "set x2range [0:1];" << endl
 				  << "set y2range [0:*];" << endl
-				  << "set y2tics;" << endl
+				  << "set ytics nomirror;" << endl
+				  << "set y2tics nomirror;" << endl
 				  << "set x2tics;" << endl;
 			}
 			else
@@ -151,7 +153,7 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 				   " Error = " << fixed << setprecision(2) << (*it)->error << "\"" << endl
 //				<< "set title '" << (*it)->title << " - with " << fixed << setprecision(2) << (*it)->error << " error';" << endl
 				<< "set ylabel '" << counter << "';" << endl
-				<< "set y2label 'Slope of " << counter << "';" << endl
+				<< "set y2label 'Slope of " << counter << " (in Mevents/s)';" << endl
 				<< "set xlabel 'Normalized time';" << endl
 			  << "unset label;" << endl
 //			  << "set label 'Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 <<  "ms' at 0.05,0.96;" << endl
