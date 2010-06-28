@@ -7,7 +7,7 @@ int main (int argc, char *argv[])
 	int current_read;
 	int res[2];
 	int total_read;
-	double xpoint[2], ypoint[2], mean, std_dev;
+	double xpoint[2], ypoint[2], mean, sqr_mean_err;
 	double acc_diff;
 	double diff;
 	char unused[1024];
@@ -55,9 +55,9 @@ int main (int argc, char *argv[])
 		diff = ypoint[1] - ypoint[0];
 		acc_diff += (diff - mean) * (diff - mean);
 	}
-	std_dev = sqrt ((1.0f/((double)total_read-1))*acc_diff);
+	sqr_mean_err = sqrt ( acc_diff / (total_read * (total_read-1)) );
 
-	printf ("%lf %lf\n", mean, std_dev);
+	printf ("%lf %lf\n", mean, sqr_mean_err);
 
 	fclose (f[0]);
 	fclose (f[1]);
