@@ -65,7 +65,7 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 			    << "set ytics nomirror;" << endl
 			    << "set y2tics nomirror;" << endl
 			    << "set x2tics;" << endl
-				  << "set y2label 'Slope of " << counter << " (in Mevents/s)';" << endl;
+				  << "set y2label '" << counter << " rate (in Mevents/s)';" << endl;
 			}
 
 			gnuplot_out
@@ -79,11 +79,8 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 				   " Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents" << 
 				   " Error = " << fixed << setprecision(2) << (*it)->error << "\"" << endl
 
-				//<< "set title '" << (*it)->title << " - with " << fixed << setprecision(2) << (*it)->error << " error';" << endl
 				<< "set ylabel '" << counter << "';" << endl
 				<< "set xlabel 'Normalized time';" << endl
-//			  << "set label 'Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 <<  "ms' at 0.05,0.96;" << endl
-//			  << "set label 'Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents' at 0.05,0.91;" << endl
 				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples' w points";
 
 			if ((*it)->interpolated)
@@ -151,13 +148,10 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 			     "Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << " ms" << 
 				   " Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents" << 
 				   " Error = " << fixed << setprecision(2) << (*it)->error << "\"" << endl
-//				<< "set title '" << (*it)->title << " - with " << fixed << setprecision(2) << (*it)->error << " error';" << endl
 				<< "set ylabel '" << counter << "';" << endl
-				<< "set y2label 'Slope of " << counter << " (in Mevents/s)';" << endl
+				<< "set y2label '" << counter << " rate (in Mevents/s)';" << endl
 				<< "set xlabel 'Normalized time';" << endl
 			  << "unset label;" << endl
-//			  << "set label 'Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 <<  "ms' at 0.05,0.96;" << endl
-//			  << "set label 'Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents' at 0.05,0.91;" << endl
 			  << "set label 'Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 <<  "ms, Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents' at graph -0.2,0.8;" << endl
 				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples' w points";
 
@@ -195,7 +189,7 @@ void createMultiSlopeGNUPLOT (string file, string regionName, list<GNUPLOTinfo*>
 	  << "set yrange [0:*];" << endl
 	  << "set ytics mirror;" << endl
 	  << "set xtics mirror;" << endl
-		<< "set ylabel 'Slope of performance metric';" << endl
+		<< "set ylabel 'Performance metric rate';" << endl
 		<< "set xlabel 'Normalized time';" << endl;
 
 	bool found = false;
