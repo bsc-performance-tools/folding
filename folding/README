@@ -1,0 +1,44 @@
+How to use the folding mechanism
+--
+
+1.- (optional) Sort the caller lines using the sort_pcf application. This is useful when analyzing callers in a sampled tracefile.
+
+    Usage: sort_pcf tracefile.prv
+
+    This will generate a tracefile called tracefile.sorted.prv with the caller lines reordered.
+
+
+2.- Some traces (like clusterized traces) must be preprocessed before applying the folding mechanism.
+
+    Usage: fuse tracefile.prv
+
+    This will generate a tracefile called tracefile.fused.prv with appropriate records to be folded.
+
+
+3.- Extract data from the tracefile. This will depend on the data you want to fold.
+
+    Example 1: Folding user functions
+       extract -separator 60000019 tracefile.prv
+
+    Example 2: Folding user functions and separating its computation regions using MPI calls
+       extract -separator 60000019 -phase-separator 50000001 -phase-separator 50000002 -phase-separator 50000003 tracefile.prv
+
+    Example 3: Folding clusters
+       extract -separator 90000001 tracefile.prv
+
+    Any of these commands will report by task & thread extracted files with folded sampled data. The files will look like tracefile.extract.TASK.THREAD, where TASK and THREAD are values from 0 to MAXTASK-1 or 0 to MAXTHREAD-1 respectively.
+
+4.- Interpolate extracted data.
+
+    Example 1: Interpolate total instructions and generating gnuplots of task 0 thread 3.
+      interpolate -counter PAPI_TOT_INS -generate-gnuplot yes tracefile.extract.0.3
+
+    Example 2: Interpolate total instructions and l2D cache misses and generating gnuplots of task 3 thread 1.
+      interpolate -counter PAPI_TOT_INS -counter PAPI_L2_DCM -generate-gnuplot yes tracefile.extract.3.1
+
+    Example 3: Interpolate total instructions and l2D cache misses and generating gnuplots of task 3 thread 1, now removing outliers that are outside the 95% of Interval of Confidence -using time & instructions -.
+      interpolate -counter PAPI_TOT_INS -counter PAPI_L2_DCM -generate-gnuplot yes -remove-outliers 2.0 tracefile.extract.3.1
+
+    Example 4: Interpolate total instructions and l2D cache misses and generating gnuplots of task 3 thread 1 removing computation phases that last less than 1 millisecond.
+      interpolate -counter PAPI_TOT_INS -counter PAPI_L2_DCM -generate-gnuplot yes -min-duration 1 tracefile.extract.3.1
+
