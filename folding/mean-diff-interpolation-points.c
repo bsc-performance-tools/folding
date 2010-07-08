@@ -1,6 +1,9 @@
 #include <math.h>
 #include <stdio.h>
 
+#define MIN(a,b) ((a)>(b)?(b):(a))
+#define MAX(a,b) ((a)<(b)?(b):(a))
+
 int main (int argc, char *argv[])
 {
 	FILE *f[2];
@@ -24,7 +27,10 @@ int main (int argc, char *argv[])
 	fscanf (f[0], "%s %lf %lf", unused, &xpoint[0], &ypoint[0]);
 	fscanf (f[1], "%s %lf %lf", unused, &xpoint[1], &ypoint[1]);
 	current_read = 1;
-	acc_diff = ypoint[1] - ypoint[0];
+	if (ypoint[0] == 0 || ypoint[1] == 0)
+		acc_diff = 0;
+	else
+		acc_diff = fabs(ypoint[1] - ypoint[0])/fabs(MAX(ypoint[0],ypoint[1]));
 	while (!feof(f[0]))
 	{
 		res[0] = fscanf (f[0], "%s %lf %lf", unused, &xpoint[0], &ypoint[0]);
@@ -33,7 +39,13 @@ int main (int argc, char *argv[])
 			break;
 
 		current_read++;
-		acc_diff += ypoint[1] - ypoint[0];
+
+		if (ypoint[0] == 0 || ypoint[1] == 0)
+			{}
+		else
+			acc_diff += fabs(ypoint[1] - ypoint[0])/fabs(MAX(ypoint[0],ypoint[1]));
+
+//		printf ("ypoint[1] = %lf ypoint[0] = %lf abs_diff = %lf acc = %lf\n", ypoint[1], ypoint[0], fabs(ypoint[1] - ypoint[0]), acc_diff);
 	}
 	total_read = current_read;
 	mean = acc_diff / total_read;
@@ -43,7 +55,10 @@ int main (int argc, char *argv[])
 	rewind (f[1]);
 	fscanf (f[0], "%s %lf %lf", unused, &xpoint[0], &ypoint[0]);
 	fscanf (f[1], "%s %lf %lf", unused, &xpoint[1], &ypoint[1]);
-	diff = ypoint[1] - ypoint[0];
+	if (ypoint[0] == 0 || ypoint[1] == 0)
+		diff = 0;
+	else
+		diff = fabs(ypoint[1] - ypoint[0])/fabs(MAX(ypoint[0],ypoint[1]));
 	acc_diff = (diff - mean) * (diff - mean);
 	while (!feof(f[0]))
 	{
@@ -52,7 +67,11 @@ int main (int argc, char *argv[])
 		if (res[0] != 3 || res[1] != 3)
 			break;
 			
-		diff = ypoint[1] - ypoint[0];
+		if (ypoint[0] == 0 || ypoint[1] == 0)
+			diff = 0;
+		else
+			diff = fabs(ypoint[1] - ypoint[0])/fabs(MAX(ypoint[0],ypoint[1]));
+		
 		acc_diff += (diff - mean) * (diff - mean);
 	}
 	sqr_mean_err = sqrt ( acc_diff / (total_read * (total_read-1)) );
