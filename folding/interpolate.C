@@ -509,6 +509,11 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 
 			Kriger_Region (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f);
 
+			/* Correct negative points present in the interpolation */
+			for (unsigned j = 0; j < outcount; j++)
+				if (outpoints[j] < 0)
+					outpoints[j] = 0;
+
 			if (interpolation.is_open() && slope.is_open())
 			{
 				interpolation << "KRIGER " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
