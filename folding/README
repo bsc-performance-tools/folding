@@ -1,4 +1,18 @@
-How to use the folding mechanism
+What is the folding ?
+--
+
+The folding mechanism allows you to map all the samples from different regions of time of a regular application into a single region in order to generate a detailed results of the application behavior.
+
+The folding mechanism is applied to a particular Paraver events (see step 3). For example, to fold on user functions use the type 60000019 whereas to fold on clusters use the type 90000001. If you are interested on folding other time regions (iterations, for example) you have to emit: an event at the start of the region with any type and a value greater than 0, and a another event at the end of the region with the same type and a value of 0.
+
+It is necessary that in all of these events (user functions, clusters, ...) the hardware counters are read.
+
+Further instructions on how to generate a tracefile with samples can be found in the example installed in:
+
+  /gpfs/apps/CEPBATOOLS/tracing-setup/WithSampling/
+
+
+These are the steps to run the folding process:
 --
 
 1.- (optional) Sort the caller lines using the sort_pcf application. This is useful when analyzing callers in a sampled tracefile.
@@ -8,7 +22,7 @@ How to use the folding mechanism
     This will generate a tracefile called tracefile.sorted.prv with the caller lines reordered.
 
 
-2.- Some traces (like clusterized traces) must be preprocessed before applying the folding mechanism.
+2.- Some traces (like clusterized traces) must be preprocessed before applying the folding mechanism. 
 
     Usage: fuse tracefile.prv
 
