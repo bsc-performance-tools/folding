@@ -77,7 +77,7 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 				<< "set title \"" << (*it)->title << "\\n" << 
 			     "Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << " ms" << 
 				   " Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents" << 
-				   " Error = " << fixed << setprecision(2) << (*it)->error << "\"" << endl
+				   "\"" << endl
 
 				<< "set ylabel 'Normalized " << counter << "';" << endl
 				<< "set xlabel 'Normalized time';" << endl
@@ -147,7 +147,7 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 				<< "set title \"" << (*it)->title << "\\n" << 
 			     "Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << " ms" << 
 				   " Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents" << 
-				   " Error = " << fixed << setprecision(2) << (*it)->error << "\"" << endl
+				   "\"" << endl
 				<< "set ylabel 'Normalized " << counter << "';" << endl
 				<< "set y2label '" << counter << " rate (in Mevents/s)';" << endl
 				<< "set xlabel 'Normalized time';" << endl
