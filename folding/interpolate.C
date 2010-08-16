@@ -93,7 +93,6 @@ double sigmaRegion[MAX_REGIONS], sigmaRegion_tot_ins[MAX_REGIONS];
 double NumOfSigmaTimes;
 
 bool option_doLineFolding = true;
-int option_InterpolationErrorLevel = 10;
 bool removeOutliers = false;
 bool SeparateValues = true;
 vector<string> wantedCounters;
@@ -380,83 +379,12 @@ void DumpParaverLine (ofstream &f, unsigned long long type,
   f << "2:" << task << ":1:" << task << ":" << thread << ":" << time << ":" << type << ":" << value << endl;
 }
 
-#if 0
-double runInterpolationError (int depth, double position, double divider,
-	int num_in_samples, double *X_samples, double *Y_samples, double min_value,
-	double max_value)
-#endif
-double runInterpolationError (double position, int num_in_samples,
-	double *X_samples, double *Y_samples, double min_value, double max_value)
-{
-	/* Look for the closer position to the value 'position' within
-	   X_samples */
-	int close_position = 0;
-	for (int i = 1; i < num_in_samples; i++)
-		if (fabs(X_samples[i]-position) < fabs(X_samples[close_position]-position))
-			close_position = i;
-
-	/* Calculate value for closer value in X_samples to the 'position' value */
-	double Kriger_result;
-	Kriger_Point (num_in_samples, X_samples, Y_samples, X_samples[close_position],
-	  &Kriger_result, min_value, max_value);
-
-	double result = (Kriger_result - Y_samples[close_position]) * 
-	                (Kriger_result - Y_samples[close_position]);
-
-#if 0
-	/* Apply recursively */
-	if (depth > 0)
-	{
-		double new_position = position - 0.5 / divider;
-		result += runInterpolationError (depth-1, new_position, 2*divider,
-			num_in_samples, X_samples, Y_samples, min_value, max_value);
-
-		new_position = position + 0.5 / divider;
-		result += runInterpolationError (depth-1, new_position, 2*divider,
-			num_in_samples, X_samples, Y_samples, min_value, max_value);
-	}
-#endif
-
-	return result;
-}
-
-double runFullInterpolationError (int num_in_samples,
-	double *X_samples, double *Y_samples, double min_value, double max_value)
-{
-	double result = 0.0f;
-	for (int i = 0; i < num_in_samples; i++)
-	{
-		double Kriger_result;
-		Kriger_Point (num_in_samples, X_samples, Y_samples, X_samples[i],
-		  &Kriger_result, min_value, max_value);
-		result += (Kriger_result - Y_samples[i]) * (Kriger_result - Y_samples[i]);
-	}
-	return result;
-}
-
-double newInterpolationError (int num_in_samples,
-	double *X_samples, double *Y_samples, double min_value, double max_value)
-{
-	double result = 0.0f;
-
-	return result;
-
-	for (int i = 0; i < num_in_samples; i += 8)
-	{
-		double Kriger_result;
-		Kriger_Point (num_in_samples, X_samples, Y_samples, X_samples[i],
-		  &Kriger_result, min_value, max_value);
-		result = MAX(fabs(Kriger_result - Y_samples[i]), result);
-	}
-	return result;
-}
-
 bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpolation,
 	ofstream &slope, double slope_factor, ofstream &prv, vector<Sample> &vsamples,
 	string CounterID, unsigned counterCode, bool anyRegion, unsigned RegionID,
 	unsigned outcount, unsigned long long prvStartTime,
-	unsigned long long prvEndTime, unsigned long long prvAccumCounter,
-	double *error)
+	unsigned long long prvEndTime, unsigned long long prvAccumCounter)
+	
 {
 	bool all_zeroes = true;
 	int incount = 0;
@@ -575,44 +503,6 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 				}
 			}
 		}
-
-		if (1 || option_InterpolationErrorLevel > 1)
-		{
-#if 0
-			unsigned N = (1 << (1+option_InterpolationErrorLevel))-1;
-			cout << "Checking interpolation error (" << N << " steps): " << flush;
-			*error = sqrt (runInterpolationError (option_InterpolationErrorLevel,
-				0.5f, 2.0f, incount, inpoints_x, inpoints_y, 0.0f, 1.0f ));
-			*error = *error / (N - 1);
-			cout << fixed << setprecision(3) << *error << endl;
-#endif
-
-			cout << "Checking interpolation error (" << option_InterpolationErrorLevel << " steps): " << flush;
-#if 0
-			int total = 0;
-			double result = 0.0f;
-			double part = (double) 1.0 / (double) option_InterpolationErrorLevel;
-			double current_position = part; /* Don't start at 0.0f */
-			while (current_position < 1.0f)
-			{
-				result += runInterpolationError (current_position, incount, inpoints_x, inpoints_y, 0.0f, 1.0f);
-				current_position += part;
-				total++;
-			}
-#endif
-
-#if 0
-			double result = runFullInterpolationError (incount, inpoints_x, inpoints_y, 0.0f, 1.0f);
-			*error = sqrt (result) / (incount-1);
-			cout << fixed << setprecision(3) << result << " / " << *error << endl;
-#endif
-
-			double result = newInterpolationError (incount, inpoints_x, inpoints_y, 0.0f, 1.0f);
-			*error = result;
-			cout << fixed << setprecision(3) << result << " / " << *error << endl;
-		}
-		else
-			*error = 0.0f;
 
 		free (inpoints_x);
 		free (inpoints_y);
@@ -832,7 +722,6 @@ void doInterpolation (int task, int thread, string filePrefix,
 			exit (-1);
 		}
 
-		double error;
 		unsigned long long num_out_points = 10000;
 		unsigned long long target_num_points;
 		if (feedTraceRegion || feedTraceTimes)
@@ -845,7 +734,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 		bool done = runInterpolation (task, thread, output_points, output_kriger,
 		  output_slope, slope_factor, output_prv, vsamples, CounterID, counterCode,
 		  !SeparateValues, regionIndex, target_num_points, (*i)->Tstart,
-		  (*i)->Tend, (*i)->HWCvalues[posCounterID], &error);
+		  (*i)->Tend, (*i)->HWCvalues[posCounterID]);
 
 		if (feedTraceRegion || feedTraceTimes)
 			output_prv.close();
@@ -890,7 +779,6 @@ void doInterpolation (int task, int thread, string filePrefix,
 				info->mean_counter = info->mean_counter / tmp;
 				info->mean_duration = info->mean_duration / tmp;
 			}
-			info->error = error;
 
 			if (FilterMinDuration)
 			{
@@ -971,7 +859,6 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-feed-region TYPE VALUE" << endl
 		     << "-feed-time TIME1 TIME2" << endl
 		     << "-do-line-folding [yes/no]" << endl
-		     << "-interpolate-error [level (2 by default)]" << endl
 		     << "-generate-gnuplot [yes/no]" << endl
 		     << "-min-duration [T in ms]" << endl
 		     << "-max-iteration IT" << endl
@@ -1011,18 +898,6 @@ int ProcessParameters (int argc, char *argv[])
 		{
 			i++;
 			option_doLineFolding = strcmp (argv[i], "yes") == 0;
-			continue;
-		}
-		if (strcmp (argv[i], "-interpolate-error") == 0)
-		{
-			i++;
-			if (atoi (argv[i]) < 0)
-			{
-				cerr << "Invalid -interpolate-error level value (should be >= 0)" << endl;
-				exit (-1);
-			}
-			else
-				option_InterpolationErrorLevel = atoi (argv[i]);
 			continue;
 		}
 		if (strcmp ("-counter", argv[i]) == 0)

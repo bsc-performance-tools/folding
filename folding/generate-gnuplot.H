@@ -44,7 +44,6 @@ class GNUPLOTinfo
 	public:
 	bool done;
 	bool interpolated;
-	double error;
 	double mean_duration;
 	double mean_counter;
 	string title;
