@@ -56,3 +56,9 @@ These are the steps to run the folding process:
     Example 4: Interpolate total instructions and l2D cache misses and generating gnuplots of task 3 thread 1 removing computation phases that last less than 1 millisecond.
       interpolate -counter PAPI_TOT_INS -counter PAPI_L2_DCM -generate-gnuplot yes -min-duration 1 tracefile.extract.3.1
 
+    Example 5: Interpolate total instructions of task 0 thread 0 and reintroduce on the Paraver tracefile using the event type/value marker 123456/1
+      interpolate -counter PAPI_TOT_INS -feed-region 123456 1 tracefile.extract.0.0 
+
+    Example 6: Interpolate total instructions of task 0 thread 0 and reintroduce on the Paraver tracefile between timestamps 100 and 200
+      interpolate -counter PAPI_TOT_INS -feed-time 100 200 tracefile.extract.0.0 
+
