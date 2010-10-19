@@ -81,14 +81,14 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 
 				<< "set ylabel 'Normalized " << counter << "';" << endl
 				<< "set xlabel 'Normalized time';" << endl
-				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples' w points";
+				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples (" << (*it)->inpoints << ")' w points";
 
 			if ((*it)->interpolated)
 			{
 				gnuplot_out
 				  << ",\\" << endl
 				  << "     '" << file << "." << counter << ".interpolation' using 2:3 title 'Curve fitting' w lines lw 2,\\" << endl
-			 	  << "     '" << file << "." << counter << ".slope' using 2:3 title 'Curve fitting slope' axes x2y2 w lines lw 2;" << endl;
+			 	  << "     '" << file << "." << counter << ".slope' using 2:3 title 'Counter rate' axes x2y2 w lines lw 2;" << endl;
 			}
 			else
 				gnuplot_out << ";" << endl;
@@ -110,6 +110,8 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 	}
 
 	gnuplot_out
+	  << "#set term postscript eps solid enhanced color font \",18\"" << endl
+	  << "#set term png" << endl
 	  << "set key bottom right;" << endl;
 
 	for (list<GNUPLOTinfo*>::iterator it = info.begin(); it != info.end() ; it++)
@@ -143,24 +145,28 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 			string file = (*it)->fileprefix;
 			string counter = (*it)->metric;
 
+#warning "TODO set output .fitxer.eps / .fitxer.png"
+
 			gnuplot_out
 				<< "set title \"" << (*it)->title << "\\n" << 
 			     "Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << " ms" << 
 				   " Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents" << 
 				   "\"" << endl
+				<< "#set title \"" << (*it)->title << "\\n" << 
+			     "Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << " ms" << 
+				   " Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents" << 
+				   "\" font \",24\"" << endl
 				<< "set ylabel 'Normalized " << counter << "';" << endl
 				<< "set y2label '" << counter << " rate (in Mevents/s)';" << endl
 				<< "set xlabel 'Normalized time';" << endl
-			  << "unset label;" << endl
-			  << "set label 'Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 <<  "ms, Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents' at graph -0.2,0.8;" << endl
-				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples' w points";
+				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples (" << (*it)->inpoints << ")' w points";
 
 			if ((*it)->interpolated)
 			{
 				gnuplot_out
 				  << ",\\" << endl
 				  << "     '" << file << "." << counter << ".interpolation' using 2:3 title 'Curve fitting' w lines lw 2,\\" << endl
-			 	  << "     '" << file << "." << counter << ".slope' using 2:3 title 'Curve fitting slope' axes x2y2 w lines lw 2;" << endl;
+			 	  << "     '" << file << "." << counter << ".slope' using 2:3 title 'Counter rate' axes x2y2 w lines lw 2;" << endl;
 			}
 			else
 				gnuplot_out << ";" << endl;

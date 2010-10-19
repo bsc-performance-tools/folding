@@ -22,7 +22,10 @@ subroutine call_kriger_region (num_in_samples, X_samples, Y_samples, num_out_sam
   mobta_kri = 1
   nsolv_kri = 1
   mgrid_kri = 1
+!  nuget_kri = 1.000000000000000E-005
+!  nuget_kri = 1.000000000000000E-004
   nuget_kri = 1.000000000000000E-003
+!  nuget_kri = 1.000000000000000E-002
   drift_kri = 1
 
   call kri_memall(1) ! allocate memory
