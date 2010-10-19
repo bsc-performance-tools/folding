@@ -77,6 +77,8 @@ double MinDuration;
 unsigned MaxIteration = 0;
 bool hasMaxIteration = false;
 
+unsigned MaxSamples = 0;
+
 string TraceToFeed;
 bool feedTraceRegion = false;
 bool feedTraceTimes = false;
@@ -383,8 +385,8 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 	ofstream &slope, double slope_factor, ofstream &prv, vector<Sample> &vsamples,
 	string CounterID, unsigned counterCode, bool anyRegion, unsigned RegionID,
 	unsigned outcount, unsigned long long prvStartTime,
-	unsigned long long prvEndTime, unsigned long long prvAccumCounter)
-	
+	unsigned long long prvEndTime, unsigned long long prvAccumCounter,
+	int &num_inpoints)
 {
 	bool all_zeroes = true;
 	int incount = 0;
@@ -424,6 +426,12 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 
 				incount++;
 			}
+
+		if (MaxSamples != 0 && incount > MaxSamples)
+		{
+			cout << "Attention! Number of samples limited to " << MaxSamples << " (incount was " << incount << ")" << endl;
+			incount = MaxSamples;
+		}
 
 		if (!all_zeroes)
 		{
@@ -508,6 +516,8 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 		free (inpoints_y);
 		free (outpoints);
 	}
+
+	num_inpoints = incount;
 
 	return incount > 0 && outcount > 0;
 }
@@ -722,6 +732,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 			exit (-1);
 		}
 
+		int num_in_points;
 		unsigned long long num_out_points = 10000;
 		unsigned long long target_num_points;
 		if (feedTraceRegion || feedTraceTimes)
@@ -734,7 +745,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 		bool done = runInterpolation (task, thread, output_points, output_kriger,
 		  output_slope, slope_factor, output_prv, vsamples, CounterID, counterCode,
 		  !SeparateValues, regionIndex, target_num_points, (*i)->Tstart,
-		  (*i)->Tend, (*i)->HWCvalues[posCounterID]);
+		  (*i)->Tend, (*i)->HWCvalues[posCounterID], num_in_points);
 
 		if (feedTraceRegion || feedTraceTimes)
 			output_prv.close();
@@ -764,7 +775,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 			info->fileprefix = completefilePrefix;
 			info->metric = CounterID;
 			info->nameregion = (*i)->RegionName;
-
+			info->inpoints = num_in_points;
 			info->mean_counter = 0;
 			info->mean_duration = 0;
 			for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
@@ -862,6 +873,7 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-generate-gnuplot [yes/no]" << endl
 		     << "-min-duration [T in ms]" << endl
 		     << "-max-iteration IT" << endl
+		     << "-max-samples NUM" << endl
 		     << endl;
 		exit (-1);
 	}
@@ -886,6 +898,17 @@ int ProcessParameters (int argc, char *argv[])
 				exit (-1);
 			}
 			MinDuration = ((double)tmp) * 1000000;
+			continue;
+		}
+		if (strcmp ("-max-samples", argv[i]) == 0)
+		{
+			i++;
+			MaxSamples = atoi(argv[i]);
+			if (MaxSamples == 0)
+			{
+				cerr << "Invalid -max-samples value (should be >0)" << endl;
+				exit (-1);
+			}
 			continue;
 		}
 		if (strcmp ("-separator-value",  argv[i]) == 0)

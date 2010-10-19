@@ -42,6 +42,7 @@ using namespace libparaver;
 class GNUPLOTinfo
 {
 	public:
+	int inpoints;
 	bool done;
 	bool interpolated;
 	double mean_duration;

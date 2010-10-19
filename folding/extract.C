@@ -179,6 +179,7 @@ class Process : public ParaverTrace
 	void processComment (string &c);
 	InformationHolder IH;
 	unsigned numCounterIDs;
+	list<string> TypeValuesLabels;
 };
 
 Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, multievents)
@@ -196,6 +197,10 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 		if (s.length() > 0)
 			found_counters++;
 	}
+
+	vector<unsigned> values = pcf->getEventValuesFromEventTypeKey(RegionSeparator);
+	for (unsigned i = 0; i < values.size(); i++)
+		TypeValuesLabels.push_back (pcf->getEventValue(RegionSeparator, values[i]));
 
 	numCounterIDs = found_counters;
 	CounterIDs = new unsigned long long[numCounterIDs];
@@ -609,6 +614,12 @@ int main (int argc, char *argv[])
 		exit (-1);
 	}
 
+	if (p->TypeValuesLabels.size() == 0)
+	{
+		cerr << "ERROR! Cannot find regions delimited by type " << RegionSeparator << endl;
+		exit (-1);
+	}
+
 	for (unsigned int i = 0; i < va.size(); i++)
 	{
 		vector<ParaverTraceTask *> vt = va[i]->get_tasks();
@@ -627,6 +638,11 @@ int main (int argc, char *argv[])
 				threadnumber << k;
 				string completefile = tracename.substr (0, tracename.length()-4) + ".extract." + tasknumber.str() + "." + threadnumber.str();
 				thi->output.open (completefile.c_str());
+
+				/* Put definitions for the separator event */
+				list<string>::iterator it = p->TypeValuesLabels.begin();
+				for (; it != p->TypeValuesLabels.end(); it++)
+					thi->output << "D " << *it << endl;
 			}
 		}
   }
