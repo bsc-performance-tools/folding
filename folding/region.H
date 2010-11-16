@@ -44,11 +44,12 @@ class Region
 	unsigned long long Tend;
 	unsigned long long Type;
 	unsigned long long Value;
+	unsigned long long Phase;
 	vector<unsigned long long> HWCvalues;
 
 	public:
 	Region (unsigned long long Tstart, unsigned long long Type,
-		unsigned long long Value);
+		unsigned long long Value, unsigned long long Phase);
 	~Region ();
 };
 

@@ -634,8 +634,8 @@ int main (int argc, char *argv[])
 				thi->AllocateBufferCounters (p->numCounterIDs);
 
 				stringstream tasknumber, threadnumber;
-				tasknumber << j;
-				threadnumber << k;
+				tasknumber << j+1;
+				threadnumber << k+1;
 				string completefile = tracename.substr (0, tracename.length()-4) + ".extract." + tasknumber.str() + "." + threadnumber.str();
 				thi->output.open (completefile.c_str());
 
@@ -665,6 +665,13 @@ int main (int argc, char *argv[])
 	ofstream cfile (ControlFile.c_str());
 	cfile << tracename << endl;
 	cfile << RegionSeparator << endl;
+	cfile << PhaseSeparators.size() << endl;
+	vector<unsigned long long>::iterator it = PhaseSeparators.begin();
+	while (it != PhaseSeparators.end())
+	{
+		cfile << (*it) << endl;
+		it++;
+	}
 	cfile.close ();
 
 	return 0;

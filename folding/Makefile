@@ -36,18 +36,24 @@ extract: extract.C common.o
 generate-gnuplot.o: generate-gnuplot.C
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
 
-region-info.o:	region-info.C
+region-info.o:	region-info.C region.H
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
-region.o: region.C
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
-
-region-analyzer.o: region-analyzer.C
+region-analyzer-in-frame-region.o: region-analyzer-in-frame-region.C region-analyzer-in-frame-region.H region.H
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
 
-interpolate: region-analyzer.o region.o generate-gnuplot.o common.o interpolate.C
+region-analyzer-in-time-region.o: region-analyzer-in-time-region.C region-analyzer-in-time-region.H region.H
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
+
+region-analyzer-first-occurrency.o: region-analyzer-first-occurrency.C region-analyzer-first-occurrency.H region.H
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
+
+region.o: region.C region.H
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
+
+interpolate: region-analyzer-first-occurrency.o region-analyzer-in-frame-region.o region-analyzer-in-time-region.o region.o generate-gnuplot.o common.o interpolate.C
 	cd service-kriger; gmake ; cd ..
-	$(CXX) -o $@ interpolate.C $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(PWD)/service-kriger -L $(PWD)/service-kriger -lkriger -lgfortran region.o region-analyzer.o generate-gnuplot.o common.o
+	$(CXX) -o $@ interpolate.C $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(PWD)/service-kriger -L $(PWD)/service-kriger -lkriger -lgfortran region.o region-analyzer-first-occurrency.o region-analyzer-in-frame-region.o region-analyzer-in-time-region.o generate-gnuplot.o common.o
 
 clean:
 	cd service-kriger; gmake clean; cd ..
