@@ -33,12 +33,13 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "region.H"
 
 Region::Region (unsigned long long Tstart, unsigned long long Type,
-	unsigned long long Value)
+	unsigned long long Value, unsigned long long Phase)
 {
 	this->Tstart = Tstart;
 	this->Tend = 0;
 	this->Type = Type;
 	this->Value = Value;
+	this->Phase = Phase;
 	this->HWCvalues = HWCvalues;
 	this->RegionName = "";
 }

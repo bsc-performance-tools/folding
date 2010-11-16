@@ -47,7 +47,9 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "UIParaverTraceConfig.h"
 #include "kriger_wrapper.h"
 #include "generate-gnuplot.H"
-#include "region-analyzer.H"
+#include "region-analyzer-in-frame-region.H"
+#include "region-analyzer-in-time-region.H"
+#include "region-analyzer-first-occurrency.H"
 #include "common.H"
 #include "point.H"
 
@@ -82,10 +84,12 @@ unsigned MaxSamples = 0;
 string TraceToFeed;
 bool feedTraceRegion = false;
 bool feedTraceTimes = false;
+bool feedFirstOccurrence = false;
 unsigned long long feedTraceRegion_Type;
 unsigned long long feedTraceRegion_Value;
 unsigned long long feedTraceFoldType_Value;
 unsigned long long feedTraceTimes_Begin, feedTraceTimes_End;
+unsigned long long feedSyntheticEventsRate = 1000;
 
 unsigned numRegions = 0;
 string nameRegion[MAX_REGIONS];
@@ -488,12 +492,15 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			}
 		}
 
-		if (feedTraceRegion || feedTraceTimes)
+		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 		{
 #warning "Afegir els POINTS a la trasa"
 			unsigned long long newCounterID = 600000000 + counterCode;
 			unsigned long long deltaTime = (prvEndTime - prvStartTime) / outcount;
-			DumpParaverLine (prv, newCounterID, 0, prvStartTime, task+1, thread+1);
+			DumpParaverLine (prv, newCounterID, 0, prvStartTime, task, thread);
+
+			/* last value of outpoints[] may no be strictly 1 */
+			unsigned long long fixedAccumCounter = prvAccumCounter/outpoints[outcount-1];
 
 			bool first_zero = true;
 			for (unsigned j = 1; j < outcount; j++)
@@ -501,13 +508,13 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 				double deltaValue = outpoints[j]-outpoints[j-1];
 				if (deltaValue > 0)
 				{
-					DumpParaverLine (prv, newCounterID, deltaValue*prvAccumCounter, prvStartTime+j*deltaTime, task+1, thread+1);
+					DumpParaverLine (prv, newCounterID, deltaValue*fixedAccumCounter, prvStartTime+j*deltaTime, task, thread);
 					first_zero = false;
 				}
 				else
 				{
 					if (!first_zero)
-						DumpParaverLine (prv, newCounterID, 0, prvStartTime+j*deltaTime, task+1, thread+1);
+						DumpParaverLine (prv, newCounterID, 0, prvStartTime+j*deltaTime, task, thread);
 				}
 			}
 		}
@@ -546,7 +553,7 @@ bool runLineFolding (int task, int thread, ofstream &points, ofstream &prv,
 				points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << endl;
 
 			DumpParaverLine (prv, type, (*it).CounterValue, (unsigned long long) time,
-			  task+1, thread+1);
+			  task, thread);
 			found = true;
 		}
 		else if (anyRegion && (*it).CounterID == CounterID)
@@ -555,7 +562,7 @@ bool runLineFolding (int task, int thread, ofstream &points, ofstream &prv,
 				points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << endl;
 
 			DumpParaverLine (prv, type, (*it).CounterValue, (unsigned long long) time,
-			  task+1, thread+1);
+			  task, thread);
 			found = true;
 		}
 	}
@@ -593,10 +600,10 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 
 		ofstream output_prv;
 
-		if (feedTraceRegion || feedTraceTimes)
+		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
 
-		if ((feedTraceRegion || feedTraceTimes) && !output_prv.is_open())
+		if ((feedTraceRegion || feedTraceTimes || feedFirstOccurrence) && !output_prv.is_open())
 		{
 			cerr << "Cannot append to " << TraceToFeed << " file " << endl;
 			exit (-1);
@@ -606,7 +613,7 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 		  vsamples, metric, !SeparateValues, regionIndex, 0, (*i)->Tstart,
 		  (*i)->Tend, 0);
 
-		if (feedTraceRegion || feedTraceTimes)
+		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 			output_prv.close();
 
 		if (generateGNUPLOTfiles)
@@ -644,7 +651,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 
 	unsigned counterCode = 0;
 	string CounterID = wantedCounters[posCounterID];
-	if (feedTraceRegion || feedTraceTimes)
+	if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 	{
 		for (unsigned i = 0; i < regions.HWCnames.size(); i++)
 			if (regions.HWCnames[i] == CounterID)
@@ -662,6 +669,11 @@ void doInterpolation (int task, int thread, string filePrefix,
 	for (list<Region*>::iterator i = regions.foundRegions.begin();
 	     i != regions.foundRegions.end(); i++)
 	{
+
+		/* Avoid excluded phases, always odd phases? */
+		if ((*i)->Phase % 2 == 1)
+			continue;
+
 		string RegionName = (*i)->RegionName;
 		int regionIndex = TranslateRegion (RegionName);
 
@@ -705,7 +717,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 		}
 		ofstream output_prv;
 
-		if (feedTraceRegion || feedTraceTimes)
+		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
 
 		if (generateGNUPLOTfiles)
@@ -726,17 +738,22 @@ void doInterpolation (int task, int thread, string filePrefix,
 				exit (-1);
 			}
 		}
-		if ((feedTraceRegion || feedTraceTimes) && !output_prv.is_open())
+		if ((feedTraceRegion || feedTraceTimes || feedFirstOccurrence) && !output_prv.is_open())
 		{
 			cerr << "Cannot append to " << TraceToFeed << " file " << endl;
 			exit (-1);
 		}
 
 		int num_in_points;
-		unsigned long long num_out_points = 10000;
 		unsigned long long target_num_points;
-		if (feedTraceRegion || feedTraceTimes)
-			target_num_points = 2+(num_out_points*((*i)->Tend - (*i)->Tstart) / (endTime - startTime));
+		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
+		{
+			/* SER menas Synthetic Events Rate */
+			unsigned long long SER_per_ns = 1000000000 / feedSyntheticEventsRate;
+
+			/* Add two (initial and end) */
+			target_num_points = 2 + ((*i)->Tend-(*i)->Tstart)/SER_per_ns;
+		}
 		else
 			target_num_points = 1000;
 
@@ -747,7 +764,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 		  !SeparateValues, regionIndex, target_num_points, (*i)->Tstart,
 		  (*i)->Tend, (*i)->HWCvalues[posCounterID], num_in_points);
 
-		if (feedTraceRegion || feedTraceTimes)
+		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 			output_prv.close();
 
 		if (generateGNUPLOTfiles)
@@ -832,15 +849,12 @@ void dumpAccumulatedCounterData (int task, int thread, string filePrefix,
 		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
 
 		ofstream output_data;
-		if (generateGNUPLOTfiles)
-		{
-			output_data.open ((completefilePrefix+"."+CounterID+".acc.points").c_str());
+		output_data.open ((completefilePrefix+"."+CounterID+".acc.points").c_str());
 
-			if (!output_data.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".acc.points" << " file " << endl;
-				exit (-1);
-			}
+		if (!output_data.is_open())
+		{
+			cerr << "Cannot create " << completefilePrefix+".acc.points" << " file " << endl;
+			exit (-1);
 		}
 
 #if 1
@@ -853,8 +867,7 @@ void dumpAccumulatedCounterData (int task, int thread, string filePrefix,
 			if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
 				output_data << (*it).Duration << " " << (*it).TotalCounter << endl;
 
-		if (generateGNUPLOTfiles)
-			output_data.close();
+		output_data.close();
 	}
 }
 
@@ -869,17 +882,30 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-separator-value [yes/no]" << endl
 		     << "-feed-region TYPE VALUE" << endl
 		     << "-feed-time TIME1 TIME2" << endl
+		     << "-feed-first-occurrence" << endl
 		     << "-do-line-folding [yes/no]" << endl
 		     << "-generate-gnuplot [yes/no]" << endl
 		     << "-min-duration [T in ms]" << endl
 		     << "-max-iteration IT" << endl
 		     << "-max-samples NUM" << endl
+		     << "-synthetic-events-rate NUM (rate, num events per second) [1000 if not given]" << endl
 		     << endl;
 		exit (-1);
 	}
 
 	for (int i = 1; i < argc-1; i++)
 	{
+		if (strcmp ("-synthetic-events-rate", argv[i]) == 0)
+		{
+			i++;
+			feedSyntheticEventsRate = atoll (argv[i]);
+			if (feedSyntheticEventsRate < 0 || feedSyntheticEventsRate > 1000000000)
+			{
+				cerr << "Invalid -synthetic-events-rate (should be > 0 and < 1000000000)" << endl;
+				exit (-1);
+			}
+			continue;
+		}
 		if (strcmp ("-generate-gnuplot", argv[i]) == 0)
 		{
 			i++;
@@ -894,7 +920,7 @@ int ProcessParameters (int argc, char *argv[])
 			tmp = atoi(argv[i]);
 			if (tmp == 0)
 			{
-				cerr << "Invalid --min-duration value (should be > 0)" << endl;
+				cerr << "Invalid -min-duration value (should be > 0)" << endl;
 				exit (-1);
 			}
 			MinDuration = ((double)tmp) * 1000000;
@@ -947,6 +973,7 @@ int ProcessParameters (int argc, char *argv[])
 		{
 			feedTraceRegion = true;
 			feedTraceTimes = false;
+			feedFirstOccurrence = false;
 			i++;
 			feedTraceRegion_Type = atoll (argv[i]);
 			i++;
@@ -963,6 +990,7 @@ int ProcessParameters (int argc, char *argv[])
 		{
 			feedTraceTimes = true;
 			feedTraceRegion = false;
+			feedFirstOccurrence = false;
 			i++;
 			feedTraceTimes_Begin = atoll (argv[i]);
 			i++;
@@ -973,6 +1001,14 @@ int ProcessParameters (int argc, char *argv[])
 				cerr << "Invalid -feed-time TIME1 / TIME2 pair" << endl;
 				exit (-1);
 			}
+			continue;
+		}
+		if (strcmp ("-feed-first-occurrence", argv[i]) == 0)
+		{
+			feedTraceRegion = false;
+			feedTraceTimes = false;
+			feedFirstOccurrence = true;
+
 			continue;
 		}
 		if (strcmp ("-max-iteration", argv[i]) == 0)
@@ -1035,6 +1071,7 @@ void GetTaskThreadFromFile (string file, unsigned *task, unsigned *thread)
 
 int main (int argc, char *argv[])
 {
+	vector<unsigned long long> phasetypes;
 	UIParaverTraceConfig *pcf = NULL;
 	RegionInfo regions;
 	unsigned long long prv_out_start, prv_out_end;
@@ -1053,14 +1090,30 @@ int main (int argc, char *argv[])
 	cout << "Calculating stats" << endl;
 	CalculateStatsFromFile (InputFile, !SeparateValues);
 
-	if (feedTraceRegion || feedTraceTimes)
+	if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 	{
 		string cFile = argv[res];
 		cFile = cFile.substr (0, cFile.rfind (".extract")) + ".control";
 
 		ifstream controlFile (cFile.c_str());
+		if (!controlFile.is_open())
+		{
+			cerr << "Error! Cannot open file " << cFile << endl;
+			exit (-1);
+		}
 		controlFile >> TraceToFeed;
 		controlFile >> feedTraceFoldType_Value;
+		{
+			int numPhaseTypes;
+			controlFile >> numPhaseTypes;
+			for (int i = 0; i < numPhaseTypes; i++)
+			{
+				unsigned long long phasetype;
+				controlFile >> phasetype;
+				phasetypes.push_back (phasetype);
+			}
+		}
+
 		controlFile.close ();
 
 		ifstream test (TraceToFeed.c_str());
@@ -1098,13 +1151,23 @@ int main (int argc, char *argv[])
 		  feedTraceFoldType_Value, feedTraceTimes_Begin, feedTraceTimes_End,
 		  &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
 	}
+	else if (feedFirstOccurrence)
+	{
+		/* If a trace is given, search within the trace where to do the folding */
+		string pcffile = TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf");
+		pcf = new UIParaverTraceConfig (pcffile);
+
+		SearchForRegionsFirstOccurrence (TraceToFeed, task, thread,
+		  feedTraceFoldType_Value, wantedCounters, regions, pcf,
+			phasetypes);
+	}
 	else
 	{
 		/* Prepare regions, as fake params for doLineFolding and doInterpolation*/
 		int max = SeparateValues?numRegions:1;
 		for (int i = 0; i < max; i++)
 		{
-			Region *r = new Region (0, 0, i);
+			Region *r = new Region (0, 0, i, 0);
 			if (SeparateValues)
 			{
 				/* r->RegionName = nameRegion[i].substr (0, nameRegion[i].find_first_of (":[]{}() ")); */
@@ -1130,8 +1193,9 @@ int main (int argc, char *argv[])
 
 		doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
 		  vsamples, i, prv_out_start, prv_out_end, regions);
-		dumpAccumulatedCounterData (task, thread, argv[res], i,
-		  accumulatedCounterPoints, vsamples, regions);
+		if (generateGNUPLOTfiles)
+			dumpAccumulatedCounterData (task, thread, argv[res], i,
+			  accumulatedCounterPoints, vsamples, regions);
 	}
 
 	if (option_doLineFolding)
