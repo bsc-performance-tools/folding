@@ -53,11 +53,22 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "common.H"
 #include "point.H"
 
+#define TOT_INS "PM_INST_CMPL"
+
 #define MAX(a,b) ((a)>(b))?(a):(b)
 
 #define MAX_REGIONS 1024
 
 using namespace std;
+
+class CallstackSample
+{
+	public:
+	float Time;
+	unsigned long long Type;
+	unsigned long long Value;
+	unsigned Region;
+};
 
 class Sample
 {
@@ -72,6 +83,8 @@ class Sample
 
 	unsigned iteration;
 };
+
+vector<CallstackSample> vcallstacksamples;
 
 bool FilterMinDuration = false;
 double MinDuration;
@@ -180,11 +193,11 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			file >> p.TotalCounter;
 
 			/* Outlier could be inherited from T type */
-			if (p.CounterID == "PAPI_TOT_INS" && removeOutliers && inRegion)
+			if (p.CounterID == TOT_INS && removeOutliers && inRegion)
 				Outlier = Outlier || fabs (meanRegion_tot_ins[any_region?0:lastRegion] - p.TotalCounter) > NumOfSigmaTimes*sigmaRegion_tot_ins[any_region?0:lastRegion];
 
 #if defined(DEBUG)
-			if (p.CounterID == "PAPI_TOT_INS")
+			if (p.CounterID == TOT_INS)
 			{
 				cout << "ACCUMULATED " << p.TotalCounter << " REGION (" << nameRegion[lastRegion] << ")= "<< lastRegion << (Outlier?" is":" is not") << " an outlier " << endl;
 				cout << "MEAN_REGION = " << meanRegion_tot_ins[any_region?0:lastRegion] << " ABS = " << fabs (meanRegion_tot_ins[any_region?0:lastRegion] - p.TotalCounter) << endl;
@@ -195,6 +208,17 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			for (unsigned i = 0 ; i < wantedCounters.size(); i++)
 				if (wantedCounters[i] == p.CounterID)
 					accumulatedCounterPoints.push_back (p);
+		}
+		else if (type == 'C')
+		{
+			CallstackSample cs;
+
+			file >> cs.Time;
+			file >> cs.Type;
+			file >> cs.Value;
+			cs.Region = lastRegion;
+
+			vcallstacksamples.push_back (cs);
 		}
 		else if (type == 'S')
 		{
@@ -278,18 +302,27 @@ void CalculateStatsFromFile (ifstream &file, bool any_region)
 			file >> unused_s;
 			file >> unused_ll;
 
-			if (unused_s == "PAPI_TOT_INS")
+			if (unused_s == TOT_INS)
 				meanRegion_tot_ins[any_region?0:Region] += unused_ll;
 
 		}
 		else if (type == 'S')
 		{
+			unsigned long long unused_ll;
 			double unused_f;
 			string unused_s;
 
 			file >> unused_s;
 			file >> unused_f;
 			file >> unused_f;
+			file >> unused_ll;
+			file >> unused_ll;
+			file >> unused_ll;
+		}
+		else if (type == 'C')
+		{
+			double unused_f;
+
 			file >> unused_f;
 			file >> unused_f;
 			file >> unused_f;
@@ -342,7 +375,7 @@ void CalculateStatsFromFile (ifstream &file, bool any_region)
 			file >> unused_s;
 			file >> unused_ll;
 
-			if (unused_s == "PAPI_TOT_INS")
+			if (unused_s == TOT_INS)
 				sigmaRegion_tot_ins[any_region?0:Region] += 
 					(((double)unused_ll) - meanRegion_tot_ins[any_region?0:Region]) * (((double)unused_ll) - meanRegion_tot_ins[any_region?0:Region]);
 		}
@@ -377,6 +410,18 @@ void CalculateStatsFromFile (ifstream &file, bool any_region)
 	file.seekg (0, ios::beg);
 }
 
+void DumpParaverLines (ofstream &f, vector<unsigned long long> &type,
+	vector<unsigned long long > &value, unsigned long long time, unsigned long long task,
+	unsigned long long thread)
+{
+  /* 2:14:1:14:1:69916704358:40000003:0 */
+
+  f << "2:" << task << ":1:" << task << ":" << thread << ":" << time;
+	for (unsigned i = 0; i < type.size(); i++)
+		f << ":" << type[i] << ":" << value[i];
+	f << endl;
+}
+
 void DumpParaverLine (ofstream &f, unsigned long long type,
 	unsigned long long value, unsigned long long time, unsigned long long task,
 	unsigned long long thread)
@@ -390,7 +435,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 	string CounterID, unsigned counterCode, bool anyRegion, unsigned RegionID,
 	unsigned outcount, unsigned long long prvStartTime,
 	unsigned long long prvEndTime, unsigned long long prvAccumCounter,
-	int &num_inpoints)
+	int &num_inpoints, bool callstacksamples)
 {
 	bool all_zeroes = true;
 	int incount = 0;
@@ -407,7 +452,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 		}
 	}
 
-	if (incount > 0 && outcount > 0)
+	if (incount >= 0 && outcount > 0)
 	{
 		double *inpoints_x = (double*) malloc ((incount+2)*sizeof(double));
 		double *inpoints_y = (double*) malloc ((incount+2)*sizeof(double));
@@ -458,14 +503,22 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			{
 				interpolation << "KRIGER " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
 				// slope << "SLOPE 0 0" << endl; /* force to start at 0? no! */
+				double d_last = outpoints[0];
 				for (unsigned j = 1; j < outcount; j++)
 				{
 					double d_j = (double) j;
 					double d_outcount = (double) outcount;	
 					interpolation << "KRIGER " << d_j / d_outcount << " " << outpoints[j] << endl;
-					slope << "SLOPE " << d_j / d_outcount << " " <<
-						slope_factor * (outpoints[j]-outpoints[j-1]) / (d_j/d_outcount - (d_j-1)/d_outcount)
-						<< endl; 
+
+					if (d_last < outpoints[j])
+					{
+						slope << "SLOPE " << d_j / d_outcount << " " <<
+							slope_factor * (outpoints[j]-d_last) / (d_j/d_outcount - (d_j-1)/d_outcount)
+							<< endl; 
+						d_last = outpoints[j];
+					}
+					else
+						slope << "SLOPE " << d_j / d_outcount << " 0" << endl;
 				}
 			}
 		}
@@ -486,8 +539,10 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 				interpolation << "KRIGER 0 0" << endl;
 				for (unsigned j = 1; j < outcount; j++)
 				{
-					interpolation << "KRIGER 0 0" << endl;
-					slope << "SLOPE 0 0" << endl;
+					double d_j = (double) j;
+					double d_outcount = (double) outcount;	
+					interpolation << "KRIGER " << d_j / d_outcount << " 0" << endl;
+					slope << "SLOPE " <<  d_j / d_outcount << " 0" << endl;
 				}
 			}
 		}
@@ -516,6 +571,46 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 					if (!first_zero)
 						DumpParaverLine (prv, newCounterID, 0, prvStartTime+j*deltaTime, task, thread);
 				}
+			}
+
+			if (callstacksamples)
+			{
+				unsigned long long last_time = 0;
+				unsigned long long time;
+				unsigned i = 0;
+
+				vector<unsigned long long> types;
+				vector<unsigned long long> values;
+
+				while (i < vcallstacksamples.size())
+				{
+					if (vcallstacksamples[i].Region == RegionID)
+					{
+						time = prvStartTime+(float) (((float)prvEndTime - (float)prvStartTime)*vcallstacksamples[i].Time);
+						if (time == last_time)
+						{
+							types.push_back (vcallstacksamples[i].Type+600000000);
+							values.push_back (vcallstacksamples[i].Value);
+						}
+						else
+						{
+							if (types.size() > 0)
+								DumpParaverLines (prv, types, values, last_time, task, thread);
+
+							types.clear();
+							values.clear();
+
+							types.push_back (vcallstacksamples[i].Type+600000000);
+							values.push_back (vcallstacksamples[i].Value);
+
+							last_time = time;
+						}
+					}
+					i++;
+				}
+
+				if (types.size() > 0)
+					DumpParaverLines (prv, types, values, last_time, task, thread);
 			}
 		}
 
@@ -583,6 +678,12 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 	for (list<Region*>::iterator i = regions.foundRegions.begin();
 	     i != regions.foundRegions.end(); i++)
 	{
+		/* HSG hack */
+#if 0
+		if (i != regions.foundRegions.begin())
+			continue;
+#endif
+
 		string RegionName = (*i)->RegionName;
 		int regionIndex = TranslateRegion (RegionName);
 		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
@@ -643,6 +744,8 @@ void doInterpolation (int task, int thread, string filePrefix,
 	unsigned long long startTime, unsigned long long endTime,
 	RegionInfo &regions)
 {
+	static bool first_run = true;
+
 	stringstream taskstream, threadstream;
 	taskstream << task;
 	threadstream << thread;
@@ -680,21 +783,32 @@ void doInterpolation (int task, int thread, string filePrefix,
 		double slope_factor = 0; /* computed as mean(number of hwc events) / mean (time) */
 		double this_mean_counter = 0;
 		double this_mean_duration = 0;
-		unsigned count_this = 0;
+		unsigned count_counter = 0, count_duration = 0;
 
 		for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
 			if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
-			{
-				this_mean_counter += (*it).TotalCounter;
-				this_mean_duration += (*it).Duration;
-				count_this++;
-			}
-		if (count_this > 0)
-		{
-			this_mean_counter = this_mean_counter / count_this;
-			this_mean_duration = this_mean_duration / count_this;
+				{
+					if ((*it).TotalCounter > 0)
+					{
+						this_mean_counter += (*it).TotalCounter;
+						count_counter++;
+					}
+
+					if ((*it).Duration > 0)
+					{
+						this_mean_duration += (*it).Duration;
+						count_duration++;
+					}
+				}
+
+		if (count_counter > 0)
+			this_mean_counter = this_mean_counter / count_counter;
+
+		if (count_duration > 0)
+			this_mean_duration = this_mean_duration / count_duration;
+
+		if (this_mean_duration > 0)
 			slope_factor = this_mean_counter / (this_mean_duration / 1000);
-		}
 
 		if (FilterMinDuration)
 		{
@@ -714,6 +828,10 @@ void doInterpolation (int task, int thread, string filePrefix,
 			output_points.open ((completefilePrefix+"."+CounterID+".points").c_str());
 			output_kriger.open ((completefilePrefix+"."+CounterID+".interpolation").c_str());
 			output_slope.open ((completefilePrefix+"."+CounterID+".slope").c_str());
+
+			output_points.precision(10); output_points << fixed;
+			output_kriger.precision(10); output_kriger << fixed;
+			output_slope.precision(10); output_slope << fixed;
 		}
 		ofstream output_prv;
 
@@ -755,14 +873,14 @@ void doInterpolation (int task, int thread, string filePrefix,
 			target_num_points = 2 + ((*i)->Tend-(*i)->Tstart)/SER_per_ns;
 		}
 		else
-			target_num_points = 1000;
+			target_num_points = feedSyntheticEventsRate;
 
 #warning "Accumulate several equal clusters!"
 
 		bool done = runInterpolation (task, thread, output_points, output_kriger,
 		  output_slope, slope_factor, output_prv, vsamples, CounterID, counterCode,
 		  !SeparateValues, regionIndex, target_num_points, (*i)->Tstart,
-		  (*i)->Tend, (*i)->HWCvalues[posCounterID], num_in_points);
+		  (*i)->Tend, (*i)->HWCvalues[posCounterID], num_in_points, first_run);
 
 		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 			output_prv.close();
@@ -823,6 +941,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 				GNUPLOT.push_back (info);
 		}
 	}
+	first_run = false;
 }
 
 void dumpAccumulatedCounterData (int task, int thread, string filePrefix,

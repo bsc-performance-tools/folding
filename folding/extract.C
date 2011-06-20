@@ -82,6 +82,7 @@ class ThreadInformation
 	list<unsigned long long> * CounterSamples;
 	list<LineCodeInformation*> LineSamples;
 	ofstream output;
+	vector<pair<event_t, unsigned long long> > vcallstack;
 
 	unsigned long long CurrentIteration;
 	unsigned long long CurrentPhase;
@@ -164,6 +165,7 @@ class Process : public ParaverTrace
 	list<unsigned> CallerCut;
 	string *CounterIDNames;
 	unsigned long long *CounterIDs;
+	unsigned *HackCounter;
 	unsigned long long LookupCounter (unsigned long long Counter);
 	UIParaverTraceConfig *pcf;
 	void ReadCallerLinesIntoList (string file, UIParaverTraceConfig *pcf);
@@ -205,6 +207,7 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 	numCounterIDs = found_counters;
 	CounterIDs = new unsigned long long[numCounterIDs];
 	CounterIDNames = new string[numCounterIDs];
+	HackCounter = new unsigned[numCounterIDs];
 
 	unsigned j = 0;
 	for (unsigned i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
@@ -214,6 +217,7 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 		{
 			CounterIDs[j] = i;
 			CounterIDNames[j] = s.substr (s.find ('(')+1, s.rfind (')') - (s.find ('(') + 1));
+			HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?1:0;
 			j++;
 		}
 	}
@@ -341,8 +345,24 @@ void Process::processMultiEvent (struct multievent_t &e)
 		{
 			if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER)
 			{
+				unsigned long long value;
 				int index = LookupCounter ((*it).Type);
-				thi->CounterSamples[index].push_back ((*it).Value);
+
+				if (HackCounter[index])
+				{
+					value = (*it).Value;
+					if (value > 0x80000000LL) /* If counter larger than 32 bits  (2^32) */
+					{
+						value = value & 0xffffffffLL;
+						if ((value & 0x80000000LL) != 0)
+							value = value ^ 0xffffffffLL;
+						value = 0;
+					}
+				}
+				else
+					value = (*it).Value;
+					
+				thi->CounterSamples[index].push_back (value);
 				CounterAdded = true;
 			}
 		}
@@ -357,6 +377,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 		for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 		{
+			if ((*it).Type >= 30000000 && (*it).Type <= 30000199)
+				thi->vcallstack.push_back (make_pair(*it,e.Timestamp));
+
 			if ((*it).Type >= 30000000 && (*it).Type <= 30000099)
 			{
 				if (find (CallerCut.begin(), CallerCut.end(), (*it).Value) != CallerCut.end())
@@ -441,6 +464,12 @@ void Process::processMultiEvent (struct multievent_t &e)
 						thi->output << "T Unknown_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
 				}
 
+				for (unsigned i = 0; i < thi->vcallstack.size(); i++)
+				{
+					double NTime = ::NormalizeValue (thi->vcallstack[i].second - thi->StartRegion, 0, TotalTime);
+					thi->output << "C " << NTime << " "<< thi->vcallstack[i].first.Type << " " << thi->vcallstack[i].first.Value << endl;
+				}
+
 				/* Write total counters spent in this region */
 				for (unsigned cnt = 0; cnt < numCounterIDs; cnt++)
 				{
@@ -448,8 +477,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 					list<unsigned long long>::iterator Counter_iter = thi->CounterSamples[cnt].begin();
 					for ( ; Counter_iter != thi->CounterSamples[cnt].end(); Counter_iter++)
 						TotalCounter += (*Counter_iter);
-					if (TotalCounter > 0)
-						thi->output << "A " << CounterIDNames[cnt] << " " << TotalCounter << endl;
+					thi->output << "A " << CounterIDNames[cnt] << " " << TotalCounter << endl;
 				}
 			}
 
@@ -495,6 +523,29 @@ void Process::processMultiEvent (struct multievent_t &e)
 					}
 					thi->CounterSamples[cnt].clear();
 				} /* TotalCounter > 0 */
+				else
+				{
+					/* Last pair is always 1 - 1, skip them! */
+					for (; Counter_iter_next != thi->CounterSamples[cnt].end();
+						Counter_iter_next++, Counter_iter++, Times_iter++, Skip_iter++)
+					{
+						if (!(*Skip_iter))
+						{
+							double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
+							double NCounter = 0.0f;
+	
+#if defined(DEBUG)
+							thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
+#else
+							thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << 0.0f << " " << thi->CurrentIteration << endl;
+#endif
+						}
+
+						/* Always! accumulate counters, even for skipped records! */
+					}
+					thi->CounterSamples[cnt].clear();
+				}
+
 			} /* !Skip */
 			thi->TimeSamples.clear();
 			thi->SkipSamples.clear();
@@ -506,11 +557,11 @@ void Process::processMultiEvent (struct multievent_t &e)
 			double NTime = ::NormalizeValue ((*it)->time - thi->StartRegion, 0, TotalTime);
 
 #if defined(DEBUG)
-			thi->output << "S LINE " << NTime << " " << (*it)->line << " at timestamp " << (*it)->time << endl;
-			thi->output << "S LINEID " << NTime << " " << (*it)->lineid_value << " at timestamp " << (*it)->time << endl;
+			thi->output << "S LINE " << NTime << " " << (*it)->line << " at timestamp " << (*it)->time << " " << thi->CurrentIteration << endl;
+			thi->output << "S LINEID " << NTime << " " << (*it)->lineid_value << " at timestamp " << (*it)->time << " " << thi->CurrentIteration << endl;
 #else
-			thi->output << "S LINE " << NTime << " " << (*it)->line << " " << (*it)->time << " 0" << endl;
-			thi->output << "S LINEID " << NTime << " " << (*it)->lineid_value << " " << (*it)->time << " 0" << endl;
+			thi->output << "S LINE " << NTime << " " << (*it)->line << " " << (*it)->time << " 0 " << thi->CurrentIteration << endl;
+			thi->output << "S LINEID " << NTime << " " << (*it)->lineid_value << " " << (*it)->time << " 0 " << thi->CurrentIteration << endl;
 #endif
 		}
 		thi->LineSamples.clear();
@@ -519,13 +570,17 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 	/* If we found a phase separator, increase current phase */
 	if (FoundPhaseSeparator)
+	{
 		thi->CurrentPhase++;
+		thi->vcallstack.clear();
+	}
 
 	/* If we found a region separator, increase current region and reset the phase */
 	if (FoundSeparator)
 	{
 		thi->CurrentRegion = ValueSeparator;
 		thi->CurrentPhase = 0;
+		thi->vcallstack.clear();
 	}
 
 	if ((FoundSeparator && ValueSeparator != 0) || FoundPhaseSeparator)
@@ -608,6 +663,7 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
+/*
 	if (p->numCounterIDs == 0)
 	{
 		cerr << "ERROR! Cannot find performance counters in the PCF file" << endl;
@@ -619,6 +675,7 @@ int main (int argc, char *argv[])
 		cerr << "ERROR! Cannot find regions delimited by type " << RegionSeparator << endl;
 		exit (-1);
 	}
+*/
 
 	for (unsigned int i = 0; i < va.size(); i++)
 	{
