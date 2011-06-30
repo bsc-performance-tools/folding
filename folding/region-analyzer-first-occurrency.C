@@ -1,0 +1,281 @@
+/*****************************************************************************\
+ *                        ANALYSIS PERFORMANCE TOOLS                         *
+ *                                  MPItrace                                 *
+ *              Instrumentation package for parallel applications            *
+ *****************************************************************************
+ *                                                             ___           *
+ *   +---------+     http:// www.cepba.upc.edu/tools_i.htm    /  __          *
+ *   |    o//o |     http:// www.bsc.es                      /  /  _____     *
+ *   |   o//o  |                                            /  /  /     \    *
+ *   |  o//o   |     E-mail: cepbatools@cepba.upc.edu      (  (  ( B S C )   *
+ *   | o//o    |     Phone:          +34-93-401 71 78       \  \  \_____/    *
+ *   +---------+     Fax:            +34-93-401 25 77        \  \__          *
+ *    C E P B A                                               \___           *
+ *                                                                           *
+ * This software is subject to the terms of the CEPBA/BSC license agreement. *
+ *      You must accept the terms of this license to use this software.      *
+ *                                 ---------                                 *
+ *                European Center for Parallelism of Barcelona               *
+ *                      Barcelona Supercomputing Center                      *
+\*****************************************************************************/
+
+/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/folding/region-analyzer.C $
+ | 
+ | @last_commit: $Date: 2009-12-03 11:30:14 +0100 (dj, 03 des 2009) $
+ | @version:     $Revision: 66 $
+ | 
+ | History:
+\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+
+static char __attribute__ ((unused)) rcsid[] = "$Id: region-analyzer.C 66 2009-12-03 10:30:14Z harald $";
+
+#include "ParaverTrace.h"
+#include "ParaverTraceThread.h"
+#include "ParaverTraceTask.h"
+#include "ParaverTraceApplication.h"
+#include "UIParaverTraceConfig.h"
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <math.h>
+#include <string.h>
+#include <list>
+
+#include "common.H"
+#include "region-analyzer-first-occurrency.H"
+
+#define PAPI_MIN_COUNTER   42000000
+#define PAPI_MAX_COUNTER   42009998
+
+namespace libparaver {
+
+class ProcessFirstOccurrence : public ParaverTrace
+{
+	private:
+	Region *currentRegion;
+	unsigned *CounterIDs;
+
+	unsigned long long Separator;
+	unsigned task;
+	unsigned thread;
+	unsigned numCounterIDs;
+	unsigned CurrentPhase;
+	vector<unsigned long long> phasetypes;
+	
+	bool LookupCounter (unsigned Counter, unsigned *index);
+
+	public:
+	list<Region*> foundRegions;
+
+	ProcessFirstOccurrence (string prvFile, bool multievents, int task, int thread, vector<unsigned> &CounterList, unsigned long long Separator, vector<unsigned long long> &phasetypes);
+
+	void processState (struct state_t &s);
+	void processMultiEvent (struct multievent_t &e);
+	void processEvent (struct singleevent_t &e);
+	void processCommunication (struct comm_t &c);
+	void processCommunicator (string &c);
+	void processComment (string &c);
+};
+
+ProcessFirstOccurrence::ProcessFirstOccurrence (string prvFile, bool multievents, int task, int thread, vector<unsigned> &CounterList, unsigned long long Separator, vector<unsigned long long> & phasetypes) : ParaverTrace (prvFile, multievents)
+{
+	numCounterIDs = CounterList.size();
+	CounterIDs = new unsigned [numCounterIDs];
+
+	for (unsigned i = 0; i < CounterList.size(); i++)
+		CounterIDs[i] = CounterList[i];
+
+	currentRegion = NULL;
+	this->Separator = Separator;
+	this->task = task;
+	this->thread = thread;
+	CurrentPhase = 0;
+	this->phasetypes = phasetypes;
+}
+
+void ProcessFirstOccurrence::processComment (string &c)
+{
+	UNREFERENCED(c);
+}
+
+void ProcessFirstOccurrence::processCommunicator (string &c)
+{
+	UNREFERENCED(c);
+}
+
+void ProcessFirstOccurrence::processState (struct state_t &s)
+{
+	UNREFERENCED(s);
+}
+
+bool ProcessFirstOccurrence::LookupCounter (unsigned Counter, unsigned *index)
+{
+	for (unsigned i = 0; i < numCounterIDs; i++)
+		if (CounterIDs[i] == Counter)
+		{
+			*index = i;
+			return true;
+		}
+
+	return false;
+}
+
+void ProcessFirstOccurrence::processMultiEvent (struct multievent_t &e)
+{
+	bool FoundSeparator = false;
+	bool FoundPhaseSeparator = false;
+	unsigned long long ValueSeparator = 0;
+
+	if (e.ObjectID.task != task || e.ObjectID.thread != thread)
+		return;
+
+	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
+	{
+		if ((*it).Type == Separator)
+		{
+			FoundSeparator = true;
+			ValueSeparator = (*it).Value;
+		}
+		FoundPhaseSeparator = find (phasetypes.begin(), phasetypes.end(), (*it).Type) != phasetypes.end() || FoundPhaseSeparator;
+	}
+
+	if (FoundSeparator && ValueSeparator != 0)
+	{
+		/* Start a region */
+		CurrentPhase = 0;
+		currentRegion = new Region (e.Timestamp, Separator, ValueSeparator, CurrentPhase);
+		for (unsigned i = 0; i < numCounterIDs; i++)
+			currentRegion->HWCvalues.push_back (0);
+	}
+	else
+	{
+		/* Ignore counters from initial region */
+		if (currentRegion != NULL)
+		{
+			for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
+			{
+				if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER)
+				{
+					unsigned index;
+					if (LookupCounter ((*it).Type, &index))
+						currentRegion->HWCvalues[index] += (*it).Value;
+				}
+			}
+		}
+	}
+
+	if ((FoundPhaseSeparator || (FoundSeparator && ValueSeparator == 0)) && currentRegion != NULL)
+	{
+		/* Complete a region and add it only if it's the first region with this
+		   pair type/value */
+		currentRegion->Tend = e.Timestamp;
+
+		list<Region *>::iterator i = foundRegions.begin();
+		bool found = false;
+		for (; i != foundRegions.end() && !found; i++)
+			found = ((*i)->Value == currentRegion->Value && (*i)->Phase == currentRegion->Phase);
+
+		if (!found && currentRegion->Value >= 6)
+			foundRegions.push_back (currentRegion);
+
+		if (FoundSeparator && ValueSeparator == 0)
+		{
+			currentRegion = NULL;
+		}
+		else if (FoundPhaseSeparator)
+		{
+			/* Start a region */
+			CurrentPhase++;
+
+			currentRegion = new Region (e.Timestamp, currentRegion->Type, currentRegion->Value, CurrentPhase);
+			for (unsigned i = 0; i < numCounterIDs; i++)
+				currentRegion->HWCvalues.push_back (0);
+		}
+	}
+}
+
+void ProcessFirstOccurrence::processEvent (struct singleevent_t &e)
+{
+	UNREFERENCED(e);
+}
+
+void ProcessFirstOccurrence::processCommunication (struct comm_t &c)
+{
+	UNREFERENCED(c);
+}
+
+} /* namespace libparaver */
+
+
+static vector<unsigned> convertCountersToID (vector<string> &lCounters, UIParaverTraceConfig *pcf)
+{
+	vector<unsigned> result;
+
+	/* Look for every counter in the vector its code within the PCF file */
+	for (unsigned i = 0; i < lCounters.size(); i++)
+	{
+		unsigned ctr = common::lookForCounter (lCounters[i], pcf);
+		if (ctr == 0)
+		{
+			cerr << "FATAL ERROR! Cannot find counter " << lCounters[i] << " within the PCF file " << endl;
+			exit (-1);
+		}
+		else
+			result.push_back (ctr);
+	}
+
+	return result;
+}
+
+void SearchForRegionsFirstOccurrence (string tracename, unsigned task, unsigned thread,
+	unsigned long long Type, vector<string> &vCounters, RegionInfo &regions,
+	UIParaverTraceConfig *pcf, vector<unsigned long long> &phasetypes)
+{
+	vector<unsigned> vIDCounters = convertCountersToID (vCounters, pcf);
+
+	ProcessFirstOccurrence *p = new ProcessFirstOccurrence (tracename, true, task, thread, vIDCounters, Type, phasetypes);
+
+	p->parseBody();
+
+	regions.HWCnames = vCounters;
+	regions.HWCcodes = vIDCounters;
+	regions.foundRegions = p->foundRegions;
+	for (list<Region*>::iterator i = regions.foundRegions.begin();
+	  i != regions.foundRegions.end(); i++)
+	{
+		string tmp = pcf->getEventValue ((*i)->Type, (*i)->Value);
+		if (tmp == "Not found" || tmp.length() == 0)
+		{
+			stringstream regionstream;
+			regionstream << (*i)->Value;
+			tmp = pcf->getEventType ((*i)->Type);
+			if (tmp.length() > 0)
+				tmp = tmp + "_" + regionstream.str();
+			else
+				tmp = string("Unknown_") + regionstream.str();
+		}
+		tmp = common::removeSpaces (tmp);
+		(*i)->RegionName = tmp.substr (0, tmp.find_first_of (":[]{}() "));
+		stringstream phasestr;
+		phasestr << (*i)->Phase;
+		(*i)->RegionName += "." + phasestr.str();
+	}
+
+#if defined(DEBUG)
+	cout << "# Regions found = " << p->foundRegions.size() << endl;
+	for (list<Region *>::iterator i = regions.foundRegions.begin();
+	  i != regions.foundRegions.end(); i++)
+	{
+		cout << "Found region " << (*i)->Type << ":" << (*i)->Value << " from " << (*i)->Tstart << " to " << (*i)->Tend << endl;
+		cout << "COUNTERS:";
+		vector<string>::iterator n = vCounters.begin();
+		for (vector<unsigned long long>::iterator j = (*i)->HWCvalues.begin();
+		  j != (*i)->HWCvalues.end(); j++, n++)
+			cout << " "<< *n << "=>" << *j;
+		cout << endl;
+	}
+#endif
+}
+
