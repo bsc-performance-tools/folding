@@ -1188,6 +1188,62 @@ void GetTaskThreadFromFile (string file, unsigned *task, unsigned *thread)
 	}
 }
 
+void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf)
+{
+	bool any_found;
+	ofstream PCFfile;
+
+	PCFfile.open (file.c_str(), ios_base::out|ios_base::app);
+	if (!PCFfile.is_open())
+	{
+		cerr << "Unable to append to: " << PCFfile << endl;
+		exit (-1);
+	}
+
+	any_found = false;
+	for (unsigned i = 30000000; i < 30000099; i++)
+		if (pcf->getEventType(i) != "")
+			any_found = true;
+	if (any_found)
+	{
+		PCFfile << endl << "EVENT_TYPE" << endl;
+		for (unsigned i = 30000000; i < 30000099; i++)
+			if (pcf->getEventType(i) != "")
+				PCFfile << "0 " << 600000000 + i << " Folded sampling caller level " << i - 30000000 << endl;
+		PCFfile << "VALUES" << endl;
+		PCFfile << "0 " << pcf->getEventValue(30000000, 0) << endl;
+		PCFfile << "1 " << pcf->getEventValue(30000000, 1) << endl;
+
+		vector<unsigned> v = pcf->getEventValuesFromEventTypeKey (30000000);
+		for (unsigned i = 2; i < v.size(); i++)
+			PCFfile << i << " " << pcf->getEventValue(30000000, i) << endl;
+		PCFfile << endl;
+	}
+
+	any_found = false;
+	for (unsigned i = 30000100; i < 30000199; i++)
+		if (pcf->getEventType(i) != "")
+			any_found = true;
+	if (any_found)
+	{
+		PCFfile << endl <<  "EVENT_TYPE" << endl;
+		for (unsigned i = 30000100; i < 30000199; i++)
+			if (pcf->getEventType(i) != "")
+				PCFfile << "0 " << 600000000 + i << " Folded sampling caller line level " << i - 30000100 << endl;
+		PCFfile << "VALUES" << endl;
+		PCFfile << "0 " << pcf->getEventValue(30000100, 0) << endl;
+		PCFfile << "1 " << pcf->getEventValue(30000100, 1) << endl;
+
+		vector<unsigned> v = pcf->getEventValuesFromEventTypeKey (30000100);
+		for (unsigned i = 2; i < v.size(); i++)
+			PCFfile << i << " " << pcf->getEventValue(30000100, i) << endl;
+
+		PCFfile << endl;
+	}
+
+	PCFfile.close();
+}
+
 int main (int argc, char *argv[])
 {
 	vector<unsigned long long> phasetypes;
@@ -1259,6 +1315,8 @@ int main (int argc, char *argv[])
 		SearchForRegionsWithinRegion (TraceToFeed, task, thread,
 		  feedTraceFoldType_Value, feedTraceRegion_Type, feedTraceRegion_Value,
 		  &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
+
+		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"), pcf);
 	}
 	else if (feedTraceTimes)
 	{
@@ -1269,6 +1327,8 @@ int main (int argc, char *argv[])
 		SearchForRegionsWithinTime (TraceToFeed, task, thread,
 		  feedTraceFoldType_Value, feedTraceTimes_Begin, feedTraceTimes_End,
 		  &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
+
+		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"), pcf);
 	}
 	else if (feedFirstOccurrence)
 	{
@@ -1279,6 +1339,8 @@ int main (int argc, char *argv[])
 		SearchForRegionsFirstOccurrence (TraceToFeed, task, thread,
 		  feedTraceFoldType_Value, wantedCounters, regions, pcf,
 			phasetypes);
+
+		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"), pcf);
 	}
 	else
 	{
