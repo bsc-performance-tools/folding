@@ -59,6 +59,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #define MAX_REGIONS 1024
 
+#define FOLDED_BASE 600000000
+
 using namespace std;
 
 class CallstackSample
@@ -465,6 +467,14 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
 			    (anyRegion && (*it).CounterID == CounterID))
 			{
+
+#if 1
+/* be careful with these exclusions */
+				if (((*it).Time != 1.0 && (*it).CounterValue == 1.0) || 
+            ((*it).Time <= 0.2 && (*it).CounterValue > 0.8))
+					continue;
+#endif
+
 				inpoints_x[incount] = (*it).Time;
 				inpoints_y[incount] = (*it).CounterValue;
 
@@ -550,7 +560,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 		{
 #warning "Afegir els POINTS a la trasa"
-			unsigned long long newCounterID = 600000000 + counterCode;
+			unsigned long long newCounterID = FOLDED_BASE + counterCode;
 			unsigned long long deltaTime = (prvEndTime - prvStartTime) / outcount;
 			DumpParaverLine (prv, newCounterID, 0, prvStartTime, task, thread);
 
@@ -589,7 +599,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 						time = prvStartTime+(float) (((float)prvEndTime - (float)prvStartTime)*vcallstacksamples[i].Time);
 						if (time == last_time)
 						{
-							types.push_back (vcallstacksamples[i].Type+600000000);
+							types.push_back (vcallstacksamples[i].Type+FOLDED_BASE);
 							values.push_back (vcallstacksamples[i].Value);
 						}
 						else
@@ -600,7 +610,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 							types.clear();
 							values.clear();
 
-							types.push_back (vcallstacksamples[i].Type+600000000);
+							types.push_back (vcallstacksamples[i].Type+FOLDED_BASE);
 							values.push_back (vcallstacksamples[i].Value);
 
 							last_time = time;
@@ -1209,7 +1219,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf)
 		PCFfile << endl << "EVENT_TYPE" << endl;
 		for (unsigned i = 30000000; i < 30000099; i++)
 			if (pcf->getEventType(i) != "")
-				PCFfile << "0 " << 600000000 + i << " Folded sampling caller level " << i - 30000000 << endl;
+				PCFfile << "0 " << FOLDED_BASE + i << " Folded sampling caller level " << i - 30000000 << endl;
 		PCFfile << "VALUES" << endl;
 		PCFfile << "0 " << pcf->getEventValue(30000000, 0) << endl;
 		PCFfile << "1 " << pcf->getEventValue(30000000, 1) << endl;
@@ -1229,7 +1239,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf)
 		PCFfile << endl <<  "EVENT_TYPE" << endl;
 		for (unsigned i = 30000100; i < 30000199; i++)
 			if (pcf->getEventType(i) != "")
-				PCFfile << "0 " << 600000000 + i << " Folded sampling caller line level " << i - 30000100 << endl;
+				PCFfile << "0 " << FOLDED_BASE + i << " Folded sampling caller line level " << i - 30000100 << endl;
 		PCFfile << "VALUES" << endl;
 		PCFfile << "0 " << pcf->getEventValue(30000100, 0) << endl;
 		PCFfile << "1 " << pcf->getEventValue(30000100, 1) << endl;
@@ -1240,6 +1250,12 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf)
 
 		PCFfile << endl;
 	}
+
+	PCFfile << endl << "EVENT_TYPE" << endl;
+	for (unsigned i = 42000000; i < 42001999; i++)
+		if (pcf->getEventType(i) != "")
+			PCFfile << "0 " << FOLDED_BASE + i << " Folded " << pcf->getEventType(i) << endl;
+	PCFfile << endl;
 
 	PCFfile.close();
 }
