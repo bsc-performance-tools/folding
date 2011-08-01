@@ -81,14 +81,14 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 
 				<< "set ylabel 'Normalized " << counter << "';" << endl
 				<< "set xlabel 'Normalized time';" << endl
-				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples (" << (*it)->inpoints << ")' w points";
+				<< "plot '" << file << ".points' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Samples (" << (*it)->inpoints << ")' w points";
 
 			if ((*it)->interpolated)
 			{
 				gnuplot_out
 				  << ",\\" << endl
-				  << "     '" << file << "." << counter << ".interpolation' using 2:3 title 'Curve fitting' w lines lw 2,\\" << endl
-			 	  << "     '" << file << "." << counter << ".slope' using 2:3 title 'Counter rate' axes x2y2 w lines lw 2;" << endl;
+				  << "     '" << file << ".interpolation' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' w lines lw 2,\\" << endl
+			 	  << "     '" << file << ".slope' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Counter rate' axes x2y2 w lines lw 2;" << endl;
 			}
 			else
 				gnuplot_out << ";" << endl;
@@ -159,14 +159,14 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 				<< "set ylabel 'Normalized " << counter << "';" << endl
 				<< "set y2label '" << counter << " rate (in Mevents/s)';" << endl
 				<< "set xlabel 'Normalized time';" << endl
-				<< "plot '" << file << "." << counter << ".points' using 2:3 title 'Samples (" << (*it)->inpoints << ")' w points";
+				<< "plot '" << file << ".points' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Samples (" << (*it)->inpoints << ")' w points";
 
 			if ((*it)->interpolated)
 			{
 				gnuplot_out
 				  << ",\\" << endl
-				  << "     '" << file << "." << counter << ".interpolation' using 2:3 title 'Curve fitting' w lines lw 2,\\" << endl
-			 	  << "     '" << file << "." << counter << ".slope' using 2:3 title 'Counter rate' axes x2y2 w lines lw 2;" << endl;
+				  << "     '" << file << ".interpolation' using using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' w lines lw 2,\\" << endl
+			 	  << "     '" << file << ".slope' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Counter rate' axes x2y2 w lines lw 2;" << endl;
 			}
 			else
 				gnuplot_out << ";" << endl;

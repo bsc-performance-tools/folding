@@ -468,7 +468,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			    (anyRegion && (*it).CounterID == CounterID))
 			{
 
-#if 1
+#if 0
 /* be careful with these exclusions */
 				if (((*it).Time != 1.0 && (*it).CounterValue == 1.0) || 
             ((*it).Time <= 0.2 && (*it).CounterValue > 0.8))
@@ -481,7 +481,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 				all_zeroes = inpoints_y[incount] == 0.0f && all_zeroes;
 
 				if (points.is_open())
-					points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << " " << (*it).iteration << endl;
+					points << CounterID << " " << (*it).Time << " " << (*it).CounterValue << " " << (*it).iteration << endl;
 
 				incount++;
 			}
@@ -495,7 +495,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 		if (!all_zeroes)
 		{
 			/* If the region is not filled with 0s, run the regular countoring algorithm */
-			cout << "CALL_KRIGER (region=";
+			cout << "Running interpolation (region=";
 			if (anyRegion)
 				cout << "any";
 			else
@@ -511,24 +511,24 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 
 			if (interpolation.is_open() && slope.is_open())
 			{
-				interpolation << "KRIGER " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
+				interpolation << CounterID << " " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
 				// slope << "SLOPE 0 0" << endl; /* force to start at 0? no! */
 				double d_last = outpoints[0];
 				for (unsigned j = 1; j < outcount; j++)
 				{
 					double d_j = (double) j;
 					double d_outcount = (double) outcount;	
-					interpolation << "KRIGER " << d_j / d_outcount << " " << outpoints[j] << endl;
+					interpolation << CounterID << " " << d_j / d_outcount << " " << outpoints[j] << endl;
 
 					if (d_last < outpoints[j])
 					{
-						slope << "SLOPE " << d_j / d_outcount << " " <<
+						slope << CounterID << " " << d_j / d_outcount << " " <<
 							slope_factor * (outpoints[j]-d_last) / (d_j/d_outcount - (d_j-1)/d_outcount)
 							<< endl; 
 						d_last = outpoints[j];
 					}
 					else
-						slope << "SLOPE " << d_j / d_outcount << " 0" << endl;
+						slope << CounterID << " " << d_j / d_outcount << " 0" << endl;
 				}
 			}
 		}
@@ -538,7 +538,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			   This will save some badly formed countoring results because of the implied
 			   added 1.0f in inpoints_y[1] */
 
-			cout << "CALL_KRIGER (region=";
+			cout << "Running interpolation (region=";
 			if (anyRegion)
 				cout << "any";
 			else
@@ -546,13 +546,13 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ") -- filled with zeroes" << endl;
 			if (interpolation.is_open() && slope.is_open())
 			{
-				interpolation << "KRIGER 0 0" << endl;
+				interpolation << CounterID << " 0 0" << endl;
 				for (unsigned j = 1; j < outcount; j++)
 				{
 					double d_j = (double) j;
 					double d_outcount = (double) outcount;	
-					interpolation << "KRIGER " << d_j / d_outcount << " 0" << endl;
-					slope << "SLOPE " <<  d_j / d_outcount << " 0" << endl;
+					interpolation << CounterID << " " << d_j / d_outcount << " 0" << endl;
+					slope << CounterID << " " <<  d_j / d_outcount << " 0" << endl;
 				}
 			}
 		}
@@ -750,9 +750,8 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 }
 
 void doInterpolation (int task, int thread, string filePrefix,
-	vector<Point> &vpoints, vector<Sample> &vsamples, unsigned posCounterID,
-	unsigned long long startTime, unsigned long long endTime,
-	RegionInfo &regions)
+	vector<Point> &vpoints, vector<Sample> &vsamples,
+	unsigned long long startTime, unsigned long long endTime, RegionInfo &regions)
 {
 	static bool first_run = true;
 
@@ -762,27 +761,9 @@ void doInterpolation (int task, int thread, string filePrefix,
 	string task_str = taskstream.str();
 	string thread_str = threadstream.str();
 
-	unsigned counterCode = 0;
-	string CounterID = wantedCounters[posCounterID];
-	if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
-	{
-		for (unsigned i = 0; i < regions.HWCnames.size(); i++)
-			if (regions.HWCnames[i] == CounterID)
-			{
-				counterCode = regions.HWCcodes[i];
-				break;
-			}
-		if (counterCode == 0)
-		{
-			cerr << "FATAL ERROR! Cannot find counter " << CounterID << " within the PCF file " << endl;
-			exit (-1);
-		}
-	}
-
 	for (list<Region*>::iterator i = regions.foundRegions.begin();
 	     i != regions.foundRegions.end(); i++)
 	{
-
 		/* Avoid excluded phases, always odd phases? */
 		if ((*i)->Phase % 2 == 1)
 			continue;
@@ -790,110 +771,165 @@ void doInterpolation (int task, int thread, string filePrefix,
 		string RegionName = (*i)->RegionName;
 		int regionIndex = TranslateRegion (RegionName);
 
-		double slope_factor = 0; /* computed as mean(number of hwc events) / mean (time) */
-		double this_mean_counter = 0;
-		double this_mean_duration = 0;
-		unsigned count_counter = 0, count_duration = 0;
-
-		for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
-			if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
-				{
-					if ((*it).TotalCounter > 0)
-					{
-						this_mean_counter += (*it).TotalCounter;
-						count_counter++;
-					}
-
-					if ((*it).Duration > 0)
-					{
-						this_mean_duration += (*it).Duration;
-						count_duration++;
-					}
-				}
-
-		if (count_counter > 0)
-			this_mean_counter = this_mean_counter / count_counter;
-
-		if (count_duration > 0)
-			this_mean_duration = this_mean_duration / count_duration;
-
-		if (this_mean_duration > 0)
-			slope_factor = this_mean_counter / (this_mean_duration / 1000);
-
-		if (FilterMinDuration)
-		{
-			if (this_mean_duration < MinDuration)
-				continue;
-		}
-
-#if defined(DEBUG)
-		cout << "Treating region called " << RegionName << " (index = " << regionIndex << ")" << endl;
-#endif
-
 		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
 
 		ofstream output_points, output_kriger, output_slope;
 		if (generateGNUPLOTfiles)
 		{
-			output_points.open ((completefilePrefix+"."+CounterID+".points").c_str());
-			output_kriger.open ((completefilePrefix+"."+CounterID+".interpolation").c_str());
-			output_slope.open ((completefilePrefix+"."+CounterID+".slope").c_str());
+			output_points.open ((completefilePrefix+".points").c_str());
+			if (!output_points.is_open())
+			{
+				cerr << "Error! Cannot create " << completefilePrefix+".points! Dying..." << endl;
+				exit (-1);
+			}
+			output_kriger.open ((completefilePrefix+".interpolation").c_str());
+			if (!output_points.is_open())
+			{
+				cerr << "Error! Cannot create " << completefilePrefix+".interpolation! Dying..." << endl;
+				exit (-1);
+			}
+			output_slope.open ((completefilePrefix+".slope").c_str());
+			if (!output_points.is_open())
+			{
+				cerr << "Error! Cannot create " << completefilePrefix+".slope! Dying..." << endl;
+				exit (-1);
+			}
 
 			output_points.precision(10); output_points << fixed;
 			output_kriger.precision(10); output_kriger << fixed;
 			output_slope.precision(10); output_slope << fixed;
 		}
-		ofstream output_prv;
 
-		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
-			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
-
-		if (generateGNUPLOTfiles)
+		bool data_dumped = false;
+		for (unsigned posCounterID = 0; posCounterID < wantedCounters.size(); posCounterID++)
 		{
-			if (!output_points.is_open())
+
+			unsigned counterCode = 0;
+			string CounterID = wantedCounters[posCounterID];
+			if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 			{
-				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
+				for (unsigned i = 0; i < regions.HWCnames.size(); i++)
+					if (regions.HWCnames[i] == CounterID)
+					{
+						counterCode = regions.HWCcodes[i];
+						break;
+					}
+				if (counterCode == 0)
+				{
+					cerr << "FATAL ERROR! Cannot find counter " << CounterID << " within the PCF file " << endl;
+					exit (-1);
+				}
+			}
+
+			double slope_factor = 0; /* computed as mean(number of hwc events) / mean (time) */
+			double this_mean_counter = 0;
+			double this_mean_duration = 0;
+			unsigned count_counter = 0, count_duration = 0;
+
+			for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
+				if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
+					{
+						if ((*it).TotalCounter > 0)
+						{
+							this_mean_counter += (*it).TotalCounter;
+							count_counter++;
+						}
+
+						if ((*it).Duration > 0)
+						{
+							this_mean_duration += (*it).Duration;
+							count_duration++;
+						}
+					}
+
+			if (count_counter > 0)
+				this_mean_counter = this_mean_counter / count_counter;
+
+			if (count_duration > 0)
+				this_mean_duration = this_mean_duration / count_duration;
+
+			if (this_mean_duration > 0)
+				slope_factor = this_mean_counter / (this_mean_duration / 1000);
+
+			if (FilterMinDuration)
+			{
+				if (this_mean_duration < MinDuration)
+					continue;
+			}
+
+			/* We're about to write some values for this region */
+			data_dumped = true;
+
+			ofstream output_prv;
+
+			if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
+				output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
+
+			if ((feedTraceRegion || feedTraceTimes || feedFirstOccurrence) && !output_prv.is_open())
+			{
+				cerr << "Cannot append to " << TraceToFeed << " file " << endl;
 				exit (-1);
 			}
-			if (!output_kriger.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".interpolation" << " file " << endl;
-				exit (-1);
-			}
-			if (!output_slope.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".slope" << " file " << endl;
-				exit (-1);
-			}
-		}
-		if ((feedTraceRegion || feedTraceTimes || feedFirstOccurrence) && !output_prv.is_open())
-		{
-			cerr << "Cannot append to " << TraceToFeed << " file " << endl;
-			exit (-1);
-		}
 
-		int num_in_points;
-		unsigned long long target_num_points;
-		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
-		{
-			/* SER menas Synthetic Events Rate */
-			unsigned long long SER_per_ns = 1000000000 / feedSyntheticEventsRate;
+			int num_in_points;
+			unsigned long long target_num_points;
+			if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
+			{
+				/* SER menas Synthetic Events Rate */
+				unsigned long long SER_per_ns = 1000000000 / feedSyntheticEventsRate;
 
-			/* Add two (initial and end) */
-			target_num_points = 2 + ((*i)->Tend-(*i)->Tstart)/SER_per_ns;
-		}
-		else
-			target_num_points = feedSyntheticEventsRate;
+				/* Add two (initial and end) */
+				target_num_points = 2 + ((*i)->Tend-(*i)->Tstart)/SER_per_ns;
+			}
+			else
+				target_num_points = feedSyntheticEventsRate;
 
 #warning "Accumulate several equal clusters!"
 
-		bool done = runInterpolation (task, thread, output_points, output_kriger,
-		  output_slope, slope_factor, output_prv, vsamples, CounterID, counterCode,
-		  !SeparateValues, regionIndex, target_num_points, (*i)->Tstart,
-		  (*i)->Tend, (*i)->HWCvalues[posCounterID], num_in_points, first_run);
+			bool done = runInterpolation (task, thread, output_points, output_kriger,
+			  output_slope, slope_factor, output_prv, vsamples, CounterID, counterCode,
+			  !SeparateValues, regionIndex, target_num_points, (*i)->Tstart,
+			  (*i)->Tend, (*i)->HWCvalues[posCounterID], num_in_points, first_run);
 
-		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
-			output_prv.close();
+			if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
+				output_prv.close();
+
+			if (generateGNUPLOTfiles)
+			{
+				unsigned tmp = 0;
+
+				GNUPLOTinfo *info = new GNUPLOTinfo;
+				info->done = done;
+				info->interpolated = true;
+				info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
+				info->fileprefix = completefilePrefix;
+				info->metric = CounterID;
+				info->nameregion = (*i)->RegionName;
+				info->inpoints = num_in_points;
+				info->mean_counter = 0;
+				info->mean_duration = 0;
+				for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
+					if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
+					{
+						info->mean_counter += (*it).TotalCounter;
+						info->mean_duration += (*it).Duration;
+						tmp++;
+					}
+				if (tmp > 0)
+				{
+					info->mean_counter = info->mean_counter / tmp;
+					info->mean_duration = info->mean_duration / tmp;
+				}
+
+				if (FilterMinDuration)
+				{
+					if (info->mean_duration >= MinDuration)
+						GNUPLOT.push_back (info);
+				}
+				else 
+					GNUPLOT.push_back (info);
+			}
+		}
 
 		if (generateGNUPLOTfiles)
 		{
@@ -902,53 +938,11 @@ void doInterpolation (int task, int thread, string filePrefix,
 			output_kriger.close();
 		}
 
-		if (!done)
+		if (!data_dumped)
 		{
-			remove ((completefilePrefix+"."+CounterID+".points").c_str());
-			remove ((completefilePrefix+"."+CounterID+".interpolation").c_str());
-			remove ((completefilePrefix+"."+CounterID+".slope").c_str());
-		}
-
-		if (generateGNUPLOTfiles)
-		{
-			unsigned tmp = 0;
-
-			GNUPLOTinfo *info = new GNUPLOTinfo;
-			info->done = done;
-			info->interpolated = true;
-			info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
-			info->fileprefix = completefilePrefix;
-			info->metric = CounterID;
-			info->nameregion = (*i)->RegionName;
-			info->inpoints = num_in_points;
-			info->mean_counter = 0;
-			info->mean_duration = 0;
-			for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
-				if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
-				{
-					info->mean_counter += (*it).TotalCounter;
-					info->mean_duration += (*it).Duration;
-					tmp++;
-				}
-			if (tmp > 0)
-			{
-				info->mean_counter = info->mean_counter / tmp;
-				info->mean_duration = info->mean_duration / tmp;
-			}
-
-			if (FilterMinDuration)
-			{
-				if (info->mean_duration < MinDuration)
-				{
-					remove ((completefilePrefix+"."+CounterID+".points").c_str());
-					remove ((completefilePrefix+"."+CounterID+".interpolation").c_str());
-					remove ((completefilePrefix+"."+CounterID+".slope").c_str());
-				}
-				else
-					GNUPLOT.push_back (info);
-			}
-			else 
-				GNUPLOT.push_back (info);
+			remove ((completefilePrefix+".points").c_str());
+			remove ((completefilePrefix+".slope").c_str());
+			remove ((completefilePrefix+".interpolation").c_str());
 		}
 	}
 	first_run = false;
@@ -1382,23 +1376,20 @@ int main (int argc, char *argv[])
 		cout << "# of regions: " << regions.foundRegions.size() << endl;
 #endif
 
-	for (unsigned i = 0; i < wantedCounters.size(); i++)
-	{
-#if defined(DEBUG)
-		cout << "Working on counter " << i << " - " << wantedCounters[i] << endl;
+	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
+	  vsamples, prv_out_start, prv_out_end, regions);
+#if 0
+	if (generateGNUPLOTfiles)
+		dumpAccumulatedCounterData (task, thread, argv[res],
+			accumulatedCounterPoints, vsamples, regions);
 #endif
-
-		doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
-		  vsamples, i, prv_out_start, prv_out_end, regions);
-		if (generateGNUPLOTfiles)
-			dumpAccumulatedCounterData (task, thread, argv[res], i,
-			  accumulatedCounterPoints, vsamples, regions);
-	}
 
 	if (option_doLineFolding)
 	{
+#if 0
 		doLineFolding (task, thread, argv[res], vsamples, 0, 0, regions, "LINE");
 		doLineFolding (task, thread, argv[res], vsamples, 0, 0, regions, "LINEID");
+#endif
 	}
 
 	if (GNUPLOT.size() > 0)
