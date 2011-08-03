@@ -432,12 +432,10 @@ void DumpParaverLine (ofstream &f, unsigned long long type,
   f << "2:" << task << ":1:" << task << ":" << thread << ":" << time << ":" << type << ":" << value << endl;
 }
 
-bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpolation,
-	ofstream &slope, double slope_factor, ofstream &prv, vector<Sample> &vsamples,
-	string CounterID, unsigned counterCode, bool anyRegion, unsigned RegionID,
-	unsigned outcount, unsigned long long prvStartTime,
-	unsigned long long prvEndTime, unsigned long long prvAccumCounter,
-	int &num_inpoints, bool callstacksamples)
+bool runInterpolation (ofstream &points, ofstream &interpolation,
+	ofstream &slope, double slope_factor, vector<Sample> &vsamples,
+	string CounterID, bool anyRegion, unsigned RegionID,
+	unsigned outcount, int &num_inpoints, double *outpoints)
 {
 	bool all_zeroes = true;
 	int incount = 0;
@@ -454,11 +452,13 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 		}
 	}
 
+	for (unsigned j = 0; j < outcount; j++)
+		outpoints[j] = 0.0f;
+
 	if (incount >= 0 && outcount > 0)
 	{
 		double *inpoints_x = (double*) malloc ((incount+2)*sizeof(double));
 		double *inpoints_y = (double*) malloc ((incount+2)*sizeof(double));
-		double *outpoints  = (double*) malloc (outcount*sizeof(double));
 
 		inpoints_x[0] = inpoints_y[0] = 0.0f;
 		inpoints_x[1] = inpoints_y[1] = 1.0f;
@@ -468,7 +468,7 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			    (anyRegion && (*it).CounterID == CounterID))
 			{
 
-#if 0
+#if 1
 /* be careful with these exclusions */
 				if (((*it).Time != 1.0 && (*it).CounterValue == 1.0) || 
             ((*it).Time <= 0.2 && (*it).CounterValue > 0.8))
@@ -512,7 +512,6 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			if (interpolation.is_open() && slope.is_open())
 			{
 				interpolation << CounterID << " " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
-				// slope << "SLOPE 0 0" << endl; /* force to start at 0? no! */
 				double d_last = outpoints[0];
 				for (unsigned j = 1; j < outcount; j++)
 				{
@@ -557,81 +556,99 @@ bool runInterpolation (int task, int thread, ofstream &points, ofstream &interpo
 			}
 		}
 
-		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
-		{
-#warning "Afegir els POINTS a la trasa"
-			unsigned long long newCounterID = FOLDED_BASE + counterCode;
-			unsigned long long deltaTime = (prvEndTime - prvStartTime) / outcount;
-			DumpParaverLine (prv, newCounterID, 0, prvStartTime, task, thread);
-
-			/* last value of outpoints[] may no be strictly 1 */
-			unsigned long long fixedAccumCounter = prvAccumCounter/outpoints[outcount-1];
-
-			bool first_zero = true;
-			for (unsigned j = 1; j < outcount; j++)
-			{
-				double deltaValue = outpoints[j]-outpoints[j-1];
-				if (deltaValue > 0)
-				{
-					DumpParaverLine (prv, newCounterID, deltaValue*fixedAccumCounter, prvStartTime+j*deltaTime, task, thread);
-					first_zero = false;
-				}
-				else
-				{
-					if (!first_zero)
-						DumpParaverLine (prv, newCounterID, 0, prvStartTime+j*deltaTime, task, thread);
-				}
-			}
-
-			if (callstacksamples)
-			{
-				unsigned long long last_time = 0;
-				unsigned long long time;
-				unsigned i = 0;
-
-				vector<unsigned long long> types;
-				vector<unsigned long long> values;
-
-				while (i < vcallstacksamples.size())
-				{
-					if (vcallstacksamples[i].Region == RegionID)
-					{
-						time = prvStartTime+(float) (((float)prvEndTime - (float)prvStartTime)*vcallstacksamples[i].Time);
-						if (time == last_time)
-						{
-							types.push_back (vcallstacksamples[i].Type+FOLDED_BASE);
-							values.push_back (vcallstacksamples[i].Value);
-						}
-						else
-						{
-							if (types.size() > 0)
-								DumpParaverLines (prv, types, values, last_time, task, thread);
-
-							types.clear();
-							values.clear();
-
-							types.push_back (vcallstacksamples[i].Type+FOLDED_BASE);
-							values.push_back (vcallstacksamples[i].Value);
-
-							last_time = time;
-						}
-					}
-					i++;
-				}
-
-				if (types.size() > 0)
-					DumpParaverLines (prv, types, values, last_time, task, thread);
-			}
-		}
-
 		free (inpoints_x);
 		free (inpoints_y);
-		free (outpoints);
 	}
 
 	num_inpoints = incount;
 
 	return incount > 0 && outcount > 0;
+}
+
+void WriteResultsIntoTrace (int task, int thread, ofstream &prv,
+	Region *r, vector<unsigned long long> &HWCcodes,
+	vector<unsigned long long> &HWCtotals,
+	unsigned outcount, bool callstacksamples, double *_outpoints)
+{
+	vector<unsigned long long> types;
+	vector<unsigned long long> values;
+	unsigned long long prvStartTime = r->Tstart;
+	unsigned long long prvEndTime = r->Tend;
+	unsigned long long deltaTime = (prvEndTime - prvStartTime) / outcount;
+
+	for (unsigned c = 0; c < HWCcodes.size(); c++)
+		values.push_back (0);
+	DumpParaverLines (prv, HWCcodes, values, prvStartTime, task, thread);
+	values.clear();
+
+	bool first_zero = true;
+	for (unsigned j = 1; j < outcount; j++)
+	{
+		for (unsigned c = 0; c < HWCcodes.size(); c++)
+		{
+			/* last value of outpoints[] may no be strictly 1 */
+			unsigned long long fixedAccumCounter = HWCtotals[c]/_outpoints[((c+1)*outcount)-1];
+
+			double deltaValue = _outpoints[c*outcount+j]-_outpoints[c*outcount+j-1];
+			if (deltaValue > 0)
+			{
+				types.push_back (HWCcodes[c]);
+				values.push_back (deltaValue*fixedAccumCounter);
+				first_zero = false;
+			}
+			else
+			{
+				if (!first_zero)
+				{
+					types.push_back (HWCcodes[c]);
+					values.push_back (0);
+				}
+			}
+		}
+
+		if (types.size() > 0)
+			DumpParaverLines (prv, types, values, prvStartTime+j*deltaTime, task, thread);
+
+		types.clear();
+		values.clear();
+	}
+
+	if (callstacksamples)
+	{
+		unsigned long long last_time = 0;
+		unsigned long long time;
+		unsigned i = 0;
+
+		while (i < vcallstacksamples.size())
+		{
+			if (vcallstacksamples[i].Region == TranslateRegion(r->RegionName))
+			{
+				time = prvStartTime+(float) (((float)deltaTime)*vcallstacksamples[i].Time);
+				if (time == last_time)
+				{
+					types.push_back (vcallstacksamples[i].Type+FOLDED_BASE);
+					values.push_back (vcallstacksamples[i].Value);
+				}
+				else
+				{
+					if (types.size() > 0)
+						DumpParaverLines (prv, types, values, last_time, task, thread);
+
+					types.clear();
+					values.clear();
+
+					types.push_back (vcallstacksamples[i].Type+FOLDED_BASE);
+					values.push_back (vcallstacksamples[i].Value);
+
+					last_time = time;
+				}
+			}
+			i++;
+		}
+
+		if (types.size() > 0)
+			DumpParaverLines (prv, types, values, last_time, task, thread);
+	}
 }
 
 bool runLineFolding (int task, int thread, ofstream &points, ofstream &prv,
@@ -676,8 +693,7 @@ bool runLineFolding (int task, int thread, ofstream &points, ofstream &prv,
 }
 
 void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsamples,
-	unsigned long long startTime, unsigned long long endTime, RegionInfo &regions,
-	string metric)
+	RegionInfo &regions, string metric)
 {
 	stringstream taskstream, threadstream;
 	taskstream << task;
@@ -696,7 +712,8 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 
 		string RegionName = (*i)->RegionName;
 		int regionIndex = TranslateRegion (RegionName);
-		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
+		//string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
+		string completefilePrefix = filePrefix + "." + common::removeSpaces(RegionName);
 
 		ofstream output_points;
 		if (generateGNUPLOTfiles)
@@ -751,8 +768,9 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 
 void doInterpolation (int task, int thread, string filePrefix,
 	vector<Point> &vpoints, vector<Sample> &vsamples,
-	unsigned long long startTime, unsigned long long endTime, RegionInfo &regions)
+	RegionInfo &regions)
 {
+	vector<unsigned long long> HWCcodes, HWCtotals;
 	static bool first_run = true;
 
 	stringstream taskstream, threadstream;
@@ -800,21 +818,40 @@ void doInterpolation (int task, int thread, string filePrefix,
 			output_slope.precision(10); output_slope << fixed;
 		}
 
-		bool data_dumped = false;
-		for (unsigned posCounterID = 0; posCounterID < wantedCounters.size(); posCounterID++)
+		unsigned long long target_num_points;
+		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 		{
+			/* SER menas Synthetic Events Rate */
+			unsigned long long SER_per_ns = 1000000000 / feedSyntheticEventsRate;
 
-			unsigned counterCode = 0;
-			string CounterID = wantedCounters[posCounterID];
+			/* Add two (initial and end) */
+			target_num_points = 2 + ((*i)->Tend-(*i)->Tstart)/SER_per_ns;
+		}
+		else
+			target_num_points = feedSyntheticEventsRate;
+
+		double *outpoints = (double*) malloc (sizeof(double)*target_num_points*wantedCounters.size());
+		if (outpoints == NULL)
+		{
+			cerr << "Cannot allocate memory for outpoints! Dying..." << endl;
+			exit (-1);
+		}
+
+		bool data_dumped = false;
+		for (unsigned CID = 0; CID < wantedCounters.size(); CID++)
+		{
+			bool found = false;
+			string CounterID = wantedCounters[CID];
 			if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
 			{
-				for (unsigned i = 0; i < regions.HWCnames.size(); i++)
-					if (regions.HWCnames[i] == CounterID)
+				for (unsigned idx = 0; idx < regions.HWCnames.size(); idx++)
+					if (regions.HWCnames[idx] == CounterID)
 					{
-						counterCode = regions.HWCcodes[i];
+						HWCcodes.push_back (regions.HWCcodes[idx] + FOLDED_BASE);
+						found = true;
 						break;
 					}
-				if (counterCode == 0)
+				if (!found)
 				{
 					cerr << "FATAL ERROR! Cannot find counter " << CounterID << " within the PCF file " << endl;
 					exit (-1);
@@ -845,6 +882,8 @@ void doInterpolation (int task, int thread, string filePrefix,
 			if (count_counter > 0)
 				this_mean_counter = this_mean_counter / count_counter;
 
+			HWCtotals.push_back (this_mean_counter);
+
 			if (count_duration > 0)
 				this_mean_duration = this_mean_duration / count_duration;
 
@@ -860,39 +899,11 @@ void doInterpolation (int task, int thread, string filePrefix,
 			/* We're about to write some values for this region */
 			data_dumped = true;
 
-			ofstream output_prv;
-
-			if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
-				output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
-
-			if ((feedTraceRegion || feedTraceTimes || feedFirstOccurrence) && !output_prv.is_open())
-			{
-				cerr << "Cannot append to " << TraceToFeed << " file " << endl;
-				exit (-1);
-			}
-
 			int num_in_points;
-			unsigned long long target_num_points;
-			if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
-			{
-				/* SER menas Synthetic Events Rate */
-				unsigned long long SER_per_ns = 1000000000 / feedSyntheticEventsRate;
 
-				/* Add two (initial and end) */
-				target_num_points = 2 + ((*i)->Tend-(*i)->Tstart)/SER_per_ns;
-			}
-			else
-				target_num_points = feedSyntheticEventsRate;
-
-#warning "Accumulate several equal clusters!"
-
-			bool done = runInterpolation (task, thread, output_points, output_kriger,
-			  output_slope, slope_factor, output_prv, vsamples, CounterID, counterCode,
-			  !SeparateValues, regionIndex, target_num_points, (*i)->Tstart,
-			  (*i)->Tend, (*i)->HWCvalues[posCounterID], num_in_points, first_run);
-
-			if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
-				output_prv.close();
+			bool done = runInterpolation (output_points, output_kriger, output_slope,
+				slope_factor, vsamples, CounterID, !SeparateValues, regionIndex,
+				target_num_points, num_in_points, &outpoints[target_num_points*CID]);
 
 			if (generateGNUPLOTfiles)
 			{
@@ -938,13 +949,36 @@ void doInterpolation (int task, int thread, string filePrefix,
 			output_kriger.close();
 		}
 
+		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
+		{
+			ofstream output_prv;
+	
+			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
+			if (!output_prv.is_open())
+			{
+				cerr << "Cannot append to " << TraceToFeed << " file " << endl;
+				exit (-1);
+			}
+
+			WriteResultsIntoTrace (task, thread, output_prv, *i, HWCcodes,
+				HWCtotals, target_num_points, first_run, outpoints);
+
+			output_prv.close();
+		}
+
 		if (!data_dumped)
 		{
 			remove ((completefilePrefix+".points").c_str());
 			remove ((completefilePrefix+".slope").c_str());
 			remove ((completefilePrefix+".interpolation").c_str());
 		}
+
+		HWCtotals.clear();
+		HWCcodes.clear();
+
+		free (outpoints);
 	}
+
 	first_run = false;
 }
 
@@ -1022,7 +1056,7 @@ int ProcessParameters (int argc, char *argv[])
 		{
 			i++;
 			feedSyntheticEventsRate = atoll (argv[i]);
-			if (feedSyntheticEventsRate < 0 || feedSyntheticEventsRate > 1000000000)
+			if (feedSyntheticEventsRate > 1000000000)
 			{
 				cerr << "Invalid -synthetic-events-rate (should be > 0 and < 1000000000)" << endl;
 				exit (-1);
@@ -1192,7 +1226,8 @@ void GetTaskThreadFromFile (string file, unsigned *task, unsigned *thread)
 	}
 }
 
-void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf)
+void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
+	vector<string> &wantedCounters)
 {
 	bool any_found;
 	ofstream PCFfile;
@@ -1246,10 +1281,14 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf)
 	}
 
 	PCFfile << endl << "EVENT_TYPE" << endl;
-	for (unsigned i = 42000000; i < 42001999; i++)
-		if (pcf->getEventType(i) != "")
-			PCFfile << "0 " << FOLDED_BASE + i << " Folded " << pcf->getEventType(i) << endl;
+	for (unsigned i = 0 ; i < wantedCounters.size(); i++)
+	{
+		unsigned long long tmp = common::lookForCounter (wantedCounters[i], pcf);
+		if (tmp != 0)
+			PCFfile << "0 " << FOLDED_BASE + tmp << " Folded " << wantedCounters[i] << endl;
+	}
 	PCFfile << endl;
+		
 
 	PCFfile.close();
 }
@@ -1326,7 +1365,8 @@ int main (int argc, char *argv[])
 		  feedTraceFoldType_Value, feedTraceRegion_Type, feedTraceRegion_Value,
 		  &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
 
-		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"), pcf);
+		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"),
+			pcf, wantedCounters);
 	}
 	else if (feedTraceTimes)
 	{
@@ -1338,7 +1378,8 @@ int main (int argc, char *argv[])
 		  feedTraceFoldType_Value, feedTraceTimes_Begin, feedTraceTimes_End,
 		  &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
 
-		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"), pcf);
+		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"),
+			pcf, wantedCounters);
 	}
 	else if (feedFirstOccurrence)
 	{
@@ -1350,7 +1391,8 @@ int main (int argc, char *argv[])
 		  feedTraceFoldType_Value, wantedCounters, regions, pcf,
 			phasetypes);
 
-		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"), pcf);
+		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"),
+			pcf, wantedCounters);
 	}
 	else
 	{
@@ -1377,12 +1419,7 @@ int main (int argc, char *argv[])
 #endif
 
 	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
-	  vsamples, prv_out_start, prv_out_end, regions);
-#if 0
-	if (generateGNUPLOTfiles)
-		dumpAccumulatedCounterData (task, thread, argv[res],
-			accumulatedCounterPoints, vsamples, regions);
-#endif
+	  vsamples, regions);
 
 	if (option_doLineFolding)
 	{
@@ -1400,7 +1437,6 @@ int main (int argc, char *argv[])
 		for (unsigned j = 0; j < numRegions; j++)
 		{
 			createMultiSlopeGNUPLOT (argv[res], nameRegion[j], GNUPLOT, wantedCounters);
-//			createAccumulatedCounterGNUPLOT (argv[res], nameRegion[j], accumulatedCounterPoints, wantedCounters);
 		}
 	}
 

@@ -22,7 +22,7 @@ These are the steps to run the folding process:
     This will generate a tracefile called tracefile.sorted.prv with the caller lines reordered.
 
 
-2.- Some traces (like clusterized traces) must be preprocessed before applying the folding mechanism. 
+2.- Some traces (like clustered traces) must be preprocessed before applying the folding mechanism. 
 
     Usage: fuse tracefile.prv
 
@@ -40,12 +40,12 @@ These are the steps to run the folding process:
     Example 3: Folding clusters
        extract -separator 90000001 tracefile.prv
 
-    Any of these commands will report by task & thread extracted files with folded sampled data. The files will look like tracefile.extract.TASK.THREAD, where TASK and THREAD are values from 0 to MAXTASK-1 or 0 to MAXTHREAD-1 respectively.
+    Any of these commands will report by task & thread extracted files with folded sampled data. The files will look like tracefile.extract.TASK.THREAD, where TASK and THREAD are values from 1 to MAXTASK or 1 to MAXTHREAD respectively.
 
 4.- Interpolate extracted data.
 
-    Example 1: Interpolate total instructions and generating gnuplots of task 0 thread 3.
-      interpolate -counter PAPI_TOT_INS -generate-gnuplot yes tracefile.extract.0.3
+    Example 1: Interpolate total instructions and generating gnuplots of task 1 thread 3.
+      interpolate -counter PAPI_TOT_INS -generate-gnuplot yes tracefile.extract.1.3
 
     Example 2: Interpolate total instructions and l2D cache misses and generating gnuplots of task 3 thread 1.
       interpolate -counter PAPI_TOT_INS -counter PAPI_L2_DCM -generate-gnuplot yes tracefile.extract.3.1
@@ -56,9 +56,9 @@ These are the steps to run the folding process:
     Example 4: Interpolate total instructions and l2D cache misses and generating gnuplots of task 3 thread 1 removing computation phases that last less than 1 millisecond.
       interpolate -counter PAPI_TOT_INS -counter PAPI_L2_DCM -generate-gnuplot yes -min-duration 1 tracefile.extract.3.1
 
-    Example 5: Interpolate total instructions of task 0 thread 0 and reintroduce on the Paraver tracefile using the event type/value marker 123456/1
-      interpolate -counter PAPI_TOT_INS -feed-region 123456 1 tracefile.extract.0.0 
+    Example 5: Interpolate total instructions of task 1 thread 1 and reintroduce on the Paraver tracefile using the event type/value marker 123456/1
+      interpolate -counter PAPI_TOT_INS -feed-region 123456 1 tracefile.extract.1.1 
 
-    Example 6: Interpolate total instructions of task 0 thread 0 and reintroduce on the Paraver tracefile between timestamps 100 and 200
-      interpolate -counter PAPI_TOT_INS -feed-time 100 200 tracefile.extract.0.0 
+    Example 6: Interpolate total instructions of task 2 thread 1 and reintroduce on the Paraver tracefile between timestamps 100 and 200
+      interpolate -counter PAPI_TOT_INS -feed-time 100 200 tracefile.extract.2.1 
 

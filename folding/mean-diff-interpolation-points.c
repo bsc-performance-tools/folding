@@ -15,6 +15,12 @@ int main (int argc, char *argv[])
 	double diff;
 	char unused[1024];
 
+	if (argc != 3)
+	{
+		printf ("Invalid number of arguments given\n");
+		return -2;
+	}
+
 	f[0] = fopen (argv[1], "r");
 	f[1] = fopen (argv[2], "r");
 	if (f[0] == NULL || f[1] == NULL)
