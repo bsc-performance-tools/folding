@@ -851,10 +851,9 @@ void doInterpolation (int task, int thread, string filePrefix,
 						found = true;
 						break;
 					}
-				if (!found)
+				if (!found && i != regions.foundRegions.begin())
 				{
-					cerr << "FATAL ERROR! Cannot find counter " << CounterID << " within the PCF file " << endl;
-					exit (-1);
+					cerr << "ERROR! Cannot find counter " << CounterID << " within the PCF file " << endl;
 				}
 			}
 
