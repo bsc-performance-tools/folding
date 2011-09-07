@@ -74,7 +74,7 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 			  << "set yrange [0:" << Y1Limit << "];" << endl
 			  << "set ytics nomirror;" << endl
 			  << "set xtics nomirror;" << endl
-			  << "set key bottom right" << endl
+			  << "set key bottom right invert" << endl
 				<< "set title \"" << (*it)->title << "\\n" << 
 			     "Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << " ms" << 
 				   " Counter = " << fixed << setprecision(2) << (*it)->mean_counter/1000 <<  " Kevents" << 
@@ -113,7 +113,7 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 	gnuplot_out
 	  << "#set term postscript eps solid enhanced color font \",18\"" << endl
 	  << "#set term png" << endl
-	  << "set key bottom right;" << endl;
+	  << "set key bottom right invert" << endl;
 
 	for (list<GNUPLOTinfo*>::iterator it = info.begin(); it != info.end() ; it++)
 	{
@@ -191,7 +191,7 @@ void createMultiSlopeGNUPLOT (string file, string regionName, list<GNUPLOTinfo*>
 	}
 
 	gnuplot_out
-	  << "set key top right;" << endl
+	  << "set key top right invert" << endl
 	  << "set xrange [0:1];" << endl
 	  << "set yrange [0:*];" << endl
 	  << "set ytics mirror;" << endl
