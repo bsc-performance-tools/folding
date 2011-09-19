@@ -5,7 +5,7 @@ CXX = g++
 COMMON = ../common-files
 COMMONFILESFLAGS = -I $(COMMON) -I $(COMMON)/pcfparser -I $(COMMON)/prvparser # -I $(BOOST)/include
 CXXFLAGS = -O -Wall -g $(DEBUG) -I .
-CFLAGS = -O -Wall
+CFLAGS = -O -Wall -g $(DEBUG)
 PRV_PCF_PARSERS = $(COMMON)/prvparser/*.cpp $(COMMON)/pcfparser/*.cpp $(COMMON)/LibException.cpp
 
 TARGETS = fuse sort_pcf extract interpolate max-diff-interpolation-points mean-diff-interpolation-points

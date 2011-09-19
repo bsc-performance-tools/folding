@@ -36,7 +36,6 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <algorithm>
 #include <iomanip>
 
-#include "common.H"
 #include "generate-gnuplot.H"
 
 void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
