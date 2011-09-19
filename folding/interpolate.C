@@ -1436,6 +1436,7 @@ int main (int argc, char *argv[])
 		for (unsigned j = 0; j < numRegions; j++)
 		{
 			createMultiSlopeGNUPLOT (argv[res], nameRegion[j], GNUPLOT, wantedCounters);
+//			createAccumulatedCounterGNUPLOT (argv[res], nameRegion[j], accumulatedCounterPoints, wantedCounters);
 		}
 	}
 

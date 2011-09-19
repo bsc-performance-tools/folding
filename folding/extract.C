@@ -165,7 +165,8 @@ class Process : public ParaverTrace
 	list<unsigned> CallerCut;
 	string *CounterIDNames;
 	unsigned long long *CounterIDs;
-	unsigned *HackCounter;
+	bool *CounterUsed;
+	bool *HackCounter;
 	unsigned long long LookupCounter (unsigned long long Counter);
 	UIParaverTraceConfig *pcf;
 	void ReadCallerLinesIntoList (string file, UIParaverTraceConfig *pcf);
@@ -207,7 +208,8 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 	numCounterIDs = found_counters;
 	CounterIDs = new unsigned long long[numCounterIDs];
 	CounterIDNames = new string[numCounterIDs];
-	HackCounter = new unsigned[numCounterIDs];
+	HackCounter = new bool[numCounterIDs];
+	CounterUsed = new bool[numCounterIDs];
 
 	unsigned j = 0;
 	for (unsigned i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
@@ -215,6 +217,7 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 		string s = pcf->getEventType (i);
 		if (s.length() > 0)
 		{
+			CounterUsed[j] = false;
 			CounterIDs[j] = i;
 			CounterIDNames[j] = s.substr (s.find ('(')+1, s.rfind (')') - (s.find ('(') + 1));
 			HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?1:0;
@@ -363,6 +366,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 					value = (*it).Value;
 					
 				thi->CounterSamples[index].push_back (value);
+				CounterUsed[index] = true; /* do not mix, counteradded and counterused */
 				CounterAdded = true;
 			}
 		}
@@ -473,6 +477,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 				/* Write total counters spent in this region */
 				for (unsigned cnt = 0; cnt < numCounterIDs; cnt++)
 				{
+					if (!CounterUsed[cnt])
+						continue;
 					unsigned long long TotalCounter = 0;
 					list<unsigned long long>::iterator Counter_iter = thi->CounterSamples[cnt].begin();
 					for ( ; Counter_iter != thi->CounterSamples[cnt].end(); Counter_iter++)
@@ -483,6 +489,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 			for (unsigned cnt = 0; cnt < numCounterIDs; cnt++)
 			{
+				if (!CounterUsed[cnt])
+					continue;
+
 				unsigned long long TotalCounter = 0;
 				list<unsigned long long>::iterator Counter_iter = thi->CounterSamples[cnt].begin();
 				for ( ; Counter_iter != thi->CounterSamples[cnt].end(); Counter_iter++)
@@ -545,8 +554,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 					}
 					thi->CounterSamples[cnt].clear();
 				}
+				CounterUsed[cnt] = false; /* clean for next region */
+			} /* Skip */
 
-			} /* !Skip */
 			thi->TimeSamples.clear();
 			thi->SkipSamples.clear();
 		}
