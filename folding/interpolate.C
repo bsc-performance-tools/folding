@@ -619,6 +619,8 @@ void WriteResultsIntoTrace (int task, int thread, ofstream &prv,
 		unsigned long long time;
 		unsigned i = 0;
 
+		deltaTime = prvEndTime - prvStartTime;
+
 		while (i < vcallstacksamples.size())
 		{
 			if (vcallstacksamples[i].Region == TranslateRegion(r->RegionName))
