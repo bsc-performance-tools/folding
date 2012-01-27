@@ -65,15 +65,28 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 			    << "set y2range [0:*];" << endl
 			    << "set ytics nomirror;" << endl
 			    << "set y2tics nomirror;" << endl
-			    << "set x2tics;" << endl
+			    << "set x2tics nomirror;" << endl
 				  << "set y2label '" << counter << " rate (in Mevents/s)';" << endl;
+
+				gnuplot_out
+				  << "set xtics ( 0.0 ";
+				for (int i = 1; i <= 5; i++)
+				{
+					double duration = (*it)->mean_duration / 1000000;
+					gnuplot_out << ", " << fixed << setprecision(2) << i*duration/5;
+				}
+
+				gnuplot_out << ");" << endl;
+				gnuplot_out << endl;
+				for (unsigned i = 0; i < (*it)->qualities.size(); i++)
+					gnuplot_out << "set label \"Q" << i << " = " << fixed << setprecision(2) << (*it)->qualities[i] << "\" at graph 0.01," << 0.95f - i*0.05 << endl;
+				gnuplot_out << endl;
 			}
 
 			gnuplot_out
-				<< "set xrange [0:1];" << endl
+				<< "set xrange [0:" << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << "];" << endl
 			  << "set yrange [0:" << Y1Limit << "];" << endl
 			  << "set ytics nomirror;" << endl
-			  << "set xtics nomirror;" << endl
 			  << "set key bottom right invert" << endl
 				<< "set title \"" << (*it)->title << "\\n" << 
 			     "Duration = " << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << " ms" << 
@@ -82,13 +95,13 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 
 				<< "set ylabel 'Normalized " << counter << "';" << endl
 				<< "set xlabel 'Normalized time';" << endl
-				<< "plot '" << file << ".points' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Samples (" << (*it)->inpoints << ")' w points";
+				<< "plot '" << file << ".points' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Samples (" << (*it)->inpoints << ")' axes x2y1 w points";
 
 			if ((*it)->interpolated)
 			{
 				gnuplot_out
 				  << ",\\" << endl
-				  << "     '" << file << ".interpolation' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' w lines lw 2,\\" << endl
+				  << "     '" << file << ".interpolation' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' axes x2y1 w lines lw 2,\\" << endl
 			 	  << "     '" << file << ".slope' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Counter rate' axes x2y2 w lines lw 2;" << endl;
 			}
 			else
@@ -124,23 +137,44 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 			if ((*it)->interpolated)
 			{
 	  		gnuplot_out
-				  << "set xrange [0:1];" << endl
+					<< "set xrange [0:" << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << "];" << endl
 				  << "set yrange [0:" << Y1Limit << "];" << endl
 				  << "set x2range [0:1];" << endl
 				  << "set y2range [0:*];" << endl
 				  << "set ytics nomirror;" << endl
 				  << "set y2tics nomirror;" << endl
 				  << "set x2tics;" << endl;
+
+				gnuplot_out
+				  << "set xtics ( 0.0 ";
+				for (int i = 1; i <= 5; i++)
+				{
+					double duration = (*it)->mean_duration / 1000000;
+					gnuplot_out << ", " << fixed << setprecision(2) << i*duration/5;
+				}
+
+				gnuplot_out << ");" << endl;
+					gnuplot_out << endl;
+					for (unsigned i = 0; i < (*it)->qualities.size(); i++)
+						gnuplot_out << "set label \"Q" << i << " = " << fixed << setprecision(2) << (*it)->qualities[i] << "\" at graph 0.01," << 0.95f - i*0.05 << endl;
+					gnuplot_out << endl;
 			}
 			else
 			{
 	  		gnuplot_out
-				  << "set xrange [0:1];" << endl
+					<< "set xrange [0:" << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << "];" << endl
 				  << "set yrange [0:" << Y1Limit << "];" << endl
 				  << "set x2range [0:1];" << endl
 				  << "set y2range [0:1];" << endl
-				  << "set ytics mirror;" << endl
-				  << "set xtics mirror;" << endl;
+				  << "set ytics mirror;" << endl;
+				gnuplot_out
+				  << "set xtics ( 0.0 ";
+				for (int i = 1; i <= 5; i++)
+				{
+					double duration = (*it)->mean_duration / 1000000;
+					gnuplot_out << ", " << fixed << setprecision(2) << i*duration/5;
+				}
+				gnuplot_out << ");" << endl;
 			}
 
 			string file = (*it)->fileprefix;
@@ -160,13 +194,13 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 				<< "set ylabel 'Normalized " << counter << "';" << endl
 				<< "set y2label '" << counter << " rate (in Mevents/s)';" << endl
 				<< "set xlabel 'Normalized time';" << endl
-				<< "plot '" << file << ".points' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Samples (" << (*it)->inpoints << ")' w points";
+				<< "plot '" << file << ".points' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Samples (" << (*it)->inpoints << ")' axes x2y1 w points";
 
 			if ((*it)->interpolated)
 			{
 				gnuplot_out
 				  << ",\\" << endl
-				  << "     '" << file << ".interpolation' using using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' w lines lw 2,\\" << endl
+				  << "     '" << file << ".interpolation' using using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' axes x2y1 w lines lw 2,\\" << endl
 			 	  << "     '" << file << ".slope' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Counter rate' axes x2y2 w lines lw 2;" << endl;
 			}
 			else

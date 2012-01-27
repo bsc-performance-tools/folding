@@ -51,6 +51,7 @@ class GNUPLOTinfo
 	string fileprefix;
 	string metric;
 	string nameregion;
+	vector <double> qualities;
 };
 
 void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info);
