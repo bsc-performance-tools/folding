@@ -56,10 +56,13 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #define TOT_INS "PM_INST_CMPL"
 
 #define MAX(a,b) ((a)>(b))?(a):(b)
+#define MIN(a,b) ((a)<(b))?(a):(b)
 
 #define MAX_REGIONS 1024
 
 #define FOLDED_BASE 600000000
+
+#define QUALITY_DISTANCE 0.01
 
 using namespace std;
 
@@ -412,6 +415,37 @@ void CalculateStatsFromFile (ifstream &file, bool any_region)
 	file.seekg (0, ios::beg);
 }
 
+static double Calculate_Quality0 (int incount, double *inpoints_x, double *inpoints_y, int outcount, double *outpoints, double QD)
+{
+	int values_within_QD = 0;
+	for (int i = 0; i < incount; i++)
+	{
+		int pt_x = (int) (inpoints_x[i]*outcount); /* index position X of sample i into 0..outcount-1 */
+		if (((inpoints_y[i] >= outpoints[pt_x] - QD)) && (inpoints_y[i] <= (outpoints[pt_x] + QD)))
+			values_within_QD++;
+	}
+	return (double) values_within_QD / (double) incount;
+}
+
+static double Calculate_Quality1 (int incount, double *inpoints_x, double *inpoints_y, int outcount, double *outpoints)
+{
+	double total_distances = 0.0f;
+	for (int i = 0; i < incount; i++)	
+	{
+		double min_distance = 1.0f;
+		for (int j = 0; j < outcount; j++)
+		{
+			double X_distance = inpoints_x[i]-((double) j/(double) outcount);
+			double Y_distance = inpoints_y[i]-outpoints[j];
+			double diagonal = sqrt (X_distance*X_distance + Y_distance*Y_distance);
+
+			min_distance = MIN(diagonal, min_distance);
+		}
+		total_distances += min_distance;
+	}
+	return (double) total_distances / (double) incount;
+}
+
 void DumpParaverLines (ofstream &f, vector<unsigned long long> &type,
 	vector<unsigned long long > &value, unsigned long long time, unsigned long long task,
 	unsigned long long thread)
@@ -435,7 +469,8 @@ void DumpParaverLine (ofstream &f, unsigned long long type,
 bool runInterpolation (ofstream &points, ofstream &interpolation,
 	ofstream &slope, double slope_factor, vector<Sample> &vsamples,
 	string CounterID, bool anyRegion, unsigned RegionID,
-	unsigned outcount, int &num_inpoints, double *outpoints)
+	unsigned outcount, int &num_inpoints, double *outpoints,
+	vector<double> &qualities)
 {
 	bool all_zeroes = true;
 	int incount = 0;
@@ -468,7 +503,7 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 			    (anyRegion && (*it).CounterID == CounterID))
 			{
 
-#if 1
+#if 0
 /* be careful with these exclusions */
 				if (((*it).Time != 1.0 && (*it).CounterValue == 1.0) || 
             ((*it).Time <= 0.2 && (*it).CounterValue > 0.8))
@@ -503,6 +538,17 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ")" << endl;
 
 			Kriger_Region (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f);
+
+			cout << "Calculating Q0 w/ QD = " << fixed << setprecision(2) << QUALITY_DISTANCE << flush;
+			double q0 = Calculate_Quality0 (incount, inpoints_x, inpoints_y, outcount, outpoints, QUALITY_DISTANCE);
+			cout << ", Q0 = " << fixed << setprecision(2) << q0 << endl;
+
+			cout << "Calculating Q1" << flush;
+			double q1 = Calculate_Quality1 (incount, inpoints_x, inpoints_y, outcount, outpoints);
+			cout << ", Q1 = " << fixed << setprecision(2) << q1 << endl;
+
+			qualities.push_back (q0);
+			qualities.push_back (q1);
 
 			/* Correct negative points present in the interpolation */
 			for (unsigned j = 0; j < outcount; j++)
@@ -554,6 +600,9 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 					slope << CounterID << " " <<  d_j / d_outcount << " 0" << endl;
 				}
 			}
+
+			qualities.push_back (0.0f); /* Q0 */
+			qualities.push_back (0.0f); /* Q1 */
 		}
 
 		free (inpoints_x);
@@ -902,9 +951,11 @@ void doInterpolation (int task, int thread, string filePrefix,
 
 			int num_in_points;
 
+			vector<double> qualities;
 			bool done = runInterpolation (output_points, output_kriger, output_slope,
 				slope_factor, vsamples, CounterID, !SeparateValues, regionIndex,
-				target_num_points, num_in_points, &outpoints[target_num_points*CID]);
+				target_num_points, num_in_points, &outpoints[target_num_points*CID],
+			  qualities);
 
 			if (generateGNUPLOTfiles)
 			{
@@ -918,6 +969,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 				info->metric = CounterID;
 				info->nameregion = (*i)->RegionName;
 				info->inpoints = num_in_points;
+				info->qualities = qualities;
 				info->mean_counter = 0;
 				info->mean_duration = 0;
 				for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
@@ -1422,12 +1474,12 @@ int main (int argc, char *argv[])
 	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
 	  vsamples, regions);
 
+	dumpAccumulatedCounterData (task, thread, argv[res], 0, accumulatedCounterPoints, vsamples, regions);
+
 	if (option_doLineFolding)
 	{
-#if 0
-		doLineFolding (task, thread, argv[res], vsamples, 0, 0, regions, "LINE");
-		doLineFolding (task, thread, argv[res], vsamples, 0, 0, regions, "LINEID");
-#endif
+		doLineFolding (task, thread, argv[res], vsamples, regions, "LINE");
+		doLineFolding (task, thread, argv[res], vsamples, regions, "LINEID");
 	}
 
 	if (GNUPLOT.size() > 0)

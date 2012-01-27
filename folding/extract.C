@@ -47,7 +47,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #define PAPI_MIN_COUNTER   42000000
 #define PAPI_MAX_COUNTER   42009998
 
-unsigned long long RegionSeparator = 123456;
+unsigned long long RegionSeparator = 1234567;
 vector<unsigned long long> SkipTypes;
 vector<unsigned long long> PhaseSeparators;
 
@@ -89,6 +89,8 @@ class ThreadInformation
 	unsigned long long CurrentRegion;
 	unsigned long long StartRegion;
 
+	unsigned long long LastCounterTime;
+
 	void AllocateBufferCounters (int numCounters);
 	ThreadInformation ();
 };
@@ -96,6 +98,7 @@ class ThreadInformation
 ThreadInformation::ThreadInformation ()
 {
 	CurrentRegion = CurrentPhase = CurrentIteration = 0;
+	LastCounterTime = 0;
 }
 
 void ThreadInformation::AllocateBufferCounters (int numCounters)
@@ -167,7 +170,7 @@ class Process : public ParaverTrace
 	unsigned long long *CounterIDs;
 	bool *CounterUsed;
 	bool *HackCounter;
-	unsigned long long LookupCounter (unsigned long long Counter);
+	unsigned long long LookupCounter (unsigned long long Counter, bool &found);
 	UIParaverTraceConfig *pcf;
 	void ReadCallerLinesIntoList (string file, UIParaverTraceConfig *pcf);
 
@@ -268,12 +271,15 @@ void Process::ReadCallerLinesIntoList (string file, UIParaverTraceConfig *pcf)
 
 }
 
-unsigned long long Process::LookupCounter (unsigned long long Counter)
+unsigned long long Process::LookupCounter (unsigned long long Counter, bool &found)
 {
+	found = true;
+
 	for (unsigned i = 0; i < numCounterIDs; i++)
 		if (CounterIDs[i] == Counter)
 			return i;
 
+	found = false;
 	return numCounterIDs;
 }
 
@@ -300,18 +306,25 @@ void Process::processMultiEvent (struct multievent_t &e)
 	int task = e.ObjectID.task - 1;
 	int thread = e.ObjectID.thread - 1;
 
+	//cout << "task = " << task << " IH.getNumTasks() = " << IH.getNumTasks() << endl;
+
 	if (task >= IH.getNumTasks())
 		return;
 
 	TaskInformation *ti = IH.getTasksInformation();
+
+	//cout << "thread = " << thread << " ti[task].getNumThreads() = " << ti[task].getNumThreads() << endl;
+
 	if (thread >= ti[task].getNumThreads())
 		return;
 
   ThreadInformation *thi = &((ti[task].getThreadsInformation())[thread]);
 
+#if 0
 	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 		if ((*it).Type == 123456)
 			thi->CurrentIteration = (*it).Value;
+#endif
 
 	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 	{
@@ -348,28 +361,105 @@ void Process::processMultiEvent (struct multievent_t &e)
 		{
 			if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER)
 			{
-				unsigned long long value;
-				int index = LookupCounter ((*it).Type);
 
-				if (HackCounter[index])
+//				cout << "Found counter @ " << e.Timestamp << endl;
+
+				bool found;
+				unsigned long long value;
+				int index = LookupCounter ((*it).Type, found);
+
+				if (found)
 				{
-					value = (*it).Value;
-					if (value > 0x80000000LL) /* If counter larger than 32 bits  (2^32) */
+					if (HackCounter[index])
 					{
-						value = value & 0xffffffffLL;
-						if ((value & 0x80000000LL) != 0)
-							value = value ^ 0xffffffffLL;
-						value = 0;
+						value = (*it).Value;
+						if (value > 0x80000000LL) /* If counter larger than 32 bits  (2^32) */
+						{
+							value = value & 0xffffffffLL;
+							if ((value & 0x80000000LL) != 0)
+								value = value ^ 0xffffffffLL;
+							value = 0;
+						}
 					}
-				}
-				else
-					value = (*it).Value;
-					
-				thi->CounterSamples[index].push_back (value);
-				CounterUsed[index] = true; /* do not mix, counteradded and counterused */
-				CounterAdded = true;
+					else
+						value = (*it).Value;
+
+#if 0 /* HSG NEW */
+					if (thi->CounterSamples[index].size() == 0 && thi->LastCounterTime > 0)
+					{
+//						cout << "current time = " << e.Timestamp << endl;
+//						cout << "LastCounterTime = " << thi->LastCounterTime << endl;
+
+						double rate = ((double) (value))/(e.Timestamp - thi->LastCounterTime);
+
+//						cout << "calculated rate = " << rate << endl;
+
+//						cout << "StartRegion = " << thi->StartRegion << endl;
+//						cout << "delta(origin, current) = " << e.Timestamp - thi->StartRegion << endl;
+
+						unsigned long long cextended = (e.Timestamp - thi->StartRegion) * rate;
+
+//						cout << "cextended-pre = " << cextended << endl;
+
+						thi->CounterSamples[index].push_back (cextended);
+						CounterUsed[index] = true; /* do not mix, counteradded and counterused */
+						CounterAdded = true;
+					}
+					else
+					{
+						thi->CounterSamples[index].push_back (value);
+						CounterUsed[index] = true; /* do not mix, counteradded and counterused */
+						CounterAdded = true;
+					}
+#endif
+		
+#if 1 /* HSG ORIGINAL */			
+					thi->CounterSamples[index].push_back (value);
+					CounterUsed[index] = true; /* do not mix, counteradded and counterused */
+					CounterAdded = true;
+
+#endif
+				} /* if found */
 			}
 		}
+
+#if 0 /* HSG NEW */
+		if (FoundSeparator && ValueSeparator == 0 && thi->CurrentRegion != 0 && !CounterAdded)
+		{
+			for (int i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
+			{
+				bool found;
+				int cnt = LookupCounter (i, found);
+				if (found)
+					if (CounterUsed[cnt])
+					{
+//						cout << "last time = " << thi->TimeSamples.back() << endl;
+//						cout << "last counter = " << thi->CounterSamples[cnt].back() << endl;
+//						cout << "first time = " << thi->TimeSamples.front() << endl;
+
+						unsigned long long totalcounter = 0;
+						list<unsigned long long>::iterator it = thi->CounterSamples[cnt].begin();
+						for (; it != thi->CounterSamples[cnt].end(); it++)
+							totalcounter += *it;
+
+						double rate = ((double) (totalcounter)) / (thi->TimeSamples.back()-thi->TimeSamples.front());
+
+//						cout << "counter rate = " << rate << endl;
+
+//						cout << "current time = " << e.Timestamp << endl;
+//						cout << "delta(current,last) = " << e.Timestamp - thi->TimeSamples.back() << endl;
+
+						unsigned long long cextended = (e.Timestamp - thi->TimeSamples.back())*rate;
+
+//						cout << "cextended-post = " << cextended << endl;
+
+						thi->CounterSamples[cnt].push_back (cextended);
+					}
+			}
+			CounterAdded = true;
+		}
+#endif /* HSG NEW */
+
 		if (CounterAdded)
 		{
 			thi->TimeSamples.push_back (e.Timestamp);
@@ -450,116 +540,119 @@ void Process::processMultiEvent (struct multievent_t &e)
 		}
 		else
 		{
-			if (thi->TimeSamples.size() > 0)
+			string RegionNameValue = pcf->getEventValue (RegionSeparator, thi->CurrentRegion);
+
+			/* Write the total time spent in this region */
+			if (RegionNameValue.length() > 0 && RegionNameValue != "Not found")
 			{
-				string RegionNameValue = pcf->getEventValue (RegionSeparator, thi->CurrentRegion);
-
-				/* Write the total time spent in this region */
-				if (RegionNameValue.length() > 0 && RegionNameValue != "Not found")
-				{
-					thi->output << "T " << common::removeSpaces (RegionNameValue) << "." << thi->CurrentPhase << " " << TotalTime << endl;
-				}
+				thi->output << "T " << common::removeSpaces (RegionNameValue) << "." << thi->CurrentPhase << " " << TotalTime << endl;
+			}
+			else
+			{
+				string RegionName = pcf->getEventType (RegionSeparator);
+				if (RegionName.length() > 0)
+					thi->output << "T " << common::removeSpaces (RegionName) << "_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
 				else
-				{
-					string RegionName = pcf->getEventType (RegionSeparator);
-					if (RegionName.length() > 0)
-						thi->output << "T " << common::removeSpaces (RegionName) << "_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
-					else
-						thi->output << "T Unknown_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
-				}
-
-				for (unsigned i = 0; i < thi->vcallstack.size(); i++)
-				{
-					double NTime = ::NormalizeValue (thi->vcallstack[i].second - thi->StartRegion, 0, TotalTime);
-					thi->output << "C " << NTime << " "<< thi->vcallstack[i].first.Type << " " << thi->vcallstack[i].first.Value << endl;
-				}
-
-				/* Write total counters spent in this region */
-				for (unsigned cnt = 0; cnt < numCounterIDs; cnt++)
-				{
-					if (!CounterUsed[cnt])
-						continue;
-					unsigned long long TotalCounter = 0;
-					list<unsigned long long>::iterator Counter_iter = thi->CounterSamples[cnt].begin();
-					for ( ; Counter_iter != thi->CounterSamples[cnt].end(); Counter_iter++)
-						TotalCounter += (*Counter_iter);
-					thi->output << "A " << CounterIDNames[cnt] << " " << TotalCounter << endl;
-				}
+					thi->output << "T Unknown_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
 			}
 
+			for (unsigned i = 0; i < thi->vcallstack.size(); i++)
+			{
+				double NTime = ::NormalizeValue (thi->vcallstack[i].second - thi->StartRegion, 0, TotalTime);
+				thi->output << "C " << NTime << " "<< thi->vcallstack[i].first.Type << " " << thi->vcallstack[i].first.Value << endl;
+			}
+
+			/* Write total counters spent in this region */
 			for (unsigned cnt = 0; cnt < numCounterIDs; cnt++)
 			{
 				if (!CounterUsed[cnt])
 					continue;
-
 				unsigned long long TotalCounter = 0;
 				list<unsigned long long>::iterator Counter_iter = thi->CounterSamples[cnt].begin();
 				for ( ; Counter_iter != thi->CounterSamples[cnt].end(); Counter_iter++)
 					TotalCounter += (*Counter_iter);
-
-				list<unsigned long long>::iterator Times_iter = thi->TimeSamples.begin();
-				Counter_iter = thi->CounterSamples[cnt].begin();
-				list<unsigned long long>::iterator Counter_iter_next = thi->CounterSamples[cnt].begin();
-				Counter_iter_next++;
-				list<bool>::iterator Skip_iter = thi->SkipSamples.begin();
-
-#if defined(DEBUG)
-				thi->output << "TOTAL TIME = " << TotalTime << " from " << thi->StartRegion << " to " << e.Timestamp << " TOTAL COUNTER[" << CounterIDs[cnt] << "/"<< cnt << "]= " << TotalCounter << endl;
-#endif
-
-				if (TotalCounter > 0)
-				{
-					unsigned long long AccumCounter = 0;
-
-					/* Last pair is always 1 - 1, skip them! */
-					for (; Counter_iter_next != thi->CounterSamples[cnt].end();
-						Counter_iter_next++, Counter_iter++, Times_iter++, Skip_iter++)
-					{
-						if (!(*Skip_iter))
-						{
-							double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
-							double NCounter = ::NormalizeValue (AccumCounter + (*Counter_iter), 0, TotalCounter);
-	
-#if defined(DEBUG)
-							thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
-#else
-							thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << (AccumCounter + (*Counter_iter)) << " " << thi->CurrentIteration << endl;
-#endif
-						}
-
-						/* Always! accumulate counters, even for skipped records! */
-						AccumCounter += (*Counter_iter);
-					}
-					thi->CounterSamples[cnt].clear();
-				} /* TotalCounter > 0 */
-				else
-				{
-					/* Last pair is always 1 - 1, skip them! */
-					for (; Counter_iter_next != thi->CounterSamples[cnt].end();
-						Counter_iter_next++, Counter_iter++, Times_iter++, Skip_iter++)
-					{
-						if (!(*Skip_iter))
-						{
-							double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
-							double NCounter = 0.0f;
-	
-#if defined(DEBUG)
-							thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
-#else
-							thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << 0.0f << " " << thi->CurrentIteration << endl;
-#endif
-						}
-
-						/* Always! accumulate counters, even for skipped records! */
-					}
-					thi->CounterSamples[cnt].clear();
-				}
-				CounterUsed[cnt] = false; /* clean for next region */
-			} /* Skip */
-
-			thi->TimeSamples.clear();
-			thi->SkipSamples.clear();
+				thi->output << "A " << CounterIDNames[cnt] << " " << TotalCounter << endl;
+			}
 		}
+
+		for (unsigned cnt = 0; cnt < numCounterIDs; cnt++)
+		{
+			if (!CounterUsed[cnt])
+				continue;
+
+			unsigned long long TotalCounter = 0;
+			list<unsigned long long>::iterator Counter_iter = thi->CounterSamples[cnt].begin();
+			for ( ; Counter_iter != thi->CounterSamples[cnt].end(); Counter_iter++)
+			{
+				TotalCounter += (*Counter_iter);
+			}
+
+			list<unsigned long long>::iterator Times_iter = thi->TimeSamples.begin();
+			Counter_iter = thi->CounterSamples[cnt].begin();
+			list<unsigned long long>::iterator Counter_iter_next = thi->CounterSamples[cnt].begin();
+			Counter_iter_next++;
+			list<bool>::iterator Skip_iter = thi->SkipSamples.begin();
+
+#if defined(DEBUG)
+			thi->output << "TOTAL TIME = " << TotalTime << " from " << thi->StartRegion << " to " << e.Timestamp << " TOTAL COUNTER[" << CounterIDs[cnt] << "/"<< cnt << "]= " << TotalCounter << endl;
+#endif
+
+			if (TotalCounter > 0)
+			{
+				unsigned long long AccumCounter = 0;
+
+				/* Last pair is always 1 - 1, skip them! */
+/* HSG original
+				for (; Counter_iter_next != thi->CounterSamples[cnt].end();
+					Counter_iter_next++, Counter_iter++, Times_iter++, Skip_iter++)
+*/
+				for (; Counter_iter != thi->CounterSamples[cnt].end();
+					Counter_iter++, Times_iter++, Skip_iter++)
+				{
+					if (!(*Skip_iter))
+					{
+						double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
+						double NCounter = ::NormalizeValue (AccumCounter + (*Counter_iter), 0, TotalCounter);
+	
+#if defined(DEBUG)
+						thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
+#else
+						thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << (AccumCounter + (*Counter_iter)) << " " << thi->CurrentIteration << endl;
+#endif
+					}
+
+					/* Always! accumulate counters, even for skipped records! */
+					AccumCounter += (*Counter_iter);
+				}
+				thi->CounterSamples[cnt].clear();
+			} /* TotalCounter > 0 */
+			else
+			{
+				/* Last pair is always 1 - 1, skip them! */
+				for (; Counter_iter != thi->CounterSamples[cnt].end();
+					Counter_iter_next++, Counter_iter++, Times_iter++, Skip_iter++)
+				{
+					if (!(*Skip_iter))
+					{
+						double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
+						double NCounter = 0.0f;
+	
+#if defined(DEBUG)
+						thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
+#else
+						thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << 0.0f << " " << thi->CurrentIteration << endl;
+#endif
+					}
+
+					/* Always! accumulate counters, even for skipped records! */
+				}
+				thi->CounterSamples[cnt].clear();
+			}
+			CounterUsed[cnt] = false; /* clean for next region */
+		} /* Skip */
+
+		thi->TimeSamples.clear();
+		thi->SkipSamples.clear();
 
 		/* Then dump caller line information */
 		for (list<LineCodeInformation*>::iterator it = thi->LineSamples.begin(); it != thi->LineSamples.end(); it++)
@@ -595,6 +688,14 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 	if ((FoundSeparator && ValueSeparator != 0) || FoundPhaseSeparator)
 		thi->StartRegion = e.Timestamp;
+
+	/* Annotate the time if we have found a counter in this event group */
+	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
+		if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER)
+		{
+			thi->LastCounterTime = e.Timestamp;
+			break;
+		}
 }
 
 void Process::processEvent (struct singleevent_t &e)
@@ -694,8 +795,9 @@ int main (int argc, char *argv[])
 		TaskInformation *ti = p->IH.getTasksInformation();
 		for (unsigned int j = 0; j < vt.size(); j++)
 		{
-			ti[j].AllocateThreads (vt[j]->get_threads().size());
-			for (unsigned int k = 0; k < vt[j]->get_threads().size(); k++)
+			ti[j].AllocateThreads (vt[j]->get_threads()[0]->get_key());
+			//ti[j].AllocateThreads (vt[j]->get_threads().size());
+			for (unsigned int k = 0; k < ti[j].getNumThreads(); k++)
 			{
 				ThreadInformation *thi = &((ti[j].getThreadsInformation())[k]);
 				thi->AllocateBufferCounters (p->numCounterIDs);
@@ -704,7 +806,7 @@ int main (int argc, char *argv[])
 				tasknumber << j+1;
 				threadnumber << k+1;
 				string completefile = tracename.substr (0, tracename.length()-4) + ".extract." + tasknumber.str() + "." + threadnumber.str();
-				thi->output.open (completefile.c_str());
+				thi->output.open (basename(completefile.c_str()));
 
 				/* Put definitions for the separator event */
 				list<string>::iterator it = p->TypeValuesLabels.begin();
@@ -721,7 +823,7 @@ int main (int argc, char *argv[])
 		vector<ParaverTraceTask *> vt = va[i]->get_tasks();
 		TaskInformation *ti = p->IH.getTasksInformation();
 		for (unsigned int j = 0; j < vt.size(); j++)
-			for (unsigned int k = 0; k < vt[j]->get_threads().size(); k++)
+			for (unsigned int k = 0; k < ti[j].getNumThreads(); k++)
 			{
 				ThreadInformation *thi = &((ti[j].getThreadsInformation())[k]);
 				thi->output.close();
@@ -729,7 +831,7 @@ int main (int argc, char *argv[])
 	}
 
 	string ControlFile = tracename.substr (0, tracename.length()-4) + ".control";
-	ofstream cfile (ControlFile.c_str());
+	ofstream cfile (basename(ControlFile.c_str()));
 	cfile << tracename << endl;
 	cfile << RegionSeparator << endl;
 	cfile << PhaseSeparators.size() << endl;
