@@ -20,15 +20,15 @@
 \*****************************************************************************/
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/folding/region-analyzer.C $
+ | @file: $HeadURL$
  | 
- | @last_commit: $Date: 2009-12-03 11:30:14 +0100 (dj, 03 des 2009) $
- | @version:     $Revision: 66 $
+ | @last_commit: $Date$
+ | @version:     $Revision$
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id: region-analyzer.C 66 2009-12-03 10:30:14Z harald $";
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "ParaverTrace.h"
 #include "ParaverTraceThread.h"
