@@ -1,12 +1,16 @@
 #DEBUG= -DDEBUG
+#BOOST = /home/harald/aplic/boost/1.40
+
+CUBE3_HOME = /home/harald/aplic/cube/3.4
 CC = gcc
 CXX = g++
-#BOOST = /home/harald/aplic/boost/1.40
 COMMON = ../common-files
 COMMONFILESFLAGS = -I $(COMMON) -I $(COMMON)/pcfparser -I $(COMMON)/prvparser # -I $(BOOST)/include
-CXXFLAGS = -O -Wall -g $(DEBUG) -I .
+CXXFLAGS = -O -Wall -g $(DEBUG) -I . -I $(CUBE3_HOME)/include
 CFLAGS = -O -Wall -g $(DEBUG)
 PRV_PCF_PARSERS = $(COMMON)/prvparser/*.cpp $(COMMON)/pcfparser/*.cpp $(COMMON)/LibException.cpp
+
+LDFLAGS = -L $(CUBE3_HOME)/lib -lcube3 -lz -L $(PWD)/service-kriger -lkriger -lgfortran
 
 TARGETS = fuse sort_pcf extract interpolate max-diff-interpolation-points mean-diff-interpolation-points
 
@@ -51,9 +55,12 @@ region-analyzer-first-occurrency.o: region-analyzer-first-occurrency.C region-an
 region.o: region.C region.H
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
-interpolate: region-analyzer-first-occurrency.o region-analyzer-in-frame-region.o region-analyzer-in-time-region.o region.o generate-gnuplot.o common.o interpolate.C
+callstackanalysis.o: callstackanalysis.C callstackanalysis.H
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
+
+interpolate: region-analyzer-first-occurrency.o region-analyzer-in-frame-region.o region-analyzer-in-time-region.o region.o generate-gnuplot.o common.o callstackanalysis.o interpolate.C
 	cd service-kriger; gmake ; cd ..
-	$(CXX) -o $@ interpolate.C $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(PWD)/service-kriger -L $(PWD)/service-kriger -lkriger -lgfortran region.o region-analyzer-first-occurrency.o region-analyzer-in-frame-region.o region-analyzer-in-time-region.o generate-gnuplot.o common.o
+	$(CXX) -o $@ interpolate.C $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(PWD)/service-kriger region.o region-analyzer-first-occurrency.o region-analyzer-in-frame-region.o region-analyzer-in-time-region.o generate-gnuplot.o common.o callstackanalysis.o $(LDFLAGS)
 
 clean:
 	cd service-kriger; gmake clean; cd ..

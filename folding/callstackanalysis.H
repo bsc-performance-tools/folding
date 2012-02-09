@@ -28,26 +28,45 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef UTILS_H_INCLUDED
-#define UTILS_H_INCLUDED
+#ifndef CALLSTACKANALYSIS_H_INCLUDED
+#define CALLSTACKANALYSIS_H_INCLUDED
 
+#include <vector>
 #include <string>
 #include "UIParaverTraceConfig.h"
-
-#define UNREFERENCED(a) ((a) = (a))
-#define MAX(a,b) ((a)>(b)?(a):(b))
-#define MIN(a,b) ((a)<(b)?(a):(b))
+#include <cube3/Cube.h>
 
 using namespace std;
-using namespace libparaver;
 
-class common
+class ca_callstacksample
 {
 	public:
-	static string convertInt (int);
-	static string convertDouble (double, int);
-	static string removeSpaces (string &in);
-	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
+	float Time;
+	unsigned Region;
+	vector<unsigned> depth;
+	vector<unsigned> caller;
+	vector<unsigned> callerline;
+};
+
+class ca_callstackanalysis_presence
+{
+	public:
+	unsigned occurrences;
+	vector<unsigned> caller;
+	vector<unsigned> callerline;
+};
+
+class ca_callstackanalysis
+{
+	public:
+
+	static void do_analysis (unsigned, string, vector<double> &, 
+	  vector<ca_callstacksample> &, UIParaverTraceConfig *, cube::Cube*);
+	static void do_analysis_presence_region (unsigned, string, unsigned, double ,
+	  double, vector<ca_callstacksample> &, UIParaverTraceConfig *);
+	static void do_analysis_presence_region_cube (unsigned, string, unsigned,
+		double, double, vector<ca_callstacksample> &, UIParaverTraceConfig *,
+		cube::Cube*, cube::Cnode *base);
 };
 
 #endif
