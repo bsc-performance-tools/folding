@@ -20,15 +20,15 @@
 \*****************************************************************************/
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/folding/region.cpp $
+ | @file: $HeadURL$
  | 
- | @last_commit: $Date: 2009-11-20 19:02:15 +0100 (dv, 20 nov 2009) $
- | @version:     $Revision: 37 $
+ | @last_commit: $Date$
+ | @version:     $Revision$
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id: region.cpp 37 2009-11-20 18:02:15Z harald $";
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include <UIParaverTraceConfig.h>
 #include <fstream>

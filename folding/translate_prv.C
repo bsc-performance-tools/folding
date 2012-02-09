@@ -20,15 +20,15 @@
 \*****************************************************************************/
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/folding/extract.C $
+ | @file: $HeadURL$
  | 
- | @last_commit: $Date: 2009-11-20 19:13:28 +0100 (dv, 20 nov 2009) $
- | @version:     $Revision: 39 $
+ | @last_commit: $Date$
+ | @version:     $Revision$
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id: extract.C 39 2009-11-20 18:13:28Z harald $";
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "translate_prv.H"
 
