@@ -32,8 +32,25 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: xml-parse.c 15 2009-10-29 1
 
 #include "common.H"
 
+#include <sstream>
+#include <iomanip>
+
 #define PAPI_MIN_COUNTER   42000000
 #define PAPI_MAX_COUNTER   42009998
+
+string common::convertDouble (double d, int i)
+{
+	stringstream s;//create a stringstream
+	s << fixed << setprecision(i) << d;//add number to the stream with selected precision
+	return s.str();//return a string with the contents of the stream
+}
+
+string common::convertInt (int i)
+{
+	stringstream s;//create a stringstream
+	s << i;//add number to the stream
+	return s.str();//return a string with the contents of the stream
+}
 
 string common::removeSpaces (string &in)
 {
