@@ -1,24 +1,25 @@
 /*****************************************************************************\
  *                        ANALYSIS PERFORMANCE TOOLS                         *
- *                                  MPItrace                                 *
+ *                                   Folding                                 *
  *              Instrumentation package for parallel applications            *
  *****************************************************************************
- *                                                             ___           *
- *   +---------+     http:// www.cepba.upc.edu/tools_i.htm    /  __          *
- *   |    o//o |     http:// www.bsc.es                      /  /  _____     *
- *   |   o//o  |                                            /  /  /     \    *
- *   |  o//o   |     E-mail: cepbatools@cepba.upc.edu      (  (  ( B S C )   *
- *   | o//o    |     Phone:          +34-93-401 71 78       \  \  \_____/    *
- *   +---------+     Fax:            +34-93-401 25 77        \  \__          *
- *    C E P B A                                               \___           *
+ *     ___     This library is free software; you can redistribute it and/or *
+ *    /  __         modify it under the terms of the GNU LGPL as published   *
+ *   /  /  _____    by the Free Software Foundation; either version 2.1      *
+ *  /  /  /     \   of the License, or (at your option) any later version.   *
+ * (  (  ( B S C )                                                           *
+ *  \  \  \_____/   This library is distributed in hope that it will be      *
+ *   \  \__         useful but WITHOUT ANY WARRANTY; without even the        *
+ *    \___          implied warranty of MERCHANTABILITY or FITNESS FOR A     *
+ *                  PARTICULAR PURPOSE. See the GNU LGPL for more details.   *
  *                                                                           *
- * This software is subject to the terms of the CEPBA/BSC license agreement. *
- *      You must accept the terms of this license to use this software.      *
+ * You should have received a copy of the GNU Lesser General Public License  *
+ * along with this library; if not, write to the Free Software Foundation,   *
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA          *
+ * The GNU LEsser General Public License is contained in the file COPYING.   *
  *                                 ---------                                 *
- *                European Center for Parallelism of Barcelona               *
- *                      Barcelona Supercomputing Center                      *
+ *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
  | @file: $HeadURL$
  | 
@@ -146,6 +147,34 @@ unsigned TranslateRegion (string &RegionName)
 	return result;
 }
 
+void AdaptCallStack (ca_callstacksample &CS)
+{
+	/* Remove trailing not_found | unknown values*/
+	while (CS.caller.back() <= 2 && CS.callerline.back() <= 2)
+	{
+		CS.caller.pop_back();
+		CS.callerline.pop_back();
+		if (CS.caller.size() == 0 && CS.callerline.size() == 0)
+			break;
+	}
+	if (CS.caller.size() > 0)
+	{
+		/* Extrae generates the callstack down-top
+		   i.e. first element is closer to the code it was executing,
+		   reverse the vector for a top-down approach.
+		   Also remove not_found|unknown values */
+		reverse (CS.caller.begin(), CS.caller.end());
+		reverse (CS.callerline.begin(), CS.callerline.end());
+		while (CS.caller.back() <= 2 && CS.callerline.back() <= 2)
+		{
+			CS.caller.pop_back();
+			CS.callerline.pop_back();
+			if (CS.caller.size() == 0 && CS.callerline.size() == 0)
+				break;
+		}
+	}
+}
+
 void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 	vector<Point> &accumulatedCounterPoints)
 {
@@ -238,15 +267,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 						cerr << "CS,caller.size() != CS.callerline.size(). This should not happen!" << endl;
 						exit (-1);
 					}
-
-					/* Remove trailing not_found | unknown values*/
-					while (CS.caller.back() <= 2 && CS.callerline.back() <= 2)
-					{
-						CS.caller.pop_back();
-						CS.callerline.pop_back();
-						if (CS.caller.size() == 0 && CS.callerline.size() == 0)
-							break;
-					}
+					AdaptCallStack (CS);
 					if (CS.caller.size() > 0)
 						vcallstacksamples.push_back (CS);
 				}
@@ -298,7 +319,17 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 		}
 	}
 
-	vcallstacksamples.push_back (CS);
+	if (CS.caller.size() > 0)
+	{
+		if (CS.caller.size() != CS.callerline.size())
+		{
+			cerr << "CS,caller.size() != CS.callerline.size(). This should not happen!" << endl;
+			exit (-1);
+		}
+		AdaptCallStack (CS);
+		if (CS.caller.size() > 0)
+			vcallstacksamples.push_back (CS);
+	}
 }
 
 void CalculateStatsFromFile (ifstream &file, bool any_region)

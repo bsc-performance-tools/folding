@@ -29,52 +29,72 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef CALLSTACKANALYSIS_H_INCLUDED
-#define CALLSTACKANALYSIS_H_INCLUDED
-
-#include <vector>
-#include <string>
-#include "UIParaverTraceConfig.h"
-#include <cube3/Cube.h>
 #include "treenodeholder.H"
 
-using namespace std;
-
-class TreeNodeHolder;
-
-class ca_callstacksample
+TreeNodeHolder * TreeNodeHolder::lookForCallerLine (unsigned id)
 {
-	public:
-	float Time;
-	unsigned Region;
-//	vector<unsigned> depth;
-	vector<unsigned> caller;
-	vector<unsigned> callerline;
-};
+   TreeNodeHolder *tmp;
+   for (unsigned u = 0; u < children.size(); u++)
+		if (children[u]->CallerLine == id)
+			return this;
 
-class ca_callstackanalysis_presence
+   for (unsigned u = 0; u < children.size(); u++)
+     if ( (tmp = children[u]->lookForCallerLine (id)) != NULL)
+       return tmp;
+   return NULL;
+}
+
+void TreeNodeHolder::AddPath (unsigned depth, ca_callstacksample &ca)
 {
-	public:
-	unsigned occurrences;
-	vector<unsigned> caller;
-	vector<unsigned> callerline;
-};
+#ifdef DEBUG
+	string as = "*";
+	string em = " ";
 
-class ca_callstackanalysis
-{
-	public:
+	cout << "ADDPATH depth = " << depth << endl;
+	cout << "ADDPATH BEGIN adding samples " << endl;
+	for (unsigned u = 0; u < ca.callerline.size(); u++)
+		if (u==depth)
+			cout << as << " ADDPATH sample " << ca.callerline[u] << endl;
+		else
+			cout << em << " ADDPATH sample " << ca.callerline[u] << endl;
+	cout << "ADDPATH END adding samples " << endl;
 
-	static void do_analysis (unsigned, string, vector<double> &, 
-	  vector<ca_callstacksample> &, libparaver::UIParaverTraceConfig *, cube::Cube*);
-	static void do_analysis_presence_region (unsigned, string, unsigned, double ,
-	  double, vector<ca_callstacksample> &, libparaver::UIParaverTraceConfig *);
-
-	static void do_analysis_presence_region_cube_tree (unsigned, string, unsigned,
-		double, double, vector<ca_callstacksample> &,
-		libparaver::UIParaverTraceConfig *, cube::Cube*, cube::Cnode *base);
-	static void do_analysis_presence_region_cube_tree_r (
-		TreeNodeHolder *tree, libparaver::UIParaverTraceConfig *pcf, 
-		cube::Cube *cube, cube::Cnode *root);
-};
-
+	cout << "COMPARING " << ca.callerline[depth] << endl;
 #endif
+
+	bool found = false;
+	for (unsigned u = 0; u < children.size() && !found; u++)
+	{
+#ifdef DEBUG
+		cout << ".. WITH " << children[u]->CallerLine << endl;
+#endif
+		if (ca.callerline[depth] == children[u]->CallerLine)
+		{
+			found = true;
+			//children[u]->Occurrences++;
+			if (depth+1 < ca.callerline.size())
+				children[u]->AddPath (depth+1, ca);
+			else
+				children[u]->Occurrences++;
+		} 
+	}
+#ifdef DEBUG
+	cout << "END COMPARING " << ca.callerline[depth] << endl;
+#endif
+
+	if (!found)
+	{
+#ifdef DEBUG
+		cout << "NOT FOUND BUILDING " << ca.callerline[depth] << endl;
+#endif
+		TreeNodeHolder *tmp = new TreeNodeHolder;
+		tmp->Caller = ca.caller[depth];
+		tmp->CallerLine = ca.callerline[depth];
+		tmp->Occurrences = (depth+1 < ca.callerline.size())?0:1;
+		children.push_back (tmp);
+
+		if (depth+1 < ca.callerline.size())
+			tmp->AddPath (depth+1, ca);
+	}
+}
+

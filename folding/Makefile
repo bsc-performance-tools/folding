@@ -28,6 +28,9 @@ translate_prv.o: translate_prv.C
 sort_pcf:	sort_pcf.C translate_prv.o
 	$(CXX) -o $@ $< $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) translate_prv.o
 
+treenodeholder.o: treenodeholder.C
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
+
 common.o: common.C
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
 
@@ -58,9 +61,9 @@ region.o: region.C region.H
 callstackanalysis.o: callstackanalysis.C callstackanalysis.H
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(COMMONFILESFLAGS)
 
-interpolate: region-analyzer-first-occurrency.o region-analyzer-in-frame-region.o region-analyzer-in-time-region.o region.o generate-gnuplot.o common.o callstackanalysis.o interpolate.C
+interpolate: interpolate.C region-analyzer-first-occurrency.o region-analyzer-in-frame-region.o region-analyzer-in-time-region.o region.o generate-gnuplot.o common.o callstackanalysis.o  treenodeholder.o
 	cd service-kriger; gmake ; cd ..
-	$(CXX) -o $@ interpolate.C $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(PWD)/service-kriger region.o region-analyzer-first-occurrency.o region-analyzer-in-frame-region.o region-analyzer-in-time-region.o generate-gnuplot.o common.o callstackanalysis.o $(LDFLAGS)
+	$(CXX) -o $@ interpolate.C $(PRV_PCF_PARSERS) $(CXXFLAGS) $(COMMONFILESFLAGS) -I $(PWD)/service-kriger region.o region-analyzer-first-occurrency.o region-analyzer-in-frame-region.o region-analyzer-in-time-region.o generate-gnuplot.o common.o callstackanalysis.o treenodeholder.o $(LDFLAGS)
 
 clean:
 	cd service-kriger; gmake clean; cd ..
