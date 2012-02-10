@@ -29,52 +29,30 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef CALLSTACKANALYSIS_H_INCLUDED
-#define CALLSTACKANALYSIS_H_INCLUDED
+#ifndef TREENODEHOLDER_H_INCLUDED
+#define TREENODEHOLDER_H_INCLUDED
 
-#include <vector>
-#include <string>
-#include "UIParaverTraceConfig.h"
-#include <cube3/Cube.h>
-#include "treenodeholder.H"
+#include "callstackanalysis.H"
 
-using namespace std;
+class ca_callstacksample;
 
-class TreeNodeHolder;
-
-class ca_callstacksample
+class TreeNodeHolder
 {
 	public:
-	float Time;
-	unsigned Region;
-//	vector<unsigned> depth;
-	vector<unsigned> caller;
-	vector<unsigned> callerline;
-};
+	unsigned CallerLine;
+	unsigned Caller;
 
-class ca_callstackanalysis_presence
-{
-	public:
-	unsigned occurrences;
-	vector<unsigned> caller;
-	vector<unsigned> callerline;
-};
+	vector<TreeNodeHolder *> children;
+	unsigned Occurrences;
 
-class ca_callstackanalysis
-{
-	public:
+	TreeNodeHolder ()
+	{};
 
-	static void do_analysis (unsigned, string, vector<double> &, 
-	  vector<ca_callstacksample> &, libparaver::UIParaverTraceConfig *, cube::Cube*);
-	static void do_analysis_presence_region (unsigned, string, unsigned, double ,
-	  double, vector<ca_callstacksample> &, libparaver::UIParaverTraceConfig *);
+	~TreeNodeHolder ()
+	{};
 
-	static void do_analysis_presence_region_cube_tree (unsigned, string, unsigned,
-		double, double, vector<ca_callstacksample> &,
-		libparaver::UIParaverTraceConfig *, cube::Cube*, cube::Cnode *base);
-	static void do_analysis_presence_region_cube_tree_r (
-		TreeNodeHolder *tree, libparaver::UIParaverTraceConfig *pcf, 
-		cube::Cube *cube, cube::Cnode *root);
+	TreeNodeHolder *lookForCallerLine (unsigned);
+	void AddPath (unsigned, ca_callstacksample &);
 };
 
 #endif
