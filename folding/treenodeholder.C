@@ -68,7 +68,16 @@ void TreeNodeHolder::AddPath (unsigned depth, ca_callstacksample &ca)
 #ifdef DEBUG
 		cout << ".. WITH " << children[u]->CallerLine << endl;
 #endif
+
+//#define ALL_CALLERLINES
+
+#ifndef ALL_CALLERLINES
+		if ((ca.callerline.size()-1 == depth && ca.callerline[depth] == children[u]->CallerLine) ||
+		    (ca.callerline.size()-1 != depth && ca.caller[depth] == children[u]->Caller))
+#else
 		if (ca.callerline[depth] == children[u]->CallerLine)
+#endif
+
 		{
 			found = true;
 			//children[u]->Occurrences++;
@@ -91,7 +100,18 @@ void TreeNodeHolder::AddPath (unsigned depth, ca_callstacksample &ca)
 		tmp->Caller = ca.caller[depth];
 		tmp->CallerLine = ca.callerline[depth];
 		tmp->Occurrences = (depth+1 < ca.callerline.size())?0:1;
-		children.push_back (tmp);
+
+		/* If there are siblings, add sorted by line # (use identifier in PCF) */
+		if (children.size() > 0)
+		{
+			vector<TreeNodeHolder*>::iterator it = children.begin();
+			while (tmp->CallerLine > (*it)->CallerLine)
+				if (++it == children.end())
+					break;
+			children.insert (it, tmp);
+		}
+		else
+			children.push_back (tmp);
 
 		if (depth+1 < ca.callerline.size())
 			tmp->AddPath (depth+1, ca);

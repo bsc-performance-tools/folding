@@ -332,7 +332,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 	}
 }
 
-void CalculateStatsFromFile (ifstream &file, bool any_region)
+void CalculateStatsFromFile (ifstream &file, bool any_region, vector<string> &allcounters)
 {
 	char type;
 
@@ -383,6 +383,8 @@ void CalculateStatsFromFile (ifstream &file, bool any_region)
 			if (unused_s == TOT_INS)
 				meanRegion_tot_ins[any_region?0:Region] += unused_ll;
 
+			if (find(allcounters.begin(), allcounters.end(), unused_s) == allcounters.end())
+				allcounters.push_back (unused_s);
 		}
 		else if (type == 'S')
 		{
@@ -665,7 +667,7 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 			}
 
 			sslope << fixed << setprecision (4);
-			for (float eps = 0.0001; eps <= 0.001f; eps += 0.0001)
+			for (float eps = 0.0002; eps <= 0.002f; eps += 0.0002)
 			{
 				unsigned last_pos_segment = 0;
 				float prevslope = 0.0f;
@@ -689,8 +691,11 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 				}
 #endif
 
-#define WINDOW_SIZE 10 
+#define WINDOW_SIZE    10 
+
 				cout << fixed << setprecision(5) << flush;
+
+				unsigned preslopepoint = 0;
 
 				for (unsigned j = 0; j < outcount; j += WINDOW_SIZE)
 				{
@@ -711,6 +716,7 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 						prevslope = slope;
 						double point = d_j/d_outcount;
 						sslope << CounterID << " " << point << " " << outpoints[j] << " " << eps << endl;
+						preslopepoint = j;
 					}
 				}
 
@@ -1533,6 +1539,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 
 int main (int argc, char *argv[])
 {
+	vector<string> allcounters;
 	vector<unsigned long long> phasetypes;
 	UIParaverTraceConfig *pcf = NULL;
 	RegionInfo regions;
@@ -1563,8 +1570,8 @@ int main (int argc, char *argv[])
   coord0.push_back(0);
   cube.def_coords(cart, (cube::Sysres*) thrd0, coord0);
 
-
-
+	cube.def_met("# Occurrences", "no_Occurrences", "INTEGER",
+	  "occ", "", "", "Number of occurrences of the callstack", NULL);
 
 
 
@@ -1584,7 +1591,13 @@ int main (int argc, char *argv[])
 	}
 
 	cout << "Calculating stats" << endl;
-	CalculateStatsFromFile (InputFile, !SeparateValues);
+	CalculateStatsFromFile (InputFile, !SeparateValues, allcounters);
+
+	/* If the user specifies -counter all, substitute the the wanted counters
+	   by all the counters found */
+	if (wantedCounters.size() > 0)
+		if (find(wantedCounters.begin(), wantedCounters.end(), "all") != wantedCounters.end())
+			wantedCounters = allcounters;
 
 	string cFile = argv[res];
 	cFile = cFile.substr (0, cFile.rfind (".extract")) + ".control";
@@ -1718,7 +1731,8 @@ int main (int argc, char *argv[])
 
 
   // Output to a cube file
-  std::ofstream out("example.cube");
+	string cube_output = string(argv[res]) + ".cube";
+  std::ofstream out (cube_output.c_str());
   out << cube;
 
 
