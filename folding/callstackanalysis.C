@@ -54,8 +54,6 @@ void ca_callstackanalysis::do_analysis (unsigned R, string Rstr,
 		exit (-1);
 	}
 
-	cube::Metric* met0 = cube->def_met("# Occurrences", "no_Occurrences", "INTEGER",
-	  "occ", "", "", "Number of occurrences of the callstack", NULL);
 	string RegionSTR = Rstr;
 
   cube::Region* rroot = cube->def_region (RegionSTR, 0, 0, "", "", "");
@@ -168,10 +166,23 @@ void ca_callstackanalysis::do_analysis_presence_region_cube_tree_r (TreeNodeHold
 	for (unsigned u = 0; u < tree->children.size(); u++)
 	{
 		TreeNodeHolder *child = tree->children[u];
-			string s = pcf->getEventValue (30000000, child->Caller) + " - " + pcf->getEventValue (30000100,child->CallerLine);
+		//string s = pcf->getEventValue (30000000, child->Caller) + " - " + pcf->getEventValue (30000100,child->CallerLine);
+
+		string cl = pcf->getEventValue (30000100, child->CallerLine);
+		int line = atoi ((cl.substr (0, cl.find (" "))).c_str());
+		int pos_open = cl.find ("(");
+		int pos_close = cl.find (")");
+		string file = cl.substr (pos_open+1, pos_close-pos_open-1);
+
+		string s;
+		if (child->children.size() > 0)
+			s = pcf->getEventValue (30000000, child->Caller);
+		else
+			s = pcf->getEventValue (30000000, child->Caller) + " - " + pcf->getEventValue (30000100,child->CallerLine);
 
 		cube::Region* r = cube->def_region (s, 0, 0, "", "", "");
-		cube::Cnode* c = cube->def_cnode (r, "", 0, root);
+		//cube::Cnode* c = cube->def_cnode (r, "", 0, root);
+		cube::Cnode* c = cube->def_cnode (r, file, line, root);
 		cube->set_sev (m, c, t, child->Occurrences);
 
 		do_analysis_presence_region_cube_tree_r (child, pcf, cube, c);
@@ -211,9 +222,23 @@ void ca_callstackanalysis::do_analysis_presence_region_cube_tree (unsigned R,
 		{
 			TreeNodeHolder *child = tnh.children[u];
 
-			string s = pcf->getEventValue (30000000, child->Caller) + " - " + pcf->getEventValue (30000100,child->CallerLine);
+			//string s = pcf->getEventValue (30000000, child->Caller) + " - " + pcf->getEventValue (30000100,child->CallerLine);
+
+			string cl = pcf->getEventValue (30000100, child->CallerLine);
+			int line = atoi ((cl.substr (0, cl.find (" "))).c_str());
+			int pos_open = cl.find ("(");
+			int pos_close = cl.find (")");
+			string file = cl.substr (pos_open+1, pos_close-pos_open-1);
+
+			string s;
+			if (child->children.size() > 0)
+				s = pcf->getEventValue (30000000, child->Caller);
+			else
+				s = pcf->getEventValue (30000000, child->Caller) + " - " + pcf->getEventValue (30000100,child->CallerLine);
+
 			cube::Region* r = cube->def_region (s, 0, 0, "", "", "");
-			cube::Cnode* c = cube->def_cnode (r, "", 0, root);
+			//cube::Cnode* c = cube->def_cnode (r, "", 0, root);
+			cube::Cnode* c = cube->def_cnode (r, file, line, root);
 			cube->set_sev (m, c, t, child->Occurrences);
 
 			do_analysis_presence_region_cube_tree_r (child, pcf, cube, c);
