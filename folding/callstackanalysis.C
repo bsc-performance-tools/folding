@@ -31,6 +31,8 @@
 
 static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
+#if CUBE
+
 #include <stdlib.h>
 
 #include <iostream>
@@ -44,6 +46,7 @@ void ca_callstackanalysis::do_analysis (unsigned R, string Rstr,
 	vector<double> &breakpoints, vector<ca_callstacksample> &samples,
 	UIParaverTraceConfig *pcf, cube::Cube *cube)
 {
+#if 0
 	unsigned N = breakpoints.size();
 
 	cout << "CallStack Analysis for " << Rstr << " Num of phases = " << N-1 << endl;
@@ -74,6 +77,7 @@ void ca_callstackanalysis::do_analysis (unsigned R, string Rstr,
 			do_analysis_presence_region_cube_tree (R, Rstr, u, breakpoints[u-1],
 			  breakpoints[u], samples, pcf, cube, c);
 	}
+#endif
 }
 
 void ca_callstackanalysis::do_analysis_presence_region (unsigned R, string Rstr,
@@ -161,6 +165,7 @@ void ca_callstackanalysis::do_analysis_presence_region (unsigned R, string Rstr,
 void ca_callstackanalysis::do_analysis_presence_region_cube_tree_r (TreeNodeHolder *tree,
 	UIParaverTraceConfig *pcf, cube::Cube *cube, cube::Cnode *root)
 {
+#if 0
 	cube::Metric *m = cube->get_met ("no_Occurrences");
 	cube::Thread *t = (cube->get_thrdv())[0];
 	for (unsigned u = 0; u < tree->children.size(); u++)
@@ -187,6 +192,7 @@ void ca_callstackanalysis::do_analysis_presence_region_cube_tree_r (TreeNodeHold
 
 		do_analysis_presence_region_cube_tree_r (child, pcf, cube, c);
 	}
+#endif
 }
 
 void ca_callstackanalysis::do_analysis_presence_region_cube_tree (unsigned R,
@@ -194,6 +200,7 @@ void ca_callstackanalysis::do_analysis_presence_region_cube_tree (unsigned R,
 	unsigned phase,	double from, double to, vector<ca_callstacksample> &samples,
 	UIParaverTraceConfig *pcf, cube::Cube *cube, cube::Cnode *root)
 {
+#if 0
 	unsigned TOTALoccurrences = 0;
 	TreeNodeHolder tnh;
 	tnh.Caller = 1;
@@ -244,5 +251,7 @@ void ca_callstackanalysis::do_analysis_presence_region_cube_tree (unsigned R,
 			do_analysis_presence_region_cube_tree_r (child, pcf, cube, c);
 		}
 	}
+#endif
 }
 
+#endif /* CUBE */

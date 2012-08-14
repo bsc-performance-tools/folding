@@ -258,7 +258,8 @@ void SearchForRegionsFirstOccurrence (string tracename, unsigned task, unsigned 
 				tmp = string("Unknown_") + regionstream.str();
 		}
 		tmp = common::removeSpaces (tmp);
-		(*i)->RegionName = tmp.substr (0, tmp.find_first_of (":[]{}() "));
+		//(*i)->RegionName = tmp.substr (0, tmp.find_first_of (":[]{}() "));
+		(*i)->RegionName = tmp;
 		stringstream phasestr;
 		phasestr << (*i)->Phase;
 		(*i)->RegionName += "." + phasestr.str();

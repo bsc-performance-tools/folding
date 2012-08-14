@@ -41,6 +41,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <map>
 #include <list>
 #include <algorithm>
 #include <iomanip>
@@ -57,13 +58,18 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #define TOT_INS "PM_INST_CMPL"
 
-#define MAX_REGIONS 1024
+#define MAX_REGIONS 10*1024
 
 #define FOLDED_BASE 600000000
 
-#define QUALITY_DISTANCE 0.01
+#warning "SLOPE must be calculated with -1 and +1 points, not -1"
 
 using namespace std;
+
+double kriger_nuget = 1e-3;
+double prefilter_distance = 0.001;
+
+#define QUALITY_DISTANCE prefilter_distance
 
 #if 0
 class CallstackSample
@@ -88,10 +94,12 @@ class Sample
 	unsigned long long DeCounterValue;
 
 	unsigned iteration;
+	unsigned Instance;
 };
 
-//vector<CallstackSample> vcallstacksamples;
+#if CUBE
 vector<ca_callstacksample> vcallstacksamples;
+#endif
 
 bool FilterMinDuration = false;
 double MinDuration;
@@ -147,6 +155,7 @@ unsigned TranslateRegion (string &RegionName)
 	return result;
 }
 
+#if CUBE
 void AdaptCallStack (ca_callstacksample &CS)
 {
 	/* Remove trailing not_found | unknown values*/
@@ -174,17 +183,21 @@ void AdaptCallStack (ca_callstacksample &CS)
 		}
 	}
 }
+#endif
 
 void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 	vector<Point> &accumulatedCounterPoints)
 {
+	unsigned Instance = 0;
 	unsigned long long lastRegion = 0;
 	unsigned long long lastDuration = 0;
 	bool inRegion = false;
 	bool Outlier = false;
 	char type;
 
+#if CUBE
 	ca_callstacksample CS;
+#endif
 	double lastCStime = 1.0;
 
 	while (true)
@@ -204,6 +217,8 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			string strRegion;
 			unsigned long long Duration;
 
+			Instance++;
+
 			file >> strRegion;
 			file >> Duration;
 
@@ -213,7 +228,9 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			inRegion = true;
 
 			if (removeOutliers && inRegion)
-				Outlier = fabs (meanRegion[any_region?0:lastRegion] - Duration) > NumOfSigmaTimes*sigmaRegion[any_region?0:lastRegion];
+				//Outlier = fabs (meanRegion[any_region?0:lastRegion] - Duration) > NumOfSigmaTimes*sigmaRegion[any_region?0:lastRegion];
+				Outlier = !((Duration > (meanRegion[any_region?0:lastRegion]-NumOfSigmaTimes*sigmaRegion[any_region?0:lastRegion])) && 
+				           (Duration < (meanRegion[any_region?0:lastRegion]+NumOfSigmaTimes*sigmaRegion[any_region?0:lastRegion])));
 
 #if defined(DEBUG)
 			cout << "DURATION " << Duration << " REGION (" << strRegion << ")= "<< lastRegion << (Outlier?" is":" is not") << " an outlier " << endl;
@@ -231,8 +248,10 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			file >> p.TotalCounter;
 
 			/* Outlier could be inherited from T type */
+#if 0
 			if (p.CounterID == TOT_INS && removeOutliers && inRegion)
 				Outlier = Outlier || fabs (meanRegion_tot_ins[any_region?0:lastRegion] - p.TotalCounter) > NumOfSigmaTimes*sigmaRegion_tot_ins[any_region?0:lastRegion];
+#endif
 
 #if defined(DEBUG)
 			if (p.CounterID == TOT_INS)
@@ -250,12 +269,13 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 		else if (type == 'C')
 		{
 			double Time;
-			unsigned Type, Value;
+			unsigned long long Type, Value;
 
 			file >> Time;
 			file >> Type;
 			file >> Value;
 
+#if CUBE
 			if (fabs(lastCStime-Time) >= 0.00001f) /* get rid of different double input differences */
 			{
 				cout << setprecision (12);
@@ -283,6 +303,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 				CS.caller.push_back (Value);
 			else if (Type >= 30000100 && Type < 30000200)
 				CS.callerline.push_back (Value);
+#endif
 
 
 		}
@@ -297,6 +318,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			file >> s.DeTime;
 			file >> s.DeCounterValue;
 			file >> s.iteration;
+			s.Instance = Instance;
 			s.Region = lastRegion;
 
 #if defined(DEBUG)
@@ -319,6 +341,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 		}
 	}
 
+#if CUBE
 	if (CS.caller.size() > 0)
 	{
 		if (CS.caller.size() != CS.callerline.size())
@@ -330,10 +353,12 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 		if (CS.caller.size() > 0)
 			vcallstacksamples.push_back (CS);
 	}
+#endif
 }
 
 void CalculateStatsFromFile (ifstream &file, bool any_region, vector<string> &allcounters)
 {
+	int line = 0;
 	char type;
 
 	for (int i = 0; i < MAX_REGIONS; i++)
@@ -349,6 +374,7 @@ void CalculateStatsFromFile (ifstream &file, bool any_region, vector<string> &al
 	while (true)
 	{
 		file >> type;
+		line++;
 
 		if (file.eof())
 			break;
@@ -521,6 +547,21 @@ static double Calculate_Quality1 (int incount, double *inpoints_x, double *inpoi
 	return (double) total_distances / (double) incount;
 }
 
+static double Distance_Point_To_Interpolate (double inpoint_x, double inpoint_y, int outcount, double *outpoints)
+{
+	double min_distance = 1.0f;
+	for (int i = 0; i < outcount; i++)
+	{
+		double X_distance = inpoint_x-((double) i/(double) outcount);
+		double Y_distance = inpoint_y-outpoints[i];
+		double distance = sqrt (X_distance*X_distance + Y_distance*Y_distance);
+
+		min_distance = MIN(distance, min_distance);
+	}
+
+	return min_distance;
+}
+
 void DumpParaverLines (ofstream &f, vector<unsigned long long> &type,
 	vector<unsigned long long > &value, unsigned long long time, unsigned long long task,
 	unsigned long long thread)
@@ -541,11 +582,135 @@ void DumpParaverLine (ofstream &f, unsigned long long type,
   f << "2:" << task << ":1:" << task << ":" << thread << ":" << time << ":" << type << ":" << value << endl;
 }
 
+
+bool runInterpolation_prefilter (ofstream &interpolation, ofstream &slope,
+	vector<Sample> &vsamples, string CounterID,	bool anyRegion,	unsigned RegionID,
+	unsigned outcount, double *outpoints, double slope_factor, double kriger_nuget,
+	double prefilter_distance)
+{
+	bool all_zeroes = true;
+	int incount = 0;
+
+	if (outcount > 0)
+	{
+		vector<Sample>::iterator it = vsamples.begin();
+		for (; it != vsamples.end(); it++)
+		{
+			if (!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID)
+				incount++;
+			else if (anyRegion && (*it).CounterID == CounterID)
+				incount++;
+		}
+	}
+
+	if (incount >= 0 && outcount > 0)
+	{
+		double *inpoints_x = (double*) malloc ((incount+2)*sizeof(double));
+		double *inpoints_y = (double*) malloc ((incount+2)*sizeof(double));
+		double *slope_vals = (double*) malloc (outcount*sizeof(double));
+		double *slope2_vals = (double*) malloc (outcount*sizeof(double));
+
+		inpoints_x[0] = inpoints_y[0] = 0.0f;
+		inpoints_x[1] = inpoints_y[1] = 1.0f;
+		vector<Sample>::iterator it = vsamples.begin();
+		for (incount = 2, it = vsamples.begin(); it != vsamples.end(); it++)
+		{
+			if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
+			    (anyRegion && (*it).CounterID == CounterID))
+			{
+				inpoints_x[incount] = (*it).Time;
+				inpoints_y[incount] = (*it).CounterValue;
+
+				all_zeroes = inpoints_y[incount] == 0.0f && all_zeroes;
+
+				incount++;
+			}
+		}
+		if (MaxSamples != 0 && incount > MaxSamples)
+		{
+			cout << "Attention! Number of samples limited to " << MaxSamples << " (incount was " << incount << ")" << endl;
+			incount = MaxSamples;
+		}
+
+		if (!all_zeroes)
+		{
+			/* If the region is not filled with 0s, run the regular countoring algorithm */
+			cout << "PREFILTER: Running interpolation (region=";
+			if (anyRegion)
+				cout << "any";
+			else
+				cout << RegionID << " / " << nameRegion[RegionID];
+			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ", nuget=" << setprecision(2) << scientific << kriger_nuget << ")" << endl;
+
+			Kriger_Region (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f, kriger_nuget);
+
+			cout << "PREFILTER: Calculating Q0" << flush;
+			double q0 = 1-Calculate_Quality1 (incount, inpoints_x, inpoints_y, outcount, outpoints);
+			cout << ", Q0 = " << fixed << q0 << endl;
+
+			cout << "PREFILTER: Calculating Q1 w/ QD = " << scientific << QUALITY_DISTANCE << flush;
+			double q1 = Calculate_Quality0 (incount, inpoints_x, inpoints_y, outcount, outpoints, QUALITY_DISTANCE);
+			cout << ", Q1 = " << fixed << q1 << endl;
+
+
+			/* Correct negative points present in the interpolation */
+			if (interpolation.is_open() && slope.is_open())
+			{
+				for (unsigned j = 0; j < outcount; j++)
+					if (outpoints[j] < 0)
+						outpoints[j] = 0;
+
+				double d_last = outpoints[0];
+				slope_vals[0] = 0.0f;
+				for (unsigned j = 1; j < outcount; j++)
+				{
+					double d_outcount = (double) outcount;
+					if (d_last < outpoints[j])
+					{
+						slope_vals[j] = (outpoints[j]-d_last) / (1/d_outcount);
+						d_last = outpoints[j];
+					}
+					else
+						slope_vals[j] = 0;
+				}
+
+				d_last = slope_vals[0];
+				for (unsigned j = 1; j < outcount; j++)
+				{
+					double d_outcount = (double) outcount;
+					slope2_vals[j] = fabs (slope_vals[j]-slope_vals[j-1]) / (1/d_outcount);
+				}
+
+				interpolation << CounterID << " " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
+				for (unsigned j = 1; j < outcount; j++)
+				{
+					double d_j = (double) j;
+					double d_outcount = (double) outcount;	
+					interpolation << CounterID << " " << d_j / d_outcount << " " << outpoints[j] << endl;
+					slope << CounterID << " " << d_j / d_outcount << " " << slope_factor * slope_vals[j] << endl;
+				}
+			}
+
+		free (slope_vals);
+		free (slope2_vals);
+		free (inpoints_x);
+		free (inpoints_y);
+		}
+	
+	}
+
+	return true;
+}
+
+
+
+
 bool runInterpolation (ofstream &points, ofstream &interpolation,
 	ofstream &slope, ofstream &slope2, ofstream &sslope, double slope_factor,
 	vector<Sample> &vsamples, string CounterID, bool anyRegion,
 	unsigned RegionID, unsigned outcount, int &num_inpoints, double *outpoints,
-	vector<double> &qualities, vector<double> &breakpoints)
+	vector<double> &qualities, vector<double> &breakpoints,
+	double kriger_nuget, double prefilter_distance, double *filter_points)
 {
 	bool all_zeroes = true;
 	int incount = 0;
@@ -574,29 +739,100 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 
 		inpoints_x[0] = inpoints_y[0] = 0.0f;
 		inpoints_x[1] = inpoints_y[1] = 1.0f;
-		vector<Sample>::iterator it = vsamples.begin();
-		for (incount = 2, it = vsamples.begin(); it != vsamples.end(); it++)
+		vector<Sample>::iterator it;
+		map<unsigned,double> InstanceAvgDistance;
+
+		unsigned curInstance = 0xFFFFFFFF;
+		double tmp = 0.0f;
+		unsigned ntmp = 0;
+
+		/* Calculate the average distance between the pre-interpolated and the points, so we
+ 		   can exclude the instances that are too "far" to the interpolated */
+
+		for (it = vsamples.begin(); it != vsamples.end(); it++)
+		{
 			if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
 			    (anyRegion && (*it).CounterID == CounterID))
 			{
-
-#if 0
-/* be careful with these exclusions */
-				if (((*it).Time != 1.0 && (*it).CounterValue == 1.0) || 
-            ((*it).Time <= 0.2 && (*it).CounterValue > 0.8))
-					continue;
-#endif
-
-				inpoints_x[incount] = (*it).Time;
-				inpoints_y[incount] = (*it).CounterValue;
-
-				all_zeroes = inpoints_y[incount] == 0.0f && all_zeroes;
-
-				if (points.is_open())
-					points << CounterID << " " << (*it).Time << " " << (*it).CounterValue << " " << (*it).iteration << endl;
-
-				incount++;
+				if (curInstance != (*it).Instance)
+				{
+					if (curInstance != 0xFFFFFFFF)
+					{
+						if (ntmp > 0)
+							InstanceAvgDistance[curInstance] = tmp / ntmp;
+						else
+							InstanceAvgDistance[curInstance] = 0.0f;
+					}
+					curInstance = (*it).Instance;
+					tmp = Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
+					ntmp = 1;
+				}
+				else
+				{
+					tmp += Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
+					ntmp += 1;
+				}
 			}
+		}
+		if (curInstance != 0xFFFFFFFF)
+		{
+			if (ntmp > 0)
+				InstanceAvgDistance[curInstance] = tmp / ntmp;
+			else
+				InstanceAvgDistance[curInstance] = 0.0f;
+		}
+
+    map<unsigned,double>::iterator avgDistance_it = InstanceAvgDistance.begin();
+		double mean_distance = 0.0f;
+		unsigned mean_qty = 0;
+		for (; avgDistance_it != InstanceAvgDistance.end(); avgDistance_it++)
+		{
+			mean_distance += (*avgDistance_it).second;
+			mean_qty += 1;
+		}
+		mean_distance = mean_distance / mean_qty;
+
+		double sigmaDistance = 0.0f;
+		if (mean_qty > 1)
+		{
+			avgDistance_it = InstanceAvgDistance.begin();
+			for (; avgDistance_it != InstanceAvgDistance.end(); avgDistance_it++)
+				sigmaDistance += ((*avgDistance_it).second - mean_distance) * ((*avgDistance_it).second - mean_distance);
+
+			sigmaDistance = sqrt (sigmaDistance / (mean_qty-1));
+		}
+
+		for (incount = 2, it = vsamples.begin(); it != vsamples.end(); it++)
+		{
+			if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
+			    (anyRegion && (*it).CounterID == CounterID))
+			{
+				/* Skip points that are farther than prefilter_distance */
+				//if (Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points) < prefilter_distance)
+				
+				/* Skip points that are farther than SigmaTimes Distance */
+				if ((InstanceAvgDistance[(*it).Instance] > (mean_distance - NumOfSigmaTimes*sigmaDistance)) &&
+				    (InstanceAvgDistance[(*it).Instance] < (mean_distance + NumOfSigmaTimes*sigmaDistance)))
+				{
+					inpoints_x[incount] = (*it).Time;
+					inpoints_y[incount] = (*it).CounterValue;
+
+					all_zeroes = inpoints_y[incount] == 0.0f && all_zeroes;
+
+					if (points.is_open())
+						points << CounterID << " " << (*it).Time << " " << (*it).CounterValue << " " << (*it).iteration << endl;
+
+					incount++;
+				}
+#if 0
+				else
+				{
+					cout << setprecision(10);
+					cout << "INSTANCE " << (*it).Instance << " with IAD = " << InstanceAvgDistance[(*it).Instance] << " NOT between [" << mean_distance - NumOfSigmaTimes*sigmaDistance << "," << mean_distance + NumOfSigmaTimes*sigmaDistance << "]" << endl;
+				}
+#endif
+			}
+		}
 
 		if (MaxSamples != 0 && incount > MaxSamples)
 		{
@@ -612,17 +848,17 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 				cout << "any";
 			else
 				cout << RegionID << " / " << nameRegion[RegionID];
-			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ")" << endl;
+			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ", nuget=" << setprecision(2) << scientific << kriger_nuget << ")" << endl;
 
-			Kriger_Region (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f);
+			Kriger_Region (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f, kriger_nuget);
 
 			cout << "Calculating Q0" << flush;
 			double q0 = 1-Calculate_Quality1 (incount, inpoints_x, inpoints_y, outcount, outpoints);
-			cout << ", Q0 = " << fixed << setprecision(2) << q0 << endl;
+			cout << ", Q0 = " << fixed << q0 << endl;
 
-			cout << "Calculating Q1 w/ QD = " << fixed << setprecision(2) << QUALITY_DISTANCE << flush;
+			cout << "Calculating Q1 w/ QD = " << scientific << QUALITY_DISTANCE << flush;
 			double q1 = Calculate_Quality0 (incount, inpoints_x, inpoints_y, outcount, outpoints, QUALITY_DISTANCE);
-			cout << ", Q1 = " << fixed << setprecision(2) << q1 << endl;
+			cout << ", Q1 = " << fixed << q1 << endl;
 
 			qualities.push_back (q0);
 			qualities.push_back (q1);
@@ -992,9 +1228,15 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 	}
 }
 
+#if CUBE
 void doInterpolation (int task, int thread, string filePrefix,
 	vector<Point> &vpoints, vector<Sample> &vsamples,
 	RegionInfo &regions, UIParaverTraceConfig *pcf, cube::Cube *cube)
+#else
+void doInterpolation (int task, int thread, string filePrefix,
+	vector<Point> &vpoints, vector<Sample> &vsamples,
+	RegionInfo &regions, UIParaverTraceConfig *pcf)
+#endif
 {
 	vector<unsigned long long> HWCcodes, HWCtotals;
 	static bool first_run = true;
@@ -1015,6 +1257,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
 
 		ofstream output_points, output_kriger, output_slope, output_slope2;
+		ofstream output_pre_kriger, output_pre_slope;
 		ofstream output_segmented_slope;
 		if (generateGNUPLOTfiles)
 		{
@@ -1036,6 +1279,21 @@ void doInterpolation (int task, int thread, string filePrefix,
 				cerr << "Error! Cannot create " << completefilePrefix+".slope! Dying..." << endl;
 				exit (-1);
 			}
+
+			output_pre_kriger.open ((completefilePrefix+".pre_interpolation").c_str());
+			if (!output_kriger.is_open())
+			{
+				cerr << "Error! Cannot create " << completefilePrefix+".pre_interpolation! Dying..." << endl;
+				exit (-1);
+			}
+			output_pre_slope.open ((completefilePrefix+".pre_slope").c_str());
+			if (!output_slope.is_open())
+			{
+				cerr << "Error! Cannot create " << completefilePrefix+".pre_slope! Dying..." << endl;
+				exit (-1);
+			}
+
+
 			output_slope2.open ((completefilePrefix+".slope2").c_str());
 			if (!output_slope2.is_open())
 			{
@@ -1051,7 +1309,9 @@ void doInterpolation (int task, int thread, string filePrefix,
 
 			output_points.precision(10); output_points << fixed;
 			output_kriger.precision(10); output_kriger << fixed;
+			output_pre_kriger.precision(10); output_pre_kriger << fixed;
 			output_slope.precision(10); output_slope << fixed;
+			output_pre_slope.precision(10); output_pre_slope << fixed;
 			output_slope2.precision(10); output_slope << fixed;
 			output_segmented_slope.precision(10); output_segmented_slope << fixed;
 		}
@@ -1137,17 +1397,35 @@ void doInterpolation (int task, int thread, string filePrefix,
 			data_dumped = true;
 
 			int num_in_points;
+			double *prefilter_points = (double*) malloc (sizeof(double)*target_num_points);
+
+			bool EnergyCounterID = 
+				("PACKAGE_ENERGY:PACKAGE0" == CounterID) ||
+				("DRAM_ENERGY:PACKAGE0" == CounterID) ||
+				("PP0_ENERGY:PACKAGE0" == CounterID);
+
+			runInterpolation_prefilter (output_pre_kriger, output_pre_slope, vsamples, CounterID,
+				!SeparateValues, regionIndex, target_num_points, prefilter_points, slope_factor,
+				EnergyCounterID?kriger_nuget*10:kriger_nuget, prefilter_distance);
 
 			vector<double> qualities;
 			vector<double> breakpoints;
+
 			bool done = runInterpolation (output_points, output_kriger, output_slope, output_slope2,
 				output_segmented_slope, slope_factor, vsamples, CounterID, !SeparateValues,
 				regionIndex, target_num_points, num_in_points,
-				&outpoints[target_num_points*CID], qualities, breakpoints);
+				&outpoints[target_num_points*CID], qualities, breakpoints,
+				EnergyCounterID?kriger_nuget*10/10:kriger_nuget/10, prefilter_distance, prefilter_points);
+
+			data_dumped = done && data_dumped;
+
+			free (prefilter_points);
 
 #warning "ONLY FOR ONE COUNTER!"
+#if CUBE
 			ca_callstackanalysis::do_analysis (TranslateRegion((*i)->RegionName), 
 			  (*i)->RegionName, breakpoints, vcallstacksamples, pcf, cube);
+#endif
 
 			if (generateGNUPLOTfiles)
 			{
@@ -1191,8 +1469,10 @@ void doInterpolation (int task, int thread, string filePrefix,
 		{
 			output_segmented_slope.close();
 			output_slope2.close();
+			output_pre_slope.close();
 			output_slope.close();
 			output_points.close();
+			output_pre_kriger.close();
 			output_kriger.close();
 		}
 
@@ -1289,6 +1569,8 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-min-duration [T in ms]" << endl
 		     << "-max-iteration IT" << endl
 		     << "-max-samples NUM" << endl
+		     << "-kriger-nuget VALUE (default = " << kriger_nuget << ")" << endl
+		     << "-prefilter-distance VALUE (default = " << prefilter_distance << ")" << endl
 		     << "-synthetic-events-rate NUM (rate, num events per second) [1000 if not given]" << endl
 		     << endl;
 		exit (-1);
@@ -1368,6 +1650,30 @@ int ProcessParameters (int argc, char *argv[])
 			}
 			else
 				NumOfSigmaTimes = atof(argv[i]);
+			continue;
+		}
+		if (strcmp ("-kriger-nuget", argv[i]) == 0)
+		{
+			i++;
+			if (atof (argv[i]) == 0.0f)
+			{
+				cerr << "Invalid nuget " << argv[i] << endl;
+				exit (-1);
+			}
+			else
+				kriger_nuget = atof(argv[i]);
+			continue;
+		}
+		if (strcmp ("-prefilter-distance", argv[i]) == 0)
+		{
+			i++;
+			if (atof (argv[i]) == 0.0f)
+			{
+				cerr << "Invalid prefilter distance " << argv[i] << endl;
+				exit (-1);
+			}
+			else
+				prefilter_distance = atof(argv[i]);
 			continue;
 		}
 		if (strcmp ("-feed-region", argv[i]) == 0)
@@ -1550,7 +1856,7 @@ int main (int argc, char *argv[])
 
 
 
-
+#if CUBE
   cube::Cube cube;
 
   // Build system resource tree
@@ -1572,6 +1878,8 @@ int main (int argc, char *argv[])
 
 	cube.def_met("# Occurrences", "no_Occurrences", "INTEGER",
 	  "occ", "", "", "Number of occurrences of the callstack", NULL);
+
+#endif
 
 
 
@@ -1706,8 +2014,13 @@ int main (int argc, char *argv[])
 		cout << "# of regions: " << regions.foundRegions.size() << endl;
 #endif
 
+#if CUBE
 	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
 	  vsamples, regions, pcf, &cube);
+#else
+	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
+	  vsamples, regions, pcf);
+#endif
 
 	dumpAccumulatedCounterData (task, thread, argv[res], 0, accumulatedCounterPoints, vsamples, regions);
 
@@ -1731,9 +2044,11 @@ int main (int argc, char *argv[])
 
 
   // Output to a cube file
+#if 0
 	string cube_output = string(argv[res]) + ".cube";
   std::ofstream out (cube_output.c_str());
-  out << cube;
+	out << cube;
+#endif
 
 
 
