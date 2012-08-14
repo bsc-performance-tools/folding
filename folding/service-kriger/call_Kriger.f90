@@ -1,4 +1,5 @@
-subroutine call_kriger_region (num_in_samples, X_samples, Y_samples, num_out_samples, Y_out_samples, min_value, max_value)
+subroutine call_kriger_region (num_in_samples, X_samples, Y_samples, num_out_samples, Y_out_samples, min_value, max_value, &
+    inp_nuget_kri)
   use def_kriger
   implicit none
   integer :: i
@@ -9,6 +10,7 @@ subroutine call_kriger_region (num_in_samples, X_samples, Y_samples, num_out_sam
   real(rp), intent(out) :: Y_out_samples(1:num_out_samples)
   real(rp), intent(in) :: min_value
   real(rp), intent(in) :: max_value
+  real(rp), intent(in) :: inp_nuget_kri
 
   ndesi_kri = 1
   nsamp_kri = num_in_samples
@@ -22,10 +24,7 @@ subroutine call_kriger_region (num_in_samples, X_samples, Y_samples, num_out_sam
   mobta_kri = 1
   nsolv_kri = 1
   mgrid_kri = 1
-!  nuget_kri = 1.000000000000000E-005
-!  nuget_kri = 1.000000000000000E-004
-  nuget_kri = 1.000000000000000E-003
-!  nuget_kri = 1.000000000000000E-002
+  nuget_kri = inp_nuget_kri
   drift_kri = 1
 
   call kri_memall(1) ! allocate memory
@@ -54,7 +53,8 @@ subroutine call_kriger_region (num_in_samples, X_samples, Y_samples, num_out_sam
 
 end 
 
-subroutine call_kriger_point (num_in_samples, X_samples, Y_samples, X_value, Y_out_value, min_value, max_value)
+subroutine call_kriger_point (num_in_samples, X_samples, Y_samples, X_value, Y_out_value, min_value, max_value, &
+    inp_nuget_kri)
   use def_kriger
   implicit none
   integer :: i
@@ -65,6 +65,7 @@ subroutine call_kriger_point (num_in_samples, X_samples, Y_samples, X_value, Y_o
   real(rp), intent(out) :: Y_out_value
   real(rp), intent(in) :: min_value
   real(rp), intent(in) :: max_value
+  real(rp), intent(in) :: inp_nuget_kri
 
   ndesi_kri = 1
   nsamp_kri = num_in_samples
@@ -78,7 +79,7 @@ subroutine call_kriger_point (num_in_samples, X_samples, Y_samples, X_value, Y_o
   mobta_kri = 1
   nsolv_kri = 1
   mgrid_kri = 0
-  nuget_kri = 1.000000000000000E-004
+  nuget_kri = inp_nuget_kri
   drift_kri = 1
 
   call kri_memall(1) ! allocate memory

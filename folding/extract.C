@@ -46,7 +46,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <list>
 
 #define PAPI_MIN_COUNTER   42000000
-#define PAPI_MAX_COUNTER   42009998
+//#define PAPI_MAX_COUNTER   42009998
+#define PAPI_MAX_COUNTER   42999999
 
 unsigned long long RegionSeparator = 1234567;
 vector<unsigned long long> SkipTypes;
@@ -346,7 +347,6 @@ void Process::processMultiEvent (struct multievent_t &e)
 		bool skip = false;
 		for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 			skip = (find (SkipTypes.begin(), SkipTypes.end(), (*it).Type ) != SkipTypes.end()) || skip;
-
 #if defined(DEBUG)
 		if (!skip)
 		{
@@ -362,8 +362,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 		{
 			if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER)
 			{
-
-//				cout << "Found counter @ " << e.Timestamp << endl;
+#if defined(DEBUG)
+				cout << "Found counter @ " << e.Timestamp << endl;
+#endif
 
 				bool found;
 				unsigned long long value;
@@ -414,7 +415,10 @@ void Process::processMultiEvent (struct multievent_t &e)
 					}
 #endif
 		
-#if 1 /* HSG ORIGINAL */			
+#if 1 /* HSG ORIGINAL */
+#if defined(DEBUG)
+					cout << "Adding value " << value << " for CounterIndex = " << index << endl;
+#endif
 					thi->CounterSamples[index].push_back (value);
 					CounterUsed[index] = true; /* do not mix, counteradded and counterused */
 					CounterAdded = true;
@@ -531,6 +535,10 @@ void Process::processMultiEvent (struct multievent_t &e)
 	{
 		unsigned long long TotalTime = e.Timestamp - thi->StartRegion;
 
+#if defined(DEBUG)
+		cout << "Final! thi->TimeSamples.size() " << thi->TimeSamples.size() << endl;
+#endif
+
 		/* First dump HW counters */
 		if (thi->TimeSamples.size() <= 1)
 		{
@@ -603,10 +611,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 				unsigned long long AccumCounter = 0;
 
 				/* Last pair is always 1 - 1, skip them! */
-/* HSG original
-				for (; Counter_iter_next != thi->CounterSamples[cnt].end();
-					Counter_iter_next++, Counter_iter++, Times_iter++, Skip_iter++)
-*/
+				//for (; Counter_iter_next != thi->CounterSamples[cnt].end();
+				//	Counter_iter_next++, Times_iter++, Skip_iter++)
 				for (; Counter_iter != thi->CounterSamples[cnt].end();
 					Counter_iter++, Times_iter++, Skip_iter++)
 				{
@@ -630,8 +636,10 @@ void Process::processMultiEvent (struct multievent_t &e)
 			else
 			{
 				/* Last pair is always 1 - 1, skip them! */
+				//for (; Counter_iter_next != thi->CounterSamples[cnt].end();
+				//	Counter_iter_next++, Counter_iter++, Times_iter++, Skip_iter++)
 				for (; Counter_iter != thi->CounterSamples[cnt].end();
-					Counter_iter_next++, Counter_iter++, Times_iter++, Skip_iter++)
+			 		Counter_iter++, Times_iter++, Skip_iter++)
 				{
 					if (!(*Skip_iter))
 					{
@@ -656,6 +664,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 		thi->SkipSamples.clear();
 
 		/* Then dump caller line information */
+#if 0
 		for (list<LineCodeInformation*>::iterator it = thi->LineSamples.begin(); it != thi->LineSamples.end(); it++)
 		{
 			double NTime = ::NormalizeValue ((*it)->time - thi->StartRegion, 0, TotalTime);
@@ -668,6 +677,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 			thi->output << "S LINEID " << NTime << " " << (*it)->lineid_value << " " << (*it)->time << " 0 " << thi->CurrentIteration << endl;
 #endif
 		}
+#endif
+
 		thi->LineSamples.clear();
 
 	}
@@ -809,10 +820,12 @@ int main (int argc, char *argv[])
 				string completefile = tracename.substr (0, tracename.length()-4) + ".extract." + tasknumber.str() + "." + threadnumber.str();
 				thi->output.open (basename(completefile.c_str()));
 
+#if 0
 				/* Put definitions for the separator event */
 				list<string>::iterator it = p->TypeValuesLabels.begin();
 				for (; it != p->TypeValuesLabels.end(); it++)
-					thi->output << "D " << *it << endl;
+					thi->output << "D " << common::removeSpaces (*it) << endl;
+#endif
 			}
 		}
   }

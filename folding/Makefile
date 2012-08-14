@@ -1,16 +1,17 @@
 #DEBUG= -DDEBUG
 #BOOST = /home/harald/aplic/boost/1.40
 
-CUBE3_HOME = /home/harald/aplic/cube/3.4
+CUBE3_HOME = /home/harald/aplic/cube/3.5
 CC = gcc
 CXX = g++
 COMMON = ../common-files
 COMMONFILESFLAGS = -I $(COMMON) -I $(COMMON)/pcfparser -I $(COMMON)/prvparser # -I $(BOOST)/include
 CXXFLAGS = -O -Wall -g $(DEBUG) -I . -I $(CUBE3_HOME)/include
-CFLAGS = -O -Wall -g $(DEBUG)
+CFLAGS = -O -Wall -g $(DEBUG) 
 PRV_PCF_PARSERS = $(COMMON)/prvparser/*.cpp $(COMMON)/pcfparser/*.cpp $(COMMON)/LibException.cpp
 
 LDFLAGS = -L $(CUBE3_HOME)/lib -lcube3 -lz -L $(PWD)/service-kriger -lkriger -lgfortran
+#LDFLAGS = -lz -L $(PWD)/service-kriger -lkriger -lgfortran
 
 TARGETS = fuse sort_pcf extract interpolate max-diff-interpolation-points mean-diff-interpolation-points
 

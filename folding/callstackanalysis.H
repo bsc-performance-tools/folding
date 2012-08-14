@@ -33,14 +33,6 @@
 #define CALLSTACKANALYSIS_H_INCLUDED
 
 #include <vector>
-#include <string>
-#include "UIParaverTraceConfig.h"
-#include <cube3/Cube.h>
-#include "treenodeholder.H"
-
-using namespace std;
-
-class TreeNodeHolder;
 
 class ca_callstacksample
 {
@@ -51,6 +43,19 @@ class ca_callstacksample
 	vector<unsigned> caller;
 	vector<unsigned> callerline;
 };
+
+#if CUBE
+
+
+#include <string>
+#include "UIParaverTraceConfig.h"
+#include <cube3/Cube.h>
+#include "treenodeholder.H"
+
+using namespace std;
+
+class TreeNodeHolder;
+
 
 class ca_callstackanalysis_presence
 {
@@ -76,5 +81,7 @@ class ca_callstackanalysis
 		TreeNodeHolder *tree, libparaver::UIParaverTraceConfig *pcf, 
 		cube::Cube *cube, cube::Cnode *root);
 };
+
+#endif
 
 #endif
