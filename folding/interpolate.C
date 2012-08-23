@@ -647,7 +647,6 @@ bool runInterpolation_prefilter (ofstream &interpolation, ofstream &slope,
 			cout << "PREFILTER: Calculating Q0" << flush;
 			double q0 = 1-Calculate_Quality1 (incount, inpoints_x, inpoints_y, outcount, outpoints);
 			cout << ", Q0 = " << fixed << q0 << endl;
-
 			cout << "PREFILTER: Calculating Q1 w/ QD = " << scientific << QUALITY_DISTANCE << flush;
 			double q1 = Calculate_Quality0 (incount, inpoints_x, inpoints_y, outcount, outpoints, QUALITY_DISTANCE);
 			cout << ", Q1 = " << fixed << q1 << endl;
@@ -1254,14 +1253,15 @@ void doInterpolation (int task, int thread, string filePrefix,
 		string RegionName = (*i)->RegionName;
 		int regionIndex = TranslateRegion (RegionName);
 
-		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
+		//string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
+		string completefilePrefix = filePrefix + "." + common::removeSpaces(RegionName);
 
 		ofstream output_points, output_kriger, output_slope, output_slope2;
 		ofstream output_pre_kriger, output_pre_slope;
 		ofstream output_segmented_slope;
 		if (generateGNUPLOTfiles)
 		{
-			output_points.open ((completefilePrefix+".points").c_str());
+			output_points.open ((completefilePrefix+".points").c_str(), ios::out | ios::app);
 			if (!output_points.is_open())
 			{
 				cerr << "Error! Cannot create " << completefilePrefix+".points! Dying..." << endl;
@@ -1423,8 +1423,9 @@ void doInterpolation (int task, int thread, string filePrefix,
 
 #warning "ONLY FOR ONE COUNTER!"
 #if CUBE
-			ca_callstackanalysis::do_analysis (TranslateRegion((*i)->RegionName), 
-			  (*i)->RegionName, breakpoints, vcallstacksamples, pcf, cube);
+			unsigned cnodeid = ca_callstackanalysis::do_analysis (
+				TranslateRegion((*i)->RegionName), (*i)->RegionName, breakpoints,
+				vcallstacksamples, pcf, cube);
 #endif
 
 			if (generateGNUPLOTfiles)
@@ -1463,6 +1464,24 @@ void doInterpolation (int task, int thread, string filePrefix,
 				else 
 					GNUPLOT.push_back (info);
 			}
+
+#if CUBE
+			ofstream output_cube_launch;
+			output_cube_launch.open ((filePrefix+".launch").c_str(), ios::out|ios::app);
+			if (!output_cube_launch.is_open())
+			{
+				cerr << "Error! Cannot create " << completefilePrefix+".launch! Dying..." << endl;
+				exit (-1);
+			}
+
+			output_cube_launch << "no_Occurrences" << endl;
+			output_cube_launch << "- cnode " << cnodeid << endl;
+			output_cube_launch << "See detailed " << CounterID << endl;
+			output_cube_launch << "gnuplot -persist %f." << RegionName << "." << CounterID << ".gnuplot" << endl;
+
+			output_cube_launch.close();
+#endif
+
 		}
 
 		if (generateGNUPLOTfiles)
@@ -1527,7 +1546,8 @@ void dumpAccumulatedCounterData (int task, int thread, string filePrefix,
 		cout << "Treating region called " << RegionName << " (index = " << regionIndex << ")" << endl;
 #endif
 
-		string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
+		//string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
+		string completefilePrefix = filePrefix + "." + common::removeSpaces(RegionName);
 
 		ofstream output_data;
 		output_data.open ((completefilePrefix+"."+CounterID+".acc.points").c_str());
@@ -2015,6 +2035,8 @@ int main (int argc, char *argv[])
 #endif
 
 #if CUBE
+	unlink ((string(argv[res])+".launch").c_str());
+
 	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
 	  vsamples, regions, pcf, &cube);
 #else
@@ -2043,14 +2065,13 @@ int main (int argc, char *argv[])
 	}
 
 
+#if CUBE
   // Output to a cube file
-#if 0
 	string cube_output = string(argv[res]) + ".cube";
   std::ofstream out (cube_output.c_str());
 	out << cube;
+	out.close();
 #endif
-
-
 
 	return 0;
 }

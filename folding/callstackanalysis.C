@@ -42,11 +42,10 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "callstackanalysis.H"
 
 
-void ca_callstackanalysis::do_analysis (unsigned R, string Rstr,
+unsigned ca_callstackanalysis::do_analysis (unsigned R, string Rstr,
 	vector<double> &breakpoints, vector<ca_callstacksample> &samples,
-	UIParaverTraceConfig *pcf, cube::Cube *cube)
+	UIParaverTraceConfig *pcf, cube::Cube *cubev)
 {
-#if 0
 	unsigned N = breakpoints.size();
 
 	cout << "CallStack Analysis for " << Rstr << " Num of phases = " << N-1 << endl;
@@ -59,28 +58,29 @@ void ca_callstackanalysis::do_analysis (unsigned R, string Rstr,
 
 	string RegionSTR = Rstr;
 
-  cube::Region* rroot = cube->def_region (RegionSTR, 0, 0, "", "", "");
-  cube::Cnode* croot = cube->def_cnode(rroot, "", 0, NULL);
+  cube::Region* rroot = cubev->def_region (RegionSTR, 0, 0, "", "", "");
+  cube::Cnode* croot = cubev->def_cnode(rroot, "", 0, NULL);
 
 	for (unsigned u = 1; u < N; u++)
 	{
 		RegionSTR = "Phase " + common::convertInt (u) + " (" + 
 		  common::convertDouble (breakpoints[u-1],2) + "-" + 
 		  common::convertDouble (breakpoints[u],2) + ")";
-	  cube::Region* r = cube->def_region (RegionSTR, 0, 0, "", "", "");
-		cube::Cnode* c = cube->def_cnode (r, "", 0, croot);
+	  cube::Region* r = cubev->def_region (RegionSTR, 0, 0, "", "", "");
+		cube::Cnode* c = cubev->def_cnode (r, "", 0, croot);
 
-		do_analysis_presence_region (R, Rstr, u, breakpoints[u-1], breakpoints[u],
+		do_analysis_presence_region (R, u, breakpoints[u-1], breakpoints[u],
 		  samples, pcf);
 
 		if (pcf != NULL)
-			do_analysis_presence_region_cube_tree (R, Rstr, u, breakpoints[u-1],
-			  breakpoints[u], samples, pcf, cube, c);
+			do_analysis_presence_region_cube_tree (R, u, breakpoints[u-1],
+			  breakpoints[u], samples, pcf, cubev, c);
 	}
-#endif
+
+	return cubev->get_cnode_id (croot);
 }
 
-void ca_callstackanalysis::do_analysis_presence_region (unsigned R, string Rstr,
+void ca_callstackanalysis::do_analysis_presence_region (unsigned R, 
 	unsigned phase,	double from, double to, vector<ca_callstacksample> &samples,
 	UIParaverTraceConfig *pcf)
 {
@@ -163,11 +163,10 @@ void ca_callstackanalysis::do_analysis_presence_region (unsigned R, string Rstr,
 }
 
 void ca_callstackanalysis::do_analysis_presence_region_cube_tree_r (TreeNodeHolder *tree,
-	UIParaverTraceConfig *pcf, cube::Cube *cube, cube::Cnode *root)
+	UIParaverTraceConfig *pcf, cube::Cube *cubev, cube::Cnode *root)
 {
-#if 0
-	cube::Metric *m = cube->get_met ("no_Occurrences");
-	cube::Thread *t = (cube->get_thrdv())[0];
+	cube::Metric *m = cubev->get_met ("no_Occurrences");
+	cube::Thread *t = (cubev->get_thrdv())[0];
 	for (unsigned u = 0; u < tree->children.size(); u++)
 	{
 		TreeNodeHolder *child = tree->children[u];
@@ -185,22 +184,19 @@ void ca_callstackanalysis::do_analysis_presence_region_cube_tree_r (TreeNodeHold
 		else
 			s = pcf->getEventValue (30000000, child->Caller) + " - " + pcf->getEventValue (30000100,child->CallerLine);
 
-		cube::Region* r = cube->def_region (s, 0, 0, "", "", "");
-		//cube::Cnode* c = cube->def_cnode (r, "", 0, root);
-		cube::Cnode* c = cube->def_cnode (r, file, line, root);
-		cube->set_sev (m, c, t, child->Occurrences);
+		cube::Region* r = cubev->def_region (s, 0, 0, "", "", "");
+		//cube::Cnode* c = cubev->def_cnode (r, "", 0, root);
+		cube::Cnode* c = cubev->def_cnode (r, file, line, root);
+		cubev->set_sev (m, c, t, child->Occurrences);
 
-		do_analysis_presence_region_cube_tree_r (child, pcf, cube, c);
+		do_analysis_presence_region_cube_tree_r (child, pcf, cubev, c);
 	}
-#endif
 }
 
 void ca_callstackanalysis::do_analysis_presence_region_cube_tree (unsigned R,
-	string Rstr,
 	unsigned phase,	double from, double to, vector<ca_callstacksample> &samples,
-	UIParaverTraceConfig *pcf, cube::Cube *cube, cube::Cnode *root)
+	UIParaverTraceConfig *pcf, cube::Cube *cubev, cube::Cnode *root)
 {
-#if 0
 	unsigned TOTALoccurrences = 0;
 	TreeNodeHolder tnh;
 	tnh.Caller = 1;
@@ -223,8 +219,8 @@ void ca_callstackanalysis::do_analysis_presence_region_cube_tree (unsigned R,
 
 	if (TOTALoccurrences > 0)
 	{
-		cube::Metric *m = cube->get_met ("no_Occurrences");
-		cube::Thread *t = (cube->get_thrdv())[0];
+		cube::Metric *m = cubev->get_met ("no_Occurrences");
+		cube::Thread *t = (cubev->get_thrdv())[0];
 		for (unsigned u = 0; u < tnh.children.size(); u++)
 		{
 			TreeNodeHolder *child = tnh.children[u];
@@ -243,15 +239,15 @@ void ca_callstackanalysis::do_analysis_presence_region_cube_tree (unsigned R,
 			else
 				s = pcf->getEventValue (30000000, child->Caller) + " - " + pcf->getEventValue (30000100,child->CallerLine);
 
-			cube::Region* r = cube->def_region (s, 0, 0, "", "", "");
-			//cube::Cnode* c = cube->def_cnode (r, "", 0, root);
-			cube::Cnode* c = cube->def_cnode (r, file, line, root);
-			cube->set_sev (m, c, t, child->Occurrences);
+			cube::Region* r = cubev->def_region (s, 0, 0, "", "", "");
+			//cube::Cnode* c = cubev->def_cnode (r, "", 0, root);
+			cube::Cnode* c = cubev->def_cnode (r, file, line, root);
+			cubev->set_sev (m, c, t, child->Occurrences);
 
-			do_analysis_presence_region_cube_tree_r (child, pcf, cube, c);
+
+			do_analysis_presence_region_cube_tree_r (child, pcf, cubev, c);
 		}
 	}
-#endif
 }
 
 #endif /* CUBE */

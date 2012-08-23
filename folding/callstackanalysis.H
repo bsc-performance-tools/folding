@@ -34,6 +34,8 @@
 
 #include <vector>
 
+using namespace std;
+
 class ca_callstacksample
 {
 	public:
@@ -52,7 +54,6 @@ class ca_callstacksample
 #include <cube3/Cube.h>
 #include "treenodeholder.H"
 
-using namespace std;
 
 class TreeNodeHolder;
 
@@ -69,12 +70,12 @@ class ca_callstackanalysis
 {
 	public:
 
-	static void do_analysis (unsigned, string, vector<double> &, 
+	static unsigned do_analysis (unsigned, string, vector<double> &, 
 	  vector<ca_callstacksample> &, libparaver::UIParaverTraceConfig *, cube::Cube*);
-	static void do_analysis_presence_region (unsigned, string, unsigned, double ,
+	static void do_analysis_presence_region (unsigned,unsigned, double ,
 	  double, vector<ca_callstacksample> &, libparaver::UIParaverTraceConfig *);
 
-	static void do_analysis_presence_region_cube_tree (unsigned, string, unsigned,
+	static void do_analysis_presence_region_cube_tree (unsigned, unsigned,
 		double, double, vector<ca_callstacksample> &,
 		libparaver::UIParaverTraceConfig *, cube::Cube*, cube::Cnode *base);
 	static void do_analysis_presence_region_cube_tree_r (
