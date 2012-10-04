@@ -86,5 +86,54 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_FC
 
+AC_MSG_CHECKING([for libtools])
+AC_ARG_WITH(libtools,
+	AC_HELP_STRING(
+		[--with-libtools@<:@=ARG@:>@],
+		[Specify where libtools (libparaverconfig and libparavertraceparser) are installed]
+	),
+	[LibToolsDir="$withval"],
+	[LibToolsDir=""]
+)
+if test ! -d ${LibToolsDir} ; then
+	AC_MSG_ERROR([Invalid directory specified in --with-libtools])
+fi
+
+if test ! -f ${LibToolsDir}/include/ParaverRecord.h -o ! -f ${LibToolsDir}/include/ParaverTrace.h ; then
+	AC_MSG_ERROR([Cannot find some header files of the libtools! Make sure that --with-libtools is pointing to the correct place.])
+fi
+if test ! -f ${LibToolsDir}/lib/libparavertraceconfig.a ; then
+	AC_MSG_ERROR([Cannot find libparavertraceconfig.a! Make sure that --with-libtools is pointing to the correct place.])
+fi
+if test ! -f ${LibToolsDir}/lib/libparavertraceparser.a ; then
+	AC_MSG_ERROR([Cannot find libparavertraceparser.a! Make sure that --with-libtools is pointing to the correct place.])
+fi
+AC_MSG_RESULT([found in ${LibToolsDir}])
+LIBTOOLS_DIR=${LibToolsDir}
+AC_SUBST(LIBTOOLS_DIR)
+
+AC_MSG_CHECKING([for Cube])
+AC_ARG_WITH(cube,
+	AC_HELP_STRING(
+		[--with-cube@<:@=ARG@:>@],
+		[Specify where Cube (v 3.5.1 or higher) is installed]
+	),
+	[CubeDir="$withval"],
+	[CubeDir=""]
+)
+if test ! -d ${CubeDir} ; then
+	AC_MSG_ERROR([Invalid directory specified in --with-cube])
+fi
+
+if test ! -f ${CubeDir}/include/cube3/Cube.h ; then
+	AC_MSG_ERROR([Cannot find cube header files of the libtools! Make sure that --with-cube is pointing to the correct place.])
+fi
+if test ! -f ${CubeDir}/lib/libcube3.a ; then
+	AC_MSG_ERROR([Cannot find libcube3.a! Make sure that --with-cube is pointing to the correct place.])
+fi
+AC_MSG_RESULT([found in ${CubeDir}])
+CUBE_DIR=${CubeDir}
+AC_SUBST(CUBE_DIR)
+
 AC_CONFIG_FILES([Makefile src/Makefile src/service-kriger/Makefile])
 AC_OUTPUT
