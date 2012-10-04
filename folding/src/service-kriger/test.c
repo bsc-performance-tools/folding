@@ -1534,7 +1534,7 @@ px[1520]=0.999832; py[1520]=402862000.000000;
 px[1521]=1; py[1521]=4.15681e+08;
 
 	printf ("About calling Kriger_Region\n");
-	Kriger_Region (1522, px, py, 1001, oy, 0.0f, 1.0f);
+	Kriger_Region (1522, px, py, 1001, oy, 0.0f, 1.0f, 0.0001f);
 
 	for (i = 0; i < 1001; i++)
 		printf ("res[%d].x = %lf res[%d].y = %lf\n", i, (double)i/(double)1000, i, oy[i]);
@@ -1544,13 +1544,13 @@ px[1521]=1; py[1521]=4.15681e+08;
   X3 = 0.5;
   X4 = 0.95;
 	printf ("About calling Kriger_Point 1/4\n");
-	Kriger_Point (1522, px, py, &X1, &Y1, 0.0f, 1.0f);
+	Kriger_Point (1522, px, py, X1, &Y1, 0.0f, 1.0f, 0.0001f);
 	printf ("About calling Kriger_Point 2/4\n");
-	Kriger_Point (1522, px, py, &X2, &Y2, 0.0f, 1.0f);
+	Kriger_Point (1522, px, py, X2, &Y2, 0.0f, 1.0f, 0.0001f);
 	printf ("About calling Kriger_Point 3/4\n");
-	Kriger_Point (1522, px, py, &X3, &Y3, 0.0f, 1.0f);
+	Kriger_Point (1522, px, py, X3, &Y3, 0.0f, 1.0f, 0.0001f);
 	printf ("About calling Kriger_Point 4/4\n");
-	Kriger_Point (1522, px, py, &X4, &Y4, 0.0f, 1.0f);
+	Kriger_Point (1522, px, py, X4, &Y4, 0.0f, 1.0f, 0.0001f);
 
 	printf ("X1 = %lf - Y1 = %lf\n", X1, Y1);
 	printf ("X2 = %lf - Y2 = %lf\n", X2, Y2);

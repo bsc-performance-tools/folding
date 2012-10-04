@@ -197,16 +197,22 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 	/* Look for hw counters */
 	string pcffile = prvFile.substr (0, prvFile.rfind(".prv")) + string (".pcf");
 
-	pcf = new UIParaverTraceConfig (pcffile);
+	pcf = new UIParaverTraceConfig;
+	pcf->parse(pcffile);
 
 	for (int i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
 	{
-		string s = pcf->getEventType (i);
-		if (s.length() > 0)
-			found_counters++;
+		try
+		{
+			string s = pcf->getEventType (i);
+			if (s.length() > 0)
+				found_counters++;
+		}
+		catch (...)
+		{ }
 	}
 
-	vector<unsigned> values = pcf->getEventValuesFromEventTypeKey(RegionSeparator);
+	vector<unsigned> values = pcf->getEventValues(RegionSeparator);
 	for (unsigned i = 0; i < values.size(); i++)
 		TypeValuesLabels.push_back (pcf->getEventValue(RegionSeparator, values[i]));
 
@@ -219,15 +225,20 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 	unsigned j = 0;
 	for (unsigned i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
 	{
-		string s = pcf->getEventType (i);
-		if (s.length() > 0)
+		try
 		{
-			CounterUsed[j] = false;
-			CounterIDs[j] = i;
-			CounterIDNames[j] = s.substr (s.find ('(')+1, s.rfind (')') - (s.find ('(') + 1));
-			HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?1:0;
-			j++;
+			string s = pcf->getEventType (i);
+			if (s.length() > 0)
+			{
+				CounterUsed[j] = false;
+				CounterIDs[j] = i;
+				CounterIDNames[j] = s.substr (s.find ('(')+1, s.rfind (')') - (s.find ('(') + 1));
+				HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?1:0;
+				j++;
+			}
 		}
+		catch (...)
+		{ }
 	}
 
 	ReadCallerLinesIntoList ("list", pcf);
@@ -251,7 +262,7 @@ void Process::ReadCallerLinesIntoList (string file, UIParaverTraceConfig *pcf)
 		}
 		file_op.close();
 	
-		vector<unsigned> v = pcf->getEventValuesFromEventTypeKey (30000000);
+		vector<unsigned> v = pcf->getEventValues(30000000);
 		unsigned i = 2;
 		while (i != v.size())
 		{
