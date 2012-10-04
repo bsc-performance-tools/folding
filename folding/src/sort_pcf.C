@@ -68,7 +68,7 @@ Information::~Information ()
 list<Information> SortEvents (UIParaverTraceConfig *pcf)
 {
 	list<Information> tmp;
-	vector<unsigned> v = pcf->getEventValuesFromEventTypeKey (30000100);
+	vector<unsigned> v = pcf->getEventValues (30000100);
 
 	unsigned i = 2;
 	while (i != v.size())
@@ -240,7 +240,7 @@ void MergePCFs (UIParaverTraceConfig *pcf_original, UIParaverTraceConfig *pcf_ne
 		{
 			pcf_new_file << "EVENT_TYPE" << endl;
 			pcf_new_file << "0 " << original_events[i] << " " << pcf_original->getEventType (original_events[i]) << endl;
-			vector<unsigned> v = pcf_original->getEventValuesFromEventTypeKey (original_events[i]);
+			vector<unsigned> v = pcf_original->getEventValues (original_events[i]);
 			if (v.size() > 0)
 			{
 				pcf_new_file << "VALUES" << endl;
@@ -265,13 +265,17 @@ int main (int argc, char *argv[])
 	PRVfile = argv[1];
 
 	/* Sort line callers (sampling and user function too) event types */
-	UIParaverTraceConfig *pcf = new UIParaverTraceConfig (PRVfile.substr (0, PRVfile.rfind(".prv")) + ".pcf");
+	//UIParaverTraceConfig *pcf = new UIParaverTraceConfig (PRVfile.substr (0, PRVfile.rfind(".prv")) + ".pcf");
+	UIParaverTraceConfig *pcf = new UIParaverTraceConfig;
+	pcf->parse (PRVfile.substr (0, PRVfile.rfind(".prv")) + ".pcf");
 	list<Information> li = SortEvents (pcf);
 
 	/* Generate a new PCF file with the sorted event-types */
 	ofstream sortedPCFfile;
 	generatePCFfile (PRVfile.substr (0, PRVfile.rfind(".prv")) + ".sorted.pcf", li, pcf, sortedPCFfile);
-	UIParaverTraceConfig *sorted_pcf = new UIParaverTraceConfig (PRVfile.substr (0, PRVfile.rfind(".prv")) + ".sorted.pcf");
+	//UIParaverTraceConfig *sorted_pcf = new UIParaverTraceConfig (PRVfile.substr (0, PRVfile.rfind(".prv")) + ".sorted.pcf");
+	UIParaverTraceConfig *sorted_pcf = new UIParaverTraceConfig;
+	sorted_pcf->parse (PRVfile.substr (0, PRVfile.rfind(".prv")) + ".sorted.pcf");
 
 	/* Translate the PRV itself */
 	Process *p = new Process (PRVfile, PRVfile.substr (0, PRVfile.rfind(".prv")) + ".sorted.prv", pcf, sorted_pcf);

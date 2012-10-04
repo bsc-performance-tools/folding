@@ -132,7 +132,7 @@ bool SeparateValues = true;
 vector<string> wantedCounters;
 list<GNUPLOTinfo*> GNUPLOT;
 
-bool generateGNUPLOTfiles = false;
+bool generateGNUPLOTfiles = true;
 
 unsigned TranslateRegion (string &RegionName)
 {
@@ -662,11 +662,14 @@ bool runInterpolation_prefilter (ofstream &interpolation, ofstream &slope,
 				double d_last = outpoints[0];
 				slope_vals[0] = 0.0f;
 				for (unsigned j = 1; j < outcount; j++)
+				//// for (unsigned j = 1; j < outcount-1; j++)
 				{
 					double d_outcount = (double) outcount;
-					if (d_last < outpoints[j])
+					if (d_last < outpoints[j+1])
+					//// if (d_last < outpoints[j])
 					{
 						slope_vals[j] = (outpoints[j]-d_last) / (1/d_outcount);
+						//// slope_vals[j] = (outpoints[j+1]-d_last) / (2/d_outcount);
 						d_last = outpoints[j];
 					}
 					else
@@ -1698,6 +1701,8 @@ int ProcessParameters (int argc, char *argv[])
 		}
 		if (strcmp ("-feed-region", argv[i]) == 0)
 		{
+			generateGNUPLOTfiles = false;
+
 			feedTraceRegion = true;
 			feedTraceTimes = false;
 			feedFirstOccurrence = false;
@@ -1715,6 +1720,8 @@ int ProcessParameters (int argc, char *argv[])
 		}
 		if (strcmp ("-feed-time", argv[i]) == 0)
 		{
+			generateGNUPLOTfiles = false;
+
 			feedTraceTimes = true;
 			feedTraceRegion = false;
 			feedFirstOccurrence = false;
@@ -1732,6 +1739,8 @@ int ProcessParameters (int argc, char *argv[])
 		}
 		if (strcmp ("-feed-first-occurrence", argv[i]) == 0)
 		{
+			generateGNUPLOTfiles = false;
+
 			feedTraceRegion = false;
 			feedTraceTimes = false;
 			feedFirstOccurrence = true;
@@ -1823,7 +1832,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		PCFfile << "0 " << pcf->getEventValue(30000000, 0) << endl;
 		PCFfile << "1 " << pcf->getEventValue(30000000, 1) << endl;
 
-		vector<unsigned> v = pcf->getEventValuesFromEventTypeKey (30000000);
+		vector<unsigned> v = pcf->getEventValues(30000000);
 		for (unsigned i = 2; i < v.size(); i++)
 			PCFfile << i << " " << pcf->getEventValue(30000000, i) << endl;
 		PCFfile << endl;
@@ -1843,7 +1852,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		PCFfile << "0 " << pcf->getEventValue(30000100, 0) << endl;
 		PCFfile << "1 " << pcf->getEventValue(30000100, 1) << endl;
 
-		vector<unsigned> v = pcf->getEventValuesFromEventTypeKey (30000100);
+		vector<unsigned> v = pcf->getEventValues(30000100);
 		for (unsigned i = 2; i < v.size(); i++)
 			PCFfile << i << " " << pcf->getEventValue(30000100, i) << endl;
 
@@ -1947,7 +1956,8 @@ int main (int argc, char *argv[])
 		controlFile >> feedTraceFoldType_Value;
 
 		string pcffile = TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf");
-		pcf = new UIParaverTraceConfig (pcffile);
+		pcf = new UIParaverTraceConfig;
+		pcf->parse (pcffile);
 	}
 
 	if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
