@@ -77,8 +77,6 @@ EVENT_TYPE
 7  42000000 (PAPI_L1_DCM) L1D cache misses
 7  42000007 (PAPI_L2_TCM) L2 cache misses
 7  42001031 (LLC_MISSES) Alias for LAST_LEVEL_CACHE_MISSES
-7  42001032 (perf::DTLB-LOAD-MISSES) Data TLB load misses
-7  42001033 (perf::DTLB-STORE-MISSES) Data TLB store misses
 7  41999999 Active hardware counter set
 
 
