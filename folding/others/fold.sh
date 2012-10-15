@@ -16,8 +16,9 @@ TRACE_PREFIX=$2
 OBJECT=$3
 DIRNAME=`basename $2`
 
-mkdir -p $DIRNAME; cd $DIRNAME
+mkdir -p $DIRNAME
 cp $TRACE_PREFIX.prv $TRACE_PREFIX.pcf $TRACE_PREFIX.row $DIRNAME
+cd $DIRNAME
 
 if test $WHAT -eq 90000001 ; then
 	$FOLDING_HOME/bin/fuse $TRACE_PREFIX.prv
