@@ -71,9 +71,6 @@ VALUES
 
 
 EVENT_TYPE
-7  42001008 (PACKAGE_ENERGY:PACKAGE0) Energy used by chip package 0
-7  42001010 (DRAM_ENERGY:PACKAGE0) Energy used by DRAM on package 0
-7  42001012 (PP0_ENERGY:PACKAGE0) Energy used by all cores in package 0
 7  42000050 (PAPI_TOT_INS) Instr completed
 7  42000059 (PAPI_TOT_CYC) Total cycles
 7  42000055 (PAPI_BR_INS) Branches
