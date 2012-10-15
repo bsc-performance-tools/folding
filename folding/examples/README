@@ -1,0 +1,13 @@
+There are two examples provided. One is applied to the user routines instrumented by Extrae itself, and another which is applied to clusters.
+
+For the former example, run:
+
+cd $FOLDING_PREFIX/examples/user-functions
+$FOLDING_PREFIX/bin/fold.sh 60000019 444.namd.2400000 1.1
+
+
+For the latter example, run:
+
+cd $FOLDING_PREFIX/examples/clusters
+$FOLDING_PREFIX/bin/fold.sh 90000001 cgpop.task1.clustered 1.1
+
