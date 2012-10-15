@@ -23,7 +23,7 @@ interpolate_SOURCES = \
  region-analyzer-first-occurrency.C region-analyzer-first-occurrency.H \
  region-analyzer-in-frame-region.C region-analyzer-in-frame-region.H \
  region-analyzer-in-time-region.C region-analyzer-in-time-region.H \
- region.C region.H\
+ region.C region.H region-info.H \
  treenodeholder.C treenodeholder.H \
  point.H 
 
