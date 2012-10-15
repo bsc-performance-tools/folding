@@ -12,11 +12,12 @@ if test $# -ne 3 ; then
 fi
 
 WHAT=$1
+TRACE_PREFIX=$2
 OBJECT=$3
 DIRNAME=`basename $2`
 
 mkdir -p $DIRNAME; cd $DIRNAME
-TRACE_PREFIX=../$2
+cp $TRACE_PREFIX.prv $TRACE_PREFIX.pcf $TRACE_PREFIX.row $DIRNAME
 
 if test $WHAT -eq 90000001 ; then
 	$FOLDING_HOME/bin/fuse $TRACE_PREFIX.prv
@@ -24,7 +25,6 @@ if test $WHAT -eq 90000001 ; then
 fi
 
 $FOLDING_HOME/bin/extract -separator $WHAT $TRACE_PREFIX.prv
-TRACE_PREFIX=`basename $TRACE_PREFIX` # Get rid of the leading ../ if any
 $FOLDING_HOME/bin/interpolate -counter all -remove-outliers 1.5 -max-samples 2500 -kriger-nuget 0.0001 $TRACE_PREFIX.extract.$OBJECT
 
 read -p "Press a key to plot $TRACE_PREFIX.extract.$OBJECT.*.slopes.gnuplot"
