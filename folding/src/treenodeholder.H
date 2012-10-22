@@ -29,8 +29,6 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#if CUBE
-
 #ifndef TREENODEHOLDER_H_INCLUDED
 #define TREENODEHOLDER_H_INCLUDED
 
@@ -58,5 +56,3 @@ class TreeNodeHolder
 };
 
 #endif
-
-#endif /* CUBE */

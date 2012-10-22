@@ -1,3 +1,19 @@
+
+Folding: detail performance envolution
+
+**
+
+The folding mechanism [referencia] provides very detailed performance information of code regions on iterative and regular applications. The folding mechanism combines the instrumentation with the sampling information to unveil the performance evolution and to augment the details offered by simply using instrumentation. We have demonstrate that the combined usage of coarse grain sampling and the folding mechanism provides similar results and suffers from less overhead when compared to very detailed sampling frequencies [reference].
+
+
+
+
+
+
+
+
+
+
 What is the folding ?
 --
 
