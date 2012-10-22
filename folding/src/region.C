@@ -31,6 +31,8 @@
 
 static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
+#include "common.H"
+
 #include "region.H"
 
 Region::Region (unsigned long long Tstart, unsigned long long Type,

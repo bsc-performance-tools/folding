@@ -29,8 +29,7 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#if CUBE
-
+#include "common.H"
 #include "treenodeholder.H"
 
 TreeNodeHolder * TreeNodeHolder::lookForCallerLine (unsigned id)
@@ -119,5 +118,3 @@ void TreeNodeHolder::AddPath (unsigned depth, ca_callstacksample &ca)
 			tmp->AddPath (depth+1, ca);
 	}
 }
-
-#endif /* CUBE */

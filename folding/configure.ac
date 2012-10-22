@@ -7,6 +7,7 @@
 # Initialize autoconf & define package name, version and bug-report address 
 #  -- keep version in sync with src/common/extrae_version.h
 AC_INIT(folding, 0.8, tools@bsc.es)
+AC_CONFIG_HEADERS([folding-config.h:folding-config.h.in])
 
 # Safety check to ensure that the directory told with `--srcdir` contains the source code
 #AC_CONFIG_SRCDIR(src/mpitrace.c)
@@ -112,28 +113,33 @@ AC_MSG_RESULT([found in ${LibToolsDir}])
 LIBTOOLS_DIR=${LibToolsDir}
 AC_SUBST(LIBTOOLS_DIR)
 
-AC_MSG_CHECKING([for Cube])
 AC_ARG_WITH(cube,
 	AC_HELP_STRING(
 		[--with-cube@<:@=ARG@:>@],
 		[Specify where Cube (v 3.5.1 or higher) is installed]
 	),
 	[CubeDir="$withval"],
-	[CubeDir=""]
+	[CubeDir="no"]
 )
-if test ! -d ${CubeDir} ; then
-	AC_MSG_ERROR([Invalid directory specified in --with-cube])
-fi
+if test "${CubeDir}" != "no" ; then
+	AC_MSG_CHECKING([for Cube])
+	if test ! -d ${CubeDir} ; then
+		AC_MSG_ERROR([Invalid directory specified in --with-cube])
+	fi
 
-if test ! -f ${CubeDir}/include/cube3/Cube.h ; then
-	AC_MSG_ERROR([Cannot find cube header files of the libtools! Make sure that --with-cube is pointing to the correct place.])
+	if test ! -f ${CubeDir}/include/cube3/Cube.h ; then
+		AC_MSG_ERROR([Cannot find cube header files of the libtools! Make sure that --with-cube is pointing to the correct place.])
+	fi
+	if test ! -f ${CubeDir}/lib/libcube3.a ; then
+		AC_MSG_ERROR([Cannot find libcube3.a! Make sure that --with-cube is pointing to the correct place.])
+	fi
+	AC_MSG_RESULT([found in ${CubeDir}])
+	CUBE_DIR=${CubeDir}
+	AC_SUBST(CUBE_DIR)
+	CUBE_AVAILABLE="yes"
+	AC_DEFINE([HAVE_CUBE], 1, [Defined CUBE is installed and available to use])
 fi
-if test ! -f ${CubeDir}/lib/libcube3.a ; then
-	AC_MSG_ERROR([Cannot find libcube3.a! Make sure that --with-cube is pointing to the correct place.])
-fi
-AC_MSG_RESULT([found in ${CubeDir}])
-CUBE_DIR=${CubeDir}
-AC_SUBST(CUBE_DIR)
+AM_CONDITIONAL(HAVE_CUBE, test "${CUBE_AVAILABLE}" = "yes")
 
 AC_CONFIG_FILES([Makefile src/Makefile src/service-kriger/Makefile])
 AC_OUTPUT

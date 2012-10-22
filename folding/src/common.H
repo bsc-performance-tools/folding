@@ -32,6 +32,7 @@
 #ifndef UTILS_H_INCLUDED
 #define UTILS_H_INCLUDED
 
+#include "folding-config.h"
 #include <string>
 #include "UIParaverTraceConfig.h"
 

@@ -31,8 +31,11 @@
 
 static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1161 2012-08-14 14:01:44Z harald $";
 
+#include "common.H"
+
 #include <string>
 #include <cube3/Cube.h>
+
 
 using namespace std;
 

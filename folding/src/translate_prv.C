@@ -31,6 +31,8 @@
 
 static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
+#include "common.H"
+
 #include "translate_prv.H"
 
 namespace libparaver {

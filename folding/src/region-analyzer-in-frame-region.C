@@ -31,6 +31,8 @@
 
 static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
+#include "common.H"
+
 #include "ParaverTrace.h"
 #include "ParaverTraceThread.h"
 #include "ParaverTraceTask.h"
@@ -45,7 +47,6 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <list>
 
 #include "region-analyzer-in-frame-region.H"
-#include "common.H"
 
 #define PAPI_MIN_COUNTER   42000000
 #define PAPI_MAX_COUNTER   42009998

@@ -31,6 +31,8 @@
 
 static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
+#include "common.H"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -52,7 +54,6 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "region-analyzer-in-frame-region.H"
 #include "region-analyzer-in-time-region.H"
 #include "region-analyzer-first-occurrency.H"
-#include "common.H"
 #include "point.H"
 #include "callstackanalysis.H"
 
@@ -97,7 +98,7 @@ class Sample
 	unsigned Instance;
 };
 
-#if CUBE
+#if HAVE_CUBE
 vector<ca_callstacksample> vcallstacksamples;
 #endif
 
@@ -155,7 +156,7 @@ unsigned TranslateRegion (string &RegionName)
 	return result;
 }
 
-#if CUBE
+#if HAVE_CUBE
 void AdaptCallStack (ca_callstacksample &CS)
 {
 	/* Remove trailing not_found | unknown values*/
@@ -195,7 +196,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 	bool Outlier = false;
 	char type;
 
-#if CUBE
+#if HAVE_CUBE
 	ca_callstacksample CS;
 #endif
 	double lastCStime = 1.0;
@@ -275,7 +276,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			file >> Type;
 			file >> Value;
 
-#if CUBE
+#if HAVE_CUBE
 			if (fabs(lastCStime-Time) >= 0.00001f) /* get rid of different double input differences */
 			{
 				cout << setprecision (12);
@@ -341,7 +342,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 		}
 	}
 
-#if CUBE
+#if HAVE_CUBE
 	if (CS.caller.size() > 0)
 	{
 		if (CS.caller.size() != CS.callerline.size())
@@ -1230,7 +1231,7 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 	}
 }
 
-#if CUBE
+#if HAVE_CUBE
 void doInterpolation (int task, int thread, string filePrefix,
 	vector<Point> &vpoints, vector<Sample> &vsamples,
 	RegionInfo &regions, UIParaverTraceConfig *pcf, cube::Cube *cube)
@@ -1425,7 +1426,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 			free (prefilter_points);
 
 #warning "ONLY FOR ONE COUNTER!"
-#if CUBE
+#if HAVE_CUBE
 			unsigned cnodeid = ca_callstackanalysis::do_analysis (
 				TranslateRegion((*i)->RegionName), (*i)->RegionName, breakpoints,
 				vcallstacksamples, pcf, cube);
@@ -1468,7 +1469,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 					GNUPLOT.push_back (info);
 			}
 
-#if CUBE
+#if HAVE_CUBE
 			ofstream output_cube_launch;
 			output_cube_launch.open ((filePrefix+".launch").c_str(), ios::out|ios::app);
 			if (!output_cube_launch.is_open())
@@ -1885,7 +1886,7 @@ int main (int argc, char *argv[])
 
 
 
-#if CUBE
+#if HAVE_CUBE
   cube::Cube cube;
 
   // Build system resource tree
@@ -2044,7 +2045,7 @@ int main (int argc, char *argv[])
 		cout << "# of regions: " << regions.foundRegions.size() << endl;
 #endif
 
-#if CUBE
+#if HAVE_CUBE
 	unlink ((string(argv[res])+".launch").c_str());
 
 	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,

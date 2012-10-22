@@ -31,16 +31,13 @@
 
 static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
-#if CUBE
+#include "common.H"
 
 #include <stdlib.h>
-
 #include <iostream>
 #include <iomanip>
 
-#include "common.H"
 #include "callstackanalysis.H"
-
 
 unsigned ca_callstackanalysis::do_analysis (unsigned R, string Rstr,
 	vector<double> &breakpoints, vector<ca_callstacksample> &samples,
@@ -249,5 +246,3 @@ void ca_callstackanalysis::do_analysis_presence_region_cube_tree (unsigned R,
 		}
 	}
 }
-
-#endif /* CUBE */
