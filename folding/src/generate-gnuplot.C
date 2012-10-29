@@ -203,7 +203,7 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 			{
 				gnuplot_out
 				  << ",\\" << endl
-				  << "     '" << file << ".interpolation' using using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' axes x2y1 w lines lw 2,\\" << endl
+				  << "     '" << file << ".interpolation' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' axes x2y1 w lines lw 2,\\" << endl
 			 	  << "     '" << file << ".slope' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Counter rate' axes x2y2 w lines lw 2, \\" << endl
 			 	  << "     '" << file << ".segmentedslope' using 2:((strcol(1) eq '" << counter << "' && $4 == 0.0006) ? $3 : 1/0) title 'BRK 0.0006' axes x2y1 w points ps 1.5 pt 7 lt rgb '#000000';" << endl;
 			}
