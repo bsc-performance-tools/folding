@@ -628,7 +628,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 				for (; Counter_iter != thi->CounterSamples[cnt].end();
 					Counter_iter++, Times_iter++, Skip_iter++)
 				{
-					if (!(*Skip_iter))
+					if (!(*Skip_iter) && *Counter_iter > 0)
 					{
 						double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
 						double NCounter = ::NormalizeValue (AccumCounter + (*Counter_iter), 0, TotalCounter);
