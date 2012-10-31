@@ -245,6 +245,7 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			Point p;
 			p.RegionName = nameRegion[lastRegion];
 			p.Duration = lastDuration;
+			p.Instance = Instance;
 			file >> p.CounterID;
 			file >> p.TotalCounter;
 
@@ -1562,15 +1563,13 @@ void dumpAccumulatedCounterData (int task, int thread, string filePrefix,
 			exit (-1);
 		}
 
-#if 1
 		for (vector<Sample>:: iterator it = vsamples.begin(); it != vsamples.end(); it++)
 			if ((*it).CounterID == CounterID && (*it).Region == regionIndex)
-				output_data << (*it).DeTime << " " << (*it).DeCounterValue << endl;
-#endif
+				output_data << (*it).DeTime << " " << (*it).DeCounterValue << " " << (*it).Instance << endl;
 
 		for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
 			if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
-				output_data << (*it).Duration << " " << (*it).TotalCounter << endl;
+				output_data << (*it).Duration << " " << (*it).TotalCounter << " " << (*it).Instance << endl;
 
 		output_data.close();
 	}
@@ -2056,6 +2055,7 @@ int main (int argc, char *argv[])
 #endif
 
 	dumpAccumulatedCounterData (task, thread, argv[res], 0, accumulatedCounterPoints, vsamples, regions);
+	dumpAccumulatedCounterData (task, thread, argv[res], 1, accumulatedCounterPoints, vsamples, regions);
 
 	if (option_doLineFolding)
 	{

@@ -43,6 +43,7 @@ class Point
 	string CounterID;
 	unsigned long long Duration;
 	unsigned long long TotalCounter;
+	unsigned Instance;
 };
 
 #endif
