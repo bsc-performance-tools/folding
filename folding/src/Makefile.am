@@ -40,6 +40,12 @@ interpolate_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Iservice-kriger
 if HAVE_CUBE
 interpolate_CXXFLAGS += -I$(CUBE_DIR)/include
 endif
+if NEED_BOOST_HOME
+sort_pcf_CXXFLAGS += -I$(BOOST_HOME)/include
+fuse_CXXFLAGS += -I$(BOOST_HOME)/include
+extract_CXXFLAGS += -I$(BOOST_HOME)/include
+interpolate_CXXFLAGS += -I$(BOOST_HOME)/include
+endif
 
 sort_pcf_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
 fuse_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
