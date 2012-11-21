@@ -141,5 +141,7 @@ if test "${CubeDir}" != "no" ; then
 fi
 AM_CONDITIONAL(HAVE_CUBE, test "${CUBE_AVAILABLE}" = "yes")
 
+AX_PROG_BOOST
+
 AC_CONFIG_FILES([Makefile src/Makefile src/service-kriger/Makefile])
 AC_OUTPUT
