@@ -233,7 +233,7 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 			{
 				CounterUsed[j] = false;
 				CounterIDs[j] = i;
-				CounterIDNames[j] = s.substr (s.find ('(')+1, s.rfind (')') - (s.find ('(') + 1));
+				CounterIDNames[j] = s.substr (s.find ('(')+1, s.find (')', s.find ('(')+1) - (s.find ('(') + 1));
 				HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?1:0;
 				j++;
 			}
