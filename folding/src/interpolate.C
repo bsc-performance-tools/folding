@@ -122,9 +122,9 @@ unsigned long long feedSyntheticEventsRate = 1000;
 
 unsigned numRegions = 0;
 string nameRegion[MAX_REGIONS];
-int countRegion[MAX_REGIONS];
-double meanRegion[MAX_REGIONS], meanRegion_tot_ins[MAX_REGIONS];
-double sigmaRegion[MAX_REGIONS], sigmaRegion_tot_ins[MAX_REGIONS];
+int countDurationRegion[MAX_REGIONS];
+double meanDurationRegion[MAX_REGIONS];
+double sigmaDurationRegion[MAX_REGIONS];
 double NumOfSigmaTimes;
 
 bool option_doLineFolding = true;
@@ -132,7 +132,7 @@ bool removeOutliers = false;
 bool SeparateValues = true;
 vector<string> wantedCounters;
 list<GNUPLOTinfo*> GNUPLOT;
-
+vector<string> wantedRegions;
 bool generateGNUPLOTfiles = true;
 
 unsigned TranslateRegion (string &RegionName)
@@ -229,14 +229,13 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			inRegion = true;
 
 			if (removeOutliers && inRegion)
-				//Outlier = fabs (meanRegion[any_region?0:lastRegion] - Duration) > NumOfSigmaTimes*sigmaRegion[any_region?0:lastRegion];
-				Outlier = !((Duration > (meanRegion[any_region?0:lastRegion]-NumOfSigmaTimes*sigmaRegion[any_region?0:lastRegion])) && 
-				           (Duration < (meanRegion[any_region?0:lastRegion]+NumOfSigmaTimes*sigmaRegion[any_region?0:lastRegion])));
+				Outlier = !((Duration > (meanDurationRegion[any_region?0:lastRegion]-NumOfSigmaTimes*sigmaDurationRegion[any_region?0:lastRegion])) && 
+				           (Duration < (meanDurationRegion[any_region?0:lastRegion]+NumOfSigmaTimes*sigmaDurationRegion[any_region?0:lastRegion])));
 
 #if defined(DEBUG)
 			cout << "DURATION " << Duration << " REGION (" << strRegion << ")= "<< lastRegion << (Outlier?" is":" is not") << " an outlier " << endl;
-			cout << "MEAN_REGION = " << meanRegion[any_region?0:lastRegion] << " ABS = " << fabs (meanRegion[any_region?0:lastRegion] - Duration) << endl;
-			cout << NumOfSigmaTimes << " * " << sigmaRegion[any_region?0:lastRegion] << endl;
+			cout << "MEAN_REGION = " << meanDurationRegion[any_region?0:lastRegion] << " ABS = " << fabs (meanDurationRegion[any_region?0:lastRegion] - Duration) << endl;
+			cout << NumOfSigmaTimes << " * " << sigmaDurationRegion[any_region?0:lastRegion] << endl;
 #endif
 
 		}
@@ -248,21 +247,6 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			p.Instance = Instance;
 			file >> p.CounterID;
 			file >> p.TotalCounter;
-
-			/* Outlier could be inherited from T type */
-#if 0
-			if (p.CounterID == TOT_INS && removeOutliers && inRegion)
-				Outlier = Outlier || fabs (meanRegion_tot_ins[any_region?0:lastRegion] - p.TotalCounter) > NumOfSigmaTimes*sigmaRegion_tot_ins[any_region?0:lastRegion];
-#endif
-
-#if defined(DEBUG)
-			if (p.CounterID == TOT_INS)
-			{
-				cout << "ACCUMULATED " << p.TotalCounter << " REGION (" << nameRegion[lastRegion] << ")= "<< lastRegion << (Outlier?" is":" is not") << " an outlier " << endl;
-				cout << "MEAN_REGION = " << meanRegion_tot_ins[any_region?0:lastRegion] << " ABS = " << fabs (meanRegion_tot_ins[any_region?0:lastRegion] - p.TotalCounter) << endl;
-				cout << NumOfSigmaTimes << " * " << sigmaRegion_tot_ins[any_region?0:lastRegion] << endl;
-			}
-#endif
 
 			for (unsigned i = 0 ; i < wantedCounters.size(); i++)
 				if (wantedCounters[i] == p.CounterID)
@@ -365,9 +349,9 @@ void CalculateStatsFromFile (ifstream &file, bool any_region, vector<string> &al
 
 	for (int i = 0; i < MAX_REGIONS; i++)
 	{
-		meanRegion[i] = meanRegion_tot_ins[i] = 0.0f;
-		countRegion[i] = 0;
-		sigmaRegion[i] = sigmaRegion_tot_ins[i] = 0.0f;
+		meanDurationRegion[i] = 0.0f;
+		sigmaDurationRegion[i] = 0.0f;
+		countDurationRegion[i] = 0;
 	}
 
 	/* Calculate totals and number of presence of each region */
@@ -397,8 +381,8 @@ void CalculateStatsFromFile (ifstream &file, bool any_region, vector<string> &al
 
 			Region = TranslateRegion (strRegion);
 
-			meanRegion[any_region?0:Region] += Duration;
-			countRegion[any_region?0:Region] ++;
+			meanDurationRegion[any_region?0:Region] += Duration;
+			countDurationRegion[any_region?0:Region] ++;
 		}
 		else if (type == 'A')
 		{
@@ -407,9 +391,6 @@ void CalculateStatsFromFile (ifstream &file, bool any_region, vector<string> &al
 
 			file >> unused_s;
 			file >> unused_ll;
-
-			if (unused_s == TOT_INS)
-				meanRegion_tot_ins[any_region?0:Region] += unused_ll;
 
 			if (find(allcounters.begin(), allcounters.end(), unused_s) == allcounters.end())
 				allcounters.push_back (unused_s);
@@ -439,11 +420,8 @@ void CalculateStatsFromFile (ifstream &file, bool any_region, vector<string> &al
 
 	/* Now calculate the means */
 	for (unsigned i = 0; i < numRegions; i++)
-		if (countRegion[i] > 0)
-		{
-			meanRegion[i] = meanRegion[i]/countRegion[i];
-			meanRegion_tot_ins[i] = meanRegion_tot_ins[i]/countRegion[i];
-		}
+		if (countDurationRegion[i] > 0)
+			meanDurationRegion[i] = meanDurationRegion[i]/countDurationRegion[i];
 
 	file.clear ();
 	file.seekg (0, ios::beg);
@@ -472,8 +450,8 @@ void CalculateStatsFromFile (ifstream &file, bool any_region, vector<string> &al
 
 			Region = TranslateRegion (strRegion);
 
-			sigmaRegion[(any_region?0:Region)] +=
-			 (((double)Duration) - meanRegion[any_region?0:Region]) * (((double)Duration) - meanRegion[any_region?0:Region]);
+			sigmaDurationRegion[(any_region?0:Region)] +=
+			 (((double)Duration) - meanDurationRegion[any_region?0:Region]) * (((double)Duration) - meanDurationRegion[any_region?0:Region]);
 		}
 		else if (type == 'A')
 		{
@@ -482,10 +460,6 @@ void CalculateStatsFromFile (ifstream &file, bool any_region, vector<string> &al
 
 			file >> unused_s;
 			file >> unused_ll;
-
-			if (unused_s == TOT_INS)
-				sigmaRegion_tot_ins[any_region?0:Region] += 
-					(((double)unused_ll) - meanRegion_tot_ins[any_region?0:Region]) * (((double)unused_ll) - meanRegion_tot_ins[any_region?0:Region]);
 		}
 		else if (type == 'S')
 		{
@@ -503,15 +477,10 @@ void CalculateStatsFromFile (ifstream &file, bool any_region, vector<string> &al
 
 	for (unsigned i = 0; i < numRegions; i++)
 	{
-		if (countRegion[i] > 1)
-		{
-			sigmaRegion[i] = sqrt ((sigmaRegion[i]) / (countRegion[i] - 1));
-			sigmaRegion_tot_ins[i] = sqrt ((sigmaRegion_tot_ins[i]) / (countRegion[i] - 1));
-		}
+		if (countDurationRegion[i] > 1)
+			sigmaDurationRegion[i] = sqrt ((sigmaDurationRegion[i]) / (countDurationRegion[i] - 1));
 		else
-		{
-			sigmaRegion[i] = sigmaRegion_tot_ins[i] = 0.0f;
-		}
+			sigmaDurationRegion[i] = 0.0f;
 	}
 
 	file.clear ();
@@ -1256,6 +1225,17 @@ void doInterpolation (int task, int thread, string filePrefix,
 			continue;
 
 		string RegionName = (*i)->RegionName;
+
+		/* Did the user provide filters to region names? */
+		if (wantedRegions.size() > 0)
+		{
+			bool found = false;
+			for (unsigned u = 0; u < wantedRegions.size() && !found; u++)
+				found = RegionName.find(wantedRegions[u]) != string::npos;
+			if (!found)
+				continue;
+		}
+
 		int regionIndex = TranslateRegion (RegionName);
 
 		//string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
@@ -1426,12 +1406,6 @@ void doInterpolation (int task, int thread, string filePrefix,
 
 			free (prefilter_points);
 
-#warning "ONLY FOR ONE COUNTER!"
-#if HAVE_CUBE
-			unsigned cnodeid = ca_callstackanalysis::do_analysis (
-				TranslateRegion((*i)->RegionName), (*i)->RegionName, breakpoints,
-				vcallstacksamples, pcf, cube);
-#endif
 
 			if (generateGNUPLOTfiles)
 			{
@@ -1468,24 +1442,36 @@ void doInterpolation (int task, int thread, string filePrefix,
 				}
 				else 
 					GNUPLOT.push_back (info);
-			}
 
 #if HAVE_CUBE
-			ofstream output_cube_launch;
-			output_cube_launch.open ((filePrefix+".launch").c_str(), ios::out|ios::app);
-			if (!output_cube_launch.is_open())
-			{
-				cerr << "Error! Cannot create " << completefilePrefix+".launch! Dying..." << endl;
-				exit (-1);
-			}
+				if (CID == 0)
+				{
+					ca_callstackanalysis::do_analysis ( "no_Occurrences", 0,
+					TranslateRegion((*i)->RegionName), (*i)->RegionName, breakpoints,
+					vcallstacksamples, pcf, cube);
+				}
 
-			output_cube_launch << "no_Occurrences" << endl;
-			output_cube_launch << "- cnode " << cnodeid << endl;
-			output_cube_launch << "See detailed " << CounterID << endl;
-			output_cube_launch << "gnuplot -persist %f." << RegionName << "." << CounterID << ".gnuplot" << endl;
+				unsigned cnodeid = ca_callstackanalysis::do_analysis (
+					CounterID, info->mean_counter,
+					TranslateRegion((*i)->RegionName), (*i)->RegionName, breakpoints,
+						vcallstacksamples, pcf, cube);
 
-			output_cube_launch.close();
+				ofstream output_cube_launch;
+				output_cube_launch.open ((filePrefix+".launch").c_str(), ios::out|ios::app);
+				if (!output_cube_launch.is_open())
+				{
+					cerr << "Error! Cannot create " << completefilePrefix+".launch! Dying..." << endl;
+					exit (-1);
+				}
+
+				output_cube_launch << CounterID << endl;
+				output_cube_launch << "- cnode " << cnodeid << endl;
+				output_cube_launch << "See detailed " << CounterID << endl;
+				output_cube_launch << "gnuplot -persist %f." << RegionName << "." << CounterID << ".gnuplot" << endl;
+
+				output_cube_launch.close();
 #endif
+			}
 
 		}
 
@@ -1660,6 +1646,13 @@ int ProcessParameters (int argc, char *argv[])
 			i++;
 			if (i < argc-1)
 				wantedCounters.push_back (string(argv[i]));
+			continue;
+		}
+		if (strcmp ("-region", argv[i]) == 0)
+		{
+			i++;
+			if (i < argc-1)
+				wantedRegions.push_back (string(argv[i]));
 			continue;
 		}
 		if (strcmp ("-remove-outliers", argv[i]) == 0)
@@ -1936,6 +1929,19 @@ int main (int argc, char *argv[])
 		if (find(wantedCounters.begin(), wantedCounters.end(), "all") != wantedCounters.end())
 			wantedCounters = allcounters;
 
+	if (wantedCounters.size() == 0)
+	{
+		cerr << "WARNING! No counters given. Applying the process to all the counters found." << endl;
+		wantedCounters = allcounters;
+	}
+
+	
+#if HAVE_CUBE
+	for (unsigned u = 0; u < wantedCounters.size(); u++)
+		cube.def_met (wantedCounters[u], wantedCounters[u], "FLOAT", "occ", "", "", "", NULL);
+#endif
+
+
 	string cFile = argv[res];
 	cFile = cFile.substr (0, cFile.rfind (".extract")) + ".control";
 
@@ -2054,8 +2060,10 @@ int main (int argc, char *argv[])
 	  vsamples, regions, pcf);
 #endif
 
-	dumpAccumulatedCounterData (task, thread, argv[res], 0, accumulatedCounterPoints, vsamples, regions);
-	dumpAccumulatedCounterData (task, thread, argv[res], 1, accumulatedCounterPoints, vsamples, regions);
+#if 0
+	for (unsigned j = 0; j < wantedCounters.size(); j++)
+		dumpAccumulatedCounterData (task, thread, argv[res], j, accumulatedCounterPoints, vsamples, regions);
+#endif
 
 	if (option_doLineFolding)
 	{
@@ -2071,12 +2079,14 @@ int main (int argc, char *argv[])
 		for (unsigned j = 0; j < numRegions; j++)
 		{
 			createMultiSlopeGNUPLOT (argv[res], nameRegion[j], GNUPLOT, wantedCounters);
-//			createAccumulatedCounterGNUPLOT (argv[res], nameRegion[j], accumulatedCounterPoints, wantedCounters);
+#if 0
+			createAccumulatedCounterGNUPLOT (argv[res], nameRegion[j], accumulatedCounterPoints, wantedCounters);
+#endif
 		}
 	}
 
 
-#if CUBE
+#if HAVE_CUBE
   // Output to a cube file
 	string cube_output = string(argv[res]) + ".cube";
   std::ofstream out (cube_output.c_str());

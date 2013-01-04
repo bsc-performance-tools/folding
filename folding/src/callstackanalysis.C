@@ -36,11 +36,15 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <iostream>
 #include <iomanip>
+#include <string>
+#include <map>
 
 #include "callstackanalysis.H"
 
-unsigned ca_callstackanalysis::do_analysis (unsigned R, string Rstr,
-	vector<double> &breakpoints, vector<ca_callstacksample> &samples,
+static map<string, cube::Cnode*> KnownRegions;
+
+unsigned ca_callstackanalysis::do_analysis (string counter, double value, unsigned R,
+	string Rstr, vector<double> &breakpoints, vector<ca_callstacksample> &samples,
 	UIParaverTraceConfig *pcf, cube::Cube *cubev)
 {
 	unsigned N = breakpoints.size();
@@ -55,23 +59,42 @@ unsigned ca_callstackanalysis::do_analysis (unsigned R, string Rstr,
 
 	string RegionSTR = Rstr;
 
-  cube::Region* rroot = cubev->def_region (RegionSTR, 0, 0, "", "", "");
-  cube::Cnode* croot = cubev->def_cnode(rroot, "", 0, NULL);
+	cube::Cnode* croot;
+	if (KnownRegions.count(Rstr) == 0)
+	{
+		cube::Region* rroot = cubev->def_region (RegionSTR, 0, 0, "", "", "");
+		croot = cubev->def_cnode(rroot, "", 0, NULL);
+		KnownRegions[Rstr] = croot;
+	}
+	else
+		croot = KnownRegions[Rstr];
 
 	for (unsigned u = 1; u < N; u++)
 	{
 		RegionSTR = "Phase " + common::convertInt (u) + " (" + 
 		  common::convertDouble (breakpoints[u-1],2) + "-" + 
 		  common::convertDouble (breakpoints[u],2) + ")";
-	  cube::Region* r = cubev->def_region (RegionSTR, 0, 0, "", "", "");
+
+		cube::Region* r = cubev->def_region (RegionSTR, 0, 0, "", "", "");
 		cube::Cnode* c = cubev->def_cnode (r, "", 0, croot);
 
+#if 0
 		do_analysis_presence_region (R, u, breakpoints[u-1], breakpoints[u],
 		  samples, pcf);
+#endif
 
-		if (pcf != NULL)
+		if (pcf != NULL && counter == "no_Occurrences")
+		{
 			do_analysis_presence_region_cube_tree (R, u, breakpoints[u-1],
 			  breakpoints[u], samples, pcf, cubev, c);
+		}
+		else
+		{
+			cube::Metric *m = cubev->get_met (counter);
+			cube::Thread *t = (cubev->get_thrdv())[0];
+			double severity = (breakpoints[u] - breakpoints[u-1]) * value;
+			cubev->set_sev (m, c, t, severity);
+		}
 	}
 
 	return cubev->get_cnode_id (croot);

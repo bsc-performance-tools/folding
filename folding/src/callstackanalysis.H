@@ -69,7 +69,7 @@ class ca_callstackanalysis
 {
 	public:
 
-	static unsigned do_analysis (unsigned, string, vector<double> &, 
+	static unsigned do_analysis (string, double, unsigned, string, vector<double> &, 
 	  vector<ca_callstacksample> &, libparaver::UIParaverTraceConfig *, cube::Cube*);
 	static void do_analysis_presence_region (unsigned,unsigned, double ,
 	  double, vector<ca_callstacksample> &, libparaver::UIParaverTraceConfig *);
