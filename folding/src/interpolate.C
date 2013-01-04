@@ -117,6 +117,7 @@ bool feedFirstOccurrence = false;
 unsigned long long feedTraceRegion_Type;
 unsigned long long feedTraceRegion_Value;
 unsigned long long feedTraceFoldType_Value;
+string feedTraceFoldType_Value_Definition;
 unsigned long long feedTraceTimes_Begin, feedTraceTimes_End;
 unsigned long long feedSyntheticEventsRate = 1000;
 
@@ -687,6 +688,8 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 {
 	bool all_zeroes = true;
 	int incount = 0;
+	double mean_distance = 0.0f;
+	double sigma_distance = 0.0f;
 
 	if (outcount > 0)
 	{
@@ -722,57 +725,58 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 		/* Calculate the average distance between the pre-interpolated and the points, so we
  		   can exclude the instances that are too "far" to the interpolated */
 
-		for (it = vsamples.begin(); it != vsamples.end(); it++)
+		if (removeOutliers)
 		{
-			if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
-			    (anyRegion && (*it).CounterID == CounterID))
+			for (it = vsamples.begin(); it != vsamples.end(); it++)
 			{
-				if (curInstance != (*it).Instance)
+				if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
+				    (anyRegion && (*it).CounterID == CounterID))
 				{
-					if (curInstance != 0xFFFFFFFF)
+					if (curInstance != (*it).Instance)
 					{
-						if (ntmp > 0)
-							InstanceAvgDistance[curInstance] = tmp / ntmp;
-						else
-							InstanceAvgDistance[curInstance] = 0.0f;
+						if (curInstance != 0xFFFFFFFF)
+						{
+							if (ntmp > 0)
+								InstanceAvgDistance[curInstance] = tmp / ntmp;
+							else
+								InstanceAvgDistance[curInstance] = 0.0f;
+						}
+						curInstance = (*it).Instance;
+						tmp = Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
+						ntmp = 1;
 					}
-					curInstance = (*it).Instance;
-					tmp = Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
-					ntmp = 1;
-				}
-				else
-				{
-					tmp += Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
-					ntmp += 1;
+					else
+					{
+						tmp += Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
+						ntmp += 1;
+					}
 				}
 			}
-		}
-		if (curInstance != 0xFFFFFFFF)
-		{
-			if (ntmp > 0)
-				InstanceAvgDistance[curInstance] = tmp / ntmp;
-			else
-				InstanceAvgDistance[curInstance] = 0.0f;
-		}
+			if (curInstance != 0xFFFFFFFF)
+			{
+				if (ntmp > 0)
+					InstanceAvgDistance[curInstance] = tmp / ntmp;
+				else
+					InstanceAvgDistance[curInstance] = 0.0f;
+			}
 
-    map<unsigned,double>::iterator avgDistance_it = InstanceAvgDistance.begin();
-		double mean_distance = 0.0f;
-		unsigned mean_qty = 0;
-		for (; avgDistance_it != InstanceAvgDistance.end(); avgDistance_it++)
-		{
-			mean_distance += (*avgDistance_it).second;
-			mean_qty += 1;
-		}
-		mean_distance = mean_distance / mean_qty;
-
-		double sigmaDistance = 0.0f;
-		if (mean_qty > 1)
-		{
-			avgDistance_it = InstanceAvgDistance.begin();
+	    map<unsigned,double>::iterator avgDistance_it = InstanceAvgDistance.begin();
+			unsigned mean_qty = 0;
 			for (; avgDistance_it != InstanceAvgDistance.end(); avgDistance_it++)
-				sigmaDistance += ((*avgDistance_it).second - mean_distance) * ((*avgDistance_it).second - mean_distance);
+			{
+				mean_distance += (*avgDistance_it).second;
+				mean_qty += 1;
+			}
+			mean_distance = mean_distance / mean_qty;
 
-			sigmaDistance = sqrt (sigmaDistance / (mean_qty-1));
+			if (mean_qty > 1)
+			{
+				avgDistance_it = InstanceAvgDistance.begin();
+				for (; avgDistance_it != InstanceAvgDistance.end(); avgDistance_it++)
+					sigma_distance += ((*avgDistance_it).second - mean_distance) * ((*avgDistance_it).second - mean_distance);
+	
+				sigma_distance = sqrt (sigma_distance / (mean_qty-1));
+			}
 		}
 
 		for (incount = 2, it = vsamples.begin(); it != vsamples.end(); it++)
@@ -784,8 +788,11 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 				//if (Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points) < prefilter_distance)
 				
 				/* Skip points that are farther than SigmaTimes Distance */
-				if ((InstanceAvgDistance[(*it).Instance] > (mean_distance - NumOfSigmaTimes*sigmaDistance)) &&
-				    (InstanceAvgDistance[(*it).Instance] < (mean_distance + NumOfSigmaTimes*sigmaDistance)))
+				if (removeOutliers &&
+				    (InstanceAvgDistance[(*it).Instance] > (mean_distance - NumOfSigmaTimes*sigma_distance) &&
+				     InstanceAvgDistance[(*it).Instance] < (mean_distance + NumOfSigmaTimes*sigma_distance)) 
+					  ||
+						!removeOutliers)
 				{
 					inpoints_x[incount] = (*it).Time;
 					inpoints_y[incount] = (*it).CounterValue;
@@ -801,7 +808,7 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 				else
 				{
 					cout << setprecision(10);
-					cout << "INSTANCE " << (*it).Instance << " with IAD = " << InstanceAvgDistance[(*it).Instance] << " NOT between [" << mean_distance - NumOfSigmaTimes*sigmaDistance << "," << mean_distance + NumOfSigmaTimes*sigmaDistance << "]" << endl;
+					cout << "INSTANCE " << (*it).Instance << " with IAD = " << InstanceAvgDistance[(*it).Instance] << " NOT between [" << mean_distance - NumOfSigmaTimes*sigma_distance << "," << mean_distance + NumOfSigmaTimes*sigma_distance << "]" << endl;
 				}
 #endif
 			}
@@ -1389,9 +1396,10 @@ void doInterpolation (int task, int thread, string filePrefix,
 				("DRAM_ENERGY:PACKAGE0" == CounterID) ||
 				("PP0_ENERGY:PACKAGE0" == CounterID);
 
-			runInterpolation_prefilter (output_pre_kriger, output_pre_slope, vsamples, CounterID,
-				!SeparateValues, regionIndex, target_num_points, prefilter_points, slope_factor,
-				EnergyCounterID?kriger_nuget*10:kriger_nuget, prefilter_distance);
+			if (removeOutliers)
+				runInterpolation_prefilter (output_pre_kriger, output_pre_slope, vsamples, CounterID,
+					!SeparateValues, regionIndex, target_num_points, prefilter_points, slope_factor,
+					EnergyCounterID?kriger_nuget*10:kriger_nuget, prefilter_distance);
 
 			vector<double> qualities;
 			vector<double> breakpoints;
@@ -1468,6 +1476,16 @@ void doInterpolation (int task, int thread, string filePrefix,
 				output_cube_launch << "- cnode " << cnodeid << endl;
 				output_cube_launch << "See detailed " << CounterID << endl;
 				output_cube_launch << "gnuplot -persist %f." << RegionName << "." << CounterID << ".gnuplot" << endl;
+
+				output_cube_launch << CounterID << endl;
+				output_cube_launch << "- cnode " << cnodeid << endl;
+				output_cube_launch << "See " << CounterID << " in Paraver timeline" << endl;
+				unsigned CounterIDcode = common::lookForCounter (CounterID, pcf);
+				unsigned long long delta = (*i)->Tend - (*i)->Tstart;
+				unsigned long long Tend = (*i)->Tend + 5*delta/100;
+				unsigned long long Tstart = (5*delta/100 > (*i)->Tstart) ? 0 : (*i)->Tstart - 5*delta/100;
+
+				output_cube_launch << "cube-call-paraver.sh " << TraceToFeed << " " << Tstart << " " << Tend << " " << feedTraceFoldType_Value << " " << feedTraceFoldType_Value_Definition <<  " " << CounterIDcode << " " << CounterID << endl;
 
 				output_cube_launch.close();
 #endif
@@ -1960,6 +1978,7 @@ int main (int argc, char *argv[])
 	{
 		controlFile >> TraceToFeed;
 		controlFile >> feedTraceFoldType_Value;
+		controlFile >> feedTraceFoldType_Value_Definition;
 
 		string pcffile = TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf");
 		pcf = new UIParaverTraceConfig;

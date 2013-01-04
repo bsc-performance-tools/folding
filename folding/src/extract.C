@@ -51,6 +51,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #define PAPI_MAX_COUNTER   42999999
 
 unsigned long long RegionSeparator = 1234567;
+string RegionSeparatorName;
 vector<unsigned long long> SkipTypes;
 vector<unsigned long long> PhaseSeparators;
 
@@ -200,6 +201,12 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 
 	pcf = new UIParaverTraceConfig;
 	pcf->parse(pcffile);
+
+	string s = pcf->getEventType (RegionSeparator);
+	if (s.length() > 0)
+		RegionSeparatorName = common::removeSpaces (s);
+	else
+		RegionSeparatorName = "Unknown";
 
 	for (int i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
 	{
@@ -570,11 +577,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 			}
 			else
 			{
-				string RegionName = pcf->getEventType (RegionSeparator);
-				if (RegionName.length() > 0)
-					thi->output << "T " << common::removeSpaces (RegionName) << "_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
-				else
-					thi->output << "T Unknown_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
+				thi->output << "T " << RegionSeparatorName << "_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
 			}
 
 			for (unsigned i = 0; i < thi->vcallstack.size(); i++)
@@ -860,6 +863,7 @@ int main (int argc, char *argv[])
 	ofstream cfile (basename(ControlFile.c_str()));
 	cfile << tracename << endl;
 	cfile << RegionSeparator << endl;
+	cfile << RegionSeparatorName << endl;
 	cfile << PhaseSeparators.size() << endl;
 	vector<unsigned long long>::iterator it = PhaseSeparators.begin();
 	while (it != PhaseSeparators.end())
