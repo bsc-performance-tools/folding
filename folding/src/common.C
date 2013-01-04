@@ -36,9 +36,11 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <sstream>
 #include <iomanip>
 
+#include <iostream>
+
 
 #define PAPI_MIN_COUNTER   42000000
-#define PAPI_MAX_COUNTER   42009998
+#define PAPI_MAX_COUNTER   42999999
 
 string common::convertDouble (double d, int i)
 {
@@ -68,13 +70,18 @@ unsigned common::lookForCounter (string &name, UIParaverTraceConfig *pcf)
 	/* Look for every counter in the vector its code within the PCF file */
 	for (unsigned j = PAPI_MIN_COUNTER; j <= PAPI_MAX_COUNTER; j++)
 	{
-		string s = pcf->getEventType (j);
-		if (s.length() > 0)
+		try
 		{
-			string tmp = s.substr (s.find ('(')+1, s.rfind (')') - (s.find ('(') + 1));
-			if (tmp == name)
-				return j;
+			string s = pcf->getEventType (j);
+			if (s.length() > 0)
+			{
+				string tmp = s.substr (s.find ('(')+1, s.find (')', s.find ('(')+1) - (s.find ('(') + 1));
+				if (tmp == name)
+					return j;
+			}
 		}
+		catch (...)
+		{ }
 	}
 	return 0;
 }
