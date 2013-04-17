@@ -26,8 +26,8 @@ for line in content:
 	elif p_subroutine.match(line):
 		lines.append(currentline)
 
-if maxline > 0:
-	lines.append(maxline)
+if currentline > 0:
+	lines.append(currentline)
 
 if len(lines) > 0:
 	s = sorted(lines)
