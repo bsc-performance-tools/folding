@@ -339,9 +339,16 @@ removeoutliersinstances <- function (data)
 		}
 
 	new_data <- data
+	print ("REMOVE-INSTANCES")
+	print (length(removeinstances))
 	if (length(removeinstances) > 0)
+	{
 		for (i in 1:length(removeinstances))
+		{
 			new_data <- subset (new_data, new_data$instance != removeinstances[i])
+			print (removeinstances[i])
+		}
+	}
 
 	# Should we remove the end points?
 	new_data <- subset (new_data, new_data$rtime < 1)
