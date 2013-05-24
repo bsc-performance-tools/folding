@@ -35,9 +35,17 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include <sstream>
 #include <iomanip>
-
 #include <iostream>
+#include <sys/stat.h>
 
+#include <sys/types.h>
+#include <dirent.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define PAPI_MIN_COUNTER   42000000
 #define PAPI_MAX_COUNTER   42999999
@@ -65,6 +73,20 @@ string common::removeSpaces (string &in)
 	return tmp;
 }
 
+bool common::existsFile (string file)
+{
+	struct stat buffer;
+	stat(file.c_str(), &buffer);
+	return (buffer.st_mode & S_IFMT) == S_IFREG;
+}
+
+bool common::existsDir (string dir)
+{
+	struct stat buffer;
+	stat(dir.c_str(), &buffer);
+	return (buffer.st_mode & S_IFMT) == S_IFDIR;
+}
+
 unsigned common::lookForCounter (string &name, UIParaverTraceConfig *pcf)
 {
 	/* Look for every counter in the vector its code within the PCF file */
@@ -86,3 +108,71 @@ unsigned common::lookForCounter (string &name, UIParaverTraceConfig *pcf)
 	return 0;
 }
 
+void common::lookForCallerLineInfo (UIParaverTraceConfig *pcf, unsigned id, string &file, int &line)
+{
+	string cl = pcf->getEventValue (30000100, id);
+	line = atoi ((cl.substr (0, cl.find (" "))).c_str());
+	int pos_open = cl.find ("(");
+	int pos_close = cl.find (")");
+	file = cl.substr (pos_open+1, pos_close-pos_open-1);
+}
+
+void common::CleanMetricsDirectory_r (char *dir)
+{
+	struct dirent *de = NULL;
+	DIR *d = NULL;
+	char current[PATH_MAX];
+	getcwd (current, PATH_MAX);
+	struct stat sb;
+	
+	d = opendir(dir);
+	if (d == NULL)
+	{
+		cerr << "Could not open directory " << dir << endl;
+		return;
+	}
+	chdir (dir);
+
+	while (de = readdir(d))
+	{
+		int res = stat (de->d_name, &sb);
+		if (res > 0 && (sb.st_mode & S_IFMT) == S_IFREG)
+		{
+			if (strlen(de->d_name) > strlen (".metrics"))
+				if (strcmp (&de->d_name[strlen(de->d_name)-strlen (".metrics")], ".metrics") == 0)
+					unlink (de->d_name);
+		}
+	}
+
+	rewinddir (d);
+
+	while (de = readdir(d))
+	{
+		int res = stat (de->d_name, &sb);
+		if (res > 0 && strcmp (de->d_name, ".") != 0 && strcmp (de->d_name, "..") != 0)
+		{
+			if ((sb.st_mode & S_IFMT) == S_IFDIR)
+			{
+				chdir (de->d_name);
+				common::CleanMetricsDirectory_r (de->d_name);
+				chdir (current);
+			}
+		}
+	}
+
+  closedir(d);
+}
+
+void common::CleanMetricsDirectory (string &directory)
+{
+	char current[PATH_MAX];
+	getcwd (current, PATH_MAX);
+
+	common::CleanMetricsDirectory_r ((char*)directory.c_str());
+	chdir (current);
+}
+
+bool common::isMIPS (string s)
+{
+	return s == "PAPI_TOT_INS" || s == "PM_INST_CMPL" || s == "INSTRUCTION_RETIRED" || s == "INSTRUCTIONS_RETIRED";
+}

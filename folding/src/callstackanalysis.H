@@ -32,7 +32,9 @@
 #ifndef CALLSTACKANALYSIS_H_INCLUDED
 #define CALLSTACKANALYSIS_H_INCLUDED
 
+#include "common.H"
 #include <vector>
+#include <string>
 
 using namespace std;
 
@@ -41,18 +43,21 @@ class ca_callstacksample
 	public:
 	float Time;
 	unsigned Region;
+	unsigned Instance;
 //	vector<unsigned> depth;
-	vector<unsigned> caller;
-	vector<unsigned> callerline;
+	vector<unsigned long long> caller;
+	vector<unsigned long long> callerline;
+	vector<unsigned long long> callerType;
+	vector<unsigned long long> callerlineType;
+	vector<pair<unsigned long long, unsigned long long > > callerlineASTBlock; /* first will be begin, second will be end */
 };
 
 
-#include <string>
 #include "UIParaverTraceConfig.h"
 #include "treenodeholder.H"
 
 #if HAVE_CUBE
-#include <cube3/Cube.h>
+# include <cube3/Cube.h>
 
 class TreeNodeHolder;
 
@@ -61,25 +66,40 @@ class ca_callstackanalysis_presence
 {
 	public:
 	unsigned occurrences;
-	vector<unsigned> caller;
-	vector<unsigned> callerline;
+	vector<unsigned long long> caller;
+	vector<unsigned long long> callerline;
 };
 
 class ca_callstackanalysis
 {
 	public:
-
-	static unsigned do_analysis (string, double, unsigned, string, vector<double> &, 
-	  vector<ca_callstacksample> &, libparaver::UIParaverTraceConfig *, cube::Cube*);
-	static void do_analysis_presence_region (unsigned,unsigned, double ,
-	  double, vector<ca_callstacksample> &, libparaver::UIParaverTraceConfig *);
-
-	static void do_analysis_presence_region_cube_tree (unsigned, unsigned,
-		double, double, vector<ca_callstacksample> &,
-		libparaver::UIParaverTraceConfig *, cube::Cube*, cube::Cnode *base);
+	static unsigned do_analysis (
+	  string prefix, string countercode, string counter, double value, unsigned R,
+	  string Rstr, vector<double> &breakpoints, vector<ca_callstacksample> &samples,
+	  UIParaverTraceConfig *pcf, cube::Cube *cubev, string &sourceDir);
+#if  0
+	static void do_analysis_presence_region (
+	  unsigned R, unsigned phase,	double from, double to,
+	  vector<ca_callstacksample> &samples, UIParaverTraceConfig *pcf);
 	static void do_analysis_presence_region_cube_tree_r (
-		TreeNodeHolder *tree, libparaver::UIParaverTraceConfig *pcf, 
-		cube::Cube *cube, cube::Cnode *root);
+	  TreeNodeHolder *tree, UIParaverTraceConfig *pcf, cube::Cube *cubev,
+	  cube::Cnode *root, string &sourceDir);
+	static void do_analysis_presence_region_cube_tree (
+	  unsigned R, unsigned phase,	double from, double to,
+	  vector<ca_callstacksample> &samples, UIParaverTraceConfig *pcf,
+	  cube::Cube *cubev, cube::Cnode *root, string &sourceDir);
+#endif
+	static void do_analysis_presence_region_cube_tree (
+	  TreeNodeHolder *tree, UIParaverTraceConfig *pcf, cube::Cube *cubev,
+		cube::Cnode *root, cube::Metric *m, string &sourceDir,
+		string &metricName);
+	static void spread_severity_tree (
+		TreeNodeHolder *tree, UIParaverTraceConfig *pcf, cube::Cube *cubev,
+	  cube::Cnode *root, cube::Metric *m, double severity, string &sourceDir,	
+		string &metricName);
+	static void spread_constant_tree (
+		TreeNodeHolder *tnh, UIParaverTraceConfig *pcf, double constant,
+			string &sourceDir, string &Name);
 };
 #endif
 

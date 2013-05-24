@@ -85,6 +85,18 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 				gnuplot_out << endl;
 			}
 
+			if ((*it)->breakpoints.size () > 0)
+			{
+				for (unsigned u = 1; u < (*it)->breakpoints.size()-1; u++) /* Skip 0 and 1 */
+					gnuplot_out << "set arrow from graph " << fixed << setprecision(2) << (*it)->breakpoints[u] << ",0 to graph " << (*it)->breakpoints[u] << ",1 nohead ls 0 lc rgb 'black' lw 2 front" << endl;
+
+				for (unsigned u = 1; u < (*it)->breakpoints.size(); u++)
+				{
+					double half = (*it)->breakpoints[u-1] + ((*it)->breakpoints[u]-(*it)->breakpoints[u-1])/2;
+					gnuplot_out << "set label \"Phase " << u << "\" at graph " << half << ",0.95 rotate by -90 front" << endl;
+				}
+			}
+
 			gnuplot_out
 				<< "set xrange [0:" << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << "];" << endl
 			  << "set yrange [0:" << Y1Limit << "];" << endl
@@ -103,9 +115,8 @@ void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info)
 			{
 				gnuplot_out
 				  << ",\\" << endl
-				  << "     '" << file << ".interpolation' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' axes x2y1 w lines lw 2,\\" << endl
-			 	  << "     '" << file << ".slope' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Counter rate' axes x2y2 w lines lw 2,\\" << endl
-			 	  << "     '" << file << ".segmentedslope' using 2:((strcol(1) eq '" << counter << "' && $4 == 0.0006) ? $3 : 1/0) title 'Segment 0.0006' axes x2y1 w points ps 1.5 pt 7 lt rgb '#000000';" << endl;
+				  << "     '" << file << ".interpolation' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' axes x2y1 w lines lw 3,\\" << endl
+			 	  << "     '" << file << ".slope' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Counter rate' axes x2y2 w lines lw 3;" << endl;
 			}
 			else
 				gnuplot_out << ";" << endl;
@@ -203,8 +214,8 @@ void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info)
 			{
 				gnuplot_out
 				  << ",\\" << endl
-				  << "     '" << file << ".interpolation' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' axes x2y1 w lines lw 2,\\" << endl
-			 	  << "     '" << file << ".slope' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Counter rate' axes x2y2 w lines lw 2, \\" << endl
+				  << "     '" << file << ".interpolation' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Curve fitting' axes x2y1 w lines lw 3,\\" << endl
+			 	  << "     '" << file << ".slope' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title 'Counter rate' axes x2y2 w lines lw 3, \\" << endl
 			 	  << "     '" << file << ".segmentedslope' using 2:((strcol(1) eq '" << counter << "' && $4 == 0.0006) ? $3 : 1/0) title 'BRK 0.0006' axes x2y1 w points ps 1.5 pt 7 lt rgb '#000000';" << endl;
 			}
 			else
@@ -228,18 +239,44 @@ void createMultiSlopeGNUPLOT (string file, string regionName, list<GNUPLOTinfo*>
 		exit (-1);
 	}
 
+	list<GNUPLOTinfo*>::iterator it = info.begin();
+
 	gnuplot_out
 	  << "set key top right invert" << endl
-	  << "set xrange [0:1];" << endl
+	  << "set x2range [0:1];" << endl
 	  << "set yrange [0:*];" << endl
 	  << "set ytics mirror;" << endl
-	  << "set xtics mirror;" << endl
+	  << "set xtics nomirror;" << endl
+	  << "set x2tics nomirror;" << endl
 		<< "set ylabel 'Performance metric rate';" << endl
-		<< "set xlabel 'Normalized time';" << endl;
+		<< "set xlabel 'Normalized time';" << endl
+		<< "set xrange [0:" << fixed << setprecision(2) << (*it)->mean_duration / 1000000 << "];" << endl
+	  << "set xtics ( 0.0 ";
+	for (int i = 1; i <= 5; i++)
+	{
+		double duration = (*it)->mean_duration / 1000000;
+		gnuplot_out << ", " << fixed << setprecision(2) << i*duration/5;
+	}
+	gnuplot_out << ");" << endl;
+
+	for (; it != info.end(); it++)
+		if ((*it)->breakpoints.size () > 0)
+		{
+			for (unsigned u = 1; u < (*it)->breakpoints.size()-1; u++) /* Skip 0 and 1 */
+				gnuplot_out << "set arrow from graph " << fixed << setprecision(2) << (*it)->breakpoints[u] << ",0 to graph " << (*it)->breakpoints[u] << ",1 nohead ls 0 lc rgb 'black' lw 2 front" << endl;
+
+				for (unsigned u = 1; u < (*it)->breakpoints.size(); u++)
+				{
+					double half = (*it)->breakpoints[u-1] + ((*it)->breakpoints[u]-(*it)->breakpoints[u-1])/2;
+					gnuplot_out << "set label \"Phase " << u << "\" at graph " << half << ",0.95 rotate by -90 front" << endl;
+				}
+		}
+
+	it = info.begin(); /* Start again */
 
 	bool found = false;
 	bool first = true;
-	for (list<GNUPLOTinfo*>::iterator it = info.begin(); it != info.end() ; it++)
+	for (; it != info.end() ; it++)
 	{
 		string counter = (*it)->metric;
 		string file = (*it)->fileprefix;
@@ -257,7 +294,7 @@ void createMultiSlopeGNUPLOT (string file, string regionName, list<GNUPLOTinfo*>
 			{
 				if (!first)
 					gnuplot_out << ",";
-				gnuplot_out << "\\" << endl << "     '" << file << ".slope' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title '" << counter << "' w lines lw 2";
+				gnuplot_out << "\\" << endl << "     '" << file << ".slope' using 2:((strcol(1) eq '" << counter << "') ? $3 : 1/0) title '" << counter << "' w lines lw 3 axis x2y1";
 				first = false;
 			}
 		}

@@ -22,7 +22,9 @@ interpolate_SOURCES = \
  region-analyzer-in-frame-region.C region-analyzer-in-frame-region.H \
  region-analyzer-in-time-region.C region-analyzer-in-time-region.H \
  region.C region.H region-info.H \
- point.H 
+ point.H \
+ execute-R.C execute-R.H execute-breakpoints-R.C execute-breakpoints-R.H
+
 if HAVE_CUBE
 interpolate_SOURCES += \
  CubeLaunchFile.C CubeLaunchFile.H \

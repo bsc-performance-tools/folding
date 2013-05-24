@@ -21,33 +21,39 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/folding/src/interpolate.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-01-04 16:23:26 +0100 (dv, 04 gen 2013) $
+ | @version:     $Revision: 1449 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id$";
+static char __attribute__ ((unused)) rcsid[] = "$Id: interpolate.C 1449 2013-01-04 15:23:26Z harald $";
 
-#include "common.H"
+#include "execute-R.H"
 
-#include "region.H"
+#include <stdlib.h>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 
-Region::Region (unsigned long long Tstart, unsigned long long Type,
-	unsigned long long Value, unsigned long long Phase)
+bool R::launch (string commands)
 {
-	this->Tstart = Tstart;
-	this->Tend = 0;
-	this->Type = Type;
-	this->Value = Value;
-	this->Phase = Phase;
-	//this->HWCvalues = HWCvalues;
-	this->RegionName = "";
+	stringstream ss;
+	ss << getpid(); 
+	string script_file = string ("/tmp/R.") + ss.str() + ".script";
+
+	ofstream temporal;
+	temporal.open (script_file.c_str());
+	if (temporal.is_open())
+	{
+		temporal << commands << endl;
+		cout << "About to run R script" << endl;
+		string sys_command = string ("R -f ") + script_file + "> /dev/null 2> /dev/null";
+		system (sys_command.c_str());
+		cout << "R finished!" << endl;
+	}
 }
 
-Region::~Region ()
-{
-}
 

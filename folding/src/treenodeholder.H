@@ -32,15 +32,26 @@
 #ifndef TREENODEHOLDER_H_INCLUDED
 #define TREENODEHOLDER_H_INCLUDED
 
+#include "common.H"
+
+//class ca_callstacksample;
+
 #include "callstackanalysis.H"
 
-class ca_callstacksample;
+#if HAVE_CUBE
+# include <cube3/Cube.h>
+#endif
+
 
 class TreeNodeHolder
 {
 	public:
 	unsigned CallerLine;
 	unsigned Caller;
+	pair<unsigned long long, unsigned long long> CallerLineASTBlock;
+#if HAVE_CUBE
+	cube::Cnode *CubeNode;
+#endif
 
 	vector<TreeNodeHolder *> children;
 	unsigned Occurrences;
@@ -52,7 +63,8 @@ class TreeNodeHolder
 	{};
 
 	TreeNodeHolder *lookForCallerLine (unsigned);
-	void AddPath (unsigned, ca_callstacksample &);
+	void AddPath (unsigned depth, ca_callstacksample &, UIParaverTraceConfig *pcf, cube::Cube *cubev, cube::Cnode *root, string &sourceDir);
+	void AddPathAST (unsigned depth, ca_callstacksample &ca, UIParaverTraceConfig *pcf, cube::Cube *cubev, cube::Cnode *root, string &sourceDir);
 };
 
 #endif

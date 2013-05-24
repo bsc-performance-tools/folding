@@ -33,6 +33,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
 
+#include <linux/limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,6 +48,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <list>
 #include <algorithm>
 #include <iomanip>
+#include <ctime>
+#include <assert.h>
 
 #include "UIParaverTraceConfig.h"
 #include "kriger_wrapper.h"
@@ -56,6 +59,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "region-analyzer-first-occurrency.H"
 #include "point.H"
 #include "callstackanalysis.H"
+#include "execute-breakpoints-R.H"
 
 #define TOT_INS "PM_INST_CMPL"
 
@@ -65,10 +69,18 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #warning "SLOPE must be calculated with -1 and +1 points, not -1"
 
+#define IS_F90(x) \
+	((x.substr(x.length()-4)) == ".f90" || ((x.substr(x.length()-4)) == ".F90"))
+#define IS_C(x) \
+	((x.substr(x.length()-2)) == ".c")
+#define IS_CXX(x) \
+	(((x.substr(x.length()-4)) == ".cpp") || ((x.substr(x.length()-4)) == ".c++") || ((x.substr(x.length()-2)) == ".C"))
+
 using namespace std;
 
 double kriger_nuget = 1e-3;
 double prefilter_distance = 0.001;
+string sourceDirectory;
 
 #define QUALITY_DISTANCE prefilter_distance
 
@@ -93,8 +105,6 @@ class Sample
 	float CounterValue;
 	unsigned long long DeTime;
 	unsigned long long DeCounterValue;
-
-	unsigned iteration;
 	unsigned Instance;
 };
 
@@ -136,6 +146,8 @@ list<GNUPLOTinfo*> GNUPLOT;
 vector<string> wantedRegions;
 bool generateGNUPLOTfiles = true;
 
+vector<unsigned> excludedinstances;
+
 unsigned TranslateRegion (string &RegionName)
 {
 	/* Look for region in the translation table */
@@ -158,17 +170,44 @@ unsigned TranslateRegion (string &RegionName)
 }
 
 #if HAVE_CUBE
-void AdaptCallStack (ca_callstacksample &CS)
+
+map<string, vector<unsigned long long> > astblocks;
+
+void AdaptCallStack (ca_callstacksample &CS, UIParaverTraceConfig *pcf)
 {
+	assert (CS.caller.size() == CS.callerline.size() &&
+		CS.caller.size() == CS.callerType.size() &&
+		CS.caller.size() == CS.callerlineType.size());
+
+	static bool pcf_tested = false;
+	static bool main_present = false;
+	static unsigned long long main_value;
+
+	if (pcf != NULL && !pcf_tested)
+	{
+		try
+		{
+			main_value = pcf->getEventValue (30000000, string("main"));
+			main_present = true;
+		}
+		catch (...)
+		{
+			main_present = false;
+		}
+		pcf_tested = true;
+	}
+
 	/* Remove trailing not_found | unknown values*/
 	while (CS.caller.back() <= 2 && CS.callerline.back() <= 2)
 	{
 		CS.caller.pop_back();
 		CS.callerline.pop_back();
-		if (CS.caller.size() == 0 && CS.callerline.size() == 0)
+		CS.callerType.pop_back();
+		CS.callerlineType.pop_back();
+		if (CS.caller.size() == 1)
 			break;
 	}
-	if (CS.caller.size() > 0)
+	if (CS.caller.size() > 1)
 	{
 		/* Extrae generates the callstack down-top
 		   i.e. first element is closer to the code it was executing,
@@ -176,19 +215,132 @@ void AdaptCallStack (ca_callstacksample &CS)
 		   Also remove not_found|unknown values */
 		reverse (CS.caller.begin(), CS.caller.end());
 		reverse (CS.callerline.begin(), CS.callerline.end());
+		reverse (CS.callerType.begin(), CS.callerType.end());
+		reverse (CS.callerlineType.begin(), CS.callerlineType.end());
 		while (CS.caller.back() <= 2 && CS.callerline.back() <= 2)
 		{
 			CS.caller.pop_back();
 			CS.callerline.pop_back();
-			if (CS.caller.size() == 0 && CS.callerline.size() == 0)
+			CS.callerType.pop_back();
+			CS.callerlineType.pop_back();
+			if (CS.caller.size() == 1)
 				break;
 		}
+	}
+
+	if (CS.caller.size() > 1 && main_present)
+	{
+		bool main_in_callstack = false;
+		unsigned levels_to_main = 0;
+		for (unsigned u = 0; u < CS.caller.size() && !main_in_callstack; u++, levels_to_main++)
+			main_in_callstack = CS.caller[u] == main_value;
+
+		if (main_in_callstack && levels_to_main > 0)
+		{
+			CS.caller.erase (CS.caller.begin(), CS.caller.begin()+levels_to_main-1);
+			CS.callerline.erase (CS.callerline.begin(), CS.callerline.begin()+levels_to_main-1);
+			CS.callerType.erase (CS.callerType.begin(), CS.callerType.begin()+levels_to_main-1);
+			CS.callerlineType.erase (CS.callerlineType.begin(), CS.callerlineType.begin()+levels_to_main-1);
+		}
+	}
+
+#if 0
+	for (unsigned u = 0; u < CS.caller.size(); u++)
+		cout << "u=" << u << " C=" << CS.caller[u] << " CL=" << CS.callerline[u] << endl;
+#endif
+
+	if (sourceDirectory.length() > 0 && pcf != NULL)
+	{
+		string folding_home = string (getenv("FOLDING_HOME"));
+		bool all_into_astblocks = true;
+		for (unsigned u = 0; u < CS.caller.size(); u++)
+		{
+			string res;
+			string file;
+			int line;
+			common::lookForCallerLineInfo (pcf, CS.callerline[u], file, line);
+			try
+			{ res = pcf->getEventValue(30000100, CS.callerline[u]); }
+			catch (...)
+			{}
+			if (common::existsFile (sourceDirectory+"/"+file) && (IS_C(file) || IS_CXX(file) || IS_F90(file)))
+			{
+				if (astblocks.count(sourceDirectory+"/"+file) == 0)
+				{
+					cout << "Calculating AST code blocks for file " << sourceDirectory+"/"+file << endl;
+					stringstream ss;
+					ss << getpid(); 
+
+					string sys_command;
+					if (IS_F90(file))
+						sys_command = folding_home+"/etc/basicblocks.F90.py "+sourceDirectory+"/"+file+"> /tmp/astblocks."+ss.str()+".out";
+					else if (IS_C(file) || IS_CXX(file))
+						sys_command = folding_home+"/etc/basicblocks.C.py "+sourceDirectory+"/"+file+"> /tmp/astblocks."+ss.str()+".out";
+
+					system (sys_command.c_str());
+					if (common::existsFile (string("/tmp/astblocks.")+ss.str()+".out"))
+					{
+						vector<unsigned long long> vtmp;
+						unsigned long long ull;
+						ifstream bb_file((string("/tmp/astblocks.")+ss.str()+".out").c_str());
+						while (bb_file >> ull)
+							vtmp.push_back (ull);
+						bb_file.close();
+
+						unlink ((string("/tmp/astblocks.")+ss.str()+".out").c_str());
+
+						astblocks[sourceDirectory+"/"+file] = vtmp;
+					}
+				}
+
+				bool within_astblock = false;
+				vector<unsigned long long> v = astblocks[sourceDirectory+"/"+file];
+				//cout << "AST check for " << sourceDirectory+"/"+file << " line = " << line << endl;
+				for (unsigned a = 0; a < v.size()-1; a++)
+				{
+					//cout << "AST check for a = " << a << "/" << v.size() << "[" << v[a] << "," << v[a+1] << "] line = " << line << endl;
+					if (line >= v[a] && line <= v[a+1])
+					{
+						//cout << "AST block " << v[a] << "." << v[a+1] << " for line " << line << endl;
+						CS.callerlineASTBlock.push_back (make_pair (v[a], v[a+1]));
+						within_astblock = true;
+						break;
+					}
+				}
+				if (!within_astblock && line <= v.back())
+				{
+					CS.callerlineASTBlock.push_back (make_pair (v.back(), v.back()));
+					within_astblock = true;
+				}
+
+				if (!within_astblock)
+				{
+					//cout <<" Failed to place in ASTBlock (" << sourceDirectory+"/"+file << ") line = " << line << endl;
+					all_into_astblocks = false;
+				}
+			}
+			else
+			{
+				//cout << "Failed due to " << sourceDirectory+"/"+file << " in line " << line << endl;
+				all_into_astblocks = false;
+				break;
+			}
+		}
+		if (!all_into_astblocks)
+			CS.callerlineASTBlock.clear();
+
+		// cout << "CS.caller.size = " << CS.caller.size() << " CS.callerlineASTBlock.size() = " << CS.callerlineASTBlock.size() << endl;
+
+		assert (CS.caller.size() == CS.callerline.size() &&
+			CS.caller.size() == CS.callerType.size() &&
+			CS.caller.size() == CS.callerlineType.size() &&
+			(CS.caller.size() == CS.callerlineASTBlock.size() || 0 == CS.callerlineASTBlock.size()));
 	}
 }
 #endif
 
 void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
-	vector<Point> &accumulatedCounterPoints)
+	vector<Point> &accumulatedCounterPoints, UIParaverTraceConfig *pcf)
 {
 	unsigned Instance = 0;
 	unsigned long long lastRegion = 0;
@@ -263,7 +415,8 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			file >> Value;
 
 #if HAVE_CUBE
-			if (fabs(lastCStime-Time) >= 0.00001f) /* get rid of different double input differences */
+			/* get rid of small different double input differences when changing of sample */
+			if (fabs(lastCStime-Time) >= 0.00001f) 
 			{
 				cout << setprecision (12);
 
@@ -274,22 +427,32 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 						cerr << "CS,caller.size() != CS.callerline.size(). This should not happen!" << endl;
 						exit (-1);
 					}
-					AdaptCallStack (CS);
+					AdaptCallStack (CS, pcf);
+					CS.Instance = Instance;
 					if (CS.caller.size() > 0)
 						vcallstacksamples.push_back (CS);
 				}
 
 				CS.caller.clear();
 				CS.callerline.clear();
+				CS.callerType.clear();
+				CS.callerlineType.clear();
+				CS.callerlineASTBlock.clear();
 	
 				lastCStime = CS.Time = Time;
 				CS.Region = lastRegion;
 			}
 
 			if (Type >= 30000000 && Type < 30000100)
+			{
 				CS.caller.push_back (Value);
+				CS.callerType.push_back (Type);
+			}
 			else if (Type >= 30000100 && Type < 30000200)
+			{
 				CS.callerline.push_back (Value);
+				CS.callerlineType.push_back (Type);
+			}
 #endif
 
 
@@ -304,7 +467,6 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			file >> s.CounterValue;
 			file >> s.DeTime;
 			file >> s.DeCounterValue;
-			file >> s.iteration;
 			s.Instance = Instance;
 			s.Region = lastRegion;
 
@@ -315,16 +477,8 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			}
 #endif
 
-			if (hasMaxIteration)
-			{
-				if (!Outlier && inRegion && s.iteration <= MaxIteration)
-					vsamples.push_back (s);
-			}
-			else
-			{
-				if (!Outlier && inRegion)
-					vsamples.push_back (s);
-			}
+			if (!Outlier && inRegion)
+				vsamples.push_back (s);
 		}
 	}
 
@@ -336,7 +490,8 @@ void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
 			cerr << "CS,caller.size() != CS.callerline.size(). This should not happen!" << endl;
 			exit (-1);
 		}
-		AdaptCallStack (CS);
+		AdaptCallStack (CS, pcf);
+		CS.Instance = Instance;
 		if (CS.caller.size() > 0)
 			vcallstacksamples.push_back (CS);
 	}
@@ -532,6 +687,13 @@ static double Distance_Point_To_Interpolate (double inpoint_x, double inpoint_y,
 	}
 
 	return min_distance;
+}
+
+void DumpStartingParaverLine (ofstream &f)
+{
+	time_t now = time(0);
+
+	f << "# Folding done by " << getenv("USER") << " at " << ctime(&now);
 }
 
 void DumpParaverLines (ofstream &f, vector<unsigned long long> &type,
@@ -781,6 +943,8 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 
 		for (incount = 2, it = vsamples.begin(); it != vsamples.end(); it++)
 		{
+
+
 			if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
 			    (anyRegion && (*it).CounterID == CounterID))
 			{
@@ -800,7 +964,7 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 					all_zeroes = inpoints_y[incount] == 0.0f && all_zeroes;
 
 					if (points.is_open())
-						points << CounterID << " " << (*it).Time << " " << (*it).CounterValue << " " << (*it).iteration << endl;
+						points << CounterID << " " << (*it).Time << " " << (*it).CounterValue << " " << (*it).Instance << " " << (*it).DeTime << " " << (*it).DeCounterValue << endl;
 
 					incount++;
 				}
@@ -882,6 +1046,7 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 				}
 			}
 
+#if 0 /* HSG */
 			sslope << fixed << setprecision (4);
 			for (float eps = 0.0002; eps <= 0.002f; eps += 0.0002)
 			{
@@ -938,8 +1103,10 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 
 				sslope << CounterID << " " << ((double) outcount-1) / (double) outcount << " " << outpoints[outcount-1] << " " << eps << endl;
 			}
+#endif /* HSG */
 
 
+#if 0 /* HSG */
 			/* EPS Slope 0.0006 seems good to compute breakpoints */
 			breakpoints.push_back (0.0f);
 			//double preslope = 0.0f;
@@ -964,6 +1131,7 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 				}
 			}
 			breakpoints.push_back (1.0f);
+#endif
 		}
 		else
 		{
@@ -1005,6 +1173,245 @@ bool runInterpolation (ofstream &points, ofstream &interpolation,
 	return incount > 0 && outcount > 0;
 }
 
+
+bool runInterpolation_R (string fname, ofstream &points, ofstream &interpolation,
+	ofstream &slope, ofstream &slope2, ofstream &sslope, double slope_factor,
+	vector<Sample> &vsamples, string CounterID, bool anyRegion,
+	unsigned RegionID, unsigned outcount, int &num_inpoints, double *outpoints,
+	vector<double> &qualities, vector<double> &breakpoints,
+	double kriger_nuget, double prefilter_distance, double *filter_points)
+{
+	bool all_zeroes = true;
+	int incount = 0;
+	double mean_distance = 0.0f;
+	double sigma_distance = 0.0f;
+
+	if (outcount > 0)
+	{
+		vector<Sample>::iterator it = vsamples.begin();
+		for (; it != vsamples.end(); it++)
+		{
+			if (!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID)
+				incount++;
+			else if (anyRegion && (*it).CounterID == CounterID)
+				incount++;
+		}
+	}
+
+	for (unsigned j = 0; j < outcount; j++)
+		outpoints[j] = 0.0f;
+
+	if (incount >= 0 && outcount > 0)
+	{
+		double *inpoints_x = (double*) malloc ((incount+2)*sizeof(double));
+		double *inpoints_y = (double*) malloc ((incount+2)*sizeof(double));
+		double *slope_vals = (double*) malloc (outcount*sizeof(double));
+		double *slope2_vals = (double*) malloc (outcount*sizeof(double));
+
+		inpoints_x[0] = inpoints_y[0] = 0.0f;
+		inpoints_x[1] = inpoints_y[1] = 1.0f;
+		vector<Sample>::iterator it;
+		map<unsigned,double> InstanceAvgDistance;
+
+		unsigned curInstance = 0xFFFFFFFF;
+		double tmp = 0.0f;
+		unsigned ntmp = 0;
+
+		/* Calculate the average distance between the pre-interpolated and the points, so we
+ 		   can exclude the instances that are too "far" to the interpolated */
+
+		if (removeOutliers)
+		{
+			for (it = vsamples.begin(); it != vsamples.end(); it++)
+			{
+				if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
+				    (anyRegion && (*it).CounterID == CounterID))
+				{
+					if (curInstance != (*it).Instance)
+					{
+						if (curInstance != 0xFFFFFFFF)
+						{
+							if (ntmp > 0)
+								InstanceAvgDistance[curInstance] = tmp / ntmp;
+							else
+								InstanceAvgDistance[curInstance] = 0.0f;
+						}
+						curInstance = (*it).Instance;
+						tmp = Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
+						ntmp = 1;
+					}
+					else
+					{
+						tmp += Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
+						ntmp += 1;
+					}
+				}
+			}
+			if (curInstance != 0xFFFFFFFF)
+			{
+				if (ntmp > 0)
+					InstanceAvgDistance[curInstance] = tmp / ntmp;
+				else
+					InstanceAvgDistance[curInstance] = 0.0f;
+			}
+
+			map<unsigned,double>::iterator avgDistance_it = InstanceAvgDistance.begin();
+			unsigned mean_qty = 0;
+			for (; avgDistance_it != InstanceAvgDistance.end(); avgDistance_it++)
+			{
+				mean_distance += (*avgDistance_it).second;
+				mean_qty += 1;
+			}
+			mean_distance = mean_distance / mean_qty;
+
+			if (mean_qty > 1)
+			{
+				avgDistance_it = InstanceAvgDistance.begin();
+				for (; avgDistance_it != InstanceAvgDistance.end(); avgDistance_it++)
+					sigma_distance += ((*avgDistance_it).second - mean_distance) * ((*avgDistance_it).second - mean_distance);
+	
+				sigma_distance = sqrt (sigma_distance / (mean_qty-1));
+			}
+		}
+
+		for (incount = 2, it = vsamples.begin(); it != vsamples.end(); it++)
+		{
+
+
+			if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
+			    (anyRegion && (*it).CounterID == CounterID))
+			{
+				/* Skip points that are farther than prefilter_distance */
+				//if (Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points) < prefilter_distance)
+				
+				/* Skip points that are farther than SigmaTimes Distance */
+				if (removeOutliers &&
+				    (InstanceAvgDistance[(*it).Instance] > (mean_distance - NumOfSigmaTimes*sigma_distance) &&
+				     InstanceAvgDistance[(*it).Instance] < (mean_distance + NumOfSigmaTimes*sigma_distance)) 
+					  ||
+						!removeOutliers)
+				{
+					inpoints_x[incount] = (*it).Time;
+					inpoints_y[incount] = (*it).CounterValue;
+
+					all_zeroes = inpoints_y[incount] == 0.0f && all_zeroes;
+
+					if (points.is_open())
+						points << CounterID << " " << (*it).Time << " " << (*it).CounterValue << " " << (*it).Instance << " " << (*it).DeTime << " " << (*it).DeCounterValue << endl;
+
+					incount++;
+				}
+			}
+		}
+
+		if (MaxSamples != 0 && incount > MaxSamples)
+		{
+			cout << "Attention! Number of samples limited to " << MaxSamples << " (incount was " << incount << ")" << endl;
+			incount = MaxSamples;
+		}
+
+		if (!all_zeroes)
+		{
+			vector<double> slopes;
+			//vector<double> breakpoints;
+			vector<unsigned> ubreakpoints;
+
+			/* If the region is not filled with 0s, run the regular countoring algorithm */
+			cout << "Running interpolation (region=";
+			if (anyRegion)
+				cout << "any";
+			else
+				cout << RegionID << " / " << nameRegion[RegionID];
+			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ", nuget=" << setprecision(2) << scientific << kriger_nuget << ")" << endl;
+
+			Rbreakpoints::breakpoints (fname+".points", CounterID, MaxSamples, 0.05, slopes, breakpoints, excludedinstances);
+
+			/* Normalize returned times and fill up to outcount */
+			for (unsigned u = 0; u < breakpoints.size(); u++)
+			{
+				double tmp = breakpoints[u]/breakpoints.back();
+				unsigned utmp = (unsigned) (tmp*outcount);
+				ubreakpoints.push_back (utmp);
+			}
+
+			double accum = 0;
+			for (unsigned u = 0; u < ubreakpoints.size()-1; u++)
+				for (unsigned v = ubreakpoints[u]; v < ubreakpoints[u+1]; v++)
+					accum += 1000 * slopes[u];
+
+			double partial_accum = 0;
+			for (unsigned u = 0; u < ubreakpoints.size()-1; u++)
+			{
+				for (unsigned v = ubreakpoints[u]; v < ubreakpoints[u+1]; v++)
+				{
+					double d_v = (double) v;
+					double d_outcount = (double) outcount;	
+
+					interpolation << CounterID << " " << d_v / d_outcount << " " << partial_accum/accum << endl;
+					slope << CounterID << " " << d_v / d_outcount << " " << 1000 * slopes[u] << endl;
+					partial_accum += 1000 * slopes[u];
+				}
+			}
+
+
+		}
+		else
+		{
+			/* If the region are only zeroes, skip interpolating and place 0s directly.
+			   This will save some badly formed countoring results because of the implied
+			   added 1.0f in inpoints_y[1] */
+
+			cout << "Running interpolation (region=";
+			if (anyRegion)
+				cout << "any";
+			else
+				cout << RegionID << " / " << nameRegion[RegionID];
+			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ") -- filled with zeroes" << endl;
+			if (interpolation.is_open() && slope.is_open())
+			{
+				interpolation << CounterID << " 0 0" << endl;
+				for (unsigned j = 1; j < outcount; j++)
+				{
+					double d_j = (double) j;
+					double d_outcount = (double) outcount;	
+					interpolation << CounterID << " " << d_j / d_outcount << " 0" << endl;
+					slope << CounterID << " " <<  d_j / d_outcount << " 0" << endl;
+				}
+			}
+			qualities.push_back (1.0f); /* Q0 */
+			qualities.push_back (1.0f); /* Q1 */
+
+			breakpoints.push_back (0.0f);
+			breakpoints.push_back (1.0f);
+		}
+
+		free (slope_vals);
+		free (inpoints_x);
+		free (inpoints_y);
+	}
+
+	num_inpoints = incount;
+
+	return incount > 0 && outcount > 0;
+}
+
+
+
+
+
+void WriteBreakpointsIntoTrace (int task, int thread, ofstream &prv,
+	Region *r, vector<double> &bpt)
+{
+	unsigned long long prvStartTime = r->Tstart;
+	unsigned long long prvEndTime = r->Tend;
+	unsigned long long deltaTime = prvEndTime - prvStartTime;
+
+	for (unsigned u = 0; u < bpt.size()-1; u++)
+		DumpParaverLine (prv, 600000000, u+1, prvStartTime+bpt[u]*deltaTime, task, thread);
+	DumpParaverLine (prv, 600000000, 0, prvStartTime+1.0f/*bpt[bpt.size()-1]*/*deltaTime, task, thread);
+
+}
+
 void WriteResultsIntoTrace (int task, int thread, ofstream &prv,
 	Region *r, vector<unsigned long long> &HWCcodes,
 	vector<unsigned long long> &HWCtotals,
@@ -1015,6 +1422,8 @@ void WriteResultsIntoTrace (int task, int thread, ofstream &prv,
 	unsigned long long prvStartTime = r->Tstart;
 	unsigned long long prvEndTime = r->Tend;
 	unsigned long long deltaTime = (prvEndTime - prvStartTime) / outcount;
+
+	cout << "WriteResultsIntoTrace ()" << endl;
 
 	for (unsigned c = 0; c < HWCcodes.size(); c++)
 		values.push_back (0);
@@ -1053,8 +1462,6 @@ void WriteResultsIntoTrace (int task, int thread, ofstream &prv,
 		values.clear();
 	}
 
-#warning "FIX THIS callstack!"
-#if 0
 	if (callstacksamples)
 	{
 		unsigned long long last_time = 0;
@@ -1065,9 +1472,24 @@ void WriteResultsIntoTrace (int task, int thread, ofstream &prv,
 
 		while (i < vcallstacksamples.size())
 		{
-			if (vcallstacksamples[i].Region == TranslateRegion(r->RegionName))
+			if (vcallstacksamples[i].Region == TranslateRegion(r->RegionName) &&
+					find(excludedinstances.begin(), excludedinstances.end(), vcallstacksamples[i].Instance) != excludedinstances.end())
 			{
 				time = prvStartTime+(float) (((float)deltaTime)*vcallstacksamples[i].Time);
+
+				vector<unsigned long long> newtypes, newvalues;
+				for (unsigned u = 0; u < vcallstacksamples[i].callerType.size(); u++)
+				{
+					newtypes.push_back (vcallstacksamples[i].callerType[u]+FOLDED_BASE);
+					newtypes.push_back (vcallstacksamples[i].callerlineType[u]+FOLDED_BASE);
+					newvalues.push_back (vcallstacksamples[i].caller[u]);
+					newvalues.push_back (vcallstacksamples[i].callerline[u]);
+				}
+
+				DumpParaverLines (prv, newtypes, newvalues, time, task, thread);
+	//			DumpParaverLines (prv, newtypes1, vcallstacksamples[i].caller, time, task, thread);
+	//			DumpParaverLines (prv, newtypes2, vcallstacksamples[i].callerline, time, task, thread);
+#if 0
 				if (time == last_time)
 				{
 					types.push_back (vcallstacksamples[i].Type+FOLDED_BASE);
@@ -1086,14 +1508,14 @@ void WriteResultsIntoTrace (int task, int thread, ofstream &prv,
 
 					last_time = time;
 				}
+#endif
 			}
 			i++;
 		}
 
-		if (types.size() > 0)
-			DumpParaverLines (prv, types, values, last_time, task, thread);
+	//	if (types.size() > 0)
+	//		DumpParaverLines (prv, types, values, last_time, task, thread);
 	}
-#endif
 }
 
 bool runLineFolding (int task, int thread, ofstream &points, ofstream &prv,
@@ -1208,10 +1630,13 @@ void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsa
 	}
 }
 
+
+map<string,vector<double> > mbreakpoints;
 #if HAVE_CUBE
 void doInterpolation (int task, int thread, string filePrefix,
 	vector<Point> &vpoints, vector<Sample> &vsamples,
-	RegionInfo &regions, UIParaverTraceConfig *pcf, cube::Cube *cube)
+	RegionInfo &regions, UIParaverTraceConfig *pcf, cube::Cube *cube,
+	bool writecube)
 #else
 void doInterpolation (int task, int thread, string filePrefix,
 	vector<Point> &vpoints, vector<Sample> &vsamples,
@@ -1220,6 +1645,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 {
 	vector<unsigned long long> HWCcodes, HWCtotals;
 	static bool first_run = true;
+	bool firstregion = true;
 
 	string task_str = common::convertInt (task);
 	string thread_str = common::convertInt (thread);
@@ -1285,7 +1711,6 @@ void doInterpolation (int task, int thread, string filePrefix,
 				exit (-1);
 			}
 
-
 			output_slope2.open ((completefilePrefix+".slope2").c_str());
 			if (!output_slope2.is_open())
 			{
@@ -1309,7 +1734,11 @@ void doInterpolation (int task, int thread, string filePrefix,
 		}
 
 		unsigned long long target_num_points;
-		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
+		if (generateGNUPLOTfiles)
+		{
+			target_num_points = 1000;
+		}
+		else
 		{
 			/* SER menas Synthetic Events Rate */
 			unsigned long long SER_per_ns = 1000000000 / feedSyntheticEventsRate;
@@ -1317,8 +1746,6 @@ void doInterpolation (int task, int thread, string filePrefix,
 			/* Add two (initial and end) */
 			target_num_points = 2 + ((*i)->Tend-(*i)->Tstart)/SER_per_ns;
 		}
-		else
-			target_num_points = feedSyntheticEventsRate;
 
 		double *outpoints = (double*) malloc (sizeof(double)*target_num_points*wantedCounters.size());
 		if (outpoints == NULL)
@@ -1332,7 +1759,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 		{
 			bool found = false;
 			string CounterID = wantedCounters[CID];
-			if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
+			if (!generateGNUPLOTfiles && (feedTraceRegion || feedTraceTimes || feedFirstOccurrence))
 			{
 				for (unsigned idx = 0; idx < regions.HWCnames.size(); idx++)
 					if (regions.HWCnames[idx] == CounterID)
@@ -1404,16 +1831,71 @@ void doInterpolation (int task, int thread, string filePrefix,
 			vector<double> qualities;
 			vector<double> breakpoints;
 
-			bool done = runInterpolation (output_points, output_kriger, output_slope, output_slope2,
+			bool done = runInterpolation_R (completefilePrefix, output_points, output_kriger, output_slope, output_slope2,
 				output_segmented_slope, slope_factor, vsamples, CounterID, !SeparateValues,
 				regionIndex, target_num_points, num_in_points,
 				&outpoints[target_num_points*CID], qualities, breakpoints,
 				EnergyCounterID?kriger_nuget*10/10:kriger_nuget/10, prefilter_distance, prefilter_points);
 
+			/* bool done = runInterpolation (output_points, output_kriger, output_slope, output_slope2,
+				output_segmented_slope, slope_factor, vsamples, CounterID, !SeparateValues,
+				regionIndex, target_num_points, num_in_points,
+				&outpoints[target_num_points*CID], qualities, breakpoints,
+				EnergyCounterID?kriger_nuget*10/10:kriger_nuget/10, prefilter_distance, prefilter_points); */
+
+
+
+/*
+			if ((CounterID == "PAPI_TOT_INS" || CounterID == "PM_INST_CMPL") && generateGNUPLOTfiles)
+			{
+				cout << "Storing breakpoints for region " << RegionName << " (contains " << breakpoints.size() << ")" << endl;
+				mbreakpoints[RegionName] = breakpoints;
+			}
+*/
+
+			if (common::isMIPS(CounterID))
+			{
+				if (mbreakpoints.count(RegionName) == 0)
+				{
+					//vector<double> bpts, slps;
+					//Rbreakpoints::breakpoints (completefilePrefix+".points", CounterID, MaxSamples, 0.05, slps, bpts);
+					vector<double> nbpts;
+					for (unsigned u = 0; u < breakpoints.size(); u++)
+						nbpts.push_back (breakpoints[u]/breakpoints.back());
+					mbreakpoints[RegionName] = nbpts;
+				}
+				cout << "Number of breakpoints found = " << mbreakpoints[RegionName].size() << endl;
+			}
+
+			if (common::isMIPS(CounterID)
+			    && (feedTraceRegion || feedTraceTimes || feedFirstOccurrence))
+			{
+				if (!generateGNUPLOTfiles && (feedTraceRegion || feedTraceTimes || feedFirstOccurrence))
+				{
+					ofstream output_prv;
+	
+					output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
+					if (!output_prv.is_open())
+					{
+						cerr << "Cannot append to " << TraceToFeed << " file " << endl;
+						exit (-1);
+					}
+
+					if (firstregion)
+					{
+						DumpStartingParaverLine (output_prv);
+						firstregion = false;
+					}
+
+					WriteBreakpointsIntoTrace (task, thread, output_prv, *i, mbreakpoints[RegionName]);
+
+					output_prv.close();
+				}
+			}
+
 			data_dumped = done && data_dumped;
 
 			free (prefilter_points);
-
 
 			if (generateGNUPLOTfiles)
 			{
@@ -1428,6 +1910,10 @@ void doInterpolation (int task, int thread, string filePrefix,
 				info->nameregion = (*i)->RegionName;
 				info->inpoints = num_in_points;
 				info->qualities = qualities;
+				if (common::isMIPS(CounterID))
+					info->breakpoints = mbreakpoints[RegionName];
+				else
+					info->breakpoints.clear();
 				info->mean_counter = 0;
 				info->mean_duration = 0;
 				for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
@@ -1450,20 +1936,11 @@ void doInterpolation (int task, int thread, string filePrefix,
 				}
 				else 
 					GNUPLOT.push_back (info);
+			}
 
 #if HAVE_CUBE
-				if (CID == 0)
-				{
-					ca_callstackanalysis::do_analysis ( "no_Occurrences", 0,
-					TranslateRegion((*i)->RegionName), (*i)->RegionName, breakpoints,
-					vcallstacksamples, pcf, cube);
-				}
-
-				unsigned cnodeid = ca_callstackanalysis::do_analysis (
-					CounterID, info->mean_counter,
-					TranslateRegion((*i)->RegionName), (*i)->RegionName, breakpoints,
-						vcallstacksamples, pcf, cube);
-
+			if (writecube)
+			{
 				ofstream output_cube_launch;
 				output_cube_launch.open ((filePrefix+".launch").c_str(), ios::out|ios::app);
 				if (!output_cube_launch.is_open())
@@ -1472,24 +1949,84 @@ void doInterpolation (int task, int thread, string filePrefix,
 					exit (-1);
 				}
 
-				output_cube_launch << CounterID << endl;
-				output_cube_launch << "- cnode " << cnodeid << endl;
-				output_cube_launch << "See detailed " << CounterID << endl;
-				output_cube_launch << "gnuplot -persist %f." << RegionName << "." << CounterID << ".gnuplot" << endl;
+				unsigned long long deltamS = ((*i)->Tend - (*i)->Tstart) / 1000000;
+				unsigned long long counter_deltamS = (deltamS > 0) ? ((*i)->HWCvalues[CID]/deltamS) : 0;
 
-				output_cube_launch << CounterID << endl;
-				output_cube_launch << "- cnode " << cnodeid << endl;
-				output_cube_launch << "See " << CounterID << " in Paraver timeline" << endl;
+				if (common::isMIPS(CounterID))
+				{
+					unsigned cnodeid = ca_callstackanalysis::do_analysis (filePrefix, "no_Occurrences", "no_Occurrences", 0,
+						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
+						vcallstacksamples, pcf, cube, sourceDirectory);
+
+					output_cube_launch << "no_Occurrences" << endl
+					  << "- cnode " << cnodeid << endl
+					  << "See all detailed counters" << endl
+					  << "gnuplot -persist %f." << RegionName << ".slopes.gnuplot" << endl;
+
+					cnodeid = ca_callstackanalysis::do_analysis (filePrefix, "duration", "duration", (*i)->Tend - (*i)->Tstart,
+						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
+						vcallstacksamples, pcf, cube, sourceDirectory);
+
+					output_cube_launch << "duration" << endl
+					  << "- cnode " << cnodeid << endl
+					  << "See all detailed counters" << endl
+					  << "gnuplot -persist %f." << RegionName << ".slopes.gnuplot" << endl;
+				}
+
+				unsigned cnodeid;
+
+				/*
+				unsigned cnodeid = ca_callstackanalysis::do_analysis (
+					CounterID, (*i)->HWCvalues[CID],
+					TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
+						vcallstacksamples, pcf, cube);
+				*/
+
 				unsigned CounterIDcode = common::lookForCounter (CounterID, pcf);
 				unsigned long long delta = (*i)->Tend - (*i)->Tstart;
 				unsigned long long Tend = (*i)->Tend + 5*delta/100;
 				unsigned long long Tstart = (5*delta/100 > (*i)->Tstart) ? 0 : (*i)->Tstart - 5*delta/100;
 
-				output_cube_launch << "cube-call-paraver.sh " << TraceToFeed << " " << Tstart << " " << Tend << " " << feedTraceFoldType_Value << " " << feedTraceFoldType_Value_Definition <<  " " << CounterIDcode << " " << CounterID << endl;
+				/*
+				output_cube_launch << CounterID << endl
+				  << "- cnode " << cnodeid << endl
+				  << "See detailed " << CounterID << endl
+				  << "gnuplot -persist %f." << RegionName << "." << CounterID << ".gnuplot" << endl
+				  << CounterID << endl
+				  << "- cnode " << cnodeid << endl
+				  << "See " << CounterID << " in Paraver timeline" << endl;
+				output_cube_launch << "folding-cube-call-paraver.sh " << TraceToFeed << " " << Tstart << " " << Tend << " " << FOLDED_BASE+CounterIDcode << " Folded_" << CounterID << " " << feedTraceFoldType_Value << " " << feedTraceFoldType_Value_Definition << endl;
+				*/
+
+				if (common::isMIPS(CounterID))
+					cnodeid = ca_callstackanalysis::do_analysis (filePrefix,
+						CounterID, "MIPS", counter_deltamS /* info->mean_counter */,
+						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
+						vcallstacksamples, pcf, cube, sourceDirectory);
+				else
+					cnodeid = ca_callstackanalysis::do_analysis (filePrefix,
+						CounterID, CounterID+"pms", counter_deltamS /* info->mean_counter */,
+						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
+						vcallstacksamples, pcf, cube, sourceDirectory);
+
+				string nCounterID;
+				if (common::isMIPS(CounterID))
+					nCounterID = "MIPS";
+				else
+					nCounterID = CounterID+"pms";
+
+				output_cube_launch << nCounterID << endl
+				  << "- cnode " << cnodeid << endl
+				  << "See detailed " << CounterID << endl
+				  << "gnuplot -persist %f." << RegionName << "." << CounterID << ".gnuplot" << endl
+				  << nCounterID << endl
+				  << "- cnode " << cnodeid << endl
+				  << "See " << CounterID << " in Paraver timeline" << endl;
+				output_cube_launch << "folding-cube-call-paraver.sh " << TraceToFeed << " " << Tstart << " " << Tend << " " << FOLDED_BASE+CounterIDcode << " Folded_" << CounterID << " " << feedTraceFoldType_Value << " " << feedTraceFoldType_Value_Definition << endl;
 
 				output_cube_launch.close();
-#endif
 			}
+#endif
 
 		}
 
@@ -1504,7 +2041,7 @@ void doInterpolation (int task, int thread, string filePrefix,
 			output_kriger.close();
 		}
 
-		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
+		if (!generateGNUPLOTfiles && (feedTraceRegion || feedTraceTimes || feedFirstOccurrence))
 		{
 			ofstream output_prv;
 	
@@ -1515,8 +2052,14 @@ void doInterpolation (int task, int thread, string filePrefix,
 				exit (-1);
 			}
 
+			if (firstregion)
+			{
+				DumpStartingParaverLine (output_prv);
+				firstregion = false;
+			}
+
 			WriteResultsIntoTrace (task, thread, output_prv, *i, HWCcodes,
-				HWCtotals, target_num_points, first_run, outpoints);
+				HWCtotals, target_num_points, true, outpoints);
 
 			output_prv.close();
 		}
@@ -1594,17 +2137,34 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-do-line-folding [yes/no]" << endl
 		     << "-generate-gnuplot [yes/no]" << endl
 		     << "-min-duration [T in ms]" << endl
-		     << "-max-iteration IT" << endl
 		     << "-max-samples NUM" << endl
 		     << "-kriger-nuget VALUE (default = " << kriger_nuget << ")" << endl
 		     << "-prefilter-distance VALUE (default = " << prefilter_distance << ")" << endl
 		     << "-synthetic-events-rate NUM (rate, num events per second) [1000 if not given]" << endl
+		     << "-source DIR" << endl
 		     << endl;
 		exit (-1);
 	}
 
 	for (int i = 1; i < argc-1; i++)
 	{
+		if (strcmp ("-source", argv[i]) == 0)
+		{
+			i++;
+			sourceDirectory = argv[i];
+			if (sourceDirectory[0] != '/')
+			{
+				char buffer[PATH_MAX];
+				char *ptr;
+				ptr = getcwd (buffer, sizeof(buffer));
+				sourceDirectory = string(ptr)+"/"+sourceDirectory;
+			}
+			if (common::existsDir (sourceDirectory))
+				common::CleanMetricsDirectory (sourceDirectory);
+			else
+				cerr << "Cannot find directory " << sourceDirectory << endl;
+			continue;
+		}
 		if (strcmp ("-synthetic-events-rate", argv[i]) == 0)
 		{
 			i++;
@@ -1712,8 +2272,6 @@ int ProcessParameters (int argc, char *argv[])
 		}
 		if (strcmp ("-feed-region", argv[i]) == 0)
 		{
-			generateGNUPLOTfiles = false;
-
 			feedTraceRegion = true;
 			feedTraceTimes = false;
 			feedFirstOccurrence = false;
@@ -1731,8 +2289,6 @@ int ProcessParameters (int argc, char *argv[])
 		}
 		if (strcmp ("-feed-time", argv[i]) == 0)
 		{
-			generateGNUPLOTfiles = false;
-
 			feedTraceTimes = true;
 			feedTraceRegion = false;
 			feedFirstOccurrence = false;
@@ -1750,25 +2306,10 @@ int ProcessParameters (int argc, char *argv[])
 		}
 		if (strcmp ("-feed-first-occurrence", argv[i]) == 0)
 		{
-			generateGNUPLOTfiles = false;
-
 			feedTraceRegion = false;
 			feedTraceTimes = false;
 			feedFirstOccurrence = true;
-
 			continue;
-		}
-		if (strcmp ("-max-iteration", argv[i]) == 0)
-		{
-			i++;
-			MaxIteration = atoi (argv[i]);
-			if (MaxIteration == 0)
-			{
-				cerr << "Invalid -max-iteration parameter" << endl;
-				exit (-1);
-			}
-			else
-				hasMaxIteration = true;
 		}
 		else
 			cout << "Misunderstood parameter: " << argv[i] << endl;
@@ -1829,16 +2370,31 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		exit (-1);
 	}
 
+	PCFfile << endl << "EVENT_TYPE" << endl;
+	PCFfile << "0 " << FOLDED_BASE << " Folded phase" << endl;
+
 	any_found = false;
-	for (unsigned i = 30000000; i < 30000099; i++)
-		if (pcf->getEventType(i) != "")
-			any_found = true;
+	for (unsigned i = 30000000; i < 30000099 && !any_found; i++)
+	{
+		try
+		{ any_found = pcf->getEventType(i) != ""; }
+		catch(...)
+		{}
+	}
+
 	if (any_found)
 	{
 		PCFfile << endl << "EVENT_TYPE" << endl;
 		for (unsigned i = 30000000; i < 30000099; i++)
-			if (pcf->getEventType(i) != "")
-				PCFfile << "0 " << FOLDED_BASE + i << " Folded sampling caller level " << i - 30000000 << endl;
+		{
+			try
+			{
+				if (pcf->getEventType(i) != "")
+					PCFfile << "0 " << FOLDED_BASE + i << " Folded sampling caller level " << i - 30000000 << endl;
+			}
+			catch (...)
+			{}
+		}
 		PCFfile << "VALUES" << endl;
 		PCFfile << "0 " << pcf->getEventValue(30000000, 0) << endl;
 		PCFfile << "1 " << pcf->getEventValue(30000000, 1) << endl;
@@ -1851,14 +2407,25 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 
 	any_found = false;
 	for (unsigned i = 30000100; i < 30000199; i++)
-		if (pcf->getEventType(i) != "")
-			any_found = true;
+	{
+		try
+		{ any_found = pcf->getEventType(i) != ""; }
+		catch (...)
+		{}
+	}
 	if (any_found)
 	{
 		PCFfile << endl <<  "EVENT_TYPE" << endl;
 		for (unsigned i = 30000100; i < 30000199; i++)
-			if (pcf->getEventType(i) != "")
-				PCFfile << "0 " << FOLDED_BASE + i << " Folded sampling caller line level " << i - 30000100 << endl;
+		{
+			try
+			{
+				if (pcf->getEventType(i) != "")
+					PCFfile << "0 " << FOLDED_BASE + i << " Folded sampling caller line level " << i - 30000100 << endl;
+			}
+			catch (...)
+			{}
+		}
 		PCFfile << "VALUES" << endl;
 		PCFfile << "0 " << pcf->getEventValue(30000100, 0) << endl;
 		PCFfile << "1 " << pcf->getEventValue(30000100, 1) << endl;
@@ -1893,11 +2460,15 @@ int main (int argc, char *argv[])
 	unsigned task, thread;
 	int res = ProcessParameters (argc, argv);
 
-
-
-
 #if HAVE_CUBE
   cube::Cube cube;
+
+
+	if (getenv("FOLDING_HOME") == NULL)
+	{
+		cerr << "FOLDING_HOME environment variable is not set!" << endl;
+		return -1;
+	}
 
   // Build system resource tree
   cube::Machine* mach  = cube.def_mach("Machine", "");
@@ -1919,15 +2490,10 @@ int main (int argc, char *argv[])
 	cube.def_met("# Occurrences", "no_Occurrences", "INTEGER",
 	  "occ", "", "", "Number of occurrences of the callstack", NULL);
 
+	cube.def_met("Duration", "duration", "INTEGER",
+	  "occ", "", "", "Duration of each region", NULL);
+
 #endif
-
-
-
-
-
-
-
-
 
 	GetTaskThreadFromFile (argv[res], &task, &thread);
 
@@ -1956,9 +2522,15 @@ int main (int argc, char *argv[])
 	
 #if HAVE_CUBE
 	for (unsigned u = 0; u < wantedCounters.size(); u++)
-		cube.def_met (wantedCounters[u], wantedCounters[u], "FLOAT", "occ", "", "", "", NULL);
-#endif
+	{
+		// cube.def_met (wantedCounters[u], wantedCounters[u], "FLOAT", "occ", "", "", "", NULL);
 
+		if (common::isMIPS(wantedCounters[u]))
+			cube.def_met ("MIPS", "MIPS", "FLOAT", "occ", "", "", "", NULL);
+		else
+			cube.def_met (wantedCounters[u]+"/ms", wantedCounters[u]+"pms", "FLOAT", "occ", "", "", "", NULL);
+	}
+#endif
 
 	string cFile = argv[res];
 	cFile = cFile.substr (0, cFile.rfind (".extract")) + ".control";
@@ -1972,7 +2544,7 @@ int main (int argc, char *argv[])
 			exit (-1);
 		}
 		else
-			cerr << "Warning! Canno open file " << cFile << endl;
+			cerr << "Warning! Cannot open file " << cFile << endl;
 	}
 	else
 	{
@@ -2013,7 +2585,38 @@ int main (int argc, char *argv[])
 
 	vector<Sample> vsamples;
 	vector<Point> accumulatedCounterPoints;
-	FillData (InputFile, !SeparateValues, vsamples, accumulatedCounterPoints);
+	FillData (InputFile, !SeparateValues, vsamples, accumulatedCounterPoints, pcf);
+
+	cout << "Finished filling data" << endl;
+
+	/* Prepare regions, as fake params for doLineFolding and doInterpolation*/
+	int max = SeparateValues?numRegions:1;
+	for (int i = 0; i < max; i++)
+	{
+		Region *r = new Region (0, 0, i, 0);
+		if (SeparateValues)
+		{
+			/* r->RegionName = nameRegion[i].substr (0, nameRegion[i].find_first_of (":[]{}() ")); */
+			r->RegionName = nameRegion[i];
+		}
+		else
+			r->RegionName = "all";
+		for (unsigned j = 0; j < wantedCounters.size(); j++)
+			r->HWCvalues.push_back (0);
+		regions.foundRegions.push_back (r);
+	}
+	
+#if HAVE_CUBE
+	unlink ((string(argv[res])+".launch").c_str());
+
+	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
+	  vsamples, regions, pcf, &cube, false);
+#else
+	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
+	  vsamples, regions, pcf);
+#endif
+
+	regions.foundRegions.clear();
 
 	if (feedTraceRegion)
 	{
@@ -2021,9 +2624,6 @@ int main (int argc, char *argv[])
 		SearchForRegionsWithinRegion (TraceToFeed, task, thread,
 		  feedTraceFoldType_Value, feedTraceRegion_Type, feedTraceRegion_Value,
 		  &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
-
-		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"),
-			pcf, wantedCounters);
 	}
 	else if (feedTraceTimes)
 	{
@@ -2031,9 +2631,6 @@ int main (int argc, char *argv[])
 		SearchForRegionsWithinTime (TraceToFeed, task, thread,
 		  feedTraceFoldType_Value, feedTraceTimes_Begin, feedTraceTimes_End,
 		  &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
-
-		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"),
-			pcf, wantedCounters);
 	}
 	else if (feedFirstOccurrence)
 	{
@@ -2041,53 +2638,27 @@ int main (int argc, char *argv[])
 		SearchForRegionsFirstOccurrence (TraceToFeed, task, thread,
 		  feedTraceFoldType_Value, wantedCounters, regions, pcf,
 			phasetypes);
-
-		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"),
-			pcf, wantedCounters);
 	}
-	else
-	{
-		/* Prepare regions, as fake params for doLineFolding and doInterpolation*/
-		int max = SeparateValues?numRegions:1;
-		for (int i = 0; i < max; i++)
-		{
-			Region *r = new Region (0, 0, i, 0);
-			if (SeparateValues)
-			{
-				/* r->RegionName = nameRegion[i].substr (0, nameRegion[i].find_first_of (":[]{}() ")); */
-				r->RegionName = nameRegion[i];
-			}
-			else
-				r->RegionName = "all";
-			for (unsigned j = 0; j < wantedCounters.size(); j++)
-				r->HWCvalues.push_back (0);
-			regions.foundRegions.push_back (r);
-		}
-	}
-
 #if defined(DEBUG)
 		cout << "# of regions: " << regions.foundRegions.size() << endl;
 #endif
 
-#if HAVE_CUBE
-	unlink ((string(argv[res])+".launch").c_str());
-
-	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
-	  vsamples, regions, pcf, &cube);
-#else
-	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
-	  vsamples, regions, pcf);
-#endif
-
-#if 0
-	for (unsigned j = 0; j < wantedCounters.size(); j++)
-		dumpAccumulatedCounterData (task, thread, argv[res], j, accumulatedCounterPoints, vsamples, regions);
-#endif
-
-	if (option_doLineFolding)
+	if (regions.foundRegions.size() > 0)
 	{
-		doLineFolding (task, thread, argv[res], vsamples, regions, "LINE");
-		doLineFolding (task, thread, argv[res], vsamples, regions, "LINEID");
+		generateGNUPLOTfiles = false;
+
+#if HAVE_CUBE
+		unlink ((string(argv[res])+".launch").c_str());
+
+		doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
+		  vsamples, regions, pcf, &cube, true);
+#else
+		doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
+		  vsamples, regions, pcf);
+#endif
+
+		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"),
+			pcf, wantedCounters);
 	}
 
 	if (GNUPLOT.size() > 0)
@@ -2096,14 +2667,8 @@ int main (int argc, char *argv[])
 		if (SeparateValues)
 			createMultipleGNUPLOT (GNUPLOT);
 		for (unsigned j = 0; j < numRegions; j++)
-		{
 			createMultiSlopeGNUPLOT (argv[res], nameRegion[j], GNUPLOT, wantedCounters);
-#if 0
-			createAccumulatedCounterGNUPLOT (argv[res], nameRegion[j], accumulatedCounterPoints, wantedCounters);
-#endif
-		}
 	}
-
 
 #if HAVE_CUBE
   // Output to a cube file

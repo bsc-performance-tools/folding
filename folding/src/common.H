@@ -50,6 +50,12 @@ class common
 	static string convertDouble (double, int);
 	static string removeSpaces (string &in);
 	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
+	static bool existsFile (string file);
+	static bool existsDir (string dir);
+	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf, unsigned id, string &file, int &line);
+	static void CleanMetricsDirectory (string &directory);
+	static void CleanMetricsDirectory_r (char *directory);
+	static bool isMIPS (string s);
 };
 
 #endif

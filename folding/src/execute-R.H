@@ -21,33 +21,21 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/folding/src/interpolate.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-01-04 16:23:26 +0100 (dv, 04 gen 2013) $
+ | @version:     $Revision: 1449 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id$";
+#include <string>
 
-#include "common.H"
+using namespace std;
 
-#include "region.H"
-
-Region::Region (unsigned long long Tstart, unsigned long long Type,
-	unsigned long long Value, unsigned long long Phase)
+class R
 {
-	this->Tstart = Tstart;
-	this->Tend = 0;
-	this->Type = Type;
-	this->Value = Value;
-	this->Phase = Phase;
-	//this->HWCvalues = HWCvalues;
-	this->RegionName = "";
-}
-
-Region::~Region ()
-{
-}
+	protected:
+	static bool launch (string commands);
+};
 

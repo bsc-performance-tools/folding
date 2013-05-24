@@ -45,6 +45,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <math.h>
 #include <string.h>
 #include <list>
+#include <exception>
 
 #define PAPI_MIN_COUNTER   42000000
 //#define PAPI_MAX_COUNTER   42009998
@@ -200,7 +201,13 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 	string pcffile = prvFile.substr (0, prvFile.rfind(".prv")) + string (".pcf");
 
 	pcf = new UIParaverTraceConfig;
-	pcf->parse(pcffile);
+	try
+	{ pcf->parse(pcffile); }
+	catch (...)
+	{
+		cerr << "ERROR! An exception occurred when parsing the PCF file. Check that it exists and it is correctly formatted." << endl;
+		exit (-1);
+	}
 
 	string s = pcf->getEventType (RegionSeparator);
 	if (s.length() > 0)
@@ -257,7 +264,6 @@ void Process::ReadCallerLinesIntoList (string file, UIParaverTraceConfig *pcf)
 	string str;
 	list<string> l_tmp;
 	fstream file_op (file.c_str(), ios::in);
-
 
 	if (file_op.is_open())
 	{
@@ -792,7 +798,14 @@ int main (int argc, char *argv[])
 
 	string tracename = string(argv[res]);
 
-	Process *p = new Process (tracename, true);
+	Process *p;
+	try
+	{ p = new Process (tracename, true); }
+	catch (...)
+	{
+		cerr << "ERROR! Exception launched when processing the file " << tracename << ". Check that it exists..." << endl; 
+		return -1;
+	}
 
 	vector<ParaverTraceApplication *> va = p->get_applications();
 	if (va.size() != 1)

@@ -49,7 +49,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "region-analyzer-first-occurrency.H"
 
 #define PAPI_MIN_COUNTER   42000000
-#define PAPI_MAX_COUNTER   42009998
+#define PAPI_MAX_COUNTER   42999999
 
 namespace libparaver {
 
@@ -179,7 +179,7 @@ void ProcessFirstOccurrence::processMultiEvent (struct multievent_t &e)
 		for (; i != foundRegions.end() && !found; i++)
 			found = ((*i)->Value == currentRegion->Value && (*i)->Phase == currentRegion->Phase);
 
-		if (!found && currentRegion->Value >= 6)
+		if (!found)
 			foundRegions.push_back (currentRegion);
 
 		if (FoundSeparator && ValueSeparator == 0)
@@ -247,23 +247,29 @@ void SearchForRegionsFirstOccurrence (string tracename, unsigned task, unsigned 
 	for (list<Region*>::iterator i = regions.foundRegions.begin();
 	  i != regions.foundRegions.end(); i++)
 	{
-		string tmp = pcf->getEventValue ((*i)->Type, (*i)->Value);
-		if (tmp == "Not found" || tmp.length() == 0)
+		try
 		{
-			stringstream regionstream;
-			regionstream << (*i)->Value;
-			tmp = pcf->getEventType ((*i)->Type);
-			if (tmp.length() > 0)
-				tmp = tmp + "_" + regionstream.str();
-			else
-				tmp = string("Unknown_") + regionstream.str();
+			string tmp = pcf->getEventValue ((*i)->Type, (*i)->Value);
+			if (tmp == "Not found" || tmp.length() == 0)
+			{
+				stringstream regionstream;
+				regionstream << (*i)->Value;
+				tmp = pcf->getEventType ((*i)->Type);
+				if (tmp.length() > 0)
+					tmp = tmp + "_" + regionstream.str();
+				else
+					tmp = string("Unknown_") + regionstream.str();
+			}
+			tmp = common::removeSpaces (tmp);
+			//(*i)->RegionName = tmp.substr (0, tmp.find_first_of (":[]{}() "));
+			(*i)->RegionName = tmp;
+			stringstream phasestr;
+			phasestr << (*i)->Phase;
+			(*i)->RegionName += "." + phasestr.str();
 		}
-		tmp = common::removeSpaces (tmp);
-		//(*i)->RegionName = tmp.substr (0, tmp.find_first_of (":[]{}() "));
-		(*i)->RegionName = tmp;
-		stringstream phasestr;
-		phasestr << (*i)->Phase;
-		(*i)->RegionName += "." + phasestr.str();
+		catch (...)
+		{
+		}
 	}
 
 #if defined(DEBUG)
@@ -274,8 +280,7 @@ void SearchForRegionsFirstOccurrence (string tracename, unsigned task, unsigned 
 		cout << "Found region " << (*i)->Type << ":" << (*i)->Value << " from " << (*i)->Tstart << " to " << (*i)->Tend << endl;
 		cout << "COUNTERS:";
 		vector<string>::iterator n = vCounters.begin();
-		for (vector<unsigned long long>::iterator j = (*i)->HWCvalues.begin();
-		  j != (*i)->HWCvalues.end(); j++, n++)
+		for (vector<unsigned long long>::iterator j = (*i)->HWCvalues.begin(); j != (*i)->HWCvalues.end(); j++, n++)
 			cout << " "<< *n << "=>" << *j;
 		cout << endl;
 	}
