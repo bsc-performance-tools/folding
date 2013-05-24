@@ -53,6 +53,7 @@ class GNUPLOTinfo
 	string metric;
 	string nameregion;
 	vector <double> qualities;
+	vector <double> breakpoints;
 };
 
 void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info);
