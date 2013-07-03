@@ -21,33 +21,42 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id$";
+static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 2013-05-24 14:08:28Z harald $";
 
 #include "common.H"
 
-#include "region.H"
+#include "sample-selector-default.H"
 
-Region::Region (unsigned long long Tstart, unsigned long long Type,
-	unsigned long long Value, unsigned long long Phase)
+void SampleSelectorDefault::Select (InstanceGroup *ig, set<string> &counters)
 {
-	this->Tstart = Tstart;
-	this->Tend = 0;
-	this->Type = Type;
-	this->Value = Value;
-	this->Phase = Phase;
-	//this->HWCvalues = HWCvalues;
-	this->RegionName = "";
-}
+	map<string, vector<Sample*> > used_res, unused_res;
+	set<string>::iterator c;
 
-Region::~Region ()
-{
+	for (c = counters.begin(); c != counters.end(); c++)
+	{
+		vector<Instance*> vi = ig->getInstances();
+		vector<Sample*> used, unused;
+
+		for (unsigned i = 0; i < vi.size(); i++)
+		{
+			bool has_counter = vi[i]->Counters.count (*c) > 0;
+			if (has_counter)
+				for (unsigned s = 0; s < vi[i]->Samples.size(); s++)
+						used.push_back (vi[i]->Samples[s]);
+		}
+
+		used_res[*c] = used;
+		unused_res[*c] = unused;
+	}
+
+	ig->setSamples (used_res, unused_res);
 }
 

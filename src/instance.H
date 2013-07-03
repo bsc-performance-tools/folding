@@ -21,41 +21,43 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#include "ParaverTrace.h"
-#include "ParaverTraceThread.h"
-#include "ParaverTraceTask.h"
-#include "ParaverTraceApplication.h"
-#include "UIParaverTraceConfig.h"
-#include "common.H"
+#ifndef INSTANCE_H_INCLUDED
+#define INSTANCE_H_INCLUDED
 
-namespace libparaver {
+#include "sample.H"
+#include <vector>
+#include <string>
+#include <map>
+#include <set>
 
-class Process : public ParaverTrace
+using namespace std;
+
+class Instance
 {
-	private:
-	ofstream traceout;
-	UIParaverTraceConfig *pcf_original;
-	UIParaverTraceConfig *pcf_reference;
-
 	public:
-	Process (string prvFile, string outname, UIParaverTraceConfig *pcf_original, UIParaverTraceConfig *pcf_reference, bool multievents = true);
-	~Process ();
+	vector<Sample*> Samples;
 
-	void processState (struct state_t &s);
-	void processMultiEvent (struct multievent_t &e);
-	void processEvent (struct singleevent_t &e);
-	void processCommunication (struct comm_t &c);
-	void processCommunicator (string &c);
-	void processComment (string &c);
+	unsigned ptask;
+	unsigned task;
+	unsigned thread;
+	string RegionName;
+	unsigned group;
+	unsigned long long startTime;
+	unsigned long long duration;
+	set<string> Counters;
+	map<string, unsigned long long> TotalCounterValues;
+
+	Instance ();
 };
 
-} /* namespace libparaver */
+#endif
+
 

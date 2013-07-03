@@ -21,16 +21,36 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id$";
+#ifndef INTERPOLATION_H_INCLUDED
+#define INTERPOLATION_H_INCLUDED
 
-#include "common.H"
+#include "instance-group.H"
+#include "interpolation-results.H"
 
-#include "region-info.H"
+class Interpolation
+{
+	protected:
+	unsigned steps;
+	bool prefilter;
+
+	public:
+	Interpolation (unsigned steps, bool prefilter);
+	virtual string details (void) = 0;
+	virtual void interpolate (InstanceGroup *ig, set<string> &counters) = 0;
+	virtual void pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters);
+	bool preFilter (void)
+	  { return prefilter; }
+	unsigned getSteps (void)
+	  { return steps; }
+
+};
+
+#endif

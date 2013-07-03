@@ -21,47 +21,51 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef UTILS_H_INCLUDED
-#define UTILS_H_INCLUDED
+#ifndef INSTANCECONTAINER_H_INCLUDED
+#define INSTANCECONTAINER_H_INCLUDED
 
-#include "folding-config.h"
+#include "instance-group.H"
+#include <vector>
 #include <string>
-#include "UIParaverTraceConfig.h"
-
-#define UNREFERENCED(a) ((a) = (a))
-#define MAX(a,b) ((a)>(b)?(a):(b))
-#define MIN(a,b) ((a)<(b)?(a):(b))
+#include <map>
 
 using namespace std;
-using namespace libparaver;
 
-class common
+class InstanceContainer
 {
+	private:
+	unsigned long long bucketsize;
+	unsigned ngroups;
+	void separateInGroups (void);
+
 	public:
-	static string convertInt (int);
-	static string convertDouble (double, int);
-	static string removeSpaces (string &in);
-	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
-	static bool existsFile (string file);
-	static bool existsDir (string dir);
-	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
-	  unsigned id, string &file, int &line);
-	static void CleanMetricsDirectory (string &directory);
-	static void CleanMetricsDirectory_r (char *directory);
-	static bool isMIPS (string s);
-	static bool DEBUG();
-	static bool decomposePtaskTaskThread (string &s, unsigned &ptask,
-	  unsigned &task, unsigned &thread);
-	static bool decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
-	  bool &ptaskany, unsigned &task, bool &taskany, unsigned &thread, bool &threadany);
+	string regionName;
+	vector<Instance*> Instances;
+	vector<InstanceGroup*> InstanceGroups;
+
+	public:
+	InstanceContainer (string);
+
+	void add (Instance *i);
+	unsigned numInstances (void);
+	unsigned numSamples (void);
+	void splitInGroups (bool split);
+	unsigned numGroups (void)
+	  { return ngroups; }
+
+	void removePreviousData (ObjectSelection *os, string fileprefix);
+	void dumpGroupData (ObjectSelection *os, string fileprefix);
+	void gnuplot (ObjectSelection *os, string fileprefix);
 };
 
 #endif
+
+

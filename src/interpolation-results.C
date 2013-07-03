@@ -21,25 +21,53 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef _REGION_INFO_H_INCLUDED_
-#define _REGION_INFO_H_INCLUDED_
+static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 2013-05-24 14:08:28Z harald $";
 
-#include "region.H"
+#include "common.H"
 
-class RegionInfo
+#include "interpolation-results.H"
+
+InterpolationResults::InterpolationResults (unsigned count)
 {
-	public:
-	list<Region*> foundRegions;
-	vector<string> HWCnames;
-	vector<unsigned> HWCcodes;
-};
+	this->count = count;
+	slope_calculated = false;
+	interpolation = new double[count];
+	slope = new double[count];
 
-#endif
+	for (unsigned u = 0; u < count; u++)
+		interpolation[u] = slope[u] = 0;
+}
+
+InterpolationResults::~InterpolationResults (void)
+{
+	delete [] slope;
+	delete [] interpolation;
+}
+
+void InterpolationResults::calculateSlope (double factor)
+{
+	double d_last = interpolation[0];
+	double d_inv_count = (1.0 / (double) count);
+	slope[0] = 0;
+
+	for (unsigned j = 1; j < count; j++)
+		if (d_last < interpolation[j])
+		{
+			slope[j] = factor * ((interpolation[j]-d_last) / d_inv_count);
+			d_last = interpolation[j];
+		}
+		else
+			slope[j] = 0;
+
+	slope_factor = factor;
+	slope_calculated = true;
+}
+

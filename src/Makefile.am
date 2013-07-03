@@ -1,11 +1,11 @@
 SUBDIRS = service-kriger
 
-bin_PROGRAMS = sort_pcf fuse extract interpolate 
+bin_PROGRAMS = fuse codeblocks extract interpolate 
 noinst_PROGRAMS = max-diff-interpolation-points mean-diff-interpolation-points
 
-sort_pcf_SOURCES = \
- translate_prv.C translate_prv.H \
- sort_pcf.C
+codeblocks_SOURCES = \
+ common.C common.H \
+ codeblocks.C 
 
 fuse_SOURCES = \
  fuse.C 
@@ -16,14 +16,14 @@ extract_SOURCES = \
 
 interpolate_SOURCES = \
  common.C common.H \
- generate-gnuplot.C generate-gnuplot.H \
- interpolate.C \
- region-analyzer-first-occurrency.C region-analyzer-first-occurrency.H \
- region-analyzer-in-frame-region.C region-analyzer-in-frame-region.H \
- region-analyzer-in-time-region.C region-analyzer-in-time-region.H \
- region.C region.H region-info.H \
- point.H \
- execute-R.C execute-R.H execute-breakpoints-R.C execute-breakpoints-R.H
+ sample.C sample.H \
+ read-extracted-data.C read-extracted-data.H \
+ point.H object-selection.H object-selection.C \
+ instance.H instance.C instance-container.C instance-container.H instance-group.C instance-group.H \
+ prv-writer.C prv-writer.H \
+ sample-selector.H sample-selector-first.H sample-selector-first.C sample-selector-distance.H sample-selector-distance.C sample-selector-default.H sample-selector-default.C \
+ interpolation.C interpolation.H interpolation-results.C interpolation-results.H interpolation-kriger.C interpolation-kriger.H \
+ interpolate.C
 
 if HAVE_CUBE
 interpolate_SOURCES += \
@@ -35,22 +35,22 @@ endif
 max_diff_interpolation_points_SOURCES = max-diff-interpolation-points.c
 mean_diff_interpolation_points_SOURCES = mean-diff-interpolation-points.c
 
-sort_pcf_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include
-fuse_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include
-extract_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include
-interpolate_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Iservice-kriger
+fuse_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
+codeblocks_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
+extract_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
+interpolate_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Iservice-kriger -g -O
 if HAVE_CUBE
 interpolate_CXXFLAGS += -I$(CUBE_DIR)/include
 endif
 if NEED_BOOST_HOME
-sort_pcf_CXXFLAGS += -I$(BOOST_HOME)/include
 fuse_CXXFLAGS += -I$(BOOST_HOME)/include
+codeblocks_CXXFLAGS += -I$(BOOST_HOME)/include
 extract_CXXFLAGS += -I$(BOOST_HOME)/include
 interpolate_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
-sort_pcf_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
 fuse_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
+codeblocks_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
 extract_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
 interpolate_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm
 if HAVE_CUBE

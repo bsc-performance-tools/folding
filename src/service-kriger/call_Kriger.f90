@@ -37,7 +37,8 @@ subroutine call_kriger_region (num_in_samples, X_samples, Y_samples, num_out_sam
 
   call kri_memall(3)
 
-  varli_kri(1,1)=0.0
+  !varli_kri(1,1)=0.0
+  varli_kri=0.0
   do i = 1, num_in_samples
     xobje_kri(1,i) = Y_samples(i)
     xsamp_kri(1,i) = X_samples(i)
@@ -91,7 +92,8 @@ subroutine call_kriger_point (num_in_samples, X_samples, Y_samples, X_value, Y_o
 
   call kri_memall(3)
 
-  varli_kri(1,1)=0.0
+  !varli_kri(1,1)=0.0
+  varli_kri=0.0
   do i = 1, num_in_samples
     xobje_kri(1,i) = Y_samples(i)
     xsamp_kri(1,i) = X_samples(i)

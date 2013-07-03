@@ -6,7 +6,7 @@
 
 # Initialize autoconf & define package name, version and bug-report address 
 #  -- keep version in sync with src/common/extrae_version.h
-AC_INIT(folding, 0.8, tools@bsc.es)
+AC_INIT(folding, 0.9, tools@bsc.es)
 AC_CONFIG_HEADERS([folding-config.h:folding-config.h.in])
 
 # Safety check to ensure that the directory told with `--srcdir` contains the source code
@@ -141,7 +141,89 @@ if test "${CubeDir}" != "no" ; then
 fi
 AM_CONDITIONAL(HAVE_CUBE, test "${CUBE_AVAILABLE}" = "yes")
 
+AC_MSG_CHECKING([for R statistical package])
+AC_ARG_WITH(R,
+	AC_HELP_STRING(
+		[--with-R@<:@=ARG@:>@],
+		[Specify where the R statistical package binary can be found]
+	),
+	[RBIN="$withval"],
+	[RBIN=`which R`]
+)
+if test -x "${RBIN}" ; then
+	AC_MSG_RESULT(${RBIN})
+
+	AC_MSG_CHECKING(that R can process a simple script)
+	echo "q()" > ${TMPDIR:-/tmp}/Rconftest
+	${RBIN} -f ${TMPDIR:-/tmp}/Rconftest > ${TMPDIR:-/tmp}/Rconftest.out
+	nlines=`grep "The R Foundation for Statistical Computing" ${TMPDIR:-/tmp}/Rconftest.out | wc -l`
+	if test "${nlines}" -eq 1 ; then
+		AC_MSG_RESULT([yes])
+		R_AVAILABLE=yes
+
+		AC_MSG_CHECKING(that R has the strucchange package)
+		echo "library(strucchange)" > ${TMPDIR:-/tmp}/Rconftest
+		echo "Nile" >> ${TMPDIR:-/tmp}/Rconftest
+		echo "q()" >> ${TMPDIR:-/tmp}/Rconftest
+		${RBIN} -f ${TMPDIR:-/tmp}/Rconftest > ${TMPDIR:-/tmp}/Rconftest.out 2> /dev/null
+		nlines=`grep "Time Series" ${TMPDIR:-/tmp}/Rconftest.out | wc -l`
+		if test "${nlines}" -eq 1 ; then
+			R_STRUCCHANGE_AVAILABLE=yes
+			AC_MSG_RESULT([yes])
+		else
+			AC_MSG_RESULT([no])
+		fi
+	else
+		AC_MSG_RESULT([no])
+	fi
+else
+	AC_MSG_RESULT([Not found])
+fi
+if test "${R_STRUCCHANGE_AVAILABLE}" = "yes" ; then
+	AC_MSG_NOTICE([Segmented linear regression through R+strucchange is available])
+	AC_DEFINE([HAVE_R],[1],[Define if have R available])
+	AC_DEFINE_UNQUOTED([R_BINARY],["${RBIN}"],[Define binary for R])
+elif test "${R_AVAILABLE}" = yes ; then
+	AC_MSG_NOTICE([Segmented linear regression through R is not available because strucchange library is missing. Execute install.packages("strucchange") in a R session])
+else
+	AC_MSG_NOTICE([Segmented linear regression is not available as R cannot be find])
+fi
+
+AC_MSG_CHECKING([for clang compiler])
+AC_ARG_WITH(clang,
+	AC_HELP_STRING(
+		[--with-clang@<:@=ARG@:>@],
+		[Specify where the clang compilker]
+	),
+	[CLANGBIN="$withval"],
+	[CLANGBIN=`which clang`]
+)
+if test -x "${CLANGBIN}" ; then
+	AC_MSG_RESULT(${CLANGBIN})
+
+	AC_MSG_CHECKING([that clang seems a compiler])
+	${CLANGBIN} -v > ${TMPDIR:-/tmp}/clang-conftest 2> ${TMPDIR:-/tmp}/clang-conftest
+	nlines=`grep "based on LLVM" ${TMPDIR:-/tmp}/clang-conftest | wc -l`
+	if test "${nlines}" -eq 1 ; then
+		CLANG_AVAILABLE="yes"
+		AC_MSG_RESULT([yes])
+	else
+		AC_MSG_RESULT([no])
+	fi
+fi
+if test "${CLANG_AVAILABLE}" = "yes" ; then
+	AC_MSG_NOTICE([clang is available and ready for providing AST information])
+	AC_DEFINE([HAVE_CLANG],[1],[Define if have clang available])
+	AC_DEFINE_UNQUOTED([CLANG_BINARY],["${CLANGBIN}"],[Define binary for clang])
+else
+	AC_MSG_NOTICE([clang is not available. AST parsing for C/C++ files will not be available])
+fi
+
 AX_PROG_BOOST
+
+AC_CHECK_FUNC(stat, [AC_DEFINE([HAVE_STAT],[1],[Define if have stat])])
+AC_CHECK_FUNC(stat64, [AC_DEFINE([HAVE_STAT64],[1],[Define if have stat64])])
+AC_CHECK_FUNC(access, [AC_DEFINE([HAVE_ACCESS],[1],[Define if have access])])
 
 AC_CONFIG_FILES([Makefile src/Makefile src/service-kriger/Makefile])
 AC_OUTPUT

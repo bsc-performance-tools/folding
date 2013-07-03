@@ -21,31 +21,29 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef FEEDTRACE_WT_H_INCLUDED
-#define FEEDTRACE_WT_H_INCLUDED
+#ifndef SAMPLESELECTOR_FIRST_H_INCLUDED
+#define SAMPLESELECTOR_FIRST_H_INCLUDED
 
-#include "region-info.H"
+#include "sample-selector.H"
 
-#include <vector>
-#include <list>
-#include <string>
-#include "UIParaverTraceConfig.h"
+class SampleSelectorFirst : public SampleSelector
+{
+	private:
+	unsigned limit;
+	bool limitset;
 
-using namespace std;
-using namespace libparaver;
+	public:
+	SampleSelectorFirst (void);
+	void configure (unsigned limit);
+	virtual void Select (InstanceGroup *, set<string> &counters);
+};
 
-void SearchForRegionsWithinTime (string tracename, unsigned task, unsigned thread,
-	unsigned long long Type, unsigned long long Tstart, unsigned long long Tend,
-	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &vCounters, RegionInfo &regions,
-	UIParaverTraceConfig *pcf);
-
-#endif
+#endif /* SAMPLESELECTOR_H_INCLUDED */

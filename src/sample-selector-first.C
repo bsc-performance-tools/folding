@@ -21,47 +21,61 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef UTILS_H_INCLUDED
-#define UTILS_H_INCLUDED
+static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 2013-05-24 14:08:28Z harald $";
 
-#include "folding-config.h"
-#include <string>
-#include "UIParaverTraceConfig.h"
+#include "common.H"
 
-#define UNREFERENCED(a) ((a) = (a))
-#define MAX(a,b) ((a)>(b)?(a):(b))
-#define MIN(a,b) ((a)<(b)?(a):(b))
+#include "sample-selector-first.H"
 
-using namespace std;
-using namespace libparaver;
-
-class common
+SampleSelectorFirst::SampleSelectorFirst (void)
 {
-	public:
-	static string convertInt (int);
-	static string convertDouble (double, int);
-	static string removeSpaces (string &in);
-	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
-	static bool existsFile (string file);
-	static bool existsDir (string dir);
-	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
-	  unsigned id, string &file, int &line);
-	static void CleanMetricsDirectory (string &directory);
-	static void CleanMetricsDirectory_r (char *directory);
-	static bool isMIPS (string s);
-	static bool DEBUG();
-	static bool decomposePtaskTaskThread (string &s, unsigned &ptask,
-	  unsigned &task, unsigned &thread);
-	static bool decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
-	  bool &ptaskany, unsigned &task, bool &taskany, unsigned &thread, bool &threadany);
-};
+	this->limitset = false;
+}
 
-#endif
+void SampleSelectorFirst::configure (unsigned limit)
+{
+	this->limit = limit;
+	this->limitset = true;
+}
+
+void SampleSelectorFirst::Select (InstanceGroup *ig, set<string> &counters)
+{
+	map<string, vector<Sample*> > used_res, unused_res;
+
+	set<string>::iterator c;
+
+	for (c = counters.begin(); c != counters.end(); c++)
+	{
+		vector<Instance*> vi = ig->getInstances();
+		vector<Sample*> used, unused;
+		unsigned cnt = 0;
+
+		for (unsigned i = 0; i < vi.size(); i++)
+		{
+			bool has_counter = vi[i]->Counters.find (*c) != vi[i]->Counters.end();
+			if (has_counter)
+				for (unsigned s = 0; s < vi[i]->Samples.size(); s++)
+				{
+					if (limitset && cnt >= limit)
+						unused.push_back (vi[i]->Samples[s]);
+					else
+						used.push_back (vi[i]->Samples[s]);
+					cnt++;
+				}
+		}
+
+		used_res[*c] = used;
+		unused_res[*c] = unused;
+	}
+
+	ig->setSamples (used_res, unused_res);
+}
+
