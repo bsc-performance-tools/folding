@@ -21,31 +21,51 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef FEEDTRACE_WR_H_INCLUDED
-#define FEEDTRACE_WR_H_INCLUDED
+static char __attribute__ ((unused)) rcsid[] = "$Id: common.C 1764 2013-05-24 14:08:28Z harald $";
 
-#include "region-info.H"
+#include "common.H"
 
-#include <vector>
-#include <list>
-#include <string>
-#include "UIParaverTraceConfig.h"
+#include "object-selection.H"
 
-using namespace std;
-using namespace libparaver;
+#include <sstream>
 
-void SearchForRegionsWithinRegion (string tracename, unsigned task, unsigned thread,
-	unsigned long long Type, unsigned long long TimeType, unsigned long long TimeValue,
-	unsigned long long *out_Tstart, unsigned long long *out_Tend,
-	vector<string> &vCounters, RegionInfo &regions,
-	UIParaverTraceConfig *pcf);
+string ObjectSelection::toString (bool prefix, string anytext)
+{
+	stringstream ss;
 
-#endif
+	if (prefix)
+		ss << "Appl ";
+	if (anyptask)
+		ss << anytext;
+	else
+		ss << ptask;
+	if (!prefix)
+		ss << ".";
+
+	if (prefix)
+		ss << " Task ";
+	if (anytask)
+		ss << anytext;
+	else
+		ss << task;
+	if (!prefix)
+		ss << ".";
+
+	if (prefix)
+		ss << " Thread ";
+	if (anythread)
+		ss << anytext;
+	else
+		ss << thread;
+
+	return ss.str();
+}
+

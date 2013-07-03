@@ -21,47 +21,22 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef UTILS_H_INCLUDED
-#define UTILS_H_INCLUDED
+static char __attribute__ ((unused)) rcsid[] = "$Id: interpolate.C 1764 2013-05-24 14:08:28Z harald $";
 
-#include "folding-config.h"
-#include <string>
-#include "UIParaverTraceConfig.h"
+#include "common.H"
+#include "instance.H"
 
-#define UNREFERENCED(a) ((a) = (a))
-#define MAX(a,b) ((a)>(b)?(a):(b))
-#define MIN(a,b) ((a)<(b)?(a):(b))
-
-using namespace std;
-using namespace libparaver;
-
-class common
+Instance::Instance (void)
 {
-	public:
-	static string convertInt (int);
-	static string convertDouble (double, int);
-	static string removeSpaces (string &in);
-	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
-	static bool existsFile (string file);
-	static bool existsDir (string dir);
-	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
-	  unsigned id, string &file, int &line);
-	static void CleanMetricsDirectory (string &directory);
-	static void CleanMetricsDirectory_r (char *directory);
-	static bool isMIPS (string s);
-	static bool DEBUG();
-	static bool decomposePtaskTaskThread (string &s, unsigned &ptask,
-	  unsigned &task, unsigned &thread);
-	static bool decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
-	  bool &ptaskany, unsigned &task, bool &taskany, unsigned &thread, bool &threadany);
-};
-
-#endif
+	ptask = task = thread = 0;
+	group = 0;
+	startTime = duration = 0;
+}

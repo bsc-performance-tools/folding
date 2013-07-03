@@ -3,6 +3,8 @@
 import sys;
 import re;
 
+# START POINT
+
 p_enddo = re.compile ("[^!]*end(\s)*do.*", re.IGNORECASE); # Match enddo - end do 
 p_do_index = re.compile ("[^!]*do(\s)+.+(\s)*=.*,.*", re.IGNORECASE); # Match do X = X1, X2
 p_do_while = re.compile ("[^!]*do(\s)+while[(].*[)].*", re.IGNORECASE); # Match do while ( .. )

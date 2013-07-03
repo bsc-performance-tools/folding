@@ -21,47 +21,48 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef UTILS_H_INCLUDED
-#define UTILS_H_INCLUDED
+#ifndef OBJECT_SELECTION_H_INCLUDED
+#define OBJECT_SELECTION_H_INCLUDED
 
-#include "folding-config.h"
 #include <string>
-#include "UIParaverTraceConfig.h"
-
-#define UNREFERENCED(a) ((a) = (a))
-#define MAX(a,b) ((a)>(b)?(a):(b))
-#define MIN(a,b) ((a)<(b)?(a):(b))
 
 using namespace std;
-using namespace libparaver;
 
-class common
+class ObjectSelection
 {
 	public:
-	static string convertInt (int);
-	static string convertDouble (double, int);
-	static string removeSpaces (string &in);
-	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
-	static bool existsFile (string file);
-	static bool existsDir (string dir);
-	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
-	  unsigned id, string &file, int &line);
-	static void CleanMetricsDirectory (string &directory);
-	static void CleanMetricsDirectory_r (char *directory);
-	static bool isMIPS (string s);
-	static bool DEBUG();
-	static bool decomposePtaskTaskThread (string &s, unsigned &ptask,
-	  unsigned &task, unsigned &thread);
-	static bool decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
-	  bool &ptaskany, unsigned &task, bool &taskany, unsigned &thread, bool &threadany);
+	unsigned ptask, task, thread;
+	bool anyptask, anytask, anythread;
+
+	ObjectSelection ()
+	  { anyptask = anytask = anythread = true; }
+
+	ObjectSelection (unsigned ptask, bool aptask, unsigned task, bool atask,
+	  unsigned thread, bool athread)
+	  { this->ptask = ptask; this->task = task; this->thread = thread;
+	    this->anyptask = aptask; this->anytask = atask; this->anythread = athread; }
+
+	ObjectSelection (unsigned ptask, unsigned task, unsigned thread)
+	  { this->ptask = ptask; this->task = task; this->thread = thread;
+	    this->anyptask = this->anytask = this->anythread = false; }
+
+	bool match (unsigned ptask, unsigned task, unsigned thread)
+	  { return (this->anyptask || this->ptask == ptask) &&
+	           (this->anytask || this->task == task) &&
+	           (this->anythread || this->thread == thread); }
+
+	bool anyany (void)
+	  { return this->anyptask || this->anytask || this->anythread; }
+
+	string toString (bool prefix = false, string anytext = "*");
 };
 
-#endif
+#endif /* OBJECT_SELECTION_H_INCLUDED */

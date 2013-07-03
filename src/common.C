@@ -36,6 +36,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
 #include <sys/stat.h>
 
 #include <sys/types.h>
@@ -75,9 +76,26 @@ string common::removeSpaces (string &in)
 
 bool common::existsFile (string file)
 {
-	struct stat buffer;
-	stat(file.c_str(), &buffer);
-	return (buffer.st_mode & S_IFMT) == S_IFREG;
+#if defined(HAVE_ACCESS)
+	return access (file.c_str(), F_OK) == 0;
+#elif defined(HAVE_STAT64)
+	struct stat64 sb;
+	stat64 (file.c_str(), &sb);
+	return (sb.st_mode & S_IFMT) == S_IFREG;
+#elif defined(HAVE_STAT)
+	struct stat sb;
+	stat (file.c_str(), &sb);
+	return (sb.st_mode & S_IFMT) == S_IFREG;
+#else
+	int fd = open (file.c_str(), O_RDONLY);
+	if (fd >= 0)
+	{
+		close (fd);
+		return TRUE;
+	}
+	else
+		return FALSE;
+#endif
 }
 
 bool common::existsDir (string dir)
@@ -89,22 +107,22 @@ bool common::existsDir (string dir)
 
 unsigned common::lookForCounter (string &name, UIParaverTraceConfig *pcf)
 {
-	/* Look for every counter in the vector its code within the PCF file */
-	for (unsigned j = PAPI_MIN_COUNTER; j <= PAPI_MAX_COUNTER; j++)
+	vector<unsigned> vtypes = pcf->getEventTypes();
+
+	for (unsigned u = 0; u < vtypes.size(); u++)
 	{
-		try
+		if (vtypes[u] >= PAPI_MIN_COUNTER && vtypes[u] <= PAPI_MAX_COUNTER)
 		{
-			string s = pcf->getEventType (j);
+			string s = pcf->getEventType (vtypes[u]);
 			if (s.length() > 0)
 			{
 				string tmp = s.substr (s.find ('(')+1, s.find (')', s.find ('(')+1) - (s.find ('(') + 1));
 				if (tmp == name)
-					return j;
+					return vtypes[u];
 			}
 		}
-		catch (...)
-		{ }
 	}
+
 	return 0;
 }
 
@@ -176,3 +194,75 @@ bool common::isMIPS (string s)
 {
 	return s == "PAPI_TOT_INS" || s == "PM_INST_CMPL" || s == "INSTRUCTION_RETIRED" || s == "INSTRUCTIONS_RETIRED";
 }
+
+bool common::DEBUG (void)
+{
+	static bool unset = true;
+	static bool debug = false;
+
+	if (unset)
+	{
+		debug = (getenv("DEBUG") != NULL);
+		unset = false;
+	}
+
+	return debug;
+}
+
+bool common::decomposePtaskTaskThread (string &s, unsigned &ptask,
+	unsigned &task, unsigned &thread)
+{
+	size_t n = count (s.begin(), s.end(), '.');
+	if (n != 2)
+		return false;
+
+	string ptask_tmp = s.substr (0, s.find ("."));
+	string task_tmp = s.substr (s.find(".")+1, s.rfind(".")-s.find(".")-1);
+	string thread_tmp = s.substr (1+s.rfind("."));
+
+	if ((ptask = atoi(ptask_tmp.c_str())) == 0)
+		return false;
+	if ((task = atoi(task_tmp.c_str())) == 0)
+		return false;
+	if ((thread = atoi(thread_tmp.c_str())) == 0)
+		return false;
+
+	return true;
+}
+
+bool common::decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
+	bool &anyptask, unsigned &task, bool &anytask, unsigned &thread,
+	bool &anythread)
+{
+	size_t n = count (s.begin(), s.end(), '.');
+	if (n != 2)
+		return false;
+
+	anyptask = anytask = anythread = false;
+
+	string ptask_tmp = s.substr (0, s.find ("."));
+	string task_tmp = s.substr (s.find(".")+1, s.rfind(".")-s.find(".")-1);
+	string thread_tmp = s.substr (1+s.rfind("."));
+
+	if (ptask_tmp == "*")
+		anyptask = true;
+	else
+		if ((ptask = atoi(ptask_tmp.c_str())) == 0)
+			return false;
+
+	if (task_tmp == "*")
+		anytask = true;
+	else
+		if ((task = atoi(task_tmp.c_str())) == 0)
+			return false;
+
+	if (thread_tmp == "*")
+		anythread = true;
+	else
+		if ((thread = atoi(thread_tmp.c_str())) == 0)
+			return false;
+
+	return true;
+}
+
+

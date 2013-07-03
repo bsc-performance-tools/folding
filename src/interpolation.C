@@ -21,38 +21,30 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef REGION_H_INCLUDED
-#define REGION_H_INCLUDED
+static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 2013-05-24 14:08:28Z harald $";
 
-#include <vector>
-#include <string>
+#include "common.H"
 
-using namespace std;
+#include "interpolation.H"
 
-class Region
+Interpolation::Interpolation (unsigned steps, bool prefilter)
 {
-	public:
-	string RegionName;
-	unsigned long long Tstart;
-	unsigned long long Tend;
-	unsigned long long Type;
-	unsigned long long Value;
-	unsigned long long Phase;
-	vector<unsigned long long> HWCvalues;
+	this->steps = steps;
+	this->prefilter = prefilter;
+}
 
-	public:
-	Region (unsigned long long Tstart, unsigned long long Type,
-		unsigned long long Value, unsigned long long Phase);
-	~Region ();
-};
+void Interpolation::pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters)
+{
+	/* By default, do nothing */
+	return;
+}
 
-#endif
 

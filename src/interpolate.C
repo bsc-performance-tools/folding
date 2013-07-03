@@ -33,2334 +33,204 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
 
-#include <linux/limits.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
+#include "read-extracted-data.H"
+#include "instance-container.H"
+#include "prv-writer.H"
+#include "sample-selector-first.H"
+#include "sample-selector-distance.H"
+#include "sample-selector-default.H"
 
-#include <string>
-#include <sstream>
+#include "interpolation-kriger.H"
+
+#include <string.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <map>
-#include <list>
-#include <algorithm>
+#include <set>
+#include <string>
 #include <iomanip>
-#include <ctime>
+
 #include <assert.h>
 
-#include "UIParaverTraceConfig.h"
-#include "kriger_wrapper.h"
-#include "generate-gnuplot.H"
-#include "region-analyzer-in-frame-region.H"
-#include "region-analyzer-in-time-region.H"
-#include "region-analyzer-first-occurrency.H"
-#include "point.H"
-#include "callstackanalysis.H"
-#include "execute-breakpoints-R.H"
+#define FOLDED_BASE                       600000000
+#define PAPI_MIN_COUNTER                   42000000
+#define PAPI_MAX_COUNTER                   42999999
+#define EXTRAE_SAMPLE_CALLER_MIN           30000000
+#define EXTRAE_SAMPLE_CALLER_MAX           30000099
+#define EXTRAE_SAMPLE_CALLERLINE_MIN       30000100
+#define EXTRAE_SAMPLE_CALLERLINE_MAX       30000199
+#define EXTRAE_SAMPLE_CALLERLINE_AST_MIN   30000200
+#define EXTRAE_SAMPLE_CALLERLINE_AST_MAX   30000299
 
-#define TOT_INS "PM_INST_CMPL"
+static ObjectSelection *objectsSelected;
 
-#define MAX_REGIONS 10*1024
+static SampleSelectorDefault ssdefault; 
+static SampleSelector *ss = &ssdefault;
 
-#define FOLDED_BASE 600000000
+static InterpolationKriger ik(1000, 0.0001, false);
+static Interpolation *interpolation = &ik;
 
-#warning "SLOPE must be calculated with -1 and +1 points, not -1"
+enum FeedType_t { FEED_NONE, FEED_TIME, FEED_FIRST_OCCURRENCE };
+static FeedType_t feedTraceType = FEED_NONE;
+static unsigned long long feedTraceFoldType_Value;
+static unsigned long long feedTraceTimes_Begin, feedTraceTimes_End;
+static string feedTraceFoldType_Value_Definition;
+static ObjectSelection *objectToFeed = NULL;
 
-#define IS_F90(x) \
-	((x.substr(x.length()-4)) == ".f90" || ((x.substr(x.length()-4)) == ".F90"))
-#define IS_C(x) \
-	((x.substr(x.length()-2)) == ".c")
-#define IS_CXX(x) \
-	(((x.substr(x.length()-4)) == ".cpp") || ((x.substr(x.length()-4)) == ".c++") || ((x.substr(x.length()-2)) == ".C"))
+bool splitInGroups = true;
+
+enum StatisticType_t { STATISTIC_MEAN, STATISTIC_MEDIAN };
+static StatisticType_t StatisticType = STATISTIC_MEAN; 
+static double NumOfSigmaTimes = 2.0f;
+
+static set<string> wantedCounters;
+static set<string> wantedRegions;
+
+FoldedParaverTrace *ftrace = NULL;
 
 using namespace std;
 
-double kriger_nuget = 1e-3;
-double prefilter_distance = 0.001;
-string sourceDirectory;
 
-#define QUALITY_DISTANCE prefilter_distance
-
-#if 0
-class CallstackSample
+void GroupFilterAndDumpStatistics (set<string> &regions,
+	vector<Instance*> &vInstances,
+	map<string, InstanceContainer> &Instances,
+	map<string, InstanceContainer> &excludedInstances)
 {
-	public:
-	float Time;
-	unsigned long long Type;
-	unsigned long long Value;
-	unsigned Region;
-};
-#endif
+	set<string>::iterator it;
 
-class Sample
-{
-	public:
-	string CounterID;
-	unsigned Region;
-	unsigned Phase;
-	float Time;
-	float CounterValue;
-	unsigned long long DeTime;
-	unsigned long long DeCounterValue;
-	unsigned Instance;
-};
-
-#if HAVE_CUBE
-vector<ca_callstacksample> vcallstacksamples;
-#endif
-
-bool FilterMinDuration = false;
-double MinDuration;
-
-unsigned MaxIteration = 0;
-bool hasMaxIteration = false;
-
-unsigned MaxSamples = 0;
-
-string TraceToFeed;
-bool feedTraceRegion = false;
-bool feedTraceTimes = false;
-bool feedFirstOccurrence = false;
-unsigned long long feedTraceRegion_Type;
-unsigned long long feedTraceRegion_Value;
-unsigned long long feedTraceFoldType_Value;
-string feedTraceFoldType_Value_Definition;
-unsigned long long feedTraceTimes_Begin, feedTraceTimes_End;
-unsigned long long feedSyntheticEventsRate = 1000;
-
-unsigned numRegions = 0;
-string nameRegion[MAX_REGIONS];
-int countDurationRegion[MAX_REGIONS];
-double meanDurationRegion[MAX_REGIONS];
-double sigmaDurationRegion[MAX_REGIONS];
-double NumOfSigmaTimes;
-
-bool option_doLineFolding = true;
-bool removeOutliers = false;
-bool SeparateValues = true;
-vector<string> wantedCounters;
-list<GNUPLOTinfo*> GNUPLOT;
-vector<string> wantedRegions;
-bool generateGNUPLOTfiles = true;
-
-vector<unsigned> excludedinstances;
-
-unsigned TranslateRegion (string &RegionName)
-{
-	/* Look for region in the translation table */
-	for (unsigned i = 0; i < numRegions; i++)
-		if (nameRegion[i] == RegionName)
-			return i;
-
-	/* If it can't be find, add it */
-	unsigned result = numRegions;
-	nameRegion[result] = RegionName;
-	numRegions++;
-
-	if (numRegions >= MAX_REGIONS)
+	cout << "Allocating instances into instance container ... ";
+	for (unsigned u = 0; u < vInstances.size(); u++)
 	{
-		cerr << "Reached MAX_REGIONS!" << endl;
-		exit (-1);
-	}
-
-	return result;
-}
-
-#if HAVE_CUBE
-
-map<string, vector<unsigned long long> > astblocks;
-
-void AdaptCallStack (ca_callstacksample &CS, UIParaverTraceConfig *pcf)
-{
-	assert (CS.caller.size() == CS.callerline.size() &&
-		CS.caller.size() == CS.callerType.size() &&
-		CS.caller.size() == CS.callerlineType.size());
-
-	static bool pcf_tested = false;
-	static bool main_present = false;
-	static unsigned long long main_value;
-
-	if (pcf != NULL && !pcf_tested)
-	{
-		try
+		string Region = vInstances[u]->RegionName;
+		if (Instances.count (Region) == 0)
 		{
-			main_value = pcf->getEventValue (30000000, string("main"));
-			main_present = true;
-		}
-		catch (...)
-		{
-			main_present = false;
-		}
-		pcf_tested = true;
-	}
-
-	/* Remove trailing not_found | unknown values*/
-	while (CS.caller.back() <= 2 && CS.callerline.back() <= 2)
-	{
-		CS.caller.pop_back();
-		CS.callerline.pop_back();
-		CS.callerType.pop_back();
-		CS.callerlineType.pop_back();
-		if (CS.caller.size() == 1)
-			break;
-	}
-	if (CS.caller.size() > 1)
-	{
-		/* Extrae generates the callstack down-top
-		   i.e. first element is closer to the code it was executing,
-		   reverse the vector for a top-down approach.
-		   Also remove not_found|unknown values */
-		reverse (CS.caller.begin(), CS.caller.end());
-		reverse (CS.callerline.begin(), CS.callerline.end());
-		reverse (CS.callerType.begin(), CS.callerType.end());
-		reverse (CS.callerlineType.begin(), CS.callerlineType.end());
-		while (CS.caller.back() <= 2 && CS.callerline.back() <= 2)
-		{
-			CS.caller.pop_back();
-			CS.callerline.pop_back();
-			CS.callerType.pop_back();
-			CS.callerlineType.pop_back();
-			if (CS.caller.size() == 1)
-				break;
-		}
-	}
-
-	if (CS.caller.size() > 1 && main_present)
-	{
-		bool main_in_callstack = false;
-		unsigned levels_to_main = 0;
-		for (unsigned u = 0; u < CS.caller.size() && !main_in_callstack; u++, levels_to_main++)
-			main_in_callstack = CS.caller[u] == main_value;
-
-		if (main_in_callstack && levels_to_main > 0)
-		{
-			CS.caller.erase (CS.caller.begin(), CS.caller.begin()+levels_to_main-1);
-			CS.callerline.erase (CS.callerline.begin(), CS.callerline.begin()+levels_to_main-1);
-			CS.callerType.erase (CS.callerType.begin(), CS.callerType.begin()+levels_to_main-1);
-			CS.callerlineType.erase (CS.callerlineType.begin(), CS.callerlineType.begin()+levels_to_main-1);
-		}
-	}
-
-#if 0
-	for (unsigned u = 0; u < CS.caller.size(); u++)
-		cout << "u=" << u << " C=" << CS.caller[u] << " CL=" << CS.callerline[u] << endl;
-#endif
-
-	if (sourceDirectory.length() > 0 && pcf != NULL)
-	{
-		string folding_home = string (getenv("FOLDING_HOME"));
-		bool all_into_astblocks = true;
-		for (unsigned u = 0; u < CS.caller.size(); u++)
-		{
-			string res;
-			string file;
-			int line;
-			common::lookForCallerLineInfo (pcf, CS.callerline[u], file, line);
-			try
-			{ res = pcf->getEventValue(30000100, CS.callerline[u]); }
-			catch (...)
-			{}
-			if (common::existsFile (sourceDirectory+"/"+file) && (IS_C(file) || IS_CXX(file) || IS_F90(file)))
-			{
-				if (astblocks.count(sourceDirectory+"/"+file) == 0)
-				{
-					cout << "Calculating AST code blocks for file " << sourceDirectory+"/"+file << endl;
-					stringstream ss;
-					ss << getpid(); 
-
-					string sys_command;
-					if (IS_F90(file))
-						sys_command = folding_home+"/etc/basicblocks.F90.py "+sourceDirectory+"/"+file+"> /tmp/astblocks."+ss.str()+".out";
-					else if (IS_C(file) || IS_CXX(file))
-						sys_command = folding_home+"/etc/basicblocks.C.py "+sourceDirectory+"/"+file+"> /tmp/astblocks."+ss.str()+".out";
-
-					system (sys_command.c_str());
-					if (common::existsFile (string("/tmp/astblocks.")+ss.str()+".out"))
-					{
-						vector<unsigned long long> vtmp;
-						unsigned long long ull;
-						ifstream bb_file((string("/tmp/astblocks.")+ss.str()+".out").c_str());
-						while (bb_file >> ull)
-							vtmp.push_back (ull);
-						bb_file.close();
-
-						unlink ((string("/tmp/astblocks.")+ss.str()+".out").c_str());
-
-						astblocks[sourceDirectory+"/"+file] = vtmp;
-					}
-				}
-
-				bool within_astblock = false;
-				vector<unsigned long long> v = astblocks[sourceDirectory+"/"+file];
-				//cout << "AST check for " << sourceDirectory+"/"+file << " line = " << line << endl;
-				for (unsigned a = 0; a < v.size()-1; a++)
-				{
-					//cout << "AST check for a = " << a << "/" << v.size() << "[" << v[a] << "," << v[a+1] << "] line = " << line << endl;
-					if (line >= v[a] && line <= v[a+1])
-					{
-						//cout << "AST block " << v[a] << "." << v[a+1] << " for line " << line << endl;
-						CS.callerlineASTBlock.push_back (make_pair (v[a], v[a+1]));
-						within_astblock = true;
-						break;
-					}
-				}
-				if (!within_astblock && line <= v.back())
-				{
-					CS.callerlineASTBlock.push_back (make_pair (v.back(), v.back()));
-					within_astblock = true;
-				}
-
-				if (!within_astblock)
-				{
-					//cout <<" Failed to place in ASTBlock (" << sourceDirectory+"/"+file << ") line = " << line << endl;
-					all_into_astblocks = false;
-				}
-			}
-			else
-			{
-				//cout << "Failed due to " << sourceDirectory+"/"+file << " in line " << line << endl;
-				all_into_astblocks = false;
-				break;
-			}
-		}
-		if (!all_into_astblocks)
-			CS.callerlineASTBlock.clear();
-
-		// cout << "CS.caller.size = " << CS.caller.size() << " CS.callerlineASTBlock.size() = " << CS.callerlineASTBlock.size() << endl;
-
-		assert (CS.caller.size() == CS.callerline.size() &&
-			CS.caller.size() == CS.callerType.size() &&
-			CS.caller.size() == CS.callerlineType.size() &&
-			(CS.caller.size() == CS.callerlineASTBlock.size() || 0 == CS.callerlineASTBlock.size()));
-	}
-}
-#endif
-
-void FillData (ifstream &file, bool any_region, vector<Sample> &vsamples,
-	vector<Point> &accumulatedCounterPoints, UIParaverTraceConfig *pcf)
-{
-	unsigned Instance = 0;
-	unsigned long long lastRegion = 0;
-	unsigned long long lastDuration = 0;
-	bool inRegion = false;
-	bool Outlier = false;
-	char type;
-
-#if HAVE_CUBE
-	ca_callstacksample CS;
-#endif
-	double lastCStime = 1.0;
-
-	while (true)
-	{
-		file >> type;
-		if (file.eof())
-			break;
-
-		if (type == 'D')
-		{
-			string strRegion;
-			file >> strRegion;
-			TranslateRegion (strRegion);
-		}
-		else if (type == 'T')
-		{
-			string strRegion;
-			unsigned long long Duration;
-
-			Instance++;
-
-			file >> strRegion;
-			file >> Duration;
-
-			lastDuration = Duration;
-
-			lastRegion = TranslateRegion (strRegion);
-			inRegion = true;
-
-			if (removeOutliers && inRegion)
-				Outlier = !((Duration > (meanDurationRegion[any_region?0:lastRegion]-NumOfSigmaTimes*sigmaDurationRegion[any_region?0:lastRegion])) && 
-				           (Duration < (meanDurationRegion[any_region?0:lastRegion]+NumOfSigmaTimes*sigmaDurationRegion[any_region?0:lastRegion])));
-
-#if defined(DEBUG)
-			cout << "DURATION " << Duration << " REGION (" << strRegion << ")= "<< lastRegion << (Outlier?" is":" is not") << " an outlier " << endl;
-			cout << "MEAN_REGION = " << meanDurationRegion[any_region?0:lastRegion] << " ABS = " << fabs (meanDurationRegion[any_region?0:lastRegion] - Duration) << endl;
-			cout << NumOfSigmaTimes << " * " << sigmaDurationRegion[any_region?0:lastRegion] << endl;
-#endif
-
-		}
-		else if (type == 'A')
-		{
-			Point p;
-			p.RegionName = nameRegion[lastRegion];
-			p.Duration = lastDuration;
-			p.Instance = Instance;
-			file >> p.CounterID;
-			file >> p.TotalCounter;
-
-			for (unsigned i = 0 ; i < wantedCounters.size(); i++)
-				if (wantedCounters[i] == p.CounterID)
-					accumulatedCounterPoints.push_back (p);
-		}
-		else if (type == 'C')
-		{
-			double Time;
-			unsigned long long Type, Value;
-
-			file >> Time;
-			file >> Type;
-			file >> Value;
-
-#if HAVE_CUBE
-			/* get rid of small different double input differences when changing of sample */
-			if (fabs(lastCStime-Time) >= 0.00001f) 
-			{
-				cout << setprecision (12);
-
-				if (CS.caller.size() > 0)
-				{
-					if (CS.caller.size() != CS.callerline.size())
-					{
-						cerr << "CS,caller.size() != CS.callerline.size(). This should not happen!" << endl;
-						exit (-1);
-					}
-					AdaptCallStack (CS, pcf);
-					CS.Instance = Instance;
-					if (CS.caller.size() > 0)
-						vcallstacksamples.push_back (CS);
-				}
-
-				CS.caller.clear();
-				CS.callerline.clear();
-				CS.callerType.clear();
-				CS.callerlineType.clear();
-				CS.callerlineASTBlock.clear();
-	
-				lastCStime = CS.Time = Time;
-				CS.Region = lastRegion;
-			}
-
-			if (Type >= 30000000 && Type < 30000100)
-			{
-				CS.caller.push_back (Value);
-				CS.callerType.push_back (Type);
-			}
-			else if (Type >= 30000100 && Type < 30000200)
-			{
-				CS.callerline.push_back (Value);
-				CS.callerlineType.push_back (Type);
-			}
-#endif
-
-
-		}
-		else if (type == 'S')
-		{
-			Sample s;
-
-			s.Phase = 0;
-			file >> s.CounterID;
-			file >> s.Time;
-			file >> s.CounterValue;
-			file >> s.DeTime;
-			file >> s.DeCounterValue;
-			s.Instance = Instance;
-			s.Region = lastRegion;
-
-#if defined(DEBUG)
-			if (inRegion)
-			{
-				cout << "REGION " << lastRegion << " TIME " << s.Time << " COUNTERID " << s.CounterID << " COUNTERVALUE " << s.CounterValue << endl;
-			}
-#endif
-
-			if (!Outlier && inRegion)
-				vsamples.push_back (s);
-		}
-	}
-
-#if HAVE_CUBE
-	if (CS.caller.size() > 0)
-	{
-		if (CS.caller.size() != CS.callerline.size())
-		{
-			cerr << "CS,caller.size() != CS.callerline.size(). This should not happen!" << endl;
-			exit (-1);
-		}
-		AdaptCallStack (CS, pcf);
-		CS.Instance = Instance;
-		if (CS.caller.size() > 0)
-			vcallstacksamples.push_back (CS);
-	}
-#endif
-}
-
-void CalculateStatsFromFile (ifstream &file, bool any_region, vector<string> &allcounters)
-{
-	int line = 0;
-	char type;
-
-	for (int i = 0; i < MAX_REGIONS; i++)
-	{
-		meanDurationRegion[i] = 0.0f;
-		sigmaDurationRegion[i] = 0.0f;
-		countDurationRegion[i] = 0;
-	}
-
-	/* Calculate totals and number of presence of each region */
-
-	int Region = 0;
-	while (true)
-	{
-		file >> type;
-		line++;
-
-		if (file.eof())
-			break;
-
-		if (type == 'D')
-		{
-			string strRegion;
-			file >> strRegion;
-			TranslateRegion (strRegion);
-		}
-		else if (type == 'T')
-		{
-			string strRegion;
-			unsigned long long Duration;
-
-			file >> strRegion;
-			file >> Duration;
-
-			Region = TranslateRegion (strRegion);
-
-			meanDurationRegion[any_region?0:Region] += Duration;
-			countDurationRegion[any_region?0:Region] ++;
-		}
-		else if (type == 'A')
-		{
-			unsigned long long unused_ll;
-			string unused_s;
-
-			file >> unused_s;
-			file >> unused_ll;
-
-			if (find(allcounters.begin(), allcounters.end(), unused_s) == allcounters.end())
-				allcounters.push_back (unused_s);
-		}
-		else if (type == 'S')
-		{
-			unsigned long long unused_ll;
-			double unused_f;
-			string unused_s;
-
-			file >> unused_s;
-			file >> unused_f;
-			file >> unused_f;
-			file >> unused_ll;
-			file >> unused_ll;
-			file >> unused_ll;
-		}
-		else if (type == 'C')
-		{
-			double unused_f;
-
-			file >> unused_f;
-			file >> unused_f;
-			file >> unused_f;
-		}
-	}
-
-	/* Now calculate the means */
-	for (unsigned i = 0; i < numRegions; i++)
-		if (countDurationRegion[i] > 0)
-			meanDurationRegion[i] = meanDurationRegion[i]/countDurationRegion[i];
-
-	file.clear ();
-	file.seekg (0, ios::beg);
-
-	/* Calculate totals of SUM(x[i]-meanx) */
-	while (true)
-	{
-		file >> type;
-
-		if (file.eof())
-			break;
-
-		if (type == 'D')
-		{
-			string strRegion;
-			file >> strRegion;
-			TranslateRegion (strRegion);
-		}
-		else if (type == 'T')
-		{
-			string strRegion;
-			unsigned long long Duration;
-
-			file >> strRegion;
-			file >> Duration;
-
-			Region = TranslateRegion (strRegion);
-
-			sigmaDurationRegion[(any_region?0:Region)] +=
-			 (((double)Duration) - meanDurationRegion[any_region?0:Region]) * (((double)Duration) - meanDurationRegion[any_region?0:Region]);
-		}
-		else if (type == 'A')
-		{
-			unsigned long long unused_ll;
-			string unused_s;
-
-			file >> unused_s;
-			file >> unused_ll;
-		}
-		else if (type == 'S')
-		{
-			double unused_f;
-			string unused_s;
-
-			file >> unused_s;
-			file >> unused_f;
-			file >> unused_f;
-			file >> unused_f;
-			file >> unused_f;
-			file >> unused_f;
-		}
-	}
-
-	for (unsigned i = 0; i < numRegions; i++)
-	{
-		if (countDurationRegion[i] > 1)
-			sigmaDurationRegion[i] = sqrt ((sigmaDurationRegion[i]) / (countDurationRegion[i] - 1));
-		else
-			sigmaDurationRegion[i] = 0.0f;
-	}
-
-	file.clear ();
-	file.seekg (0, ios::beg);
-}
-
-static double Calculate_Quality0 (int incount, double *inpoints_x, double *inpoints_y, int outcount, double *outpoints, double QD)
-{
-	int values_within_QD = 0;
-	for (int i = 0; i < incount; i++)
-	{
-		int pt_x = (int) (inpoints_x[i]*outcount); /* index position X of sample i into 0..outcount-1 */
-		if (((inpoints_y[i] >= outpoints[pt_x] - QD)) && (inpoints_y[i] <= (outpoints[pt_x] + QD)))
-			values_within_QD++;
-	}
-	return (double) values_within_QD / (double) incount;
-}
-
-static double Calculate_Quality1 (int incount, double *inpoints_x, double *inpoints_y, int outcount, double *outpoints)
-{
-	double total_distances = 0.0f;
-	for (int i = 0; i < incount; i++)	
-	{
-		double min_distance = 1.0f;
-		for (int j = 0; j < outcount; j++)
-		{
-			double X_distance = inpoints_x[i]-((double) j/(double) outcount);
-			double Y_distance = inpoints_y[i]-outpoints[j];
-			double diagonal = sqrt (X_distance*X_distance + Y_distance*Y_distance);
-
-			min_distance = MIN(diagonal, min_distance);
-		}
-		total_distances += min_distance;
-	}
-	return (double) total_distances / (double) incount;
-}
-
-static double Distance_Point_To_Interpolate (double inpoint_x, double inpoint_y, int outcount, double *outpoints)
-{
-	double min_distance = 1.0f;
-	for (int i = 0; i < outcount; i++)
-	{
-		double X_distance = inpoint_x-((double) i/(double) outcount);
-		double Y_distance = inpoint_y-outpoints[i];
-		double distance = sqrt (X_distance*X_distance + Y_distance*Y_distance);
-
-		min_distance = MIN(distance, min_distance);
-	}
-
-	return min_distance;
-}
-
-void DumpStartingParaverLine (ofstream &f)
-{
-	time_t now = time(0);
-
-	f << "# Folding done by " << getenv("USER") << " at " << ctime(&now);
-}
-
-void DumpParaverLines (ofstream &f, vector<unsigned long long> &type,
-	vector<unsigned long long > &value, unsigned long long time, unsigned long long task,
-	unsigned long long thread)
-{
-  /* 2:14:1:14:1:69916704358:40000003:0 */
-
-  f << "2:" << task << ":1:" << task << ":" << thread << ":" << time;
-	for (unsigned i = 0; i < type.size(); i++)
-		f << ":" << type[i] << ":" << value[i];
-	f << endl;
-}
-
-void DumpParaverLine (ofstream &f, unsigned long long type,
-	unsigned long long value, unsigned long long time, unsigned long long task,
-	unsigned long long thread)
-{
-  /* 2:14:1:14:1:69916704358:40000003:0 */
-  f << "2:" << task << ":1:" << task << ":" << thread << ":" << time << ":" << type << ":" << value << endl;
-}
-
-
-bool runInterpolation_prefilter (ofstream &interpolation, ofstream &slope,
-	vector<Sample> &vsamples, string CounterID,	bool anyRegion,	unsigned RegionID,
-	unsigned outcount, double *outpoints, double slope_factor, double kriger_nuget,
-	double prefilter_distance)
-{
-	bool all_zeroes = true;
-	int incount = 0;
-
-	if (outcount > 0)
-	{
-		vector<Sample>::iterator it = vsamples.begin();
-		for (; it != vsamples.end(); it++)
-		{
-			if (!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID)
-				incount++;
-			else if (anyRegion && (*it).CounterID == CounterID)
-				incount++;
-		}
-	}
-
-	if (incount >= 0 && outcount > 0)
-	{
-		double *inpoints_x = (double*) malloc ((incount+2)*sizeof(double));
-		double *inpoints_y = (double*) malloc ((incount+2)*sizeof(double));
-		double *slope_vals = (double*) malloc (outcount*sizeof(double));
-		double *slope2_vals = (double*) malloc (outcount*sizeof(double));
-
-		inpoints_x[0] = inpoints_y[0] = 0.0f;
-		inpoints_x[1] = inpoints_y[1] = 1.0f;
-		vector<Sample>::iterator it = vsamples.begin();
-		for (incount = 2, it = vsamples.begin(); it != vsamples.end(); it++)
-		{
-			if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
-			    (anyRegion && (*it).CounterID == CounterID))
-			{
-				inpoints_x[incount] = (*it).Time;
-				inpoints_y[incount] = (*it).CounterValue;
-
-				all_zeroes = inpoints_y[incount] == 0.0f && all_zeroes;
-
-				incount++;
-			}
-		}
-		if (MaxSamples != 0 && incount > MaxSamples)
-		{
-			cout << "Attention! Number of samples limited to " << MaxSamples << " (incount was " << incount << ")" << endl;
-			incount = MaxSamples;
-		}
-
-		if (!all_zeroes)
-		{
-			/* If the region is not filled with 0s, run the regular countoring algorithm */
-			cout << "PREFILTER: Running interpolation (region=";
-			if (anyRegion)
-				cout << "any";
-			else
-				cout << RegionID << " / " << nameRegion[RegionID];
-			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ", nuget=" << setprecision(2) << scientific << kriger_nuget << ")" << endl;
-
-			Kriger_Region (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f, kriger_nuget);
-
-			cout << "PREFILTER: Calculating Q0" << flush;
-			double q0 = 1-Calculate_Quality1 (incount, inpoints_x, inpoints_y, outcount, outpoints);
-			cout << ", Q0 = " << fixed << q0 << endl;
-			cout << "PREFILTER: Calculating Q1 w/ QD = " << scientific << QUALITY_DISTANCE << flush;
-			double q1 = Calculate_Quality0 (incount, inpoints_x, inpoints_y, outcount, outpoints, QUALITY_DISTANCE);
-			cout << ", Q1 = " << fixed << q1 << endl;
-
-
-			/* Correct negative points present in the interpolation */
-			if (interpolation.is_open() && slope.is_open())
-			{
-				for (unsigned j = 0; j < outcount; j++)
-					if (outpoints[j] < 0)
-						outpoints[j] = 0;
-
-				double d_last = outpoints[0];
-				slope_vals[0] = 0.0f;
-				for (unsigned j = 1; j < outcount; j++)
-				//// for (unsigned j = 1; j < outcount-1; j++)
-				{
-					double d_outcount = (double) outcount;
-					if (d_last < outpoints[j+1])
-					//// if (d_last < outpoints[j])
-					{
-						slope_vals[j] = (outpoints[j]-d_last) / (1/d_outcount);
-						//// slope_vals[j] = (outpoints[j+1]-d_last) / (2/d_outcount);
-						d_last = outpoints[j];
-					}
-					else
-						slope_vals[j] = 0;
-				}
-
-				d_last = slope_vals[0];
-				for (unsigned j = 1; j < outcount; j++)
-				{
-					double d_outcount = (double) outcount;
-					slope2_vals[j] = fabs (slope_vals[j]-slope_vals[j-1]) / (1/d_outcount);
-				}
-
-				interpolation << CounterID << " " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
-				for (unsigned j = 1; j < outcount; j++)
-				{
-					double d_j = (double) j;
-					double d_outcount = (double) outcount;	
-					interpolation << CounterID << " " << d_j / d_outcount << " " << outpoints[j] << endl;
-					slope << CounterID << " " << d_j / d_outcount << " " << slope_factor * slope_vals[j] << endl;
-				}
-			}
-
-		free (slope_vals);
-		free (slope2_vals);
-		free (inpoints_x);
-		free (inpoints_y);
-		}
-	
-	}
-
-	return true;
-}
-
-
-
-
-bool runInterpolation (ofstream &points, ofstream &interpolation,
-	ofstream &slope, ofstream &slope2, ofstream &sslope, double slope_factor,
-	vector<Sample> &vsamples, string CounterID, bool anyRegion,
-	unsigned RegionID, unsigned outcount, int &num_inpoints, double *outpoints,
-	vector<double> &qualities, vector<double> &breakpoints,
-	double kriger_nuget, double prefilter_distance, double *filter_points)
-{
-	bool all_zeroes = true;
-	int incount = 0;
-	double mean_distance = 0.0f;
-	double sigma_distance = 0.0f;
-
-	if (outcount > 0)
-	{
-		vector<Sample>::iterator it = vsamples.begin();
-		for (; it != vsamples.end(); it++)
-		{
-			if (!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID)
-				incount++;
-			else if (anyRegion && (*it).CounterID == CounterID)
-				incount++;
-		}
-	}
-
-	for (unsigned j = 0; j < outcount; j++)
-		outpoints[j] = 0.0f;
-
-	if (incount >= 0 && outcount > 0)
-	{
-		double *inpoints_x = (double*) malloc ((incount+2)*sizeof(double));
-		double *inpoints_y = (double*) malloc ((incount+2)*sizeof(double));
-		double *slope_vals = (double*) malloc (outcount*sizeof(double));
-		double *slope2_vals = (double*) malloc (outcount*sizeof(double));
-
-		inpoints_x[0] = inpoints_y[0] = 0.0f;
-		inpoints_x[1] = inpoints_y[1] = 1.0f;
-		vector<Sample>::iterator it;
-		map<unsigned,double> InstanceAvgDistance;
-
-		unsigned curInstance = 0xFFFFFFFF;
-		double tmp = 0.0f;
-		unsigned ntmp = 0;
-
-		/* Calculate the average distance between the pre-interpolated and the points, so we
- 		   can exclude the instances that are too "far" to the interpolated */
-
-		if (removeOutliers)
-		{
-			for (it = vsamples.begin(); it != vsamples.end(); it++)
-			{
-				if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
-				    (anyRegion && (*it).CounterID == CounterID))
-				{
-					if (curInstance != (*it).Instance)
-					{
-						if (curInstance != 0xFFFFFFFF)
-						{
-							if (ntmp > 0)
-								InstanceAvgDistance[curInstance] = tmp / ntmp;
-							else
-								InstanceAvgDistance[curInstance] = 0.0f;
-						}
-						curInstance = (*it).Instance;
-						tmp = Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
-						ntmp = 1;
-					}
-					else
-					{
-						tmp += Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
-						ntmp += 1;
-					}
-				}
-			}
-			if (curInstance != 0xFFFFFFFF)
-			{
-				if (ntmp > 0)
-					InstanceAvgDistance[curInstance] = tmp / ntmp;
-				else
-					InstanceAvgDistance[curInstance] = 0.0f;
-			}
-
-	    map<unsigned,double>::iterator avgDistance_it = InstanceAvgDistance.begin();
-			unsigned mean_qty = 0;
-			for (; avgDistance_it != InstanceAvgDistance.end(); avgDistance_it++)
-			{
-				mean_distance += (*avgDistance_it).second;
-				mean_qty += 1;
-			}
-			mean_distance = mean_distance / mean_qty;
-
-			if (mean_qty > 1)
-			{
-				avgDistance_it = InstanceAvgDistance.begin();
-				for (; avgDistance_it != InstanceAvgDistance.end(); avgDistance_it++)
-					sigma_distance += ((*avgDistance_it).second - mean_distance) * ((*avgDistance_it).second - mean_distance);
-	
-				sigma_distance = sqrt (sigma_distance / (mean_qty-1));
-			}
-		}
-
-		for (incount = 2, it = vsamples.begin(); it != vsamples.end(); it++)
-		{
-
-
-			if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
-			    (anyRegion && (*it).CounterID == CounterID))
-			{
-				/* Skip points that are farther than prefilter_distance */
-				//if (Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points) < prefilter_distance)
-				
-				/* Skip points that are farther than SigmaTimes Distance */
-				if (removeOutliers &&
-				    (InstanceAvgDistance[(*it).Instance] > (mean_distance - NumOfSigmaTimes*sigma_distance) &&
-				     InstanceAvgDistance[(*it).Instance] < (mean_distance + NumOfSigmaTimes*sigma_distance)) 
-					  ||
-						!removeOutliers)
-				{
-					inpoints_x[incount] = (*it).Time;
-					inpoints_y[incount] = (*it).CounterValue;
-
-					all_zeroes = inpoints_y[incount] == 0.0f && all_zeroes;
-
-					if (points.is_open())
-						points << CounterID << " " << (*it).Time << " " << (*it).CounterValue << " " << (*it).Instance << " " << (*it).DeTime << " " << (*it).DeCounterValue << endl;
-
-					incount++;
-				}
-#if 0
-				else
-				{
-					cout << setprecision(10);
-					cout << "INSTANCE " << (*it).Instance << " with IAD = " << InstanceAvgDistance[(*it).Instance] << " NOT between [" << mean_distance - NumOfSigmaTimes*sigma_distance << "," << mean_distance + NumOfSigmaTimes*sigma_distance << "]" << endl;
-				}
-#endif
-			}
-		}
-
-		if (MaxSamples != 0 && incount > MaxSamples)
-		{
-			cout << "Attention! Number of samples limited to " << MaxSamples << " (incount was " << incount << ")" << endl;
-			incount = MaxSamples;
-		}
-
-		if (!all_zeroes)
-		{
-			/* If the region is not filled with 0s, run the regular countoring algorithm */
-			cout << "Running interpolation (region=";
-			if (anyRegion)
-				cout << "any";
-			else
-				cout << RegionID << " / " << nameRegion[RegionID];
-			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ", nuget=" << setprecision(2) << scientific << kriger_nuget << ")" << endl;
-
-			Kriger_Region (incount, inpoints_x, inpoints_y, outcount, outpoints, 0.0f, 1.0f, kriger_nuget);
-
-			cout << "Calculating Q0" << flush;
-			double q0 = 1-Calculate_Quality1 (incount, inpoints_x, inpoints_y, outcount, outpoints);
-			cout << ", Q0 = " << fixed << q0 << endl;
-
-			cout << "Calculating Q1 w/ QD = " << scientific << QUALITY_DISTANCE << flush;
-			double q1 = Calculate_Quality0 (incount, inpoints_x, inpoints_y, outcount, outpoints, QUALITY_DISTANCE);
-			cout << ", Q1 = " << fixed << q1 << endl;
-
-			qualities.push_back (q0);
-			qualities.push_back (q1);
-
-			/* Correct negative points present in the interpolation */
-			for (unsigned j = 0; j < outcount; j++)
-				if (outpoints[j] < 0)
-					outpoints[j] = 0;
-
-			double d_last = outpoints[0];
-			slope_vals[0] = 0.0f;
-			for (unsigned j = 1; j < outcount; j++)
-			{
-				double d_outcount = (double) outcount;
-				if (d_last < outpoints[j])
-				{
-					slope_vals[j] = (outpoints[j]-d_last) / (1/d_outcount);
-					d_last = outpoints[j];
-				}
-				else
-					slope_vals[j] = 0;
-			}
-
-			d_last = slope_vals[0];
-			for (unsigned j = 1; j < outcount; j++)
-			{
-				double d_outcount = (double) outcount;
-				slope2_vals[j] = fabs (slope_vals[j]-slope_vals[j-1]) / (1/d_outcount);
-			}
-
-			if (interpolation.is_open() && slope.is_open() && slope2.is_open())
-			{
-				interpolation << CounterID << " " << ((double) 0 / (double) outcount) << " " << outpoints[0] << endl;
-				for (unsigned j = 1; j < outcount; j++)
-				{
-					double d_j = (double) j;
-					double d_outcount = (double) outcount;	
-					interpolation << CounterID << " " << d_j / d_outcount << " " << outpoints[j] << endl;
-					slope << CounterID << " " << d_j / d_outcount << " " << slope_factor * slope_vals[j] << endl;
-					slope2 << CounterID << " " << d_j / d_outcount << " " << slope2_vals[j] << endl;
-				}
-			}
-
-#if 0 /* HSG */
-			sslope << fixed << setprecision (4);
-			for (float eps = 0.0002; eps <= 0.002f; eps += 0.0002)
-			{
-				unsigned last_pos_segment = 0;
-				float prevslope = 0.0f;
-				sslope << CounterID << " " << 0 << " " << outpoints[last_pos_segment] << " " << eps << endl;
-#if 0
-				for (unsigned j = 1; j < outcount; j++)
-				{
-					double d_j = (double) j;
-					double d_outcount = (double) outcount;	
-
-					float slope = (outpoints[last_pos_segment]<outpoints[j])?
-					    (outpoints[last_pos_segment]-outpoints[j])/( (d_j-last_pos_segment) / d_outcount)
-					    :
-					    0;
-					if ((fabs(slope-prevslope)) >= eps)
-					{
-						prevslope = slope;
-						sslope << CounterID << " " << d_j / d_outcount << " " << outpoints[last_pos_segment] << " " << eps << endl;
-						last_pos_segment = j;
-					}
-				}
-#endif
-
-#define WINDOW_SIZE    10 
-
-				cout << fixed << setprecision(5) << flush;
-
-				unsigned preslopepoint = 0;
-
-				for (unsigned j = 0; j < outcount; j += WINDOW_SIZE)
-				{
-					double d_j = (double) j;
-					double d_window = (double) WINDOW_SIZE;
-					double d_outcount = (double) outcount;
-
-					float slope = (outpoints[j] < outpoints[j+WINDOW_SIZE-1])?
-					  (outpoints[j+WINDOW_SIZE-1]-outpoints[j])/d_window
-					  :
-				    0;
-
-//					cout << "outpoints[" << j << "]=" << outpoints[j] << " outpoints[" << j+WINDOW_SIZE-1 << "]=" << outpoints[j+WINDOW_SIZE-1] << endl;
-//					cout << "comparing slope=" << slope << " with prevslope=" << prevslope << " eps=" << eps << endl;
-
-					if (fabs(slope-prevslope) >= eps)
-					{
-						prevslope = slope;
-						double point = d_j/d_outcount;
-						sslope << CounterID << " " << point << " " << outpoints[j] << " " << eps << endl;
-						preslopepoint = j;
-					}
-				}
-
-				sslope << CounterID << " " << ((double) outcount-1) / (double) outcount << " " << outpoints[outcount-1] << " " << eps << endl;
-			}
-#endif /* HSG */
-
-
-#if 0 /* HSG */
-			/* EPS Slope 0.0006 seems good to compute breakpoints */
-			breakpoints.push_back (0.0f);
-			//double preslope = 0.0f;
-			double preslope = (outpoints[0] < outpoints[0+WINDOW_SIZE-1])?
-				  (outpoints[0+WINDOW_SIZE-1]-outpoints[0])/ ((double) WINDOW_SIZE)
-				  : 0;
-			for (unsigned j = 0; j < outcount; j += WINDOW_SIZE)
-			{
-				double d_j = (double) j;
-				double d_outcount = (double) outcount;
-				double d_window = (double) WINDOW_SIZE;
-
-				float slope = (outpoints[j] < outpoints[j+WINDOW_SIZE-1])?
-				  (outpoints[j+WINDOW_SIZE-1]-outpoints[j])/d_window
-				  : 0;
-
-				if (fabs(slope-preslope) >= 0.0006)
-				{
-					preslope = slope;
-					double point = d_j/d_outcount;
-					breakpoints.push_back (point);
-				}
-			}
-			breakpoints.push_back (1.0f);
-#endif
-		}
-		else
-		{
-			/* If the region are only zeroes, skip interpolating and place 0s directly.
-			   This will save some badly formed countoring results because of the implied
-			   added 1.0f in inpoints_y[1] */
-
-			cout << "Running interpolation (region=";
-			if (anyRegion)
-				cout << "any";
-			else
-				cout << RegionID << " / " << nameRegion[RegionID];
-			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ") -- filled with zeroes" << endl;
-			if (interpolation.is_open() && slope.is_open())
-			{
-				interpolation << CounterID << " 0 0" << endl;
-				for (unsigned j = 1; j < outcount; j++)
-				{
-					double d_j = (double) j;
-					double d_outcount = (double) outcount;	
-					interpolation << CounterID << " " << d_j / d_outcount << " 0" << endl;
-					slope << CounterID << " " <<  d_j / d_outcount << " 0" << endl;
-				}
-			}
-			qualities.push_back (1.0f); /* Q0 */
-			qualities.push_back (1.0f); /* Q1 */
-
-			breakpoints.push_back (0.0f);
-			breakpoints.push_back (1.0f);
-		}
-
-		free (slope_vals);
-		free (inpoints_x);
-		free (inpoints_y);
-	}
-
-	num_inpoints = incount;
-
-	return incount > 0 && outcount > 0;
-}
-
-
-bool runInterpolation_R (string fname, ofstream &points, ofstream &interpolation,
-	ofstream &slope, ofstream &slope2, ofstream &sslope, double slope_factor,
-	vector<Sample> &vsamples, string CounterID, bool anyRegion,
-	unsigned RegionID, unsigned outcount, int &num_inpoints, double *outpoints,
-	vector<double> &qualities, vector<double> &breakpoints,
-	double kriger_nuget, double prefilter_distance, double *filter_points)
-{
-	bool all_zeroes = true;
-	int incount = 0;
-	double mean_distance = 0.0f;
-	double sigma_distance = 0.0f;
-
-	if (outcount > 0)
-	{
-		vector<Sample>::iterator it = vsamples.begin();
-		for (; it != vsamples.end(); it++)
-		{
-			if (!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID)
-				incount++;
-			else if (anyRegion && (*it).CounterID == CounterID)
-				incount++;
-		}
-	}
-
-	for (unsigned j = 0; j < outcount; j++)
-		outpoints[j] = 0.0f;
-
-	if (incount >= 0 && outcount > 0)
-	{
-		double *inpoints_x = (double*) malloc ((incount+2)*sizeof(double));
-		double *inpoints_y = (double*) malloc ((incount+2)*sizeof(double));
-		double *slope_vals = (double*) malloc (outcount*sizeof(double));
-		double *slope2_vals = (double*) malloc (outcount*sizeof(double));
-
-		inpoints_x[0] = inpoints_y[0] = 0.0f;
-		inpoints_x[1] = inpoints_y[1] = 1.0f;
-		vector<Sample>::iterator it;
-		map<unsigned,double> InstanceAvgDistance;
-
-		unsigned curInstance = 0xFFFFFFFF;
-		double tmp = 0.0f;
-		unsigned ntmp = 0;
-
-		/* Calculate the average distance between the pre-interpolated and the points, so we
- 		   can exclude the instances that are too "far" to the interpolated */
-
-		if (removeOutliers)
-		{
-			for (it = vsamples.begin(); it != vsamples.end(); it++)
-			{
-				if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
-				    (anyRegion && (*it).CounterID == CounterID))
-				{
-					if (curInstance != (*it).Instance)
-					{
-						if (curInstance != 0xFFFFFFFF)
-						{
-							if (ntmp > 0)
-								InstanceAvgDistance[curInstance] = tmp / ntmp;
-							else
-								InstanceAvgDistance[curInstance] = 0.0f;
-						}
-						curInstance = (*it).Instance;
-						tmp = Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
-						ntmp = 1;
-					}
-					else
-					{
-						tmp += Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points);
-						ntmp += 1;
-					}
-				}
-			}
-			if (curInstance != 0xFFFFFFFF)
-			{
-				if (ntmp > 0)
-					InstanceAvgDistance[curInstance] = tmp / ntmp;
-				else
-					InstanceAvgDistance[curInstance] = 0.0f;
-			}
-
-			map<unsigned,double>::iterator avgDistance_it = InstanceAvgDistance.begin();
-			unsigned mean_qty = 0;
-			for (; avgDistance_it != InstanceAvgDistance.end(); avgDistance_it++)
-			{
-				mean_distance += (*avgDistance_it).second;
-				mean_qty += 1;
-			}
-			mean_distance = mean_distance / mean_qty;
-
-			if (mean_qty > 1)
-			{
-				avgDistance_it = InstanceAvgDistance.begin();
-				for (; avgDistance_it != InstanceAvgDistance.end(); avgDistance_it++)
-					sigma_distance += ((*avgDistance_it).second - mean_distance) * ((*avgDistance_it).second - mean_distance);
-	
-				sigma_distance = sqrt (sigma_distance / (mean_qty-1));
-			}
-		}
-
-		for (incount = 2, it = vsamples.begin(); it != vsamples.end(); it++)
-		{
-
-
-			if ((!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID) || 
-			    (anyRegion && (*it).CounterID == CounterID))
-			{
-				/* Skip points that are farther than prefilter_distance */
-				//if (Distance_Point_To_Interpolate ((*it).Time, (*it).CounterValue, outcount, filter_points) < prefilter_distance)
-				
-				/* Skip points that are farther than SigmaTimes Distance */
-				if (removeOutliers &&
-				    (InstanceAvgDistance[(*it).Instance] > (mean_distance - NumOfSigmaTimes*sigma_distance) &&
-				     InstanceAvgDistance[(*it).Instance] < (mean_distance + NumOfSigmaTimes*sigma_distance)) 
-					  ||
-						!removeOutliers)
-				{
-					inpoints_x[incount] = (*it).Time;
-					inpoints_y[incount] = (*it).CounterValue;
-
-					all_zeroes = inpoints_y[incount] == 0.0f && all_zeroes;
-
-					if (points.is_open())
-						points << CounterID << " " << (*it).Time << " " << (*it).CounterValue << " " << (*it).Instance << " " << (*it).DeTime << " " << (*it).DeCounterValue << endl;
-
-					incount++;
-				}
-			}
-		}
-
-		if (MaxSamples != 0 && incount > MaxSamples)
-		{
-			cout << "Attention! Number of samples limited to " << MaxSamples << " (incount was " << incount << ")" << endl;
-			incount = MaxSamples;
-		}
-
-		if (!all_zeroes)
-		{
-			vector<double> slopes;
-			//vector<double> breakpoints;
-			vector<unsigned> ubreakpoints;
-
-			/* If the region is not filled with 0s, run the regular countoring algorithm */
-			cout << "Running interpolation (region=";
-			if (anyRegion)
-				cout << "any";
-			else
-				cout << RegionID << " / " << nameRegion[RegionID];
-			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ", nuget=" << setprecision(2) << scientific << kriger_nuget << ")" << endl;
-
-			Rbreakpoints::breakpoints (fname+".points", CounterID, MaxSamples, 0.05, slopes, breakpoints, excludedinstances);
-
-			/* Normalize returned times and fill up to outcount */
-			for (unsigned u = 0; u < breakpoints.size(); u++)
-			{
-				double tmp = breakpoints[u]/breakpoints.back();
-				unsigned utmp = (unsigned) (tmp*outcount);
-				ubreakpoints.push_back (utmp);
-			}
-
-			double accum = 0;
-			for (unsigned u = 0; u < ubreakpoints.size()-1; u++)
-				for (unsigned v = ubreakpoints[u]; v < ubreakpoints[u+1]; v++)
-					accum += 1000 * slopes[u];
-
-			double partial_accum = 0;
-			for (unsigned u = 0; u < ubreakpoints.size()-1; u++)
-			{
-				for (unsigned v = ubreakpoints[u]; v < ubreakpoints[u+1]; v++)
-				{
-					double d_v = (double) v;
-					double d_outcount = (double) outcount;	
-
-					interpolation << CounterID << " " << d_v / d_outcount << " " << partial_accum/accum << endl;
-					slope << CounterID << " " << d_v / d_outcount << " " << 1000 * slopes[u] << endl;
-					partial_accum += 1000 * slopes[u];
-				}
-			}
-
+			/* If first instance with this name */
+			InstanceContainer ic (Region);
+			ic.add (vInstances[u]);
+			Instances.insert (pair<string, InstanceContainer> (Region, ic));
 
 		}
 		else
 		{
-			/* If the region are only zeroes, skip interpolating and place 0s directly.
-			   This will save some badly formed countoring results because of the implied
-			   added 1.0f in inpoints_y[1] */
-
-			cout << "Running interpolation (region=";
-			if (anyRegion)
-				cout << "any";
-			else
-				cout << RegionID << " / " << nameRegion[RegionID];
-			cout << ", incount=" << incount << ", outcount=" << outcount << ", hwc=" << CounterID << ") -- filled with zeroes" << endl;
-			if (interpolation.is_open() && slope.is_open())
-			{
-				interpolation << CounterID << " 0 0" << endl;
-				for (unsigned j = 1; j < outcount; j++)
-				{
-					double d_j = (double) j;
-					double d_outcount = (double) outcount;	
-					interpolation << CounterID << " " << d_j / d_outcount << " 0" << endl;
-					slope << CounterID << " " <<  d_j / d_outcount << " 0" << endl;
-				}
-			}
-			qualities.push_back (1.0f); /* Q0 */
-			qualities.push_back (1.0f); /* Q1 */
-
-			breakpoints.push_back (0.0f);
-			breakpoints.push_back (1.0f);
-		}
-
-		free (slope_vals);
-		free (inpoints_x);
-		free (inpoints_y);
-	}
-
-	num_inpoints = incount;
-
-	return incount > 0 && outcount > 0;
-}
-
-
-
-
-
-void WriteBreakpointsIntoTrace (int task, int thread, ofstream &prv,
-	Region *r, vector<double> &bpt)
-{
-	unsigned long long prvStartTime = r->Tstart;
-	unsigned long long prvEndTime = r->Tend;
-	unsigned long long deltaTime = prvEndTime - prvStartTime;
-
-	for (unsigned u = 0; u < bpt.size()-1; u++)
-		DumpParaverLine (prv, 600000000, u+1, prvStartTime+bpt[u]*deltaTime, task, thread);
-	DumpParaverLine (prv, 600000000, 0, prvStartTime+1.0f/*bpt[bpt.size()-1]*/*deltaTime, task, thread);
-
-}
-
-void WriteResultsIntoTrace (int task, int thread, ofstream &prv,
-	Region *r, vector<unsigned long long> &HWCcodes,
-	vector<unsigned long long> &HWCtotals,
-	unsigned outcount, bool callstacksamples, double *_outpoints)
-{
-	vector<unsigned long long> types;
-	vector<unsigned long long> values;
-	unsigned long long prvStartTime = r->Tstart;
-	unsigned long long prvEndTime = r->Tend;
-	unsigned long long deltaTime = (prvEndTime - prvStartTime) / outcount;
-
-	cout << "WriteResultsIntoTrace ()" << endl;
-
-	for (unsigned c = 0; c < HWCcodes.size(); c++)
-		values.push_back (0);
-	DumpParaverLines (prv, HWCcodes, values, prvStartTime, task, thread);
-	values.clear();
-
-	bool first_zero = true;
-	for (unsigned j = 1; j < outcount; j++)
-	{
-		for (unsigned c = 0; c < HWCcodes.size(); c++)
-		{
-			/* last value of outpoints[] may no be strictly 1 */
-			unsigned long long fixedAccumCounter = HWCtotals[c]/_outpoints[((c+1)*outcount)-1];
-
-			double deltaValue = _outpoints[c*outcount+j]-_outpoints[c*outcount+j-1];
-			if (deltaValue > 0)
-			{
-				types.push_back (HWCcodes[c]);
-				values.push_back (deltaValue*fixedAccumCounter);
-				first_zero = false;
-			}
-			else
-			{
-				if (!first_zero)
-				{
-					types.push_back (HWCcodes[c]);
-					values.push_back (0);
-				}
-			}
-		}
-
-		if (types.size() > 0)
-			DumpParaverLines (prv, types, values, prvStartTime+j*deltaTime, task, thread);
-
-		types.clear();
-		values.clear();
-	}
-
-	if (callstacksamples)
-	{
-		unsigned long long last_time = 0;
-		unsigned long long time;
-		unsigned i = 0;
-
-		deltaTime = prvEndTime - prvStartTime;
-
-		while (i < vcallstacksamples.size())
-		{
-			if (vcallstacksamples[i].Region == TranslateRegion(r->RegionName) &&
-					find(excludedinstances.begin(), excludedinstances.end(), vcallstacksamples[i].Instance) != excludedinstances.end())
-			{
-				time = prvStartTime+(float) (((float)deltaTime)*vcallstacksamples[i].Time);
-
-				vector<unsigned long long> newtypes, newvalues;
-				for (unsigned u = 0; u < vcallstacksamples[i].callerType.size(); u++)
-				{
-					newtypes.push_back (vcallstacksamples[i].callerType[u]+FOLDED_BASE);
-					newtypes.push_back (vcallstacksamples[i].callerlineType[u]+FOLDED_BASE);
-					newvalues.push_back (vcallstacksamples[i].caller[u]);
-					newvalues.push_back (vcallstacksamples[i].callerline[u]);
-				}
-
-				DumpParaverLines (prv, newtypes, newvalues, time, task, thread);
-	//			DumpParaverLines (prv, newtypes1, vcallstacksamples[i].caller, time, task, thread);
-	//			DumpParaverLines (prv, newtypes2, vcallstacksamples[i].callerline, time, task, thread);
-#if 0
-				if (time == last_time)
-				{
-					types.push_back (vcallstacksamples[i].Type+FOLDED_BASE);
-					values.push_back (vcallstacksamples[i].Value);
-				}
-				else
-				{
-					if (types.size() > 0)
-						DumpParaverLines (prv, types, values, last_time, task, thread);
-
-					types.clear();
-					values.clear();
-
-					types.push_back (vcallstacksamples[i].Type+FOLDED_BASE);
-					values.push_back (vcallstacksamples[i].Value);
-
-					last_time = time;
-				}
-#endif
-			}
-			i++;
-		}
-
-	//	if (types.size() > 0)
-	//		DumpParaverLines (prv, types, values, last_time, task, thread);
-	}
-}
-
-bool runLineFolding (int task, int thread, ofstream &points, ofstream &prv,
-	vector<Sample> &vsamples, string CounterID, bool anyRegion, unsigned RegionID,
-	unsigned outcount, unsigned long long prvStartTime, unsigned long long prvEndTime,
-	unsigned long long prvAccumCounter)
-{
-	unsigned long long type = (CounterID == "LINEID")?630000001:630000000;
-	bool found = false;
-
-	UNREFERENCED(outcount);
-	UNREFERENCED(prvStartTime);
-	UNREFERENCED(prvEndTime);
-	UNREFERENCED(prvAccumCounter);
-
-	vector<Sample>::iterator it = vsamples.begin();
-	for (; it != vsamples.end(); it++)
-	{
-		double time = prvStartTime + ((*it).Time * (prvEndTime - prvStartTime));
-
-		if (!anyRegion && (*it).CounterID == CounterID && (*it).Region == RegionID)
-		{
-			if (points.is_open())
-				points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << endl;
-
-			DumpParaverLine (prv, type, (*it).CounterValue, (unsigned long long) time,
-			  task, thread);
-			found = true;
-		}
-		else if (anyRegion && (*it).CounterID == CounterID)
-		{
-			if (points.is_open())
-				points << "INPOINTS " << (*it).Time << " " << (*it).CounterValue << endl;
-
-			DumpParaverLine (prv, type, (*it).CounterValue, (unsigned long long) time,
-			  task, thread);
-			found = true;
+			/* If not-first instance with this name */
+			InstanceContainer ic = Instances.at(Region);
+			ic.add (vInstances[u]);
+			Instances.at(Region) = ic;
 		}
 	}
+	cout << "Done!" << endl;
 
-	return found;
-}
-
-void doLineFolding (int task, int thread, string filePrefix, vector<Sample> &vsamples,
-	RegionInfo &regions, string metric)
-{
-	string task_str = common::convertInt (task);
-	string thread_str = common::convertInt (thread);
-
-	for (list<Region*>::iterator i = regions.foundRegions.begin();
-	     i != regions.foundRegions.end(); i++)
-	{
-		/* HSG hack */
-#if 0
-		if (i != regions.foundRegions.begin())
-			continue;
-#endif
-
-		string RegionName = (*i)->RegionName;
-		int regionIndex = TranslateRegion (RegionName);
-		//string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
-		string completefilePrefix = filePrefix + "." + common::removeSpaces(RegionName);
-
-		ofstream output_points;
-		if (generateGNUPLOTfiles)
-		{
-			output_points.open ((completefilePrefix+"."+metric+".points").c_str());
-			if (!output_points.is_open())
-			{
-				cerr << "Cannot create " << completefilePrefix+".points" << " file " << endl;
-				exit (-1);
-			}
-		}
-
-		ofstream output_prv;
-
-		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
-			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
-
-		if ((feedTraceRegion || feedTraceTimes || feedFirstOccurrence) && !output_prv.is_open())
-		{
-			cerr << "Cannot append to " << TraceToFeed << " file " << endl;
-			exit (-1);
-		}
-
-		bool done = runLineFolding (task, thread, output_points, output_prv,
-		  vsamples, metric, !SeparateValues, regionIndex, 0, (*i)->Tstart,
-		  (*i)->Tend, 0);
-
-		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
-			output_prv.close();
-
-		if (generateGNUPLOTfiles)
-			output_points.close();
-
-		if (!done)
-			remove (completefilePrefix.c_str());
-
-		if (generateGNUPLOTfiles)
-		{
-			GNUPLOTinfo *info = new GNUPLOTinfo;
-			info->done = done;
-			info->interpolated = false;
-			info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
-			info->fileprefix = completefilePrefix;
-			info->metric = metric;
-			info->nameregion = (*i)->RegionName;
-			info->mean_duration = 0;
-			info->mean_counter = 0;
-			GNUPLOT.push_back (info);
-		}
-	}
-}
-
-
-map<string,vector<double> > mbreakpoints;
-#if HAVE_CUBE
-void doInterpolation (int task, int thread, string filePrefix,
-	vector<Point> &vpoints, vector<Sample> &vsamples,
-	RegionInfo &regions, UIParaverTraceConfig *pcf, cube::Cube *cube,
-	bool writecube)
-#else
-void doInterpolation (int task, int thread, string filePrefix,
-	vector<Point> &vpoints, vector<Sample> &vsamples,
-	RegionInfo &regions, UIParaverTraceConfig *pcf)
-#endif
-{
-	vector<unsigned long long> HWCcodes, HWCtotals;
-	static bool first_run = true;
-	bool firstregion = true;
-
-	string task_str = common::convertInt (task);
-	string thread_str = common::convertInt (thread);
-
-	for (list<Region*>::iterator i = regions.foundRegions.begin();
-	     i != regions.foundRegions.end(); i++)
-	{
-		/* Avoid excluded phases, always odd phases? */
-		if ((*i)->Phase % 2 == 1)
-			continue;
-
-		string RegionName = (*i)->RegionName;
-
-		/* Did the user provide filters to region names? */
-		if (wantedRegions.size() > 0)
-		{
-			bool found = false;
-			for (unsigned u = 0; u < wantedRegions.size() && !found; u++)
-				found = RegionName.find(wantedRegions[u]) != string::npos;
-			if (!found)
-				continue;
-		}
-
-		int regionIndex = TranslateRegion (RegionName);
-
-		//string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
-		string completefilePrefix = filePrefix + "." + common::removeSpaces(RegionName);
-
-		ofstream output_points, output_kriger, output_slope, output_slope2;
-		ofstream output_pre_kriger, output_pre_slope;
-		ofstream output_segmented_slope;
-		if (generateGNUPLOTfiles)
-		{
-			output_points.open ((completefilePrefix+".points").c_str(), ios::out | ios::app);
-			if (!output_points.is_open())
-			{
-				cerr << "Error! Cannot create " << completefilePrefix+".points! Dying..." << endl;
-				exit (-1);
-			}
-			output_kriger.open ((completefilePrefix+".interpolation").c_str());
-			if (!output_kriger.is_open())
-			{
-				cerr << "Error! Cannot create " << completefilePrefix+".interpolation! Dying..." << endl;
-				exit (-1);
-			}
-			output_slope.open ((completefilePrefix+".slope").c_str());
-			if (!output_slope.is_open())
-			{
-				cerr << "Error! Cannot create " << completefilePrefix+".slope! Dying..." << endl;
-				exit (-1);
-			}
-
-			output_pre_kriger.open ((completefilePrefix+".pre_interpolation").c_str());
-			if (!output_kriger.is_open())
-			{
-				cerr << "Error! Cannot create " << completefilePrefix+".pre_interpolation! Dying..." << endl;
-				exit (-1);
-			}
-			output_pre_slope.open ((completefilePrefix+".pre_slope").c_str());
-			if (!output_slope.is_open())
-			{
-				cerr << "Error! Cannot create " << completefilePrefix+".pre_slope! Dying..." << endl;
-				exit (-1);
-			}
-
-			output_slope2.open ((completefilePrefix+".slope2").c_str());
-			if (!output_slope2.is_open())
-			{
-				cerr << "Error! Cannot create " << completefilePrefix+".slope2! Dying..." << endl;
-				exit (-1);
-			}
-			output_segmented_slope.open ((completefilePrefix+".segmentedslope").c_str());
-			if (!output_segmented_slope.is_open())
-			{
-				cerr << "Error! Cannot create " << completefilePrefix+".segmentedslope! Dying..." << endl;
-				exit (-1);
-			}
-
-			output_points.precision(10); output_points << fixed;
-			output_kriger.precision(10); output_kriger << fixed;
-			output_pre_kriger.precision(10); output_pre_kriger << fixed;
-			output_slope.precision(10); output_slope << fixed;
-			output_pre_slope.precision(10); output_pre_slope << fixed;
-			output_slope2.precision(10); output_slope << fixed;
-			output_segmented_slope.precision(10); output_segmented_slope << fixed;
-		}
-
-		unsigned long long target_num_points;
-		if (generateGNUPLOTfiles)
-		{
-			target_num_points = 1000;
-		}
-		else
-		{
-			/* SER menas Synthetic Events Rate */
-			unsigned long long SER_per_ns = 1000000000 / feedSyntheticEventsRate;
-
-			/* Add two (initial and end) */
-			target_num_points = 2 + ((*i)->Tend-(*i)->Tstart)/SER_per_ns;
-		}
-
-		double *outpoints = (double*) malloc (sizeof(double)*target_num_points*wantedCounters.size());
-		if (outpoints == NULL)
-		{
-			cerr << "Cannot allocate memory for outpoints! Dying..." << endl;
-			exit (-1);
-		}
-
-		bool data_dumped = false;
-		for (unsigned CID = 0; CID < wantedCounters.size(); CID++)
-		{
-			bool found = false;
-			string CounterID = wantedCounters[CID];
-			if (!generateGNUPLOTfiles && (feedTraceRegion || feedTraceTimes || feedFirstOccurrence))
-			{
-				for (unsigned idx = 0; idx < regions.HWCnames.size(); idx++)
-					if (regions.HWCnames[idx] == CounterID)
-					{
-						HWCcodes.push_back (regions.HWCcodes[idx] + FOLDED_BASE);
-						found = true;
-						break;
-					}
-				if (!found && i != regions.foundRegions.begin())
-				{
-					cerr << "ERROR! Cannot find counter " << CounterID << " within the PCF file " << endl;
-				}
-			}
-
-			double slope_factor = 0; /* computed as mean(number of hwc events) / mean (time) */
-			double this_mean_counter = 0;
-			double this_mean_duration = 0;
-			unsigned count_counter = 0, count_duration = 0;
-
-			for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
-				if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
-					{
-						if ((*it).TotalCounter > 0)
-						{
-							this_mean_counter += (*it).TotalCounter;
-							count_counter++;
-						}
-
-						if ((*it).Duration > 0)
-						{
-							this_mean_duration += (*it).Duration;
-							count_duration++;
-						}
-					}
-
-			if (count_counter > 0)
-				this_mean_counter = this_mean_counter / count_counter;
-
-			HWCtotals.push_back (this_mean_counter);
-
-			if (count_duration > 0)
-				this_mean_duration = this_mean_duration / count_duration;
-
-			if (this_mean_duration > 0)
-				slope_factor = this_mean_counter / (this_mean_duration / 1000);
-
-			if (FilterMinDuration)
-			{
-				if (this_mean_duration < MinDuration)
-					continue;
-			}
-
-			/* We're about to write some values for this region */
-			data_dumped = true;
-
-			int num_in_points;
-			double *prefilter_points = (double*) malloc (sizeof(double)*target_num_points);
-
-			bool EnergyCounterID = 
-				("PACKAGE_ENERGY:PACKAGE0" == CounterID) ||
-				("DRAM_ENERGY:PACKAGE0" == CounterID) ||
-				("PP0_ENERGY:PACKAGE0" == CounterID);
-
-			if (removeOutliers)
-				runInterpolation_prefilter (output_pre_kriger, output_pre_slope, vsamples, CounterID,
-					!SeparateValues, regionIndex, target_num_points, prefilter_points, slope_factor,
-					EnergyCounterID?kriger_nuget*10:kriger_nuget, prefilter_distance);
-
-			vector<double> qualities;
-			vector<double> breakpoints;
-
-			bool done = runInterpolation_R (completefilePrefix, output_points, output_kriger, output_slope, output_slope2,
-				output_segmented_slope, slope_factor, vsamples, CounterID, !SeparateValues,
-				regionIndex, target_num_points, num_in_points,
-				&outpoints[target_num_points*CID], qualities, breakpoints,
-				EnergyCounterID?kriger_nuget*10/10:kriger_nuget/10, prefilter_distance, prefilter_points);
-
-			/* bool done = runInterpolation (output_points, output_kriger, output_slope, output_slope2,
-				output_segmented_slope, slope_factor, vsamples, CounterID, !SeparateValues,
-				regionIndex, target_num_points, num_in_points,
-				&outpoints[target_num_points*CID], qualities, breakpoints,
-				EnergyCounterID?kriger_nuget*10/10:kriger_nuget/10, prefilter_distance, prefilter_points); */
-
-
-
-/*
-			if ((CounterID == "PAPI_TOT_INS" || CounterID == "PM_INST_CMPL") && generateGNUPLOTfiles)
-			{
-				cout << "Storing breakpoints for region " << RegionName << " (contains " << breakpoints.size() << ")" << endl;
-				mbreakpoints[RegionName] = breakpoints;
-			}
-*/
-
-			if (common::isMIPS(CounterID))
-			{
-				if (mbreakpoints.count(RegionName) == 0)
-				{
-					//vector<double> bpts, slps;
-					//Rbreakpoints::breakpoints (completefilePrefix+".points", CounterID, MaxSamples, 0.05, slps, bpts);
-					vector<double> nbpts;
-					for (unsigned u = 0; u < breakpoints.size(); u++)
-						nbpts.push_back (breakpoints[u]/breakpoints.back());
-					mbreakpoints[RegionName] = nbpts;
-				}
-				cout << "Number of breakpoints found = " << mbreakpoints[RegionName].size() << endl;
-			}
-
-			if (common::isMIPS(CounterID)
-			    && (feedTraceRegion || feedTraceTimes || feedFirstOccurrence))
-			{
-				if (!generateGNUPLOTfiles && (feedTraceRegion || feedTraceTimes || feedFirstOccurrence))
-				{
-					ofstream output_prv;
-	
-					output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
-					if (!output_prv.is_open())
-					{
-						cerr << "Cannot append to " << TraceToFeed << " file " << endl;
-						exit (-1);
-					}
-
-					if (firstregion)
-					{
-						DumpStartingParaverLine (output_prv);
-						firstregion = false;
-					}
-
-					WriteBreakpointsIntoTrace (task, thread, output_prv, *i, mbreakpoints[RegionName]);
-
-					output_prv.close();
-				}
-			}
-
-			data_dumped = done && data_dumped;
-
-			free (prefilter_points);
-
-			if (generateGNUPLOTfiles)
-			{
-				unsigned tmp = 0;
-
-				GNUPLOTinfo *info = new GNUPLOTinfo;
-				info->done = done;
-				info->interpolated = true;
-				info->title = "Task " + task_str + " Thread " + thread_str + " - " + RegionName;
-				info->fileprefix = completefilePrefix;
-				info->metric = CounterID;
-				info->nameregion = (*i)->RegionName;
-				info->inpoints = num_in_points;
-				info->qualities = qualities;
-				if (common::isMIPS(CounterID))
-					info->breakpoints = mbreakpoints[RegionName];
-				else
-					info->breakpoints.clear();
-				info->mean_counter = 0;
-				info->mean_duration = 0;
-				for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
-					if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
-					{
-						info->mean_counter += (*it).TotalCounter;
-						info->mean_duration += (*it).Duration;
-						tmp++;
-					}
-				if (tmp > 0)
-				{
-					info->mean_counter = info->mean_counter / tmp;
-					info->mean_duration = info->mean_duration / tmp;
-				}
-
-				if (FilterMinDuration)
-				{
-					if (info->mean_duration >= MinDuration)
-						GNUPLOT.push_back (info);
-				}
-				else 
-					GNUPLOT.push_back (info);
-			}
-
-#if HAVE_CUBE
-			if (writecube)
-			{
-				ofstream output_cube_launch;
-				output_cube_launch.open ((filePrefix+".launch").c_str(), ios::out|ios::app);
-				if (!output_cube_launch.is_open())
-				{
-					cerr << "Error! Cannot create " << completefilePrefix+".launch! Dying..." << endl;
-					exit (-1);
-				}
-
-				unsigned long long deltamS = ((*i)->Tend - (*i)->Tstart) / 1000000;
-				unsigned long long counter_deltamS = (deltamS > 0) ? ((*i)->HWCvalues[CID]/deltamS) : 0;
-
-				if (common::isMIPS(CounterID))
-				{
-					unsigned cnodeid = ca_callstackanalysis::do_analysis (filePrefix, "no_Occurrences", "no_Occurrences", 0,
-						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
-						vcallstacksamples, pcf, cube, sourceDirectory);
-
-					output_cube_launch << "no_Occurrences" << endl
-					  << "- cnode " << cnodeid << endl
-					  << "See all detailed counters" << endl
-					  << "gnuplot -persist %f." << RegionName << ".slopes.gnuplot" << endl;
-
-					cnodeid = ca_callstackanalysis::do_analysis (filePrefix, "duration", "duration", (*i)->Tend - (*i)->Tstart,
-						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
-						vcallstacksamples, pcf, cube, sourceDirectory);
-
-					output_cube_launch << "duration" << endl
-					  << "- cnode " << cnodeid << endl
-					  << "See all detailed counters" << endl
-					  << "gnuplot -persist %f." << RegionName << ".slopes.gnuplot" << endl;
-				}
-
-				unsigned cnodeid;
-
-				/*
-				unsigned cnodeid = ca_callstackanalysis::do_analysis (
-					CounterID, (*i)->HWCvalues[CID],
-					TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
-						vcallstacksamples, pcf, cube);
-				*/
-
-				unsigned CounterIDcode = common::lookForCounter (CounterID, pcf);
-				unsigned long long delta = (*i)->Tend - (*i)->Tstart;
-				unsigned long long Tend = (*i)->Tend + 5*delta/100;
-				unsigned long long Tstart = (5*delta/100 > (*i)->Tstart) ? 0 : (*i)->Tstart - 5*delta/100;
-
-				/*
-				output_cube_launch << CounterID << endl
-				  << "- cnode " << cnodeid << endl
-				  << "See detailed " << CounterID << endl
-				  << "gnuplot -persist %f." << RegionName << "." << CounterID << ".gnuplot" << endl
-				  << CounterID << endl
-				  << "- cnode " << cnodeid << endl
-				  << "See " << CounterID << " in Paraver timeline" << endl;
-				output_cube_launch << "folding-cube-call-paraver.sh " << TraceToFeed << " " << Tstart << " " << Tend << " " << FOLDED_BASE+CounterIDcode << " Folded_" << CounterID << " " << feedTraceFoldType_Value << " " << feedTraceFoldType_Value_Definition << endl;
-				*/
-
-				if (common::isMIPS(CounterID))
-					cnodeid = ca_callstackanalysis::do_analysis (filePrefix,
-						CounterID, "MIPS", counter_deltamS /* info->mean_counter */,
-						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
-						vcallstacksamples, pcf, cube, sourceDirectory);
-				else
-					cnodeid = ca_callstackanalysis::do_analysis (filePrefix,
-						CounterID, CounterID+"pms", counter_deltamS /* info->mean_counter */,
-						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
-						vcallstacksamples, pcf, cube, sourceDirectory);
-
-				string nCounterID;
-				if (common::isMIPS(CounterID))
-					nCounterID = "MIPS";
-				else
-					nCounterID = CounterID+"pms";
-
-				output_cube_launch << nCounterID << endl
-				  << "- cnode " << cnodeid << endl
-				  << "See detailed " << CounterID << endl
-				  << "gnuplot -persist %f." << RegionName << "." << CounterID << ".gnuplot" << endl
-				  << nCounterID << endl
-				  << "- cnode " << cnodeid << endl
-				  << "See " << CounterID << " in Paraver timeline" << endl;
-				output_cube_launch << "folding-cube-call-paraver.sh " << TraceToFeed << " " << Tstart << " " << Tend << " " << FOLDED_BASE+CounterIDcode << " Folded_" << CounterID << " " << feedTraceFoldType_Value << " " << feedTraceFoldType_Value_Definition << endl;
-
-				output_cube_launch.close();
-			}
-#endif
-
-		}
-
-		if (generateGNUPLOTfiles)
-		{
-			output_segmented_slope.close();
-			output_slope2.close();
-			output_pre_slope.close();
-			output_slope.close();
-			output_points.close();
-			output_pre_kriger.close();
-			output_kriger.close();
-		}
-
-		if (!generateGNUPLOTfiles && (feedTraceRegion || feedTraceTimes || feedFirstOccurrence))
-		{
-			ofstream output_prv;
-	
-			output_prv.open (TraceToFeed.c_str(), ios_base::out|ios_base::app);
-			if (!output_prv.is_open())
-			{
-				cerr << "Cannot append to " << TraceToFeed << " file " << endl;
-				exit (-1);
-			}
-
-			if (firstregion)
-			{
-				DumpStartingParaverLine (output_prv);
-				firstregion = false;
-			}
-
-			WriteResultsIntoTrace (task, thread, output_prv, *i, HWCcodes,
-				HWCtotals, target_num_points, true, outpoints);
-
-			output_prv.close();
-		}
-
-		if (!data_dumped)
-		{
-			remove ((completefilePrefix+".points").c_str());
-			remove ((completefilePrefix+".slope").c_str());
-			remove ((completefilePrefix+".interpolation").c_str());
-		}
-
-		HWCtotals.clear();
-		HWCcodes.clear();
-
-		free (outpoints);
-	}
-
-	first_run = false;
-}
-
-void dumpAccumulatedCounterData (int task, int thread, string filePrefix,
-	unsigned posCounterID, vector<Point> &vpoints, vector<Sample> &vsamples,
-	RegionInfo &regions)
-{
-	string task_str = common::convertInt (task);
-	string thread_str = common::convertInt (thread);
-	string CounterID = wantedCounters[posCounterID];
-
-	for (list<Region*>::iterator i = regions.foundRegions.begin();
-	     i != regions.foundRegions.end(); i++)
-	{
-		string RegionName = (*i)->RegionName;
-		unsigned regionIndex = TranslateRegion (RegionName);
-
-#if defined(DEBUG)
-		cout << "Treating region called " << RegionName << " (index = " << regionIndex << ")" << endl;
-#endif
-
-		//string completefilePrefix = filePrefix + "." + RegionName.substr (0, RegionName.find_first_of (":[]{}() "));
-		string completefilePrefix = filePrefix + "." + common::removeSpaces(RegionName);
-
-		ofstream output_data;
-		output_data.open ((completefilePrefix+"."+CounterID+".acc.points").c_str());
-
-		if (!output_data.is_open())
-		{
-			cerr << "Cannot create " << completefilePrefix+".acc.points" << " file " << endl;
-			exit (-1);
-		}
-
-		for (vector<Sample>:: iterator it = vsamples.begin(); it != vsamples.end(); it++)
-			if ((*it).CounterID == CounterID && (*it).Region == regionIndex)
-				output_data << (*it).DeTime << " " << (*it).DeCounterValue << " " << (*it).Instance << endl;
-
-		for (vector<Point>::iterator it = vpoints.begin(); it != vpoints.end(); it++)
-			if ((*it).CounterID == CounterID && (*it).RegionName == RegionName)
-				output_data << (*it).Duration << " " << (*it).TotalCounter << " " << (*it).Instance << endl;
-
-		output_data.close();
-	}
-}
-
-int ProcessParameters (int argc, char *argv[])
-{
-	if (argc < 2)
-	{
-		cerr << "Insufficient number of parameters" << endl
-		     << "Available options are: " << endl
-		     << "-remove-outliers [SIGMA]" << endl
-		     << "-counter ID"<< endl
-		     << "-separator-value [yes/no]" << endl
-		     << "-feed-region TYPE VALUE" << endl
-		     << "-feed-time TIME1 TIME2" << endl
-		     << "-feed-first-occurrence" << endl
-		     << "-do-line-folding [yes/no]" << endl
-		     << "-generate-gnuplot [yes/no]" << endl
-		     << "-min-duration [T in ms]" << endl
-		     << "-max-samples NUM" << endl
-		     << "-kriger-nuget VALUE (default = " << kriger_nuget << ")" << endl
-		     << "-prefilter-distance VALUE (default = " << prefilter_distance << ")" << endl
-		     << "-synthetic-events-rate NUM (rate, num events per second) [1000 if not given]" << endl
-		     << "-source DIR" << endl
-		     << endl;
-		exit (-1);
-	}
-
-	for (int i = 1; i < argc-1; i++)
-	{
-		if (strcmp ("-source", argv[i]) == 0)
-		{
-			i++;
-			sourceDirectory = argv[i];
-			if (sourceDirectory[0] != '/')
-			{
-				char buffer[PATH_MAX];
-				char *ptr;
-				ptr = getcwd (buffer, sizeof(buffer));
-				sourceDirectory = string(ptr)+"/"+sourceDirectory;
-			}
-			if (common::existsDir (sourceDirectory))
-				common::CleanMetricsDirectory (sourceDirectory);
-			else
-				cerr << "Cannot find directory " << sourceDirectory << endl;
-			continue;
-		}
-		if (strcmp ("-synthetic-events-rate", argv[i]) == 0)
-		{
-			i++;
-			feedSyntheticEventsRate = atoll (argv[i]);
-			if (feedSyntheticEventsRate > 1000000000)
-			{
-				cerr << "Invalid -synthetic-events-rate (should be > 0 and < 1000000000)" << endl;
-				exit (-1);
-			}
-			continue;
-		}
-		if (strcmp ("-generate-gnuplot", argv[i]) == 0)
-		{
-			i++;
-			generateGNUPLOTfiles = strcmp (argv[i], "yes") == 0;
-			continue;
-		}
-		if (strcmp ("-min-duration", argv[i]) == 0)
-		{
-			unsigned tmp;
-			i++;
-			FilterMinDuration = true;
-			tmp = atoi(argv[i]);
-			if (tmp == 0)
-			{
-				cerr << "Invalid -min-duration value (should be > 0)" << endl;
-				exit (-1);
-			}
-			MinDuration = ((double)tmp) * 1000000;
-			continue;
-		}
-		if (strcmp ("-max-samples", argv[i]) == 0)
-		{
-			i++;
-			MaxSamples = atoi(argv[i]);
-			if (MaxSamples == 0)
-			{
-				cerr << "Invalid -max-samples value (should be >0)" << endl;
-				exit (-1);
-			}
-			continue;
-		}
-		if (strcmp ("-separator-value",  argv[i]) == 0)
-		{
-			i++;
-			SeparateValues = strcmp (argv[i], "yes") == 0;
-			continue;
-		}
-		if (strcmp ("-do-line-folding", argv[i]) == 0)
-		{
-			i++;
-			option_doLineFolding = strcmp (argv[i], "yes") == 0;
-			continue;
-		}
-		if (strcmp ("-counter", argv[i]) == 0)
-		{
-			i++;
-			if (i < argc-1)
-				wantedCounters.push_back (string(argv[i]));
-			continue;
-		}
-		if (strcmp ("-region", argv[i]) == 0)
-		{
-			i++;
-			if (i < argc-1)
-				wantedRegions.push_back (string(argv[i]));
-			continue;
-		}
-		if (strcmp ("-remove-outliers", argv[i]) == 0)
-		{
-			i++;
-			removeOutliers = true;
-			if (atof (argv[i]) == 0.0f)
-			{
-				cerr << "Invalid sigma " << argv[i] << endl;
-				exit (-1);
-			}
-			else
-				NumOfSigmaTimes = atof(argv[i]);
-			continue;
-		}
-		if (strcmp ("-kriger-nuget", argv[i]) == 0)
-		{
-			i++;
-			if (atof (argv[i]) == 0.0f)
-			{
-				cerr << "Invalid nuget " << argv[i] << endl;
-				exit (-1);
-			}
-			else
-				kriger_nuget = atof(argv[i]);
-			continue;
-		}
-		if (strcmp ("-prefilter-distance", argv[i]) == 0)
-		{
-			i++;
-			if (atof (argv[i]) == 0.0f)
-			{
-				cerr << "Invalid prefilter distance " << argv[i] << endl;
-				exit (-1);
-			}
-			else
-				prefilter_distance = atof(argv[i]);
-			continue;
-		}
-		if (strcmp ("-feed-region", argv[i]) == 0)
-		{
-			feedTraceRegion = true;
-			feedTraceTimes = false;
-			feedFirstOccurrence = false;
-			i++;
-			feedTraceRegion_Type = atoll (argv[i]);
-			i++;
-			feedTraceRegion_Value = atoll (argv[i]);
-
-			if (feedTraceRegion_Type == 0 || feedTraceRegion_Value == 0)
-			{
-				cerr << "Invalid -feed-region type/value pair" << endl;
-				exit (-1);
-			}
-			continue;
-		}
-		if (strcmp ("-feed-time", argv[i]) == 0)
-		{
-			feedTraceTimes = true;
-			feedTraceRegion = false;
-			feedFirstOccurrence = false;
-			i++;
-			feedTraceTimes_Begin = atoll (argv[i]);
-			i++;
-			feedTraceTimes_End = atoll (argv[i]);
-
-			if (feedTraceTimes_Begin == 0 || feedTraceTimes_End == 0)
-			{
-				cerr << "Invalid -feed-time TIME1 / TIME2 pair" << endl;
-				exit (-1);
-			}
-			continue;
-		}
-		if (strcmp ("-feed-first-occurrence", argv[i]) == 0)
-		{
-			feedTraceRegion = false;
-			feedTraceTimes = false;
-			feedFirstOccurrence = true;
-			continue;
-		}
-		else
-			cout << "Misunderstood parameter: " << argv[i] << endl;
-	}
-
-	return argc-1;
-}
-
-void GetTaskThreadFromFile (string file, unsigned *task, unsigned *thread)
-{
-	string tmp;
-
-	tmp = file.substr (file.rfind ('.')+1, string::npos);
-	if (tmp.length() > 0)
-	{
-		if (atoi (tmp.c_str()) < 0)
-		{
-			cerr << "Invalid thread marker in file " << file << endl;
-			exit (-1);
-		}
-		else
-			*thread = atoi (tmp.c_str());
-	}
+	if (splitInGroups)
+		cout << "Detecting groups in instances ... ";
 	else
-	{
-		cerr << "Invalid thread marker in file " << file << endl;
-		exit (-1);
-	}
+		cout << "Moving instances to group 0 ... ";
 
-	tmp = file.substr (file.rfind ('.', file.rfind('.')-1)+1, file.rfind ('.') - (file.rfind ('.', file.rfind('.')-1)+1));
-	if (tmp.length() > 0)
-	{
-		if (atoi (tmp.c_str()) < 0)
+	for (it = regions.begin(); it != regions.end(); it++)
+		if (Instances.count(*it) > 0)
 		{
-			cerr << "Invalid task marker in file " << file << endl;
-			exit (-1);
+			InstanceContainer ic = Instances.at(*it);
+			ic.splitInGroups (splitInGroups);
+			Instances.at(*it) = ic;
 		}
-		else
-			*task = atoi (tmp.c_str());
-	}
-	else
+	cout << "Done!" << endl;
+
+	cout << fixed << setprecision (3) << endl << "Statistics for the extracted data" << endl << "-----" << endl;
+
+	for (it = regions.begin(); it != regions.end(); it++)
 	{
-		cerr << "Invalid task marker in file " << file << endl;
-		exit (-1);
+		if (Instances.count(*it) == 0)
+			continue;
+
+		cout << "Analysis for region named : " << (*it) << endl;
+
+		InstanceContainer ic = Instances.at(*it);
+
+		cout << " No. of Groups for this region : " << ic.numGroups() << endl;
+		for (unsigned u = 0; u < ic.numGroups(); u++)
+		{
+			cout << " Analysis for group " << u+1 << endl;
+
+			InstanceGroup *ig = ic.InstanceGroups[u];
+
+			cout << "  No. of Instances = " << ig->numInstances() << " for a total of " << ig->numSamples() << " samples";
+			if (StatisticType == STATISTIC_MEAN)
+			{
+				double mean = ig->mean(), stdev = ig->stdev();
+				double uplimit = mean + NumOfSigmaTimes * stdev;
+				double lolimit = mean - NumOfSigmaTimes * stdev;
+
+				cout << ", mean = " << mean << " stdev = " << stdev << endl;
+				unsigned total = ig->numInstances();
+
+				/* Remove while traversing */
+				unsigned within = 0;
+				vector<Instance*> vinstances = ig->getInstances();
+				vector<Instance*>::iterator iter = vinstances.begin();
+				while (iter != vinstances.end())
+				{
+					if ((*iter)->duration >= lolimit && (*iter)->duration <= uplimit)
+					{
+						within++;
+						iter++;
+					}
+					else
+					{
+						ig->moveToExcluded (*iter);
+						iter = vinstances.erase (iter);
+					}
+				}
+
+				mean = ig->mean();
+				stdev = ig->stdev();
+				cout << "  No. of Instances within mean+/-" << fixed << setprecision (2)
+				  << NumOfSigmaTimes << "*stdev = [ " << lolimit << " , " << uplimit
+				  << " ] = " << within << " ~ " << (within*100)/total
+				  << "% of the population, mean = " << mean << " stdev = " << stdev
+				  << endl;
+			}
+			else if (StatisticType == STATISTIC_MEDIAN)
+			{
+				double median = ig->median(), mad = ig->MAD();
+				double uplimit = median + NumOfSigmaTimes * mad;
+				double lolimit = median - NumOfSigmaTimes * mad;
+
+				cout << ", median = " << median << " mad = " << mad << endl;
+				unsigned total = ig->numInstances();
+
+				/* Count & Remove while traversing */
+				unsigned within = 0;
+				vector<Instance*> vinstances = ig->getInstances();
+				vector<Instance*>::iterator iter = vinstances.begin();
+				while (iter != vinstances.end())
+				{
+					if ((*iter)->duration >= lolimit && (*iter)->duration <= uplimit )
+					{
+						within++;
+						iter++;
+					}
+					else
+					{
+						ig->moveToExcluded (*iter);
+						iter = vinstances.erase (iter);
+					}
+				}
+
+				median = ig->median();
+				mad = ig->MAD();
+				cout << "  No. of Instances within median +/-" << fixed << setprecision (2)
+				  << NumOfSigmaTimes << "*mad = [ " << lolimit << " , " << uplimit << " ] = "
+			      << within << " ~ " << (within*100)/total << "% of the population, median = "
+				  << median << " mad = " << mad << endl;
+			}
+		}
+		cout << "-----" << endl;
 	}
+	cout << endl;
 }
 
 void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
-	vector<string> &wantedCounters)
+	set<string> &wantedCounters)
 {
-	bool any_found;
 	ofstream PCFfile;
 
 	PCFfile.open (file.c_str(), ios_base::out|ios_base::app);
@@ -2370,313 +240,573 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		exit (-1);
 	}
 
+	vector<unsigned> vtypes = pcf->getEventTypes();
+	vector<unsigned> caller;
+	vector<unsigned> callerline;
+	vector<unsigned> callerlineast;
+	vector<unsigned> counters;
+	for (unsigned u = 0; u < vtypes.size(); u++)
+		if ( vtypes[u] >= EXTRAE_SAMPLE_CALLER_MIN && vtypes[u] <= EXTRAE_SAMPLE_CALLER_MAX )
+			caller.push_back (vtypes[u]);
+		else if ( vtypes[u] >= EXTRAE_SAMPLE_CALLERLINE_MIN && vtypes[u] <= EXTRAE_SAMPLE_CALLERLINE_MAX )
+			callerline.push_back (vtypes[u]);
+		else if ( vtypes[u] >= EXTRAE_SAMPLE_CALLERLINE_AST_MIN && vtypes[u] <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX )
+			callerlineast.push_back (vtypes[u]);
+
 	PCFfile << endl << "EVENT_TYPE" << endl;
 	PCFfile << "0 " << FOLDED_BASE << " Folded phase" << endl;
 
-	any_found = false;
-	for (unsigned i = 30000000; i < 30000099 && !any_found; i++)
-	{
-		try
-		{ any_found = pcf->getEventType(i) != ""; }
-		catch(...)
-		{}
-	}
-
-	if (any_found)
+	if (caller.size() > 0)
 	{
 		PCFfile << endl << "EVENT_TYPE" << endl;
-		for (unsigned i = 30000000; i < 30000099; i++)
-		{
-			try
-			{
-				if (pcf->getEventType(i) != "")
-					PCFfile << "0 " << FOLDED_BASE + i << " Folded sampling caller level " << i - 30000000 << endl;
-			}
-			catch (...)
-			{}
-		}
-		PCFfile << "VALUES" << endl;
-		PCFfile << "0 " << pcf->getEventValue(30000000, 0) << endl;
-		PCFfile << "1 " << pcf->getEventValue(30000000, 1) << endl;
+		for (unsigned u = 0; u < caller.size(); u++)
+			PCFfile << "0 " << FOLDED_BASE + caller[u] << " Folded sampling caller level " << caller[u] - EXTRAE_SAMPLE_CALLER_MIN << endl;
 
-		vector<unsigned> v = pcf->getEventValues(30000000);
-		for (unsigned i = 2; i < v.size(); i++)
-			PCFfile << i << " " << pcf->getEventValue(30000000, i) << endl;
+		PCFfile << "VALUES" << endl;
+		vector<unsigned> v = pcf->getEventValues(EXTRAE_SAMPLE_CALLER_MIN);
+		for (unsigned i = 0; i < v.size(); i++)
+			PCFfile << i << " " << pcf->getEventValue(EXTRAE_SAMPLE_CALLER_MIN, v[i]) << endl;
 		PCFfile << endl;
 	}
+	if (callerline.size() > 0)
+	{
+		PCFfile << endl << "EVENT_TYPE" << endl;
+		for (unsigned u = 0; u < callerline.size(); u++)
+			PCFfile << "0 " << FOLDED_BASE + callerline[u] << " Folded sampling caller line level " << callerline[u] - EXTRAE_SAMPLE_CALLERLINE_MIN << endl;
 
-	any_found = false;
-	for (unsigned i = 30000100; i < 30000199; i++)
-	{
-		try
-		{ any_found = pcf->getEventType(i) != ""; }
-		catch (...)
-		{}
-	}
-	if (any_found)
-	{
-		PCFfile << endl <<  "EVENT_TYPE" << endl;
-		for (unsigned i = 30000100; i < 30000199; i++)
-		{
-			try
-			{
-				if (pcf->getEventType(i) != "")
-					PCFfile << "0 " << FOLDED_BASE + i << " Folded sampling caller line level " << i - 30000100 << endl;
-			}
-			catch (...)
-			{}
-		}
 		PCFfile << "VALUES" << endl;
-		PCFfile << "0 " << pcf->getEventValue(30000100, 0) << endl;
-		PCFfile << "1 " << pcf->getEventValue(30000100, 1) << endl;
+		vector<unsigned> v = pcf->getEventValues(EXTRAE_SAMPLE_CALLERLINE_MIN);
+		for (unsigned i = 0; i < v.size(); i++)
+			PCFfile << i << " " << pcf->getEventValue(EXTRAE_SAMPLE_CALLERLINE_MIN, v[i]) << endl;
+		PCFfile << endl;
+	}
+	if (callerlineast.size() > 0)
+	{
+		PCFfile << endl << "EVENT_TYPE" << endl;
+		for (unsigned u = 0; u < callerlineast.size(); u++)
+			PCFfile << "0 " << FOLDED_BASE + callerlineast[u] << " Folded sampling caller line AST level " << callerlineast[u] - EXTRAE_SAMPLE_CALLERLINE_AST_MIN << endl;
 
-		vector<unsigned> v = pcf->getEventValues(30000100);
-		for (unsigned i = 2; i < v.size(); i++)
-			PCFfile << i << " " << pcf->getEventValue(30000100, i) << endl;
-
+		PCFfile << "VALUES" << endl;
+		vector<unsigned> v = pcf->getEventValues(EXTRAE_SAMPLE_CALLERLINE_AST_MIN);
+		for (unsigned i = 0; i < v.size(); i++)
+			PCFfile << i << " " << pcf->getEventValue(EXTRAE_SAMPLE_CALLERLINE_AST_MIN, v[i]) << endl;
 		PCFfile << endl;
 	}
 
 	PCFfile << endl << "EVENT_TYPE" << endl;
-	for (unsigned i = 0 ; i < wantedCounters.size(); i++)
+	set<string>::iterator it = wantedCounters.begin();
+	for ( ; it != wantedCounters.end(); it++ )
 	{
-		unsigned long long tmp = common::lookForCounter (wantedCounters[i], pcf);
+		string cname = *it;
+		unsigned long long tmp = common::lookForCounter (cname, pcf);
 		if (tmp != 0)
-			PCFfile << "0 " << FOLDED_BASE + tmp << " Folded " << wantedCounters[i] << endl;
+			PCFfile << "0 " << FOLDED_BASE + tmp << " Folded " << *it << endl;
 	}
 	PCFfile << endl;
-		
 
 	PCFfile.close();
 }
 
-int main (int argc, char *argv[])
+int ProcessParameters (int argc, char *argv[])
 {
-	vector<string> allcounters;
-	vector<unsigned long long> phasetypes;
-	UIParaverTraceConfig *pcf = NULL;
-	RegionInfo regions;
-	unsigned long long prv_out_start, prv_out_end;
-	unsigned task, thread;
-	int res = ProcessParameters (argc, argv);
+#define CHECK_ENOUGH_ARGS(N, argc, i) \
+	(((argc) - 1 - (i)) > (N))
 
-#if HAVE_CUBE
-  cube::Cube cube;
-
-
-	if (getenv("FOLDING_HOME") == NULL)
+	if (argc < 2)
 	{
-		cerr << "FOLDING_HOME environment variable is not set!" << endl;
-		return -1;
+		cerr << "Insufficient number of parameters" << endl
+		     << "Available options are: " << endl
+		     << "-split-in-groups O  [where O = yes by default]" << endl
+		     << "-use-object PTASK.TASK.THREAD [where PTASK, TASK and THREAD = * by default" << endl
+		     << "-use-median" << endl
+		     << "-use-mean" << endl
+		     << "-sigma-times X      [where X = 2.0 by default]" << endl
+		     << "-feed-time TIME1 TIME2 PTASK.TASK.THREAD" << endl
+		     << "-feed-first-occurrence PTASK.TASK.THREAD" << endl
+		     << "-max-samples NUM" << endl
+		     << "-max-samples-distance NUM" << endl
+		     << "-region R           [where R = all by default]" << endl
+		     << "-counter C          [where C = all by default]" << endl
+		     << "-interpolation " << endl
+			 << "          kriger STEPS NUGET PREFILTER?" << endl
+			 << " [DEFAULT kriger 1000 0.0001 no]" << endl
+		     << endl;
+		exit (-1);
 	}
 
-  // Build system resource tree
-  cube::Machine* mach  = cube.def_mach("Machine", "");
-  cube::Node*    node  = cube.def_node("Node", mach);
-  cube::Process* proc0 = cube.def_proc("Process 0", 0, node);
-  cube::Thread*  thrd0 = cube.def_thrd("Thread 0", 0, proc0);
-
-  int ndims = 1;
-  vector<long> dimv;
-  vector<bool> periodv;
-	dimv.push_back (1);
-	periodv.push_back (true);
-  cube::Cartesian* cart = cube.def_cart(ndims, dimv, periodv);
-
-  vector<long> coord0;
-  coord0.push_back(0);
-  cube.def_coords(cart, (cube::Sysres*) thrd0, coord0);
-
-	cube.def_met("# Occurrences", "no_Occurrences", "INTEGER",
-	  "occ", "", "", "Number of occurrences of the callstack", NULL);
-
-	cube.def_met("Duration", "duration", "INTEGER",
-	  "occ", "", "", "Duration of each region", NULL);
-
-#endif
-
-	GetTaskThreadFromFile (argv[res], &task, &thread);
-
-	ifstream InputFile (argv[res]);
-	if (!InputFile.is_open())
+	for (int i = 1; i < argc-1; i++)
 	{
-		cerr << "Unable to open " << argv[res] << endl;
-		return -1;
+		if (strcmp ("-split-in-groups", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -split-in-groups parameter" << endl;
+				exit (-1);
+			}
+			i++;
+			splitInGroups = strcasecmp (argv[i], "yes") == 0;
+			continue;
+		}
+		if (strcmp ("-use-object", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -use-object parameter" << endl;
+				exit (-1);
+			}
+			i++;
+			string o = argv[i];
+			unsigned ptask, task, thread;
+			bool aptask, atask, athread;
+			if (!common::decomposePtaskTaskThreadWithAny (o, ptask, aptask, task, atask, thread, athread))
+			{
+				cerr << "Cannot translate " << o << " into Paraver object triplet application.task.thread" << endl;
+				exit (-1);
+			}
+			if (objectsSelected != NULL)
+				delete objectsSelected;
+
+			objectsSelected = new ObjectSelection (ptask, aptask, task, atask,
+			  thread, athread);
+			continue;
+		}
+		if (strcmp ("-use-median", argv[i]) == 0)
+		{
+			StatisticType = STATISTIC_MEDIAN;
+			continue;
+		}
+		if (strcmp ("-use-mean", argv[i]) == 0)
+		{
+			StatisticType = STATISTIC_MEAN;
+			continue;
+		}
+		if (strcmp ("-counter", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -counter parameter" << endl;
+				exit (-1);
+			}
+			i++;
+			if (i < argc-1)
+				wantedCounters.insert (string(argv[i]));
+			continue;
+		}
+		if (strcmp ("-region", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -region parameter" << endl;
+				exit (-1);
+			}
+			i++;
+			if (i < argc-1)
+				wantedRegions.insert (string(argv[i]));
+			continue;
+		}
+		if (strcmp ("-sigma-times", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -sigma-times parameter" << endl;
+				exit (-1);
+			}
+
+			i++;
+			if (atof (argv[i]) == 0.0f)
+			{
+				cerr << "Invalid sigma " << argv[i] << endl;
+				exit (-1);
+			}
+			else
+				NumOfSigmaTimes = atof(argv[i]);
+			continue;
+		}
+		if (strcmp ("-max-samples", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -max-samples parameter" << endl;
+				exit (-1);
+			}
+
+			SampleSelectorFirst *ssf = new SampleSelectorFirst;
+			int numsamples;
+
+			i++;
+			if (atoi (argv[i]) == 0)
+			{
+				cerr << "Invalid -max-samples" << argv[i] << endl;
+				exit (-1);
+			}
+			else
+				numsamples = atoi(argv[i]);
+
+			ssf->configure (numsamples);
+			ss = ssf;
+			continue;
+		}
+		if (strcmp ("-max-samples-distance", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -max-samples-distance parameter" << endl;
+				exit (-1);
+			}
+
+			SampleSelectorDistance *ssd = new SampleSelectorDistance;
+			int numsamples;
+
+			i++;
+			if (atoi (argv[i]) == 0)
+			{
+				cerr << "Invalid -max-samples-distance" << argv[i] << endl;
+				exit (-1);
+			}
+			else
+				numsamples = atoi(argv[i]);
+
+			ssd->configure (numsamples);
+			ss = ssd;
+			continue;
+		}
+		if (strcmp ("-feed-time", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(3, argc, i))
+			{
+				cerr << "Insufficient arguments for -feed-time parameter" << endl;
+				exit (-1);
+			}
+
+			feedTraceType = FEED_TIME;
+			i++;
+			feedTraceTimes_Begin = atoll (argv[i]);
+			i++;
+			feedTraceTimes_End = atoll (argv[i]);
+			if (feedTraceTimes_Begin == 0 || feedTraceTimes_End == 0)
+			{
+				cerr << "Invalid -feed-time TIME1 / TIME2 pair" << endl;
+				exit (-1);
+			}
+
+			i++;
+			string o = argv[i];
+			unsigned ptask, task, thread;
+			if (!common::decomposePtaskTaskThread (o, ptask, task, thread))
+			{
+				cerr << "Cannot translate " << o << " into Paraver object triplet application.task.thread for -feed-time" << endl;
+				exit (-1);
+			}
+			objectToFeed = new ObjectSelection (ptask, task, thread);
+
+			continue;
+		}
+		if (strcmp ("-feed-first-occurrence", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -feed-first-occurrence parameter" << endl;
+				exit (-1);
+			}
+
+			feedTraceType = FEED_FIRST_OCCURRENCE;
+
+			i++;
+			string o = argv[i];
+			unsigned ptask, task, thread;
+			if (!common::decomposePtaskTaskThread (o, ptask, task, thread))
+			{
+				cerr << "Cannot translate " << o << " into Paraver object triplet application.task.thread for -feed-time" << endl;
+				exit (-1);
+			}
+			objectToFeed = new ObjectSelection (ptask, task, thread);
+
+			continue;
+		}
+		if (strcmp ("-interpolation", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -interpolation parameter" << endl;
+				exit (-1);
+			}
+
+			i++;
+			if (strcmp (argv[i], "kriger") == 0)
+			{
+				if (!CHECK_ENOUGH_ARGS(3, argc, i))
+				{
+					cerr << "Insufficient arguments for -interpolation kriger parameter" << endl;
+					exit (-1);
+				}
+
+				unsigned NSTEPS;
+				double NUGET;
+				i++;
+				if ((NSTEPS = atoi (argv[i])) == 0)
+				{
+					cerr << "Invalid num steps for KRIGER interpolation (" << argv[i] << ")" << endl;
+					exit (-1);
+				}
+				i++;
+				if ((NUGET = atof (argv[i])) == 0)
+				{
+					cerr << "Invalid nuget for KRIGER interpolation (" << argv[i] << ")" << endl;
+					exit (-1);
+				}
+				i++;
+				string strprefilter;
+				if (strcasecmp (argv[i], "yes") == 0)
+					strprefilter = "yes";
+
+				cout << "Selected interpolation algorithm: Kriger (steps = " << NSTEPS << ", nuget = " << NUGET << ", prefilter = " << strprefilter << ")" << endl;
+				InterpolationKriger *in = new InterpolationKriger (NSTEPS, NUGET, strprefilter == "yes");
+				interpolation = in;
+			}
+			continue;
+		}
+
+		cout << "Misunderstood parameter: " << argv[i] << endl;
 	}
-
-	cout << "Calculating stats" << endl;
-	CalculateStatsFromFile (InputFile, !SeparateValues, allcounters);
-
-	/* If the user specifies -counter all, substitute the the wanted counters
-	   by all the counters found */
-	if (wantedCounters.size() > 0)
-		if (find(wantedCounters.begin(), wantedCounters.end(), "all") != wantedCounters.end())
-			wantedCounters = allcounters;
 
 	if (wantedCounters.size() == 0)
+		wantedCounters.insert (string("all"));
+
+	if (wantedRegions.size() == 0)
+		wantedRegions.insert (string("all"));
+
+	return argc-1;
+#undef CHECK_ENOUGH_ARGS
+}
+
+int main (int argc, char *argv[])
+{
+	set<string> allcounters, counters;
+	set<string> allregions, regions;
+	map<string, InstanceContainer> Instances;
+	map<string, InstanceContainer> excludedInstances;
+	vector<Instance*> vInstances;
+	vector<Instance*> feedInstances;
+
+	objectsSelected = new ObjectSelection;
+
+	int res = ProcessParameters (argc, argv);
+
+	ReadExtractData::ReadDataFromFile (argv[res], objectsSelected,
+	  allcounters, allregions, vInstances, objectToFeed, feedInstances);
+
+	if (wantedRegions.find (string("all")) != wantedRegions.end())
 	{
-		cerr << "WARNING! No counters given. Applying the process to all the counters found." << endl;
-		wantedCounters = allcounters;
-	}
-
-	
-#if HAVE_CUBE
-	for (unsigned u = 0; u < wantedCounters.size(); u++)
-	{
-		// cube.def_met (wantedCounters[u], wantedCounters[u], "FLOAT", "occ", "", "", "", NULL);
-
-		if (common::isMIPS(wantedCounters[u]))
-			cube.def_met ("MIPS", "MIPS", "FLOAT", "occ", "", "", "", NULL);
-		else
-			cube.def_met (wantedCounters[u]+"/ms", wantedCounters[u]+"pms", "FLOAT", "occ", "", "", "", NULL);
-	}
-#endif
-
-	string cFile = argv[res];
-	cFile = cFile.substr (0, cFile.rfind (".extract")) + ".control";
-
-	ifstream controlFile (cFile.c_str());
-	if (!controlFile.is_open())
-	{
-		if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
-		{
-			cerr << "Error! Cannot open file " << cFile << " which is needed to feed the tracefile" << endl;
-			exit (-1);
-		}
-		else
-			cerr << "Warning! Cannot open file " << cFile << endl;
+		set<string>::iterator it = allregions.begin();
+		for (; it != allregions.end(); it++)
+			regions.insert (*it);
 	}
 	else
 	{
-		controlFile >> TraceToFeed;
-		controlFile >> feedTraceFoldType_Value;
-		controlFile >> feedTraceFoldType_Value_Definition;
-
-		string pcffile = TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf");
-		pcf = new UIParaverTraceConfig;
-		pcf->parse (pcffile);
+		set<string>::iterator it = allregions.begin();
+		for (; it != allregions.end(); it++)
+		{
+			set<string>::iterator it2 = wantedRegions.begin();
+			for (; it2 != wantedRegions.end(); it2++)
+				if ((*it).find (*it2) != string::npos)
+				{
+					regions.insert (*it);
+					break;
+				}
+		}
 	}
 
-	if (feedTraceRegion || feedTraceTimes || feedFirstOccurrence)
+	if (regions.size() == 0)
 	{
+		cerr << "Error! No regions selected through filters. Available regions in the extracted data are: " << endl;
+		set<string>::iterator it;
+		for (it = allregions.begin(); it != allregions.end(); it++)
+			if (it != allregions.begin())
+				cout << ", " << *it;
+			else
+				cout << *it;
+		cout << endl;
+		return -1;
+	}
+
+	if (wantedCounters.find (string("all")) == wantedCounters.end())
+	{
+		/* If all is not given, check for those counters that actually exist in the
+		  extracted data */
+		set<string>::iterator it;
+		for (it = wantedCounters.begin(); it != wantedCounters.end(); it++)
+			if (allcounters.find (*it) != allcounters.end())
+				counters.insert (*it);
+			else
+				cout << "WARNING! Counter " << *it << " was not extracted from the tracefile!" << endl;
+	}
+	else
+		counters = allcounters;
+
+	if (counters.size() == 0)
+	{
+		cerr << "Error! No counters given. Available counters in the extracted data are: " << endl;
+		set<string>::iterator it;
+		for (it = allcounters.begin(); it != allcounters.end(); it++)
+			if (it != allcounters.begin())
+				cout << ", " << *it;
+			else
+				cout << *it;
+		cout << endl;
+		return -1;
+	}
+
+	GroupFilterAndDumpStatistics (regions, vInstances, Instances, excludedInstances);
+
+	string cFile = argv[res];
+	string cFilePrefix = cFile.substr (0, cFile.rfind (".extract"));
+
+	set<string>::iterator it;
+	bool first = true;
+	for (it = regions.begin(); it != regions.end(); it++)
+	{
+		if (Instances.count(*it) == 0)
+			continue;
+
+		InstanceContainer ic = Instances.at(*it);
+
+		if (first)
 		{
-			int numPhaseTypes;
-			controlFile >> numPhaseTypes;
-			for (int i = 0; i < numPhaseTypes; i++)
+			ic.removePreviousData (objectsSelected, cFilePrefix);
+			ic.InstanceGroups[0]->removePreviousData (objectsSelected, cFilePrefix);
+			first = false;
+		}
+
+		if (interpolation->preFilter())
+		{
+			cout << "Prefilter Interpolation [" << interpolation->details() << 
+			  "] (region = " << *it << "), #out steps = 1000" << endl;
+			for (unsigned u = 0; u < ic.numGroups(); u++)
 			{
-				unsigned long long phasetype;
-				controlFile >> phasetype;
-				phasetypes.push_back (phasetype);
+				cout << " Processing group " << u+1 << " of " << ic.numGroups() << endl;
+				interpolation->pre_interpolate (NumOfSigmaTimes, ic.InstanceGroups[u], counters);
 			}
 		}
 
-		controlFile.close ();
+		ic.dumpGroupData (objectsSelected, cFilePrefix);
+		ic.gnuplot (objectsSelected, cFilePrefix);
 
-		ifstream test (TraceToFeed.c_str());
-		if (!test.is_open())
+		cout << "Interpolation [" << interpolation->details() << "] (region = " <<
+		  *it << "), #out steps = " << interpolation->getSteps() << endl;
+		for (unsigned u = 0; u < ic.numGroups(); u++)
 		{
-			cerr << "Error! Cannot open file " << TraceToFeed << endl;
-			exit (-1);
+			cout << " * Processing group " << u+1 << " of " << ic.numGroups() << endl;
+			ss->Select (ic.InstanceGroups[u], counters);
+			interpolation->interpolate (ic.InstanceGroups[u], counters);
+			ic.InstanceGroups[u]->dumpInterpolatedData (objectsSelected, cFilePrefix);
+			ic.InstanceGroups[u]->dumpData (objectsSelected, cFilePrefix);
+			ic.InstanceGroups[u]->gnuplot (objectsSelected, cFilePrefix);
 		}
-		test.close();	
+		cout << endl;
 	}
 
-	cout << "Filling data" << endl;
+	string controlFile = cFile.substr (0, cFile.rfind (".extract")) + ".control";
+	string traceFile;
 
-	vector<Sample> vsamples;
-	vector<Point> accumulatedCounterPoints;
-	FillData (InputFile, !SeparateValues, vsamples, accumulatedCounterPoints, pcf);
-
-	cout << "Finished filling data" << endl;
-
-	/* Prepare regions, as fake params for doLineFolding and doInterpolation*/
-	int max = SeparateValues?numRegions:1;
-	for (int i = 0; i < max; i++)
+	ifstream control (controlFile.c_str());
+	if (!control.is_open())
 	{
-		Region *r = new Region (0, 0, i, 0);
-		if (SeparateValues)
-		{
-			/* r->RegionName = nameRegion[i].substr (0, nameRegion[i].find_first_of (":[]{}() ")); */
-			r->RegionName = nameRegion[i];
-		}
-		else
-			r->RegionName = "all";
-		for (unsigned j = 0; j < wantedCounters.size(); j++)
-			r->HWCvalues.push_back (0);
-		regions.foundRegions.push_back (r);
+		cerr << "Error! Cannot open file " << controlFile << " which is needed to feed the tracefile" << endl;
+		exit (-1);
 	}
+	else
+	{
+		control >> traceFile;
+		control >> feedTraceFoldType_Value;
+		control >> feedTraceFoldType_Value_Definition;
+	}
+
+	if (feedTraceType != FEED_NONE)
+	{
+		UIParaverTraceConfig *pcf = NULL;
+		unsigned long long prv_out_start, prv_out_end;
+
+		string oFile = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.prv";
+		ftrace = new FoldedParaverTrace (oFile, traceFile, true);
+
+		ftrace->parseBody();
+
+		ftrace->DumpStartingParaverLine ();
+
+		string pcfFile = traceFile.substr (0, traceFile.rfind (".prv")) + ".pcf";
+
+		pcf = new UIParaverTraceConfig;
+		pcf->parse (pcfFile);
+
+		map<string, unsigned> counterCodes;
+		set<string>::iterator c;
+		for (c = counters.begin(); c != counters.end(); c++)
+		{
+			string cname = *c;
+			counterCodes[cname] = common::lookForCounter (cname, pcf);
+		}
 	
-#if HAVE_CUBE
-	unlink ((string(argv[res])+".launch").c_str());
+		vector<Instance*> whichInstancesToFeed;
+		if (feedTraceType == FEED_TIME)
+		{
+			for (unsigned u = 0; u < feedInstances.size(); u++)
+			{
+				Instance *i = feedInstances[u];
+				if (i->startTime >= feedTraceTimes_Begin  && i->startTime <= feedTraceTimes_End)
+					whichInstancesToFeed.push_back (i);
+			}
+		}
+		else if (feedTraceType == FEED_FIRST_OCCURRENCE)
+		{
+			set<string> usedRegions;
+			for (unsigned u = 0; u < feedInstances.size(); u++)
+			{
+				Instance *i = feedInstances[u];
+				if (usedRegions.find(i->RegionName) == usedRegions.end())
+				{
+					whichInstancesToFeed.push_back (i);
+					usedRegions.insert (i->RegionName);
+				}
+			}
+		}
 
-	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
-	  vsamples, regions, pcf, &cube, false);
-#else
-	doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
-	  vsamples, regions, pcf);
-#endif
+		/* Emit callstack into the new tracefile */
+		for (unsigned u = 0; u < whichInstancesToFeed.size(); u++)
+		{
+			Instance *i = whichInstancesToFeed[u];
+			if (Instances.count(i->RegionName) > 0)
+			{
+				InstanceContainer ic = Instances.at (i->RegionName);
+				for (unsigned g = 0; g < ic.numGroups(); g++)
+				{
+					ftrace->DumpInterpolationData (objectToFeed, i, 
+					  ic.InstanceGroups[g], counterCodes);
+					ftrace->DumpCallersInInstance (objectToFeed, i, 
+					  ic.InstanceGroups[g]);
+				}
+			}
+		}
 
-	regions.foundRegions.clear();
+		/* Copy .pcf and .row files */
+		ifstream ifs_pcf ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".pcf")).c_str());
+		if (ifs_pcf.is_open())
+		{
+			ofstream ofs_pcf ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".folded.pcf")).c_str());
+			ofs_pcf << ifs_pcf.rdbuf();
+			ifs_pcf.close();
+			ofs_pcf.close();
+		}
+		AppendInformationToPCF (traceFile.substr (0, traceFile.rfind(".prv"))+string(".folded.pcf"), pcf, counters);
 
-	if (feedTraceRegion)
-	{
-		/* If a trace is given, search within the trace where to do the folding */
-		SearchForRegionsWithinRegion (TraceToFeed, task, thread,
-		  feedTraceFoldType_Value, feedTraceRegion_Type, feedTraceRegion_Value,
-		  &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
+		ifstream ifs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".row")).c_str());
+		if (ifs_row.is_open())
+		{
+			ofstream ofs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".folded.row")).c_str());
+			ofs_row << ifs_row.rdbuf();
+			ifs_row.close();
+			ofs_row.close();
+		}
 	}
-	else if (feedTraceTimes)
-	{
-		/* If a trace is given, search within the trace where to do the folding */
-		SearchForRegionsWithinTime (TraceToFeed, task, thread,
-		  feedTraceFoldType_Value, feedTraceTimes_Begin, feedTraceTimes_End,
-		  &prv_out_start, &prv_out_end, wantedCounters, regions, pcf);
-	}
-	else if (feedFirstOccurrence)
-	{
-		/* If a trace is given, search within the trace where to do the folding */
-		SearchForRegionsFirstOccurrence (TraceToFeed, task, thread,
-		  feedTraceFoldType_Value, wantedCounters, regions, pcf,
-			phasetypes);
-	}
-#if defined(DEBUG)
-		cout << "# of regions: " << regions.foundRegions.size() << endl;
-#endif
-
-	if (regions.foundRegions.size() > 0)
-	{
-		generateGNUPLOTfiles = false;
-
-#if HAVE_CUBE
-		unlink ((string(argv[res])+".launch").c_str());
-
-		doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
-		  vsamples, regions, pcf, &cube, true);
-#else
-		doInterpolation (task, thread, argv[res], accumulatedCounterPoints,
-		  vsamples, regions, pcf);
-#endif
-
-		AppendInformationToPCF (TraceToFeed.substr (0, TraceToFeed.length()-3) + string ("pcf"),
-			pcf, wantedCounters);
-	}
-
-	if (GNUPLOT.size() > 0)
-	{
-		createSingleGNUPLOT (argv[res], GNUPLOT);
-		if (SeparateValues)
-			createMultipleGNUPLOT (GNUPLOT);
-		for (unsigned j = 0; j < numRegions; j++)
-			createMultiSlopeGNUPLOT (argv[res], nameRegion[j], GNUPLOT, wantedCounters);
-	}
-
-#if HAVE_CUBE
-  // Output to a cube file
-	string cube_output = string(argv[res]) + ".cube";
-  std::ofstream out (cube_output.c_str());
-	out << cube;
-	out.close();
-#endif
 
 	return 0;
 }

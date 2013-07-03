@@ -21,29 +21,32 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/interpolate.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef FEEDTRACE_FO_H_INCLUDED
-#define FEEDTRACE_FO_H_INCLUDED
+#ifndef READEXTRACTEDDATA_H_INCLUDED
+#define READEXTRACTEDDATA_H_INCLUDED
 
-#include "region-info.H"
-
-#include <vector>
-#include <list>
 #include <string>
-#include "UIParaverTraceConfig.h"
+#include <set>
+#include "object-selection.H"
+#include "instance.H"
 
 using namespace std;
-using namespace libparaver;
 
-void SearchForRegionsFirstOccurrence (string tracename, unsigned task, unsigned thread,
-	unsigned long long Type, vector<string> &vCounters, RegionInfo &regions,
-	UIParaverTraceConfig *pcf, vector <unsigned long long> &phasetypes);
+class ReadExtractData
+{
+	public:
+	static void ReadDataFromFile (string filename, ObjectSelection *os,
+		set<string> &allcounters, set<string> &allregions,
+		vector<Instance*> &Instances, ObjectSelection *osfeed, 
+		vector<Instance*> &feedInstances);
+};
 
-#endif
+#endif /* READEXTRACTEDDATA_H_INCLUDED */
+

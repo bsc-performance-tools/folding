@@ -23,13 +23,22 @@ def decode2(line, what1, what2):
 	line2_end_pos = line.find(":", line2_start_pos);
 	return [tonum(line[line1_start_pos:line1_end_pos]), tonum(line[line2_start_pos:line2_end_pos])];
 
+# START POINT
+
+envvars = os.environ
+if not ('FOLDING_CLANG_BIN' in envvars):
+	print "Cannot obtain clang binary through FOLDING_CLANG_BIN env variable";
+	os._exit(1)
+
+CLANGBIN = envvars['FOLDING_CLANG_BIN'];
+
 #pall = re.compile (".*\((.*ForStmt.*|.*WhileStmt.*|.*DoStmt.*|.*SwitchStmt.*|.*CaseStmt.*|.*IfStmt.*|.*CompoundStmt.*|.*CallExpr.*|.*LabelStmt.*|.*GotoStmt.*)")
 pall = re.compile (".*\((.*ForStmt.*|.*WhileStmt.*|.*DoStmt.*|.*SwitchStmt.*|.*CaseStmt.*|.*IfStmt.*|.*CompoundStmt.*|.*LabelStmt.*|.*GotoStmt.*)");
 
 maxline = 0;
 lines = [];
 sourcefile = sys.argv[1];
-stdinput, ASTcontent, stderr = os.popen3 ("clang -cc1 -ast-dump "+sourcefile);
+stdinput, ASTcontent, stderr = os.popen3 (CLANGBIN+" -cc1 -ast-dump "+sourcefile);
 
 for line in ASTcontent:
 	if pall.match(line):

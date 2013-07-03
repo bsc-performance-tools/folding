@@ -21,47 +21,29 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef UTILS_H_INCLUDED
-#define UTILS_H_INCLUDED
+#ifndef SAMPLESELECTOR_DISTANCE_H_INCLUDED
+#define SAMPLESELECTOR_DISTANCE_H_INCLUDED
 
-#include "folding-config.h"
-#include <string>
-#include "UIParaverTraceConfig.h"
+#include "sample-selector.H"
 
-#define UNREFERENCED(a) ((a) = (a))
-#define MAX(a,b) ((a)>(b)?(a):(b))
-#define MIN(a,b) ((a)<(b)?(a):(b))
-
-using namespace std;
-using namespace libparaver;
-
-class common
+class SampleSelectorDistance : public SampleSelector
 {
+	private:
+	unsigned limit;
+	bool limitset;
+
 	public:
-	static string convertInt (int);
-	static string convertDouble (double, int);
-	static string removeSpaces (string &in);
-	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
-	static bool existsFile (string file);
-	static bool existsDir (string dir);
-	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
-	  unsigned id, string &file, int &line);
-	static void CleanMetricsDirectory (string &directory);
-	static void CleanMetricsDirectory_r (char *directory);
-	static bool isMIPS (string s);
-	static bool DEBUG();
-	static bool decomposePtaskTaskThread (string &s, unsigned &ptask,
-	  unsigned &task, unsigned &thread);
-	static bool decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
-	  bool &ptaskany, unsigned &task, bool &taskany, unsigned &thread, bool &threadany);
+	SampleSelectorDistance (void);
+	void configure (unsigned limit);
+	virtual void Select (InstanceGroup *, set<string> &counters);
 };
 
-#endif
+#endif /* SAMPLESELECTOR_DISTANCE_H_INCLUDED */

@@ -47,14 +47,16 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <list>
 #include <exception>
 
-#define PAPI_MIN_COUNTER   42000000
-//#define PAPI_MAX_COUNTER   42009998
-#define PAPI_MAX_COUNTER   42999999
+#define PAPI_MIN_COUNTER                   42000000
+#define PAPI_MAX_COUNTER                   42999999
+#define EXTRAE_SAMPLE_CALLER_MIN           30000000
+#define EXTRAE_SAMPLE_CALLER_MAX           30000099
+#define EXTRAE_SAMPLE_CALLERLINE_MIN       30000100
+#define EXTRAE_SAMPLE_CALLERLINE_MAX       30000199
+#define EXTRAE_SAMPLE_CALLERLINE_AST_MIN   30000200
+#define EXTRAE_SAMPLE_CALLERLINE_AST_MAX   30000299
 
-unsigned long long RegionSeparator = 1234567;
-string RegionSeparatorName;
-vector<unsigned long long> SkipTypes;
-vector<unsigned long long> PhaseSeparators;
+unsigned long long RegionSeparator = 0;
 
 using namespace std;
 
@@ -70,45 +72,35 @@ double DenormalizeValue (double normalized, double min, double max)
 
 namespace libparaver {
 
-class LineCodeInformation
+class Sample
 {
 	public:
-	unsigned line;
-	unsigned lineid_type;
-	unsigned lineid_value;
-	unsigned long long time;
+	map<unsigned, unsigned long long> CounterValues; /* Map to ID of counter to its value */
+	map<unsigned, unsigned long long> Caller;        /* Map depth of caller */
+	map<unsigned, unsigned long long> CallerLine;    /* Map depth of caller line */
+	map<unsigned, unsigned long long> CallerLineAST; /* Map depth of caller line AST */
+	unsigned long long Timestamp;
 };
 
 class ThreadInformation
 {
 	public:
-	list<unsigned long long> TimeSamples;
-	list<bool> SkipSamples;
-	list<unsigned long long> * CounterSamples;
-	list<LineCodeInformation*> LineSamples;
-	ofstream output;
-	vector<pair<event_t, unsigned long long> > vcallstack;
+	vector<Sample> Samples;
 
-	unsigned long long CurrentIteration;
-	unsigned long long CurrentPhase;
 	unsigned long long CurrentRegion;
 	unsigned long long StartRegion;
 
-	unsigned long long LastCounterTime;
-
-	void AllocateBufferCounters (int numCounters);
 	ThreadInformation ();
+	~ThreadInformation ();
 };
 
 ThreadInformation::ThreadInformation ()
 {
-	CurrentRegion = CurrentPhase = CurrentIteration = 0;
-	LastCounterTime = 0;
+	CurrentRegion = 0;
 }
 
-void ThreadInformation::AllocateBufferCounters (int numCounters)
+ThreadInformation::~ThreadInformation ()
 {
-	CounterSamples = new list<unsigned long long> [numCounters];
 }
 
 class TaskInformation
@@ -139,12 +131,12 @@ void TaskInformation::AllocateThreads (int numThreads)
 	ThreadsInfo = new ThreadInformation[this->numThreads];
 }
 
-class InformationHolder
+class PTaskInformation
 {
 	private:
 	int numTasks;
 	TaskInformation *TasksInfo;
-	
+
 	public:
 	int getNumTasks (void)
 	{ return numTasks; };
@@ -152,52 +144,96 @@ class InformationHolder
 	TaskInformation* getTasksInformation (void)
 	{ return TasksInfo; };
 
-	void AllocateTasks (int numTasks);
-	~InformationHolder();
+	void AllocateTasks (int numTakss);
+	~PTaskInformation();
 };
 
-InformationHolder::~InformationHolder()
+PTaskInformation::~PTaskInformation()
 {
 	delete [] TasksInfo;
 }
 
-void InformationHolder::AllocateTasks (int numTasks)
+void PTaskInformation::AllocateTasks (int numTasks)
 {
 	this->numTasks = numTasks;
 	TasksInfo = new TaskInformation[this->numTasks];
 }
 
+
+class InformationHolder
+{
+	private:
+	int numPTasks;
+	PTaskInformation *PTasksInfo;
+	
+	public:
+	int getNumPTasks (void)
+	{ return numPTasks; };
+
+	PTaskInformation* getPTasksInformation (void)
+	{ return PTasksInfo; };
+
+	void AllocatePTasks (int numPTasks);
+	~InformationHolder();
+
+	ofstream outputfile;
+};
+
+InformationHolder::~InformationHolder()
+{
+	delete [] PTasksInfo;
+}
+
+void InformationHolder::AllocatePTasks (int numPTasks)
+{
+	this->numPTasks = numPTasks;
+	PTasksInfo = new PTaskInformation[this->numPTasks];
+}
+
 class Process : public ParaverTrace
 {
 	private:
+	unsigned nCounterChanges;
 	list<unsigned> CallerCut;
 	string *CounterIDNames;
 	unsigned long long *CounterIDs;
 	bool *CounterUsed;
 	bool *HackCounter;
-	unsigned long long LookupCounter (unsigned long long Counter, bool &found);
+	unsigned LookupCounter (unsigned long long Counter, bool &found);
 	UIParaverTraceConfig *pcf;
-	void ReadCallerLinesIntoList (string file, UIParaverTraceConfig *pcf);
+	InformationHolder IH;
+	unsigned numCounterIDs;
+
+	bool checkSamples (vector<Sample> &Samples);
+	void dumpSamples (unsigned ptask, unsigned task, unsigned thread,
+	  unsigned long long region, unsigned long long start,
+	  unsigned long long duration, vector<Sample> &Samples);
+	bool equalTypes (map<unsigned, unsigned long long> &m1, map<unsigned, unsigned long long> &m2);
+	void processCaller (struct event_t &evt, unsigned base, Sample &s);
+	void processCounter (struct event_t &rvt, Sample &s);
 
 	public:
 	Process (string prvFile, bool multievents);
 
+	string getType (unsigned type);
+	string getTypeValue (unsigned type, unsigned value);
+	void allocateBuffers (void);
+	void closeFile (void);
 	void processState (struct state_t &s);
 	void processMultiEvent (struct multievent_t &e);
 	void processEvent (struct singleevent_t &e);
 	void processCommunication (struct comm_t &c);
 	void processCommunicator (string &c);
 	void processComment (string &c);
-	InformationHolder IH;
-	unsigned numCounterIDs;
-	list<string> TypeValuesLabels;
+
+	unsigned getNCounterChanges (void)
+	  { return nCounterChanges; }
 };
 
 Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, multievents)
 {
-	unsigned found_counters = 0;
+	nCounterChanges = 0;
 
-	/* Look for hw counters */
 	string pcffile = prvFile.substr (0, prvFile.rfind(".prv")) + string (".pcf");
 
 	pcf = new UIParaverTraceConfig;
@@ -209,96 +245,40 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 		exit (-1);
 	}
 
-	string s = pcf->getEventType (RegionSeparator);
-	if (s.length() > 0)
-		RegionSeparatorName = common::removeSpaces (s);
-	else
-		RegionSeparatorName = "Unknown";
+	vector<unsigned> vtypes = pcf->getEventTypes();
 
-	for (int i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
-	{
-		try
-		{
-			string s = pcf->getEventType (i);
-			if (s.length() > 0)
-				found_counters++;
-		}
-		catch (...)
-		{ }
-	}
+	unsigned ncounters = 0;
+	for (unsigned u = 0; u < vtypes.size(); u++)
+		if ( vtypes[u] >= PAPI_MIN_COUNTER && vtypes[u] <= PAPI_MAX_COUNTER )
+			ncounters++;
 
-	vector<unsigned> values = pcf->getEventValues(RegionSeparator);
-	for (unsigned i = 0; i < values.size(); i++)
-		TypeValuesLabels.push_back (pcf->getEventValue(RegionSeparator, values[i]));
-
-	numCounterIDs = found_counters;
+	numCounterIDs = ncounters;
 	CounterIDs = new unsigned long long[numCounterIDs];
 	CounterIDNames = new string[numCounterIDs];
 	HackCounter = new bool[numCounterIDs];
 	CounterUsed = new bool[numCounterIDs];
 
-	unsigned j = 0;
-	for (unsigned i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
-	{
-		try
+	for (unsigned u = 0, j = 0; u < vtypes.size(); u++)
+		if ( vtypes[u] >= PAPI_MIN_COUNTER && vtypes[u] <= PAPI_MAX_COUNTER )
 		{
-			string s = pcf->getEventType (i);
-			if (s.length() > 0)
-			{
-				CounterUsed[j] = false;
-				CounterIDs[j] = i;
-				CounterIDNames[j] = s.substr (s.find ('(')+1, s.find (')', s.find ('(')+1) - (s.find ('(') + 1));
-				HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?1:0;
-				j++;
-			}
+			string s = getType (vtypes[u]);
+			CounterUsed[j] = false;
+			CounterIDs[j] = vtypes[u];
+			CounterIDNames[j] = s.substr (s.find ('(')+1, s.find (')', s.find ('(')+1) - (s.find ('(') + 1));
+			HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?1:0;
+			j++;
 		}
-		catch (...)
-		{ }
-	}
 
-	ReadCallerLinesIntoList ("list", pcf);
+	string completefile = prvFile.substr (0, prvFile.length()-4) + ".extract" ;
+	IH.outputfile.open (basename(completefile.c_str()));
 }
 
-void Process::ReadCallerLinesIntoList (string file, UIParaverTraceConfig *pcf)
+void Process::closeFile (void)
 {
-	string str;
-	list<string> l_tmp;
-	fstream file_op (file.c_str(), ios::in);
-
-	if (file_op.is_open())
-	{
-		while (file_op >> str)
-		{
-			/* Add element into list if it didn't exist */
-			list<string>::iterator iter = find (l_tmp.begin(), l_tmp.end(), str);
-			if (iter == l_tmp.end())
-				l_tmp.push_back (str);
-		}
-		file_op.close();
-	
-		vector<unsigned> v = pcf->getEventValues(30000000);
-		unsigned i = 2;
-		while (i != v.size())
-		{
-			string str = pcf->getEventValue (30000000, v[i]);
-			string func_name = str.substr (0, str.find(' '));
-			if (find (l_tmp.begin(), l_tmp.end(), func_name) != l_tmp.end())
-			{
-				cout << "Adding identifier " << i << " for caller " << pcf->getEventValue (30000000, i) << endl;
-				CallerCut.push_back (i);
-			}
-			i++;
-		}
-	}
-	else
-	{
-		cout << "WARNING: No callstack segment cut given!" << endl;
-		return;
-	}
-
+	IH.outputfile.close();
 }
 
-unsigned long long Process::LookupCounter (unsigned long long Counter, bool &found)
+unsigned Process::LookupCounter (unsigned long long Counter, bool &found)
 {
 	found = true;
 
@@ -325,410 +305,289 @@ void Process::processState (struct state_t &s)
 	UNREFERENCED(s);
 }
 
+void Process::processCaller (struct event_t &evt, unsigned base, Sample &s)
+{
+	unsigned depth = evt.Type - base;
+
+	if (base == EXTRAE_SAMPLE_CALLER_MIN)
+		s.Caller[depth] = evt.Value;
+	else if (base == EXTRAE_SAMPLE_CALLERLINE_MIN)
+		s.CallerLine[depth] = evt.Value;
+	else if (base == EXTRAE_SAMPLE_CALLERLINE_AST_MIN)
+		s.CallerLineAST[depth] = evt.Value;
+}
+
+void Process::processCounter (struct event_t &evt, Sample &s)
+{
+	bool found;
+	unsigned long long value;
+	unsigned index = LookupCounter (evt.Type, found);
+    
+	if (found) 
+	{
+		if (HackCounter[index])
+		{
+			value = evt.Value;
+			if (value > 0x80000000LL) /* If counter larger than 32 bits  (2^32) */
+			{
+				value = value & 0xffffffffLL;
+				if ((value & 0x80000000LL) != 0)
+					value = value ^ 0xffffffffLL;
+				value = 0; // Supersede previous hacking
+			}
+		}   
+		else    
+			value = evt.Value;
+
+		s.CounterValues[evt.Type] = value;
+	}
+}
+
+bool Process::equalTypes (map<unsigned, unsigned long long> &m1,
+	map<unsigned, unsigned long long> &m2)
+{
+	map<unsigned, unsigned long long>::iterator i1 = m1.begin();
+	map<unsigned, unsigned long long>::iterator i2 = m2.begin();
+
+	if (m1.size() != m2.size())
+		return false;
+
+	/* Check all types in M1 are in M2 in the same order */
+	for (; i1 != m1.end(); i1++, i2++)
+		if ((*i1).first != (*i2).first)
+			return false;
+
+	/* If we are here, then types(M1) = types(M2) */
+	return true;
+}
+
+bool Process::checkSamples (vector<Sample> &Samples)
+{
+	/* Triplets are not valid at the edges (first and last) */
+	if (Samples.size() > 2)
+	{
+		map<unsigned, unsigned long long> refCounterValues = Samples[1].CounterValues;
+
+		for (unsigned u = 2; u < Samples.size()-1; u++)
+		{
+			/* Just check for counter types, that are the same across the instance.
+			   We don't need to check for the callers because they may vary from
+			   execution to execution (i.e. one sample may get 10 callers but the
+			   following can take less). */
+			if (!equalTypes (refCounterValues, Samples[u].CounterValues))
+			{
+				nCounterChanges++;
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+void Process::dumpSamples (unsigned ptask, unsigned task, unsigned thread,
+	unsigned long long region, unsigned long long start,
+	unsigned long long duration, vector<Sample> &Samples)
+{
+	if (common::DEBUG())
+		cout << "Process:dumpSamples (Samples.size() = " << Samples.size() << ")" << endl;
+
+	/* At least, have a sample at the begin & end, and someone else */
+	if (Samples.size() < 2)
+		return;
+
+	if (!checkSamples (Samples))
+		return;
+
+	/* Write the total time spent in this region */
+	string RegionName = getTypeValue (RegionSeparator, region);
+	if (RegionName.length() == 0 || RegionName == "Not found")
+		RegionName = "Unknown";
+	else
+		RegionName = common::removeSpaces (RegionName);
+
+	/* Calculate totals */
+	map<unsigned, unsigned long long> totals;
+	map<unsigned, unsigned long long>::iterator it = Samples[0].CounterValues.begin();
+	for (; it != Samples[0].CounterValues.end(); it++)
+		totals[(*it).first] = (*it).second;
+
+	/* Generate header for this instance */
+	IH.outputfile << "I " << ptask+1 << " " << task+1 << " " << thread+1 
+	  << " " << RegionName << " " << start << " " << duration;
+	for (unsigned u = 1; u < Samples.size(); u++)
+	{
+		it = Samples[u].CounterValues.begin();
+		for (; it != Samples[u].CounterValues.end(); it++)
+			totals[(*it).first] = totals[(*it).first] + (*it).second;
+	}
+	IH.outputfile << " " << totals.size();
+	map<unsigned, unsigned long long>::iterator it_totals = totals.begin();
+	for (; it_totals != totals.end(); it_totals++)
+	{
+		bool found;
+		unsigned index = LookupCounter ((*it_totals).first, found);
+		if (!found)
+			cout << "Error! Cannot find counter " << (*it_totals).first << endl;
+		IH.outputfile << " " << CounterIDNames[index] << " " << (*it_totals).second;
+	}
+	IH.outputfile << endl;
+
+	/* Do not emit samples if we only have a sample at the end */
+	if (Samples[0].Timestamp == start + duration)
+		return;
+
+	/* Prepare partial accum hash */
+	map<unsigned, unsigned long long> partials;
+	for (it = Samples[0].CounterValues.begin();
+	     it != Samples[0].CounterValues.end();
+	     it++)
+		partials[(*it).first] = 0;
+
+	/* Dump all the samples for this instance except the last one, which can be extrapolated
+       from the instance header data */
+	for (unsigned u = 0; u < Samples.size() - 1; u++)
+	{
+		IH.outputfile << "S " << Samples[u].Timestamp << " " << Samples[u].Timestamp - start;
+
+		IH.outputfile << " " << Samples[u].CounterValues.size();
+		it = Samples[u].CounterValues.begin();
+		for (; it != Samples[u].CounterValues.end(); it++)
+		{
+			bool found;
+			unsigned index = LookupCounter ((*it).first, found);
+			if (!found)
+				cout << "Error! Cannot find counter " << (*it).first << endl;
+
+			unsigned long long tmp = partials[(*it).first] + (*it).second;
+			IH.outputfile << " " << CounterIDNames[index] << " " << tmp;
+			partials[(*it).first] = tmp;
+		}
+
+		/* Dump callers, callerlines and caller line ASTs triplets */
+		IH.outputfile << " " << Samples[u].Caller.size();
+
+		map<unsigned, unsigned long long>::iterator it1 = Samples[u].Caller.begin();
+		map<unsigned, unsigned long long>::iterator it2 = Samples[u].CallerLine.begin();
+		map<unsigned, unsigned long long>::iterator it3 = Samples[u].CallerLineAST.begin();
+		for (; it1 != Samples[u].Caller.end(); it1++, it2++, it3++)
+			IH.outputfile << " " << (*it1).first << " " << 
+			  (*it1).second << " " << (*it2).second << " " <<
+			  (*it3).second;
+
+		IH.outputfile << endl;
+	}
+
+	Samples.clear();
+}
+
 void Process::processMultiEvent (struct multievent_t &e)
 {
 	bool FoundSeparator = false;
 	bool FoundPhaseSeparator = false;
 	unsigned long long ValueSeparator = 0;
-	int task = e.ObjectID.task - 1;
-	int thread = e.ObjectID.thread - 1;
+	unsigned ptask = e.ObjectID.ptask - 1;
+	unsigned task = e.ObjectID.task - 1;
+	unsigned thread = e.ObjectID.thread - 1;
 
-	//cout << "task = " << task << " IH.getNumTasks() = " << IH.getNumTasks() << endl;
-
-	if (task >= IH.getNumTasks())
+	if (ptask >= IH.getNumPTasks())
 		return;
 
-	TaskInformation *ti = IH.getTasksInformation();
+	PTaskInformation *pti = IH.getPTasksInformation();
+	if (task >= pti[ptask].getNumTasks())
+		return;
 
-	//cout << "thread = " << thread << " ti[task].getNumThreads() = " << ti[task].getNumThreads() << endl;
-
+	TaskInformation *ti = &((pti[ptask].getTasksInformation())[task]);
 	if (thread >= ti[task].getNumThreads())
 		return;
 
-  ThreadInformation *thi = &((ti[task].getThreadsInformation())[thread]);
+	ThreadInformation *thi = &((ti[task].getThreadsInformation())[thread]);
 
-#if 0
-	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
-		if ((*it).Type == 123456)
-			thi->CurrentIteration = (*it).Value;
-#endif
+	bool storeSample = false;
+	Sample s;
+	s.Timestamp = e.Timestamp;
 
 	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 	{
+		if (thi->CurrentRegion > 0)
+		{
+			if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER )
+			{
+				if (common::DEBUG())
+					cout << "Processing counter " << (*it).Type << " at timestamp " << e.Timestamp << endl;
+
+				processCounter (*it, s);
+				storeSample = true;
+			}
+			if ((*it).Type >= EXTRAE_SAMPLE_CALLER_MIN && (*it).Type <= EXTRAE_SAMPLE_CALLER_MAX)
+			{
+				if (common::DEBUG())
+					cout << "Processing C " << (*it).Type << " at timestamp " << e.Timestamp << endl;
+
+				processCaller (*it, EXTRAE_SAMPLE_CALLER_MIN, s);
+				storeSample = true;
+			}
+			if ((*it).Type >= EXTRAE_SAMPLE_CALLERLINE_MIN && (*it).Type <= EXTRAE_SAMPLE_CALLERLINE_MAX)
+			{
+				if (common::DEBUG())
+					cout << "Processing CL " << (*it).Type << " at timestamp " << e.Timestamp << endl;
+
+				processCaller (*it, EXTRAE_SAMPLE_CALLERLINE_MIN, s);
+				storeSample = true;
+			}
+			if ((*it).Type >= EXTRAE_SAMPLE_CALLERLINE_AST_MIN && (*it).Type <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX)
+			{
+				if (common::DEBUG())
+					cout << "Processing CL-AST " << (*it).Type << " at timestamp " << e.Timestamp << endl;
+
+				processCaller (*it, EXTRAE_SAMPLE_CALLERLINE_AST_MIN, s);
+				storeSample = true;
+			}
+		}
+
 		if ((*it).Type == RegionSeparator)
 		{
+			if (common::DEBUG())
+				cout << "Found separator (" << RegionSeparator << "," << (*it).Value << ") at timestamp " << e.Timestamp << endl;
+
 			FoundSeparator = true;
 			ValueSeparator = (*it).Value;
-			break;
 		}
-		FoundPhaseSeparator = FoundPhaseSeparator || find (PhaseSeparators.begin(), PhaseSeparators.end(), (*it).Type) != PhaseSeparators.end();
 	}
 
-	/* If we haven't found a separator, or it's and end separator, add counters to
-	   the existing working set */
-	if ((!FoundSeparator || (FoundSeparator && ValueSeparator == 0)) && thi->CurrentRegion != 0)
+	if (common::DEBUG())
+		cout << "storeSample = " << storeSample << " at timestamp = " << e.Timestamp << endl;
+
+	if (storeSample && !(FoundSeparator && ValueSeparator > 0))
 	{
-		/* First check if this record should be skipped at dumping the counters! */
-		bool skip = false;
-		for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
-			skip = (find (SkipTypes.begin(), SkipTypes.end(), (*it).Type ) != SkipTypes.end()) || skip;
-#if defined(DEBUG)
-		if (!skip)
+		if (common::DEBUG())
 		{
-			cout << "will not skip @ " << e.Timestamp << " : ";
-			for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
-				cout << (*it).Type << " ";
+			map<unsigned, unsigned long long>::iterator it = s.CounterValues.begin();
+			for (; it != s.CounterValues.end(); it++)
+				cout << " " << (*it).first << " " << (*it).second;
 			cout << endl;
 		}
-#endif
-
-		bool CounterAdded = false;
-		for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
-		{
-			if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER)
-			{
-#if defined(DEBUG)
-				cout << "Found counter @ " << e.Timestamp << endl;
-#endif
-
-				bool found;
-				unsigned long long value;
-				int index = LookupCounter ((*it).Type, found);
-
-				if (found)
-				{
-					if (HackCounter[index])
-					{
-						value = (*it).Value;
-						if (value > 0x80000000LL) /* If counter larger than 32 bits  (2^32) */
-						{
-							value = value & 0xffffffffLL;
-							if ((value & 0x80000000LL) != 0)
-								value = value ^ 0xffffffffLL;
-							value = 0;
-						}
-					}
-					else
-						value = (*it).Value;
-
-#if 0 /* HSG NEW */
-					if (thi->CounterSamples[index].size() == 0 && thi->LastCounterTime > 0)
-					{
-//						cout << "current time = " << e.Timestamp << endl;
-//						cout << "LastCounterTime = " << thi->LastCounterTime << endl;
-
-						double rate = ((double) (value))/(e.Timestamp - thi->LastCounterTime);
-
-//						cout << "calculated rate = " << rate << endl;
-
-//						cout << "StartRegion = " << thi->StartRegion << endl;
-//						cout << "delta(origin, current) = " << e.Timestamp - thi->StartRegion << endl;
-
-						unsigned long long cextended = (e.Timestamp - thi->StartRegion) * rate;
-
-//						cout << "cextended-pre = " << cextended << endl;
-
-						thi->CounterSamples[index].push_back (cextended);
-						CounterUsed[index] = true; /* do not mix, counteradded and counterused */
-						CounterAdded = true;
-					}
-					else
-					{
-						thi->CounterSamples[index].push_back (value);
-						CounterUsed[index] = true; /* do not mix, counteradded and counterused */
-						CounterAdded = true;
-					}
-#endif
-		
-#if 1 /* HSG ORIGINAL */
-#if defined(DEBUG)
-					cout << "Adding value " << value << " for CounterIndex = " << index << endl;
-#endif
-					thi->CounterSamples[index].push_back (value);
-					CounterUsed[index] = true; /* do not mix, counteradded and counterused */
-					CounterAdded = true;
-
-#endif
-				} /* if found */
-			}
-		}
-
-#if 0 /* HSG NEW */
-		if (FoundSeparator && ValueSeparator == 0 && thi->CurrentRegion != 0 && !CounterAdded)
-		{
-			for (int i = PAPI_MIN_COUNTER; i <= PAPI_MAX_COUNTER; i++)
-			{
-				bool found;
-				int cnt = LookupCounter (i, found);
-				if (found)
-					if (CounterUsed[cnt])
-					{
-//						cout << "last time = " << thi->TimeSamples.back() << endl;
-//						cout << "last counter = " << thi->CounterSamples[cnt].back() << endl;
-//						cout << "first time = " << thi->TimeSamples.front() << endl;
-
-						unsigned long long totalcounter = 0;
-						list<unsigned long long>::iterator it = thi->CounterSamples[cnt].begin();
-						for (; it != thi->CounterSamples[cnt].end(); it++)
-							totalcounter += *it;
-
-						double rate = ((double) (totalcounter)) / (thi->TimeSamples.back()-thi->TimeSamples.front());
-
-//						cout << "counter rate = " << rate << endl;
-
-//						cout << "current time = " << e.Timestamp << endl;
-//						cout << "delta(current,last) = " << e.Timestamp - thi->TimeSamples.back() << endl;
-
-						unsigned long long cextended = (e.Timestamp - thi->TimeSamples.back())*rate;
-
-//						cout << "cextended-post = " << cextended << endl;
-
-						thi->CounterSamples[cnt].push_back (cextended);
-					}
-			}
-			CounterAdded = true;
-		}
-#endif /* HSG NEW */
-
-		if (CounterAdded)
-		{
-			thi->TimeSamples.push_back (e.Timestamp);
-			thi->SkipSamples.push_back (skip);
-		}
-
-		bool found_min_level = false;
-		unsigned MinCallerLevel = 0, MinCallerLevelValue = 0;
-
-		for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
-		{
-			if ((*it).Type >= 30000000 && (*it).Type <= 30000199)
-				thi->vcallstack.push_back (make_pair(*it,e.Timestamp));
-
-			if ((*it).Type >= 30000000 && (*it).Type <= 30000099)
-			{
-				if (find (CallerCut.begin(), CallerCut.end(), (*it).Value) != CallerCut.end())
-				{
-					if (!found_min_level)
-					{
-						found_min_level = true;
-						MinCallerLevel = (*it).Type;
-					}
-					else if (found_min_level && MinCallerLevel > (*it).Type)
-					{
-						MinCallerLevel = (*it).Type;
-					}
-				}
-			}
-		}
-
-		if (found_min_level)
-		{
-			bool found = false;
-			for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
-			{
-				if (MinCallerLevel + 100 == (*it).Type)
-				{
-					MinCallerLevel = (*it).Type;
-					MinCallerLevelValue = (*it).Value;
-					found = true;
-				}
-			}
-			if (!found)
-			{
-				cerr << "Couldn't find callerline pair for caller " << MinCallerLevel << ":" << MinCallerLevelValue << " at timestamp " << e.Timestamp << endl;
-				exit (-1);
-			}
-		}
-
-		if (found_min_level)
-		{
-			string CallerLine = pcf->getEventValue (MinCallerLevel, MinCallerLevelValue);
-			if (CallerLine.length() > 0 && CallerLine != "Not found")
-			{
-				LineCodeInformation *lci = new LineCodeInformation;
-				lci->line = atoi ((CallerLine.substr (0, CallerLine.find (" "))).c_str());
-				lci->lineid_value = MinCallerLevelValue;
-				lci->lineid_type = MinCallerLevel;
-				lci->time = e.Timestamp;
-				thi->LineSamples.push_back (lci);
-			}
-		}
+		thi->Samples.push_back (s);
 	}
-
-	/* If we found an end of a region or a phase change inside a region, dump normalized samples */
-	if ((FoundSeparator && ValueSeparator == 0) || FoundPhaseSeparator)
+	else
 	{
-		unsigned long long TotalTime = e.Timestamp - thi->StartRegion;
-
-#if defined(DEBUG)
-		cout << "Final! thi->TimeSamples.size() " << thi->TimeSamples.size() << endl;
-#endif
-
-		/* First dump HW counters */
-		if (thi->TimeSamples.size() <= 1)
-		{
-			thi->TimeSamples.clear();
-			thi->SkipSamples.clear();
-			for (unsigned cnt = 0; cnt < numCounterIDs; cnt++)
-				thi->CounterSamples[cnt].clear();
-		}
-		else
-		{
-			string RegionNameValue = pcf->getEventValue (RegionSeparator, thi->CurrentRegion);
-
-			/* Write the total time spent in this region */
-			if (RegionNameValue.length() > 0 && RegionNameValue != "Not found")
-			{
-				thi->output << "T " << common::removeSpaces (RegionNameValue) << "." << thi->CurrentPhase << " " << TotalTime << endl;
-			}
-			else
-			{
-				thi->output << "T " << RegionSeparatorName << "_" << thi->CurrentRegion << "." << thi->CurrentPhase << " " << TotalTime << endl;
-			}
-
-			for (unsigned i = 0; i < thi->vcallstack.size(); i++)
-			{
-				double NTime = ::NormalizeValue (thi->vcallstack[i].second - thi->StartRegion, 0, TotalTime);
-				thi->output << "C " << NTime << " "<< thi->vcallstack[i].first.Type << " " << thi->vcallstack[i].first.Value << endl;
-			}
-
-			/* Write total counters spent in this region */
-			for (unsigned cnt = 0; cnt < numCounterIDs; cnt++)
-			{
-				if (!CounterUsed[cnt])
-					continue;
-				unsigned long long TotalCounter = 0;
-				list<unsigned long long>::iterator Counter_iter = thi->CounterSamples[cnt].begin();
-				for ( ; Counter_iter != thi->CounterSamples[cnt].end(); Counter_iter++)
-					TotalCounter += (*Counter_iter);
-				thi->output << "A " << CounterIDNames[cnt] << " " << TotalCounter << endl;
-			}
-		}
-
-		for (unsigned cnt = 0; cnt < numCounterIDs; cnt++)
-		{
-			if (!CounterUsed[cnt])
-				continue;
-
-			unsigned long long TotalCounter = 0;
-			list<unsigned long long>::iterator Counter_iter = thi->CounterSamples[cnt].begin();
-			for ( ; Counter_iter != thi->CounterSamples[cnt].end(); Counter_iter++)
-			{
-				TotalCounter += (*Counter_iter);
-			}
-
-			list<unsigned long long>::iterator Times_iter = thi->TimeSamples.begin();
-			Counter_iter = thi->CounterSamples[cnt].begin();
-			list<unsigned long long>::iterator Counter_iter_next = thi->CounterSamples[cnt].begin();
-			Counter_iter_next++;
-			list<bool>::iterator Skip_iter = thi->SkipSamples.begin();
-
-#if defined(DEBUG)
-			thi->output << "TOTAL TIME = " << TotalTime << " from " << thi->StartRegion << " to " << e.Timestamp << " TOTAL COUNTER[" << CounterIDs[cnt] << "/"<< cnt << "]= " << TotalCounter << endl;
-#endif
-
-			if (TotalCounter > 0)
-			{
-				unsigned long long AccumCounter = 0;
-
-				/* Last pair is always 1 - 1, skip them! */
-				//for (; Counter_iter_next != thi->CounterSamples[cnt].end();
-				//	Counter_iter_next++, Times_iter++, Skip_iter++)
-				for (; Counter_iter != thi->CounterSamples[cnt].end();
-					Counter_iter++, Times_iter++, Skip_iter++)
-				{
-					if (!(*Skip_iter) && *Counter_iter > 0)
-					{
-						double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
-						double NCounter = ::NormalizeValue (AccumCounter + (*Counter_iter), 0, TotalCounter);
-	
-#if defined(DEBUG)
-						thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
-#else
-						thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << (AccumCounter + (*Counter_iter)) << " " << thi->CurrentIteration << endl;
-#endif
-					}
-
-					/* Always! accumulate counters, even for skipped records! */
-					AccumCounter += (*Counter_iter);
-				}
-				thi->CounterSamples[cnt].clear();
-			} /* TotalCounter > 0 */
-			else
-			{
-				/* Last pair is always 1 - 1, skip them! */
-				//for (; Counter_iter_next != thi->CounterSamples[cnt].end();
-				//	Counter_iter_next++, Counter_iter++, Times_iter++, Skip_iter++)
-				for (; Counter_iter != thi->CounterSamples[cnt].end();
-			 		Counter_iter++, Times_iter++, Skip_iter++)
-				{
-					if (!(*Skip_iter))
-					{
-						double NTime = ::NormalizeValue ((*Times_iter) - thi->StartRegion, 0, TotalTime);
-						double NCounter = 0.0f;
-	
-#if defined(DEBUG)
-						thi->output << "S " << CounterIDNames[cnt] << " / " <<  CounterIDs[cnt] << " " << NTime << " " << NCounter << " (TIME = " << (*Times_iter) << ", TOTALTIME= " << (*Times_iter) - thi->StartRegion<< "  )" << endl;
-#else
-						thi->output << "S " << CounterIDNames[cnt] << " " << NTime << " " << NCounter << " " << (*Times_iter) - thi->StartRegion << " " << 0.0f << " " << thi->CurrentIteration << endl;
-#endif
-					}
-
-					/* Always! accumulate counters, even for skipped records! */
-				}
-				thi->CounterSamples[cnt].clear();
-			}
-			CounterUsed[cnt] = false; /* clean for next region */
-		} /* Skip */
-
-		thi->TimeSamples.clear();
-		thi->SkipSamples.clear();
-
-		/* Then dump caller line information */
-#if 0
-		for (list<LineCodeInformation*>::iterator it = thi->LineSamples.begin(); it != thi->LineSamples.end(); it++)
-		{
-			double NTime = ::NormalizeValue ((*it)->time - thi->StartRegion, 0, TotalTime);
-
-#if defined(DEBUG)
-			thi->output << "S LINE " << NTime << " " << (*it)->line << " at timestamp " << (*it)->time << " " << thi->CurrentIteration << endl;
-			thi->output << "S LINEID " << NTime << " " << (*it)->lineid_value << " at timestamp " << (*it)->time << " " << thi->CurrentIteration << endl;
-#else
-			thi->output << "S LINE " << NTime << " " << (*it)->line << " " << (*it)->time << " 0 " << thi->CurrentIteration << endl;
-			thi->output << "S LINEID " << NTime << " " << (*it)->lineid_value << " " << (*it)->time << " 0 " << thi->CurrentIteration << endl;
-#endif
-		}
-#endif
-
-		thi->LineSamples.clear();
-
-	}
-
-	/* If we found a phase separator, increase current phase */
-	if (FoundPhaseSeparator)
-	{
-		thi->CurrentPhase++;
-		thi->vcallstack.clear();
+		if (common::DEBUG())
+			cout << "not adding sample because it is the start of a region!" << endl;
 	}
 
 	/* If we found a region separator, increase current region and reset the phase */
 	if (FoundSeparator)
 	{
-		thi->CurrentRegion = ValueSeparator;
-		thi->CurrentPhase = 0;
-		thi->vcallstack.clear();
-	}
-
-	if ((FoundSeparator && ValueSeparator != 0) || FoundPhaseSeparator)
-		thi->StartRegion = e.Timestamp;
-
-	/* Annotate the time if we have found a counter in this event group */
-	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
-		if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER)
+		if (thi->CurrentRegion > 0)
 		{
-			thi->LastCounterTime = e.Timestamp;
-			break;
+			dumpSamples (ptask, task, thread, thi->CurrentRegion,
+			  thi->StartRegion, e.Timestamp - thi->StartRegion, thi->Samples);
+			thi->Samples.clear();
 		}
+
+		thi->CurrentRegion = ValueSeparator;
+		thi->StartRegion = e.Timestamp;
+	}
 }
 
 void Process::processEvent (struct singleevent_t &e)
@@ -741,6 +600,67 @@ void Process::processCommunication (struct comm_t &c)
 	UNREFERENCED(c);
 }
 
+void Process::allocateBuffers (void)
+{
+	vector<ParaverTraceApplication *> va = this->get_applications();
+
+	if (common::DEBUG())
+		cout << "Application has " << va.size() << " ptasks" << endl;
+
+	IH.AllocatePTasks (va.size());
+	PTaskInformation *pti = IH.getPTasksInformation();
+	for (unsigned ptask = 0; ptask < va.size(); ptask++)
+	{
+		vector<ParaverTraceTask *> vt = va[ptask]->get_tasks();
+
+		if (common::DEBUG())
+			cout << " Ptask " << ptask+1 << " contains " << vt.size() << " tasks" << endl;
+
+		pti[ptask].AllocateTasks (vt.size());
+		TaskInformation *ti = pti->getTasksInformation();
+		for (unsigned int task = 0; task < vt.size(); task++)
+		{
+			unsigned nthreads = vt[task]->get_threads().size(); /* o vt[task]->get_threads()[0]->get_key() ? */
+
+			if (common::DEBUG())
+				cout << "  Task " << task+1 << " contains " << nthreads << " threads" << endl;
+
+			ti[task].AllocateThreads (nthreads);
+		}		
+	}
+}
+
+string Process::getType (unsigned type)
+{
+	string s;
+
+	try
+	{ s = pcf->getEventType (type); }
+	catch (...)
+	{
+		cerr << "ERROR! Exception launched when looking for the description of type " << type << " in the PCF file. Check that it exists..." << endl; 
+		exit (-1);
+	}
+
+	return s;
+}
+
+string Process::getTypeValue (unsigned type, unsigned value)
+{
+	string s;
+
+	try
+	{ s = pcf->getEventValue (type, value); }
+	catch (...)
+	{
+		cerr << "ERROR! Exception launched when looking for the description of pair type " << type << " value " << value << " in the PCF file. Check that it exists..." << endl; 
+		exit (-1);
+	}
+
+	return s;
+}
+
+
 } /* namespace libparaver */
 
 using namespace::libparaver;
@@ -752,9 +672,7 @@ int ProcessParameters (int argc, char *argv[])
 	{
 		cerr << "Insufficient number of parameters" << endl
 		     << "Available options are: " << endl
-		     << "-separator S" << endl
-		     << "-phase-separator S" << endl
-		     << "-skip-type T" <<  endl;
+		     << "-separator S" << endl;
 		exit (-1);
 	}
 
@@ -769,32 +687,20 @@ int ProcessParameters (int argc, char *argv[])
 				RegionSeparator = atoi(argv[i]);
 			continue;
 		}
-		else if (strcmp ("-skip-type", argv[i]) == 0)
-		{
-			i++;
-			if (atoi (argv[i]) == 0)
-				cerr << "Invalid number of type in '-skip-type' option" << endl;
-			else
-				SkipTypes.push_back (atoi(argv[i]));
-		}
-		else if (strcmp ("-phase-separator", argv[i]) == 0)
-		{
-			i++;
-			if (atoi (argv[i]) == 0)
-				cerr << "Invalid number of type in '-phase-separator' option" << endl;
-			else
-				PhaseSeparators.push_back (atoi(argv[i]));
-		}
 	}
 
 	return argc-1;
 }
 
-
-
 int main (int argc, char *argv[])
 {
 	int res = ProcessParameters (argc, argv);
+
+	if (RegionSeparator == 0)
+	{
+		cerr << "Error! Please, provide a valid separator for -separator parameter" << endl;
+		exit (-1);
+	}
 
 	string tracename = string(argv[res]);
 
@@ -807,83 +713,36 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
-	vector<ParaverTraceApplication *> va = p->get_applications();
-	if (va.size() != 1)
-	{
-		cerr << "ERROR Cannot parse traces with more than one application" << endl;
-		return -1;
-	}
+	cout << "Checking for basic caller information" << flush;
+	string t1 = p->getType (EXTRAE_SAMPLE_CALLER_MIN);
+	cout << ", caller line information" << flush;
+	string t2 = p->getType (EXTRAE_SAMPLE_CALLERLINE_MIN);
+	cout << ", caller line AST information" << flush;
+	string t3 = p->getType (EXTRAE_SAMPLE_CALLERLINE_AST_MIN);
+	cout << " Done" << endl;
 
-/*
-	if (p->numCounterIDs == 0)
-	{
-		cerr << "ERROR! Cannot find performance counters in the PCF file" << endl;
-		exit (-1);
-	}
+	/* By loading these t1-3 we ensure that the all callers triplets exist */
 
-	if (p->TypeValuesLabels.size() == 0)
-	{
-		cerr << "ERROR! Cannot find regions delimited by type " << RegionSeparator << endl;
-		exit (-1);
-	}
-*/
+	string RegionSeparatorName = p->getType (RegionSeparator);
+	if (RegionSeparatorName.length() > 0)
+		RegionSeparatorName = common::removeSpaces (RegionSeparatorName);
+	else
+		RegionSeparatorName = "Unknown";
 
-	for (unsigned int i = 0; i < va.size(); i++)
-	{
-		vector<ParaverTraceTask *> vt = va[i]->get_tasks();
-		p->IH.AllocateTasks (vt.size());
-		TaskInformation *ti = p->IH.getTasksInformation();
-		for (unsigned int j = 0; j < vt.size(); j++)
-		{
-			ti[j].AllocateThreads (vt[j]->get_threads()[0]->get_key());
-			//ti[j].AllocateThreads (vt[j]->get_threads().size());
-			for (unsigned int k = 0; k < ti[j].getNumThreads(); k++)
-			{
-				ThreadInformation *thi = &((ti[j].getThreadsInformation())[k]);
-				thi->AllocateBufferCounters (p->numCounterIDs);
+	cout << "Extracting data for type " << RegionSeparator << " (" << RegionSeparatorName << ")" << endl;
 
-				stringstream tasknumber, threadnumber;
-				tasknumber << j+1;
-				threadnumber << k+1;
-				string completefile = tracename.substr (0, tracename.length()-4) + ".extract." + tasknumber.str() + "." + threadnumber.str();
-				thi->output.open (basename(completefile.c_str()));
-
-#if 0
-				/* Put definitions for the separator event */
-				list<string>::iterator it = p->TypeValuesLabels.begin();
-				for (; it != p->TypeValuesLabels.end(); it++)
-					thi->output << "D " << common::removeSpaces (*it) << endl;
-#endif
-			}
-		}
-  }
-
+	p->allocateBuffers ();
 	p->parseBody();
+	p->closeFile();
 
-	for (unsigned int i = 0; i < va.size(); i++)
-	{
-		vector<ParaverTraceTask *> vt = va[i]->get_tasks();
-		TaskInformation *ti = p->IH.getTasksInformation();
-		for (unsigned int j = 0; j < vt.size(); j++)
-			for (unsigned int k = 0; k < ti[j].getNumThreads(); k++)
-			{
-				ThreadInformation *thi = &((ti[j].getThreadsInformation())[k]);
-				thi->output.close();
-			}
-	}
+	if (p->getNCounterChanges() > 0)
+		cout << "Ignored " << p->getNCounterChanges() << " instances, most probably because of hardware counter set change." << endl;
 
 	string ControlFile = tracename.substr (0, tracename.length()-4) + ".control";
 	ofstream cfile (basename(ControlFile.c_str()));
 	cfile << tracename << endl;
 	cfile << RegionSeparator << endl;
 	cfile << RegionSeparatorName << endl;
-	cfile << PhaseSeparators.size() << endl;
-	vector<unsigned long long>::iterator it = PhaseSeparators.begin();
-	while (it != PhaseSeparators.end())
-	{
-		cfile << (*it) << endl;
-		it++;
-	}
 	cfile.close ();
 
 	return 0;
