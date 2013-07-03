@@ -16,7 +16,7 @@ extract_SOURCES = \
 
 interpolate_SOURCES = \
  common.C common.H \
- sample.C sample.H \
+ sample.H \
  read-extracted-data.C read-extracted-data.H \
  point.H object-selection.H object-selection.C \
  instance.H instance.C instance-container.C instance-container.H instance-group.C instance-group.H \
