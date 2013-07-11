@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if test "${FOLDING_HOME}" == ""; then
+	mypath=`readlink -f ${0}`
+	mydir=`dirname ${mypath}`
+	export FOLDING_HOME=${mydir}
+fi
+
+$FOLDING_HOME/bin/wxfolding.py
+

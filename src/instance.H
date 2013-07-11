@@ -52,6 +52,7 @@ class Instance
 	unsigned group;
 	unsigned long long startTime;
 	unsigned long long duration;
+	unsigned long long prvValue;
 	set<string> Counters;
 	map<string, unsigned long long> TotalCounterValues;
 

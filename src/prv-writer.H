@@ -70,6 +70,7 @@ class FoldedParaverTrace : public ParaverTrace
 		unsigned long long value, unsigned long long time, unsigned ptask,
 		unsigned task, unsigned thread);
 
+	void DumpGroupInfo (ObjectSelection *o, Instance *in);
 	void DumpCallersInInstance (ObjectSelection *o, Instance *in,
 	  InstanceGroup *ig);
 	void DumpInterpolationData (ObjectSelection *o, Instance *in,

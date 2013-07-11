@@ -173,6 +173,8 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 				ncodereftriplets--;
 			}
 
+			s->processCodeTriplets ();
+
 			i->Samples.push_back (s);
 		}
 	}

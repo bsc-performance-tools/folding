@@ -353,6 +353,7 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 		if (unusedSamples.size() > 0)
 		{
 			gplot << "'" << fdname << "' u 4:(sampleunused($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Unused samples (" << unusedSamples.size() << ")' axes x2y1 w points lc rgbcolor '#FFA0A0'";
+			coma = true;
 		}
 		else
 			coma = false;
@@ -422,7 +423,14 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 	map<string, InterpolationResults*>::iterator it;
 	for (it = interpolated.begin(); it != interpolated.end(); it++)
 		if ((*it).second->isSlopeCalculated())
-			gplot << "slope_" << (*it).first << "(ret,c,r,g) = (c eq '" << (*it).first << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl;
+		{
+			string counter_gnuplot = (*it).first;
+			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
+				if (counter_gnuplot[u] == ':')
+					counter_gnuplot[u] = '_';
+			gplot << "slope_" << counter_gnuplot << "(ret,c,r,g) = (c eq '" << (*it).first
+			  << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl;
+		}
 	gplot << endl;
 
 	unsigned count = 0;
@@ -435,7 +443,14 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 			else
 				gplot << ",\\" << endl;
 
-			gplot << "'" << fslname << "' u 4:(slope_" << (*it).first << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first << "' axes x2y2 w lines lw 3";
+			string counter_gnuplot = (*it).first;
+			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
+				if (counter_gnuplot[u] == ':')
+					counter_gnuplot[u] = '_';
+
+			gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+			  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
+			  << "' axes x2y2 w lines lw 3";
 			count++;
 		}
 	}

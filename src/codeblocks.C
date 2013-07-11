@@ -39,6 +39,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: fuse.C 1289 2012-10-22 15:5
 #include "ParaverTraceApplication.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -47,6 +48,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: fuse.C 1289 2012-10-22 15:5
 #include <vector>
 
 using namespace std;
+
+string sourceDir = string ("/dev/null");
 
 namespace libparaver {
 
@@ -170,6 +173,10 @@ void Process::prepare (void)
 		string file;
 		int line;
 
+		/* Skip End, Not Found & Unresolved */
+		if (SampleLocations[i] <= 2)
+			continue;
+
 		common::lookForCallerLineInfo (pcf, SampleLocations[i], file, line);
 		if (testedFiles.count (file) == 0 && common::existsFile (sourceDir+"/"+file))
 		{
@@ -199,6 +206,11 @@ void Process::prepare (void)
 				unlink ((string("/tmp/astblocks.")+ss.str()+".out").c_str());
 				fileblocks[file] = vtmp;
 			}
+			testedFiles.insert (file);
+		}
+		else if (testedFiles.count (file) == 0 && !common::existsFile (sourceDir+"/"+file))
+		{
+			cout << "Can't calculate AST code blocks for file " << sourceDir << "/" << file << endl;
 			testedFiles.insert (file);
 		}
 	}
@@ -348,6 +360,42 @@ void Process::appendtoPCF (string file)
 
 } /* namespace libparaver */
 
+int ProcessParameters (int argc, char *argv[])
+{
+#define CHECK_ENOUGH_ARGS(N, argc, i) \
+	(((argc) - 1 - (i)) > (N))
+
+	if (argc < 2)
+	{
+		cerr << "Insufficient number of parameters" << endl
+		     << "Available options are: " << endl
+		     << "-source DIR [where DIR poitns to the application source code]" << endl
+		     << endl;
+		exit (-1);
+	}
+
+	for (int i = 1; i < argc-1; i++)
+	{
+		if (strcmp ("-source", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -source parameter" << endl;
+				exit (-1);
+			}
+			i++;
+			sourceDir = argv[i];
+			continue;
+		}
+		else
+			cout << "Misunderstood parameter: " << argv[i] << endl;
+	}
+
+	return argc-1;
+#undef CHECK_ENOUGH_ARGS
+}
+
+
 using namespace::libparaver;
 using namespace::std;
 
@@ -355,20 +403,16 @@ int main (int argc, char *argv[])
 {
 	string tracename;
 
-	if (argc != 3)
-	{
-		cerr << "You must provide a tracefile and the directory of the source code!" << endl;
-		return -1;
-	}
-
 	if (getenv ("FOLDING_HOME") == NULL)
 	{
 		cerr << "You must define FOLDING_HOME to execute this application" << endl;
 		return -1;
 	}
 
-	tracename = string(argv[1]);
-	Process *p = new Process (argv[1], argv[2], true,
+	int res = ProcessParameters (argc, argv);
+
+	tracename = string(argv[res]);
+	Process *p = new Process (tracename, sourceDir, true,
 		tracename.substr (0, tracename.rfind(".prv"))+string(".codeblocks.prv"));
 
 	vector<ParaverTraceApplication *> va = p->get_applications();

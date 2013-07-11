@@ -34,6 +34,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: interpolate.C 1764 2013-05-
 #include "common.H"
 
 #include "prv-writer.H"
+#include "interpolate.H"
 
 namespace libparaver {
 
@@ -109,28 +110,9 @@ void FoldedParaverTrace::DumpCallersInInstance (ObjectSelection *o, Instance *in
 {
 	vector<Instance*> vInstances = ig->getInstances();
 	unsigned numInstances = vInstances.size();
-	vector<unsigned long long> zero_types;
-	vector<unsigned long long> zero_values;
 
-	assert (!o->anyany());
-
-	if (numInstances > 0)
-	{
-		Instance *i = vInstances[0];
-
-		map<unsigned, CodeRefTriplet>::iterator it = i->Samples[0]->CodeTriplet.begin();
-		for (; it != i->Samples[0]->CodeTriplet.end(); it++)
-		{
-			zero_types.push_back (630000000 + (*it).first); /* caller + depth */
-			zero_types.push_back (630000100 + (*it).first); /* caller line + depth */
-			zero_types.push_back (630000200 + (*it).first); /* caller line AST + depth */
-
-			zero_values.push_back (0);
-			zero_values.push_back (0);
-			zero_values.push_back (0);
-		}
-		DumpParaverLines (zero_types, zero_values, in->startTime, o->ptask, o->task, o->thread);
-	}
+	set<unsigned long long> set_zero_types;
+	vector<unsigned long long> vec_zero_types, vec_zero_values;
 
 	for (unsigned u = 0; u < numInstances; u++)
 	{
@@ -146,28 +128,35 @@ void FoldedParaverTrace::DumpCallersInInstance (ObjectSelection *o, Instance *in
 			map<unsigned, CodeRefTriplet>::iterator it = i->Samples[v]->CodeTriplet.begin();
 			for (; it != i->Samples[v]->CodeTriplet.end(); it++)
 			{
-				types.push_back (630000000 + (*it).first); /* caller + depth */
-				types.push_back (630000100 + (*it).first); /* caller line + depth */
-				types.push_back (630000200 + (*it).first); /* caller line AST + depth */
+				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLER_MIN + (*it).first); /* caller + depth */
+				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_MIN + (*it).first); /* caller line + depth */
+				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_AST_MIN + (*it).first); /* caller line AST + depth */
 
 				values.push_back ((*it).second.Caller);
 				values.push_back ((*it).second.CallerLine);
 				values.push_back ((*it).second.CallerLineAST);
 			}
 			DumpParaverLines (types, values, ts, o->ptask, o->task, o->thread);
+
+			/* Annotate these types, to emit the corresponding 0s */
+			set_zero_types.insert (types.begin(), types.end());
 		}
 	}
 
-	if (numInstances > 0)
-		DumpParaverLines (zero_types, zero_values, in->startTime + in->duration, o->ptask, o->task, o->thread);
+	/* Move types into vec_zero_types */
+	vec_zero_types.insert (vec_zero_types.begin(), set_zero_types.begin(),
+	  set_zero_types.end());
+	vec_zero_values.assign (vec_zero_types.size(), 0);
+
+	DumpParaverLines (vec_zero_types, vec_zero_values, in->startTime + in->duration,
+	  o->ptask, o->task, o->thread);
 }
 
 void FoldedParaverTrace::DumpInterpolationData (ObjectSelection *o, Instance *in,
 	InstanceGroup *ig, map<string,unsigned> counterCodes)
 {
-	vector<unsigned long long> values;
-	vector<unsigned long long> types;
-	vector<unsigned long long> zero_values;
+	vector<unsigned long long> types, values;
+	vector<unsigned long long> zero_types, zero_values;
 	unsigned steps;
 
 	assert (!o->anyany());
@@ -176,12 +165,12 @@ void FoldedParaverTrace::DumpInterpolationData (ObjectSelection *o, Instance *in
 	map<string,InterpolationResults*>::iterator it;
 	for (it = ir.begin(); it != ir.end(); it++)
 	{
-		types.push_back (600000000 + counterCodes[(*it).first]);
-		zero_values.push_back (0);
+		zero_types.push_back (FOLDED_BASE + counterCodes[(*it).first]);
 		steps = ((*it).second)->getCount();
 	}
+	zero_values.assign (zero_types.size(), 0);
 
-	DumpParaverLines (types, zero_values, in->startTime, o->ptask, o->task, o->thread);
+	DumpParaverLines (zero_types, zero_values, in->startTime, o->ptask, o->task, o->thread);
 
 	for (unsigned u = 0; u < steps; u++)
 	{
@@ -190,20 +179,36 @@ void FoldedParaverTrace::DumpInterpolationData (ObjectSelection *o, Instance *in
 			(unsigned long long) (proportion * (double)(in->duration));
 
 		values.clear();
+		types.clear();
 		for (it = ir.begin(); it != ir.end(); it++)
 		{
 			InterpolationResults *irr = (*it).second;
 			double *hwc_values = irr->getSlopeResultsPtr();
 			values.push_back (hwc_values[u]);
-			DumpParaverLines (types, values, ts, o->ptask, o->task, o->thread);
+			types.push_back (FOLDED_BASE + counterCodes[(*it).first]);
 		}
+		DumpParaverLines (types, values, ts, o->ptask, o->task, o->thread);
 	}
 
-	DumpParaverLines (types, zero_values, in->startTime + in->duration, o->ptask, o->task, o->thread);
+	DumpParaverLines (zero_types, zero_values, in->startTime + in->duration, o->ptask, o->task, o->thread);
 }
 
 
+void FoldedParaverTrace::DumpGroupInfo (ObjectSelection *o, Instance *in)
+{
+	assert (!o->anyany());
 
+	vector<unsigned long long> types, values, zero_values;
+
+	types.push_back (FOLDED_INSTANCE_GROUP);
+	types.push_back (FOLDED_TYPE);
+	values.push_back (in->group+1);
+	values.push_back (in->prvValue);
+	zero_values.assign (types.size(), 0);
+
+	DumpParaverLines (types, values, in->startTime, o->ptask, o->task, o->thread);
+	DumpParaverLines (types, zero_values, in->startTime + in->duration, o->ptask, o->task, o->thread);
+}
 
 } /* namespace libparaver */
 

@@ -21,7 +21,7 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common.C $
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
  | 
  | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
  | @version:     $Revision: 1764 $
@@ -29,44 +29,37 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INSTANCECONTAINER_H_INCLUDED
-#define INSTANCECONTAINER_H_INCLUDED
+#ifndef CALLSTACKTREE_H_INCLUDED
+#define CALLSTACKTREE_H_INCLUDED
 
-#include "instance-group.H"
-#include "interpolate.H"
-#include <vector>
-#include <string>
-#include <map>
+#include "sample.H"
 
-using namespace std;
-
-class InstanceContainer
+class CallstackTree
 {
 	private:
-	unsigned long long bucketsize;
-	unsigned ngroups;
-	void separateInGroups (void);
+	unsigned occurrences;
+	CodeRefTriplet nodeTriplet;
+	vector<CallstackTree*> children;
+	CallstackTree *parent;
+
+	CallstackTree * findTopCaller_r (CodeRefTriplet &ref);
 
 	public:
-	string regionName;
-	vector<Instance*> Instances;
-	vector<InstanceGroup*> InstanceGroups;
+	CallstackTree (Sample *s, unsigned depth = 0, CallstackTree *parent = NULL);
+	CallstackTree (CodeRefTriplet triplet, CallstackTree *parent);
+	CallstackTree (void);
 
-	public:
-	InstanceContainer (string);
+	void show (unsigned depth = 0);
+	void sort (void);
 
-	void add (Instance *i);
-	unsigned numInstances (void);
-	unsigned numSamples (void);
-	void splitInGroups (bool split);
-	unsigned numGroups (void)
-	  { return ngroups; }
-
-	void removePreviousData (ObjectSelection *os, string fileprefix);
-	void dumpGroupData (ObjectSelection *os, string fileprefix);
-	void gnuplot (ObjectSelection *os, string fileprefix, StatisticType_t type);
+	CallstackTree *findTopCaller (Sample *s);
+	void addCommon (Sample *s, unsigned depth = 0);
+	CodeRefTriplet getNodeTriplet (void)
+	  { return nodeTriplet; }
+	vector<CallstackTree*> getChildren (void)
+	  { return children; }
+	unsigned getOccurrences (void)
+	  { return occurrences; }
 };
 
-#endif
-
-
+#endif /* CALLSTACKTREE_H_INCLUDED */

@@ -78,10 +78,6 @@ InterpolationResults * InterpolationKriger::interpolate_kernel (vector<Sample*> 
 	InterpolationResults *res = new InterpolationResults(steps);
 	res->setInterpolationDetails (details());
 
-	vector<double> tmp;
-	tmp.push_back (0.0); tmp.push_back (1.0);
-	res->setPhases (tmp);
-
 	unsigned incount = 0;
 	for (unsigned s = 0; s < vs.size(); s++)
 		if (vs[s]->nCounterValue.count(counter) > 0)
@@ -246,5 +242,10 @@ void InterpolationKriger::interpolate (InstanceGroup *ig, set<string> &counters)
 	}
 
 	ig->setInterpolated (res);
+
+	vector<double> phases;
+	phases.push_back (0.0f);
+	phases.push_back (1.0f);
+	ig->setInterpolationPhases (phases);
 }
 
