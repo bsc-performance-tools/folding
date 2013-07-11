@@ -21,29 +21,28 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef POINT_H_INCLUDED
-#define POINT_H_INCLUDED
+#ifndef CALLSTACK_H_INCLUDED
+#define CALLSTACK_H_INCLUDED
 
-#include <string>
+#include "instance-group.H"
+#include "callstack-tree.H"
 
-using namespace std;
-
-class Point
+class Callstack
 {
+	private:
+	Sample *lookLongestWithMain (vector<Sample*> &vs, unsigned mainid);
+	bool hasMain (Sample* s, unsigned mainid);
+
 	public:
-	string RegionName;
-	string CounterID;
-	unsigned long long Duration;
-	unsigned long long TotalCounter;
-	unsigned Instance;
+	void generate (InstanceGroup *ig, unsigned mainid = 0);
 };
 
-#endif
+#endif /* CALLSTACK_H_INCLUDED */

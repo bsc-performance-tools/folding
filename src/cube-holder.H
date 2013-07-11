@@ -21,47 +21,45 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef GENERATE_GNUPLOT_H
-#define GENERATE_GNUPLOT_H
+#ifndef CUBEHOLDER_H_INCLUDED
+#define CUBEHOLDER_H_INCLUDED
 
-#include <list>
-#include <string>
-#include "UIParaverTraceConfig.h"
-#include "point.H"
+#include <cube3/Cube.h>
 
+#include "cube-tree.H"
+#include "instance-container.H"
+
+#include <set>
+
+using namespace cube;
 using namespace std;
-using namespace libparaver;
 
-class GNUPLOTinfo
+#define NO_OCCURRENCES "no_Occurrences"
+#define DURATION       "Duration"
+
+class CubeHolder
 {
+	private:
+	Cube c;
+
+	Machine *mach;
+	Node *node;
+	Process *proc0;
+	Thread *thrd0;
+
 	public:
-	int inpoints;
-	bool done;
-	bool interpolated;
-	double mean_duration;
-	double mean_counter;
-	string title;
-	string fileprefix;
-	string metric;
-	string nameregion;
-	vector <double> qualities;
-	vector <double> breakpoints;
+	CubeHolder (set<string> &counters);
+	void generateCubeTree (string name, InstanceContainer &ic,
+		UIParaverTraceConfig *pcf);
+	void dump (string file);
 };
 
-void createMultipleGNUPLOT (list<GNUPLOTinfo*> &info);
-
-void createSingleGNUPLOT (string file, list<GNUPLOTinfo*> &info);
-
-void createMultiSlopeGNUPLOT (string file, string regionName, list<GNUPLOTinfo*> &info, vector <string> &wantedCounters);
-
-void createAccumulatedCounterGNUPLOT (string file, string regionName, vector<Point> &points, vector <string> &wantedCounters);
-
-#endif
+#endif /* CUBEHOLDER_H_INCLUDED */

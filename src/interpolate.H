@@ -21,50 +21,31 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/interpolate.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-07-03 13:58:01 +0200 (Wed, 03 Jul 2013) $
+ | @version:     $Revision: 1862 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef TREENODEHOLDER_H_INCLUDED
-#define TREENODEHOLDER_H_INCLUDED
+#ifndef INTERPOLATE_H_INCLUDED
+#define INTERPOLATE_H_INCLUDED
 
-#include "common.H"
+#define FOLDED_BASE                       600000000
+#define FOLDED_INSTANCE_GROUP             600000001
+#define FOLDED_PHASE                      600000002
+#define FOLDED_TYPE                       600000003
+#define PAPI_CHANGE_COUNTER_SET            41999999
+#define PAPI_MIN_COUNTER                   42000000
+#define PAPI_MAX_COUNTER                   42999999
+#define EXTRAE_SAMPLE_CALLER_MIN           30000000
+#define EXTRAE_SAMPLE_CALLER_MAX           30000099
+#define EXTRAE_SAMPLE_CALLERLINE_MIN       30000100
+#define EXTRAE_SAMPLE_CALLERLINE_MAX       30000199
+#define EXTRAE_SAMPLE_CALLERLINE_AST_MIN   30000200
+#define EXTRAE_SAMPLE_CALLERLINE_AST_MAX   30000299
 
-//class ca_callstacksample;
+enum StatisticType_t { STATISTIC_MEAN, STATISTIC_MEDIAN };
 
-#include "callstackanalysis.H"
-
-#if HAVE_CUBE
-# include <cube3/Cube.h>
-#endif
-
-
-class TreeNodeHolder
-{
-	public:
-	unsigned CallerLine;
-	unsigned Caller;
-	pair<unsigned long long, unsigned long long> CallerLineASTBlock;
-#if HAVE_CUBE
-	cube::Cnode *CubeNode;
-#endif
-
-	vector<TreeNodeHolder *> children;
-	unsigned Occurrences;
-
-	TreeNodeHolder ()
-	{};
-
-	~TreeNodeHolder ()
-	{};
-
-	TreeNodeHolder *lookForCallerLine (unsigned);
-	void AddPath (unsigned depth, ca_callstacksample &, UIParaverTraceConfig *pcf, cube::Cube *cubev, cube::Cnode *root, string &sourceDir);
-	void AddPathAST (unsigned depth, ca_callstacksample &ca, UIParaverTraceConfig *pcf, cube::Cube *cubev, cube::Cnode *root, string &sourceDir);
-};
-
-#endif
+#endif /* INTERPOLATE_H_INCLUDED */

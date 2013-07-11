@@ -39,4 +39,5 @@ Instance::Instance (void)
 	ptask = task = thread = 0;
 	group = 0;
 	startTime = duration = 0;
+	prvValue = 0;
 }

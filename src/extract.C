@@ -45,16 +45,10 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <math.h>
 #include <string.h>
 #include <list>
+#include <set>
 #include <exception>
 
-#define PAPI_MIN_COUNTER                   42000000
-#define PAPI_MAX_COUNTER                   42999999
-#define EXTRAE_SAMPLE_CALLER_MIN           30000000
-#define EXTRAE_SAMPLE_CALLER_MAX           30000099
-#define EXTRAE_SAMPLE_CALLERLINE_MIN       30000100
-#define EXTRAE_SAMPLE_CALLERLINE_MAX       30000199
-#define EXTRAE_SAMPLE_CALLERLINE_AST_MIN   30000200
-#define EXTRAE_SAMPLE_CALLERLINE_AST_MAX   30000299
+#include "interpolate.H"
 
 unsigned long long RegionSeparator = 0;
 
@@ -86,6 +80,7 @@ class ThreadInformation
 {
 	public:
 	vector<Sample> Samples;
+	bool seen;
 
 	unsigned long long CurrentRegion;
 	unsigned long long StartRegion;
@@ -95,7 +90,8 @@ class ThreadInformation
 };
 
 ThreadInformation::ThreadInformation ()
-{
+{	
+	seen = false;
 	CurrentRegion = 0;
 }
 
@@ -165,6 +161,8 @@ class InformationHolder
 	private:
 	int numPTasks;
 	PTaskInformation *PTasksInfo;
+	set<string> seenCounters;
+	set<string> seenRegions;
 	
 	public:
 	int getNumPTasks (void)
@@ -175,6 +173,15 @@ class InformationHolder
 
 	void AllocatePTasks (int numPTasks);
 	~InformationHolder();
+
+	void addCounter (string c)
+	  { seenCounters.insert (c); }
+	void addRegion (string r)
+	  { seenRegions.insert (r); }
+	set<string> getCounters (void)
+	  { return seenCounters; }
+	set<string> getRegions (void)
+	  { return seenRegions; }
 
 	ofstream outputfile;
 };
@@ -212,6 +219,10 @@ class Process : public ParaverTrace
 	void processCaller (struct event_t &evt, unsigned base, Sample &s);
 	void processCounter (struct event_t &rvt, Sample &s);
 
+	void dumpSeenObjects (string fnameprefix);
+	void dumpSeenCounters (string fnameprefix);
+	void dumpSeenRegions (string fnameprefix);
+
 	public:
 	Process (string prvFile, bool multievents);
 
@@ -228,6 +239,8 @@ class Process : public ParaverTrace
 
 	unsigned getNCounterChanges (void)
 	  { return nCounterChanges; }
+
+	void dumpSeen (string fnameprefix);
 };
 
 Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, multievents)
@@ -405,6 +418,7 @@ void Process::dumpSamples (unsigned ptask, unsigned task, unsigned thread,
 		RegionName = "Unknown";
 	else
 		RegionName = common::removeSpaces (RegionName);
+	IH.addRegion (RegionName);
 
 	/* Calculate totals */
 	map<unsigned, unsigned long long> totals;
@@ -430,6 +444,7 @@ void Process::dumpSamples (unsigned ptask, unsigned task, unsigned thread,
 		if (!found)
 			cout << "Error! Cannot find counter " << (*it_totals).first << endl;
 		IH.outputfile << " " << CounterIDNames[index] << " " << (*it_totals).second;
+		IH.addCounter (CounterIDNames[index]);
 	}
 	IH.outputfile << endl;
 
@@ -497,11 +512,11 @@ void Process::processMultiEvent (struct multievent_t &e)
 	if (task >= pti[ptask].getNumTasks())
 		return;
 
-	TaskInformation *ti = &((pti[ptask].getTasksInformation())[task]);
+	TaskInformation *ti = pti[ptask].getTasksInformation();
 	if (thread >= ti[task].getNumThreads())
 		return;
 
-	ThreadInformation *thi = &((ti[task].getThreadsInformation())[thread]);
+	ThreadInformation *thi = ti[task].getThreadsInformation();
 
 	bool storeSample = false;
 	Sample s;
@@ -509,7 +524,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 	{
-		if (thi->CurrentRegion > 0)
+		if (thi[thread].CurrentRegion > 0)
 		{
 			if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER )
 			{
@@ -567,7 +582,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 				cout << " " << (*it).first << " " << (*it).second;
 			cout << endl;
 		}
-		thi->Samples.push_back (s);
+		thi[thread].Samples.push_back (s);
 	}
 	else
 	{
@@ -578,15 +593,17 @@ void Process::processMultiEvent (struct multievent_t &e)
 	/* If we found a region separator, increase current region and reset the phase */
 	if (FoundSeparator)
 	{
-		if (thi->CurrentRegion > 0)
+		if (thi[thread].CurrentRegion > 0)
 		{
-			dumpSamples (ptask, task, thread, thi->CurrentRegion,
-			  thi->StartRegion, e.Timestamp - thi->StartRegion, thi->Samples);
-			thi->Samples.clear();
+			dumpSamples (ptask, task, thread, thi[thread].CurrentRegion,
+			  thi[thread].StartRegion, e.Timestamp - thi[thread].StartRegion,
+			  thi[thread].Samples);
+			thi[thread].Samples.clear();
+			thi[thread].seen = true;
 		}
 
-		thi->CurrentRegion = ValueSeparator;
-		thi->StartRegion = e.Timestamp;
+		thi[thread].CurrentRegion = ValueSeparator;
+		thi[thread].StartRegion = e.Timestamp;
 	}
 }
 
@@ -628,6 +645,7 @@ void Process::allocateBuffers (void)
 			ti[task].AllocateThreads (nthreads);
 		}		
 	}
+
 }
 
 string Process::getType (unsigned type)
@@ -660,6 +678,59 @@ string Process::getTypeValue (unsigned type, unsigned value)
 	return s;
 }
 
+void Process::dumpSeenObjects (string filename)
+{
+	ofstream f (basename(filename.c_str()));
+	if (f.is_open())
+	{
+		PTaskInformation *ptaskinfo = IH.getPTasksInformation();
+		for (unsigned ptask = 0; ptask < IH.getNumPTasks(); ptask++)
+		{
+			TaskInformation *taskinfo = ptaskinfo[ptask].getTasksInformation();
+			for (unsigned task = 0; task < ptaskinfo[ptask].getNumTasks(); task++)
+			{
+				ThreadInformation *threadinfo = taskinfo[task].getThreadsInformation();
+				for (unsigned thread = 0; thread < taskinfo[task].getNumThreads(); thread++)
+					if (threadinfo[thread].seen)
+						f << ptask+1 << "." << task+1 << "." << thread+1 << endl;
+			} 
+		}
+	}
+	f.close ();
+}
+
+void Process::dumpSeenCounters (string filename)
+{
+	ofstream f (basename(filename.c_str()));
+	if (f.is_open())
+	{
+		set<string>::iterator i;
+		set<string> ctrs = IH.getCounters ();
+		for (i = ctrs.begin(); i != ctrs.end(); i++)
+			f << *i << endl;
+	}
+	f.close();
+}
+
+void Process::dumpSeenRegions (string filename)
+{
+	ofstream f (basename(filename.c_str()));
+	if (f.is_open())
+	{
+		set<string>::iterator i;
+		set<string> ctrs = IH.getRegions ();
+		for (i = ctrs.begin(); i != ctrs.end(); i++)
+			f << *i << endl;
+	}
+	f.close();
+}
+
+void Process::dumpSeen (string fnameprefix)
+{
+	dumpSeenObjects (fnameprefix+".objects");
+	dumpSeenCounters (fnameprefix+".counters");
+	dumpSeenRegions (fnameprefix+".regions");
+}
 
 } /* namespace libparaver */
 
@@ -735,6 +806,8 @@ int main (int argc, char *argv[])
 	p->parseBody();
 	p->closeFile();
 
+	p->dumpSeen (tracename.substr (0, tracename.length()-4));
+
 	if (p->getNCounterChanges() > 0)
 		cout << "Ignored " << p->getNCounterChanges() << " instances, most probably because of hardware counter set change." << endl;
 
@@ -744,6 +817,7 @@ int main (int argc, char *argv[])
 	cfile << RegionSeparator << endl;
 	cfile << RegionSeparatorName << endl;
 	cfile.close ();
+
 
 	return 0;
 }

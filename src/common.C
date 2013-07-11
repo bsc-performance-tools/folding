@@ -126,13 +126,72 @@ unsigned common::lookForCounter (string &name, UIParaverTraceConfig *pcf)
 	return 0;
 }
 
-void common::lookForCallerLineInfo (UIParaverTraceConfig *pcf, unsigned id, string &file, int &line)
+unsigned common::lookForValueString (UIParaverTraceConfig *pcf, unsigned type, string str, bool &found)
+{
+	found = false;
+
+	vector<unsigned> vtypes = pcf->getEventTypes();
+	if (find (vtypes.begin(), vtypes.end(), type) != vtypes.end())
+	{
+		vector<unsigned> v = pcf->getEventValues(type);
+		for (unsigned i = 0; i < v.size(); i++)
+		{
+			string evstr = pcf->getEventValue (type, v[i]);
+			if (str == evstr)
+			{
+				found = true;
+				return v[i];
+			}
+			else if (str == removeSpaces (evstr))
+			{
+				found = true;
+				return v[i];
+			}
+		}
+	}
+
+	return 0;
+}
+
+void common::lookForCallerLineInfo (UIParaverTraceConfig *pcf, unsigned id,
+	string &file, int &line)
 {
 	string cl = pcf->getEventValue (30000100, id);
 	line = atoi ((cl.substr (0, cl.find (" "))).c_str());
 	int pos_open = cl.find ("(");
 	int pos_close = cl.find (")");
 	file = cl.substr (pos_open+1, pos_close-pos_open-1);
+}
+
+void common::lookForFullCallerInfo (UIParaverTraceConfig *pcf, unsigned caller,
+	unsigned callerlineast, string &routine, string &file, int &bline, int &eline)
+{
+	string cl = pcf->getEventValue (30000200, callerlineast);
+
+	bline = 0;
+	eline = 0;
+
+	/* Check whether we have a line separator or not */
+
+	int sep_position, par_position = cl.find ("(");
+	string tmp = cl.substr (0, par_position);
+	if ((sep_position = tmp.find ("-")) != string::npos)
+	{
+		string tmp1 = tmp.substr (0, sep_position);
+		string tmp2 = tmp.substr (sep_position+1);
+		bline = atoi (tmp1.c_str());
+		eline = atoi (tmp2.c_str());
+	}
+	else
+	{
+		/* If can't find -, then there isn't a separator */
+		bline = eline = atoi (tmp.c_str());
+	}
+
+	int pos_open = par_position;
+	int pos_close = cl.find (")");
+	file = cl.substr (pos_open+1, pos_close-pos_open-1);
+	routine = pcf->getEventValue (30000000, caller);
 }
 
 void common::CleanMetricsDirectory_r (char *dir)
@@ -192,7 +251,11 @@ void common::CleanMetricsDirectory (string &directory)
 
 bool common::isMIPS (string s)
 {
-	return s == "PAPI_TOT_INS" || s == "PM_INST_CMPL" || s == "INSTRUCTION_RETIRED" || s == "INSTRUCTIONS_RETIRED";
+	return s == "PAPI_TOT_INS" ||
+	  s == "PM_INST_CMPL" || /* PPC */
+	  s == "INSTRUCTION_RETIRED" || /* x86 */
+	  s == "INSTRUCTIONS_RETIRED" || /* x86 */ 
+	  s == "PEVT_INST_ALL"; /* PPC BGQ */
 }
 
 bool common::DEBUG (void)

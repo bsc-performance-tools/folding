@@ -33,6 +33,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
 
+#include "interpolate.H"
+
 #include "read-extracted-data.H"
 #include "instance-container.H"
 #include "prv-writer.H"
@@ -41,6 +43,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "sample-selector-default.H"
 
 #include "interpolation-kriger.H"
+#include "callstack.H"
+#include "cube-holder.H"
 
 #include <string.h>
 #include <iostream>
@@ -52,16 +56,6 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include <assert.h>
 
-#define FOLDED_BASE                       600000000
-#define PAPI_MIN_COUNTER                   42000000
-#define PAPI_MAX_COUNTER                   42999999
-#define EXTRAE_SAMPLE_CALLER_MIN           30000000
-#define EXTRAE_SAMPLE_CALLER_MAX           30000099
-#define EXTRAE_SAMPLE_CALLERLINE_MIN       30000100
-#define EXTRAE_SAMPLE_CALLERLINE_MAX       30000199
-#define EXTRAE_SAMPLE_CALLERLINE_AST_MIN   30000200
-#define EXTRAE_SAMPLE_CALLERLINE_AST_MAX   30000299
-
 static ObjectSelection *objectsSelected;
 
 static SampleSelectorDefault ssdefault; 
@@ -72,14 +66,13 @@ static Interpolation *interpolation = &ik;
 
 enum FeedType_t { FEED_NONE, FEED_TIME, FEED_FIRST_OCCURRENCE };
 static FeedType_t feedTraceType = FEED_NONE;
-static unsigned long long feedTraceFoldType_Value;
+static unsigned long long feedTraceFoldType;
 static unsigned long long feedTraceTimes_Begin, feedTraceTimes_End;
-static string feedTraceFoldType_Value_Definition;
+static string feedTraceFoldType_Definition;
 static ObjectSelection *objectToFeed = NULL;
 
 bool splitInGroups = true;
 
-enum StatisticType_t { STATISTIC_MEAN, STATISTIC_MEDIAN };
 static StatisticType_t StatisticType = STATISTIC_MEAN; 
 static double NumOfSigmaTimes = 2.0f;
 
@@ -159,7 +152,8 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 				double uplimit = mean + NumOfSigmaTimes * stdev;
 				double lolimit = mean - NumOfSigmaTimes * stdev;
 
-				cout << ", mean = " << mean << " stdev = " << stdev << endl;
+				cout << ", mean = " << (mean/1000000.f) << "ms stdev = " 
+				  << (stdev/1000000.f) << "ms" << endl;
 				unsigned total = ig->numInstances();
 
 				/* Remove while traversing */
@@ -182,11 +176,11 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 
 				mean = ig->mean();
 				stdev = ig->stdev();
-				cout << "  No. of Instances within mean+/-" << fixed << setprecision (2)
-				  << NumOfSigmaTimes << "*stdev = [ " << lolimit << " , " << uplimit
-				  << " ] = " << within << " ~ " << (within*100)/total
-				  << "% of the population, mean = " << mean << " stdev = " << stdev
-				  << endl;
+				cout << "  No. of Instances within mean+/-"
+				  << NumOfSigmaTimes << "*stdev = [ " << (lolimit/1000000.f) << "ms, "
+				  << (uplimit / 1000000.f) << "ms ] = " << within << " ~ " << (within*100)/total
+				  << "% of the population, mean = " << (mean/1000000.f) 
+				  << "ms stdev = " << (stdev/1000000.f) << "ms" << endl;
 			}
 			else if (StatisticType == STATISTIC_MEDIAN)
 			{
@@ -194,7 +188,8 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 				double uplimit = median + NumOfSigmaTimes * mad;
 				double lolimit = median - NumOfSigmaTimes * mad;
 
-				cout << ", median = " << median << " mad = " << mad << endl;
+				cout << ", median = " << (median / 1000000.f) << "ms mad = " 
+				  << (mad / 1000000.f) << "ms" << endl;
 				unsigned total = ig->numInstances();
 
 				/* Count & Remove while traversing */
@@ -217,10 +212,11 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 
 				median = ig->median();
 				mad = ig->MAD();
-				cout << "  No. of Instances within median +/-" << fixed << setprecision (2)
-				  << NumOfSigmaTimes << "*mad = [ " << lolimit << " , " << uplimit << " ] = "
-			      << within << " ~ " << (within*100)/total << "% of the population, median = "
-				  << median << " mad = " << mad << endl;
+				cout << "  No. of Instances within median +/-" << NumOfSigmaTimes 
+				  << "*mad = [ " << (lolimit / 1000000.f) << "ms, "
+				  << (uplimit / 1000000.f)<< "ms ] = " << within << " ~ "
+				  << (within*100)/total << "% of the population, median = "
+				  << (median / 1000000.f) << "ms mad = " << (mad / 1000000.f) << "ms" << endl;
 			}
 		}
 		cout << "-----" << endl;
@@ -229,7 +225,7 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 }
 
 void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
-	set<string> &wantedCounters)
+	set<string> &wantedCounters, unsigned foldedType)
 {
 	ofstream PCFfile;
 
@@ -293,6 +289,17 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		PCFfile << endl;
 	}
 
+	PCFfile << endl << "EVENT_TYPE" << endl
+	  << "0 " << FOLDED_TYPE << " Folded type : " << pcf->getEventType (foldedType)
+	  << endl << "VALUES" << endl;
+	vector<unsigned> v = pcf->getEventValues(foldedType);
+	for (unsigned i = 0; i < v.size(); i++)
+		PCFfile << i << " " << pcf->getEventValue(foldedType, v[i]) << endl;
+	PCFfile << endl;
+
+	PCFfile << endl << "EVENT_TYPE" << endl
+	  << "0 " << FOLDED_INSTANCE_GROUP << " Folded instance group ID" << endl << endl;
+
 	PCFfile << endl << "EVENT_TYPE" << endl;
 	set<string>::iterator it = wantedCounters.begin();
 	for ( ; it != wantedCounters.end(); it++ )
@@ -316,17 +323,17 @@ int ProcessParameters (int argc, char *argv[])
 	{
 		cerr << "Insufficient number of parameters" << endl
 		     << "Available options are: " << endl
-		     << "-split-in-groups O  [where O = yes by default]" << endl
+		     << "-split-in-groups yes/no  [yes by default]" << endl
 		     << "-use-object PTASK.TASK.THREAD [where PTASK, TASK and THREAD = * by default" << endl
 		     << "-use-median" << endl
 		     << "-use-mean" << endl
-		     << "-sigma-times X      [where X = 2.0 by default]" << endl
+		     << "-sigma-times X           [where X = 2.0 by default]" << endl
 		     << "-feed-time TIME1 TIME2 PTASK.TASK.THREAD" << endl
 		     << "-feed-first-occurrence PTASK.TASK.THREAD" << endl
 		     << "-max-samples NUM" << endl
 		     << "-max-samples-distance NUM" << endl
-		     << "-region R           [where R = all by default]" << endl
-		     << "-counter C          [where C = all by default]" << endl
+		     << "-region R                [where R = all by default]" << endl
+		     << "-counter C               [where C = all by default]" << endl
 		     << "-interpolation " << endl
 			 << "          kriger STEPS NUGET PREFILTER?" << endl
 			 << " [DEFAULT kriger 1000 0.0001 no]" << endl
@@ -344,7 +351,8 @@ int ProcessParameters (int argc, char *argv[])
 				exit (-1);
 			}
 			i++;
-			splitInGroups = strcasecmp (argv[i], "yes") == 0;
+			splitInGroups = strcasecmp (argv[i], "yes") == 0 || 
+			  strcasecmp (argv[i], "y") == 0;
 			continue;
 		}
 		if (strcmp ("-use-object", argv[i]) == 0)
@@ -587,6 +595,8 @@ int main (int argc, char *argv[])
 	map<string, InstanceContainer> excludedInstances;
 	vector<Instance*> vInstances;
 	vector<Instance*> feedInstances;
+	char CWD[1024];
+	getcwd (CWD, sizeof(CWD));
 
 	objectsSelected = new ObjectSelection;
 
@@ -689,7 +699,7 @@ int main (int argc, char *argv[])
 		}
 
 		ic.dumpGroupData (objectsSelected, cFilePrefix);
-		ic.gnuplot (objectsSelected, cFilePrefix);
+		ic.gnuplot (objectsSelected, cFilePrefix, StatisticType);
 
 		cout << "Interpolation [" << interpolation->details() << "] (region = " <<
 		  *it << "), #out steps = " << interpolation->getSteps() << endl;
@@ -705,29 +715,61 @@ int main (int argc, char *argv[])
 		cout << endl;
 	}
 
-	string controlFile = cFile.substr (0, cFile.rfind (".extract")) + ".control";
-	string traceFile;
-
-	ifstream control (controlFile.c_str());
-	if (!control.is_open())
-	{
-		cerr << "Error! Cannot open file " << controlFile << " which is needed to feed the tracefile" << endl;
-		exit (-1);
-	}
-	else
-	{
-		control >> traceFile;
-		control >> feedTraceFoldType_Value;
-		control >> feedTraceFoldType_Value_Definition;
-	}
-
 	if (feedTraceType != FEED_NONE)
 	{
+		string controlFile = cFile.substr (0, cFile.rfind (".extract")) + ".control";
+		string objectsFile = cFile.substr (0, cFile.rfind (".extract")) + ".objects";
+		string traceFile;
+
+		ifstream control (controlFile.c_str());
+		if (!control.is_open())
+		{
+			cerr << "Error! Cannot open file " << controlFile << " which is needed to feed the tracefile" << endl;
+			exit (-1);
+		}
+		else
+		{
+			control >> traceFile;
+			control >> feedTraceFoldType;
+			control >> feedTraceFoldType_Definition;
+		}
+
+		ifstream objects (objectsFile.c_str());
+		if (!objects.is_open())
+		{
+			cerr << "Error! Cannot open file " << objectsFile << " which is needed to feed the tracefile" << endl;
+			exit (-1);
+		}
+		else
+		{
+			string objectExtracted;
+			bool foundObject = false;
+
+			while (!foundObject)
+			{
+				objects >> objectExtracted;
+				if (objects.eof())
+					break;
+
+				unsigned ptask, task, thread;
+				if (common::decomposePtaskTaskThread (objectExtracted, ptask, task, thread))
+					foundObject = objectToFeed->match (ptask, task, thread);
+			}
+			objects.close();
+
+			if (!foundObject)
+			{
+				cerr << "Error! You specified to feed an object (" << objectToFeed->toString() << ") that dit not provide any data... Aborting" << endl;
+				exit (-1);
+			}
+		}
+
 		UIParaverTraceConfig *pcf = NULL;
 		unsigned long long prv_out_start, prv_out_end;
 
-		string oFile = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.prv";
-		ftrace = new FoldedParaverTrace (oFile, traceFile, true);
+		string oFilePRV = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.prv";
+		string oFileCUBE = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.cube";
+		ftrace = new FoldedParaverTrace (oFilePRV, traceFile, true);
 
 		ftrace->parseBody();
 
@@ -753,39 +795,95 @@ int main (int argc, char *argv[])
 			{
 				Instance *i = feedInstances[u];
 				if (i->startTime >= feedTraceTimes_Begin  && i->startTime <= feedTraceTimes_End)
+				{
+					bool found;
+					i->prvValue = common::lookForValueString (pcf,
+ 						feedTraceFoldType, i->RegionName, found);
+					if (!found)
+						cerr << "Can't find value for '" << i->RegionName <<"' in type " << feedTraceFoldType << endl;
 					whichInstancesToFeed.push_back (i);
+				}
 			}
 		}
 		else if (feedTraceType == FEED_FIRST_OCCURRENCE)
 		{
-			set<string> usedRegions;
+			set< pair<string, unsigned> > usedRegions;
 			for (unsigned u = 0; u < feedInstances.size(); u++)
 			{
 				Instance *i = feedInstances[u];
-				if (usedRegions.find(i->RegionName) == usedRegions.end())
+				pair<string, unsigned> RG = make_pair (i->RegionName, i->group);
+				if (usedRegions.find(RG) == usedRegions.end())
 				{
+					bool found;
+					i->prvValue = common::lookForValueString (pcf,
+ 						feedTraceFoldType, i->RegionName, found);
+					if (!found)
+						cerr << "Can't find value for '" << i->RegionName <<"' in type " << feedTraceFoldType << endl;
 					whichInstancesToFeed.push_back (i);
-					usedRegions.insert (i->RegionName);
+					usedRegions.insert (RG);
 				}
 			}
 		}
 
 		/* Emit callstack into the new tracefile */
+		cout << "Generating folded trace for Paraver (" << CWD << "/" << basename (oFilePRV.c_str()) << ")" << endl;
 		for (unsigned u = 0; u < whichInstancesToFeed.size(); u++)
 		{
 			Instance *i = whichInstancesToFeed[u];
 			if (Instances.count(i->RegionName) > 0)
 			{
 				InstanceContainer ic = Instances.at (i->RegionName);
-				for (unsigned g = 0; g < ic.numGroups(); g++)
-				{
-					ftrace->DumpInterpolationData (objectToFeed, i, 
-					  ic.InstanceGroups[g], counterCodes);
-					ftrace->DumpCallersInInstance (objectToFeed, i, 
-					  ic.InstanceGroups[g]);
-				}
+
+				ftrace->DumpGroupInfo (objectToFeed, i);
+				ftrace->DumpInterpolationData (objectToFeed, i, ic.InstanceGroups[i->group],
+				  counterCodes);
+				ftrace->DumpCallersInInstance (objectToFeed, i, ic.InstanceGroups[i->group]);
 			}
 		}
+
+#warning Enable cube generation
+#if 0
+		/* Generate a callstack tree for the CUBE program */
+		cout << "Generating callstack tree for CUBE (" << CWD << "/" << basename (oFileCUBE.c_str()) << ")" << endl;
+		bool found;
+
+		 /* __libc_start_main & generic_start_main are routines seen as main in
+		    BG/Q machines using IBM XLF compilers */
+		unsigned mainid = common::lookForValueString (pcf,
+			  EXTRAE_SAMPLE_CALLER_MIN, "__libc_start_main", found);
+		if (!found)
+			mainid = common::lookForValueString (pcf,
+			  EXTRAE_SAMPLE_CALLER_MIN, "generic_start_main", found);
+
+		/* Default to regular main symbol */
+		if (!found)
+			mainid = common::lookForValueString (pcf,
+			  EXTRAE_SAMPLE_CALLER_MIN, "main", found);
+
+		if (found)
+		{
+			CubeHolder ch (counters);
+
+			for (it = regions.begin(); it != regions.end(); it++)
+			{
+				if (Instances.count(*it) == 0)
+					continue;
+
+				InstanceContainer ic = Instances.at(*it);
+				for (unsigned u = 0; u < ic.numGroups(); u++)
+				{
+					Callstack *ct = new Callstack;
+					ct->generate (ic.InstanceGroups[u], mainid);
+				}
+				ch.generateCubeTree (*it, ic, pcf);
+			}
+
+			ch.dump (oFileCUBE);
+		}
+		else
+			cerr << "Sorry... can't find 'main' symbol in the PCF file, can't generate the CUBE file" << endl;
+
+#endif
 
 		/* Copy .pcf and .row files */
 		ifstream ifs_pcf ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".pcf")).c_str());
@@ -796,7 +894,7 @@ int main (int argc, char *argv[])
 			ifs_pcf.close();
 			ofs_pcf.close();
 		}
-		AppendInformationToPCF (traceFile.substr (0, traceFile.rfind(".prv"))+string(".folded.pcf"), pcf, counters);
+		AppendInformationToPCF (traceFile.substr (0, traceFile.rfind(".prv"))+string(".folded.pcf"), pcf, counters, feedTraceFoldType);
 
 		ifstream ifs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".row")).c_str());
 		if (ifs_row.is_open())

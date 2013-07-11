@@ -21,7 +21,7 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common.C $
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
  | 
  | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
  | @version:     $Revision: 1764 $
@@ -29,44 +29,70 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INSTANCECONTAINER_H_INCLUDED
-#define INSTANCECONTAINER_H_INCLUDED
+static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 2013-05-24 14:08:28Z harald $";
 
-#include "instance-group.H"
-#include "interpolate.H"
-#include <vector>
-#include <string>
-#include <map>
+#include "common.H"
 
-using namespace std;
+#include "sample.H"
 
-class InstanceContainer
+#include <iostream>
+
+void Sample::show (void)
 {
-	private:
-	unsigned long long bucketsize;
-	unsigned ngroups;
-	void separateInGroups (void);
+	map<unsigned, CodeRefTriplet>::reverse_iterator i = CodeTriplet.rbegin();
+	for (; i != CodeTriplet.rend(); i++)
+		cout << "Sample [" << (*i).first << " <" << (*i).second.Caller << "," << (*i).second.CallerLine << "," << (*i).second.CallerLineAST << "> ] @ " << sTime << endl;
+}
 
-	public:
-	string regionName;
-	vector<Instance*> Instances;
-	vector<InstanceGroup*> InstanceGroups;
+void Sample::processCodeTriplets (void)
+{
+/*
+	{
+		cout << "PRE size = " << CodeTriplet.size() << endl;
+		map<unsigned, CodeRefTriplet>::iterator i = CodeTriplet.begin();
+		for (; i != CodeTriplet.end(); i++)
+			cout << "PRE Sample CodeTriplet < " << (*i).second.Caller << "," << (*i).second.CallerLine << "," << (*i).second.CallerLineAST << " >" << endl;
+	}
+*/
 
-	public:
-	InstanceContainer (string);
+	/* Remove head callers 0..2 */
+	map<unsigned, CodeRefTriplet>::iterator i = CodeTriplet.begin();
+	if ((*i).second.Caller <= 2) /* 0 = End, 1 = Unresolved, 2 = Not found */
+	{
+		do
+		{
+			CodeTriplet.erase (i);
+			if (CodeTriplet.size() == 0)
+				break;
+			i = CodeTriplet.begin();
+		} while ((*i).second.Caller <= 2);
+	}
 
-	void add (Instance *i);
-	unsigned numInstances (void);
-	unsigned numSamples (void);
-	void splitInGroups (bool split);
-	unsigned numGroups (void)
-	  { return ngroups; }
+	/* Remove tail callers 0..2 */
+	i = CodeTriplet.begin();
+	bool tailFound = false;
+	map<unsigned, CodeRefTriplet>::iterator it;
+	while (i != CodeTriplet.end())
+	{
+		if ((*i).second.Caller <= 2 && !tailFound)
+		{
+			it = i;
+			tailFound = true;
+		}
+		else if ((*i).second.Caller > 2)
+			tailFound = false;
+		i++;
+	}
+	if (tailFound)
+		CodeTriplet.erase (it, CodeTriplet.end());
 
-	void removePreviousData (ObjectSelection *os, string fileprefix);
-	void dumpGroupData (ObjectSelection *os, string fileprefix);
-	void gnuplot (ObjectSelection *os, string fileprefix, StatisticType_t type);
-};
-
-#endif
-
+/*
+	{
+		cout << "POST size = " << CodeTriplet.size() << endl;
+		map<unsigned, CodeRefTriplet>::iterator i = CodeTriplet.begin();
+		for (; i != CodeTriplet.end(); i++)
+			cout << "POST Sample CodeTriplet < " << (*i).second.Caller << "," << (*i).second.CallerLine << "," << (*i).second.CallerLineAST << " >" << endl;
+	}
+*/
+}
 

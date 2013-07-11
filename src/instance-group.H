@@ -43,6 +43,7 @@
 using namespace std;
 
 class InterpolationResults;
+class CallstackTree;
 
 class InstanceGroup
 {
@@ -55,12 +56,16 @@ class InstanceGroup
 	map<string, vector<Sample*> > used;
 	map<string, vector<Sample*> > unused;
 
+	vector<double> Phases;
+	vector<CallstackTree *> trees;
+
 	string regionName;
 	unsigned numGroup;
 
 	void gnuplot_single (ObjectSelection *os, string prefix, string counter,
 	  InterpolationResults *ir);
 	void gnuplot_slopes (ObjectSelection *os, string prefix);
+
 
 	public:
 	InstanceGroup (string, unsigned);
@@ -100,6 +105,15 @@ class InstanceGroup
 	void gnuplot (ObjectSelection *os, string prefix);
 	void python (void);
 
+	void setInterpolationPhases (vector <double> &phases)
+	  { Phases = phases; }
+	vector<double> getInterpolationPhases (void)
+	  { return Phases; }
+
+	void setCallstackTrees (vector<CallstackTree*> vtrees)
+	  { trees = vtrees; }
+	vector<CallstackTree*> getCallstackTrees (void)
+	  { return trees; }
 };
 
 #endif

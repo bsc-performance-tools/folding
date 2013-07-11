@@ -21,24 +21,59 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/folding/callstackanalysis.C $
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/fuse.C $
  | 
- | @last_commit: $Date: 2012-08-14 16:01:44 +0200 (dt, 14 ago 2012) $
- | @version:     $Revision: 1161 $
+ | @last_commit: $Date: 2012-10-22 17:55:35 +0200 (dl, 22 oct 2012) $
+ | @version:     $Revision: 1289 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1161 2012-08-14 14:01:44Z harald $";
+static char __attribute__ ((unused)) rcsid[] = "$Id: fuse.C 1289 2012-10-22 15:55:35Z harald $";
 
 #include "common.H"
 
-#include <string>
-#include <cube3/Cube.h>
+#include "ParaverTrace.h"
+#include "ParaverTraceThread.h"
+#include "ParaverTraceTask.h"
+#include "ParaverTraceApplication.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <iostream>
+#include <vector>
+#include "interpolate.H"
 
-using namespace std;
+using namespace::libparaver;
+using namespace::std;
 
-void createLaunchFile (string metric, string file_prefix, cube::Cube cube, string Region, string Counter)
+int main (int argc, char *argv[])
 {
+	string prvFile;
+
+	if (argc != 2)
+		return -1;
+
+	prvFile = argv[1];
+	UIParaverTraceConfig *pcf = new UIParaverTraceConfig;
+	pcf->parse (prvFile.substr (0, prvFile.length()-3) + string ("pcf"));
+
+	vector<unsigned> vtypes = pcf->getEventTypes();
+	for (unsigned u = 0; u < vtypes.size(); u++)
+	{
+		bool unusable =
+		  ( vtypes[u] >= PAPI_MIN_COUNTER && vtypes[u] <= PAPI_MAX_COUNTER ) ||
+		  ( vtypes[u] == PAPI_CHANGE_COUNTER_SET ) ||
+		  ( vtypes[u] >= FOLDED_BASE ) ||
+		  ( vtypes[u] >= EXTRAE_SAMPLE_CALLER_MIN && vtypes[u] <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX);
+
+		if (!unusable)
+		{
+			string description = pcf->getEventType (vtypes[u]);
+			cout << vtypes[u] << ";" << description << endl;
+		}
+	}
+
+	return 0;
 }
+

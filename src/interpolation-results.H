@@ -44,7 +44,6 @@ class InterpolationResults
 	double *interpolation;
 	double *slope;
 	string interpolationDetails;
-	vector<double> phases;
 
 	public:
 	InterpolationResults (unsigned count);
@@ -69,10 +68,6 @@ class InterpolationResults
 	  { interpolationDetails = s; }
 	string getInterpolationDetails (void)
 	  { return interpolationDetails; }
-	vector<double> getPhases (void)
-	  { return phases; }
-	void setPhases (vector<double> &p)
-	  { phases = p; }
 };
 
 #endif /* INTERPOLATION_RESULTS_H_INCLUDED */

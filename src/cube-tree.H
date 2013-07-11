@@ -21,17 +21,37 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/folding/callstackanalysis.H $
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
  | 
- | @last_commit: $Date: 2012-08-14 16:01:44 +0200 (dt, 14 ago 2012) $
- | @version:     $Revision: 1161 $
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef CUBE_LAUNCH_FILE_H_INCLUDED
-#define CUBE_LAUNCH_FILE_H_INCLUDED
+#ifndef CUBETREE_H_INCLUDED
+#define CUBETREE_H_INCLUDED
 
-void createLaunchFile (string metric, string file_prefix, cube::Cube cube, string Region, string Counter);
+#include "callstack-tree.H"
+#include <cube3/Cube.h>
 
-#endif /* CUBE_LAUNCH_FILE_H_INCLUDED */
+using namespace cube;
+
+class CubeTree
+{
+	private:
+	Cnode *cube_node;
+	Region *cube_region;
+	CallstackTree *tree_node;
+	vector<CubeTree *> children;
+
+	void generateLeaf (Cube &c, Cnode *parent, CodeRefTriplet crt, 
+	  unsigned occurrences, UIParaverTraceConfig *pcf);
+	void generateSibling (Cube &, Cnode *, CallstackTree *, 
+	  UIParaverTraceConfig *pcf);
+
+	public:
+	void generate (Cube &, Cnode *, CallstackTree *, UIParaverTraceConfig *pcf);
+};
+
+#endif /* CUBETREE_H_INCLUDED */

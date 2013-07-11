@@ -140,13 +140,22 @@ void InstanceContainer::dumpGroupData (ObjectSelection *os, string prefix)
 	odata.open (fname.c_str(), std::ofstream::app);
 
 	if (Instances.size() > 0)
-		for (unsigned u = 0; u < Instances.size(); u++)
-			odata << regionName << ";" << Instances[u]->duration << ";" << Instances[u]->group+1 << endl;
+	{
+		for (unsigned g = 0; g < ngroups; g++)
+		{
+			vector<Instance*> v = InstanceGroups[g]->getInstances();
+			for (unsigned u = 0; u < v.size(); u++)
+				odata << "u;" << regionName << ";" << g+1 << ";" << v[u]->duration << endl;
+			v = InstanceGroups[g]->getExcludedInstances();
+			for (unsigned u = 0; u < v.size(); u++)
+				odata << "e;" << regionName << ";" << g+1 << ";" << v[u]->duration << endl;
+		}
+	}
 
 	odata.close ();
 }
 
-void InstanceContainer::gnuplot (ObjectSelection *os, string prefix)
+void InstanceContainer::gnuplot (ObjectSelection *os, string prefix, StatisticType_t type)
 {
 	string fname = prefix + "." + os->toString(false, "any") + ".groups.csv";
 	string gname = prefix + "." + regionName + "." + os->toString (false, "any")
@@ -174,20 +183,54 @@ void InstanceContainer::gnuplot (ObjectSelection *os, string prefix)
 	  regionName << "\\n" << Instances.size() << " Instances - Bucket size " << 
 	  fixed << setprecision (3) << ((double) bucketsize) / 1000000. << " ms\";" << endl;
 
+#define MAXLINECOLOR 6
+	gplot
+	  << "set style line 1 pt 1 linecolor rgb \"#FF0000\"" << endl
+	  << "set style line 2 pt 2 linecolor rgb \"#00B000\"" << endl
+	  << "set style line 3 pt 3 linecolor rgb \"#0000FF\"" << endl
+	  << "set style line 4 pt 4 linecolor rgb \"#FF8000\"" << endl
+	  << "set style line 5 pt 5 linecolor rgb \"#FF0080\"" << endl
+	  << "set style line 6 pt 6 linecolor rgb \"#00A0A0\"" << endl
+	  << endl 
+	  << "set style line 7 pt 1 linecolor rgb \"#FF8080\"" << endl
+	  << "set style line 8 pt 2 linecolor rgb \"#80B080\"" << endl
+	  << "set style line 9 pt 3 linecolor rgb \"#8080FF\"" << endl
+	  << "set style line 10 pt 4 linecolor rgb \"#FF8080\"" << endl
+	  << "set style line 11 pt 5 linecolor rgb \"#FF8080\"" << endl
+	  << "set style line 12 pt 6 linecolor rgb \"#80A0A0\"" << endl
+	  << endl;
+
 	for (unsigned u = 0; u < ngroups; u++)
 	{
-		if (u == 0)
-			gplot << "plot \\" << endl;
-		else
+		unsigned lstyle = (u % MAXLINECOLOR)+1;
+		InstanceGroup *ig = InstanceGroups[u];
+		unsigned long long s = (type == STATISTIC_MEAN) ? ig->mean() : ig->median();
+		gplot << "set label \"\" at " << s << ".0/1000000.0,0 point lt " << lstyle << " ps 2;" << endl;
+	}
+	gplot << endl;
+
+	gplot << "plot \\" << endl;
+	for (unsigned u = 0; u < ngroups; u++)
+	{
+		unsigned lstyle = (u % MAXLINECOLOR)+1;
+		InstanceGroup *ig = InstanceGroups[u];
+
+		if (u != 0)
 			gplot << ",\\" << endl;
-		gplot << "'" << fname << "' using ((strcol(1) eq '" << regionName 
-		  << "' && $3 == " << u+1 << ") ? $2 / 1000000: NaN) : $0 ti 'Group " << u+1
-		  << " (" << InstanceGroups[u]->numInstances() << ")'";
+
+		gplot << "'" << fname << "' using (strcol(1) eq 'u' && (strcol(2) eq '" 
+		  << regionName << "' && $3 == " << u+1
+		  << ") ? $4 / 1000000: NaN) : $0 ti 'Group " << u+1
+		  << " (" << ig->numInstances() << "/" << ig->numExcludedInstances() 
+		  << ")' w points ls " << lstyle << ",\\" << endl;
+		gplot << "'" << fname << "' using ((strcol(1) eq 'e') && (strcol(2) eq '" 
+		  << regionName 
+		  << "' && $3 == " << u+1 << ") ? $4 / 1000000: NaN) : $0 notitle w points ls " 
+		  << lstyle+MAXLINECOLOR;
 	}
 	gplot << ";" << endl;
 
 	gplot.close();
-
 }
 
 void InstanceContainer::removePreviousData (ObjectSelection *os, string prefix)

@@ -54,6 +54,8 @@ class common
 	static bool existsDir (string dir);
 	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
 	  unsigned id, string &file, int &line);
+	static void lookForFullCallerInfo (UIParaverTraceConfig *pcf, unsigned caller,
+	  unsigned callerlineast, string &routine, string &file, int &bline, int &eline);
 	static void CleanMetricsDirectory (string &directory);
 	static void CleanMetricsDirectory_r (char *directory);
 	static bool isMIPS (string s);
@@ -62,6 +64,7 @@ class common
 	  unsigned &task, unsigned &thread);
 	static bool decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
 	  bool &ptaskany, unsigned &task, bool &taskany, unsigned &thread, bool &threadany);
+	static unsigned lookForValueString (UIParaverTraceConfig *pcf, unsigned type, string str, bool &found);
 };
 
 #endif

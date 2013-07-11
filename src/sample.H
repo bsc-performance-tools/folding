@@ -42,18 +42,32 @@ class CodeRefTriplet
 	unsigned long long Caller;
 	unsigned long long CallerLine;
 	unsigned long long CallerLineAST;
+
+	bool operator==(const CodeRefTriplet &other) const 
+	  { return Caller == other.Caller && 
+	         CallerLine == other.CallerLine &&
+	         CallerLineAST == other.CallerLineAST; }
+	bool operator!=(const CodeRefTriplet &other) const 
+	  { return !(*this == other); } 
+
+	bool operator< (const CodeRefTriplet &other) const
+	  { return Caller < other.Caller; }
 };
 
 class Sample
 {
 	public:
+	unsigned long long sTime; /* integral time of the sample */
+	unsigned long long iTime; /* integral time since start of instance */
+	double nTime; /* normalized time since start of instance */
+
 	map<string, unsigned long long> iCounterValue; /* integral counter value */
 	map<string, double> nCounterValue; /* normalized counter value */
 	map<unsigned, CodeRefTriplet> CodeTriplet; /* Code reference triplets (caller, callerline, callerlineAST) */
 
-	unsigned long long sTime; /* integral time of the sample */
-	unsigned long long iTime; /* integral time since start of instance */
-	double nTime; /* normalized time since start of instance */
+	void processCodeTriplets (void);
+	void show (void);
+
 };
 
 #endif
