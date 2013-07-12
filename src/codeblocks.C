@@ -126,7 +126,7 @@ bool Process::is_cxx (string &f)
 	if (f.length() >= 4)
 		if (f.substr(f.length()-4) == ".cpp" ||
 		    f.substr(f.length()-4) == ".c++" ||
-		    f.substr(f.lenght()-4) == ".cxx")
+		    f.substr(f.length()-4) == ".cxx")
 			return true;
 
 	return false;
@@ -162,7 +162,7 @@ Process::~Process ()
 
 void Process::prepare (void)
 {
-	assert(pcf!=NULL);
+	assert (pcf!=NULL);
 
 	vector<unsigned> SampleLocations = pcf->getEventValues (30000100);
 	set <string> testedFiles;
@@ -425,7 +425,8 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
-	p->prepare();
+	if (sourceDir != "/dev/null")
+		p->prepare();
 
 	p->parseBody();
 
