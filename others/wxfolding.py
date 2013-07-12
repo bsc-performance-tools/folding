@@ -45,7 +45,7 @@ class wxFoldingEventChooser(wx.Dialog):
 
 		self.sizerv = wx.BoxSizer (wx.VERTICAL)
 		self.sizerv.Add (self.lc, 1, wx.EXPAND|wx.ALL, border = 5)
-		self.sizerv.Add (self.sizerh1, border = 3)
+		self.sizerv.Add (self.sizerh1, 0, wx.CENTER, border = 3)
 
 		self.SetSizerAndFit(self.sizerv)
 
@@ -62,6 +62,8 @@ class wxFoldingEventChooser(wx.Dialog):
 
 	def OnCancel(self, e):
 		self.EndModal(wx.ID_CANCEL)
+
+
 
 class wxFoldingInputDialog(wx.Dialog):
 
@@ -82,7 +84,7 @@ class wxFoldingInputDialog(wx.Dialog):
 		self.btnChooseSourceDir = wx.Button (self, -1, "Choose source code location")
 		self.btnChooseSourceDir.Bind (wx.EVT_BUTTON, self.OnChooseSourceDir )
 		self.btnChooseSourceDir.Disable()
-		self.txtsourceDir = wx.StaticText (self, -1, "")
+		self.txtsourceDir = wx.StaticText (self, -1, "(optional)")
 		self.txtsourceDir.Disable()
 		self.sizerh2 = wx.BoxSizer (wx.HORIZONTAL)
 		self.sizerh2.Add (self.btnChooseSourceDir, 0, wx.EXPAND|wx.ALL, border = 10)
@@ -102,12 +104,9 @@ class wxFoldingInputDialog(wx.Dialog):
 		self.btnChooseEvent.Bind (wx.EVT_BUTTON, self.OnChooseEvent)
 		self.txtEventType = wx.StaticText (self, -1, "")
 		self.txtEventType.Disable()
-		self.txtEventDesc = wx.StaticText (self, -1, "")
-		self.txtEventDesc.Disable()
 		self.sizerh3 = wx.BoxSizer (wx.HORIZONTAL)
 		self.sizerh3.Add (self.btnChooseEvent, 0, wx.EXPAND|wx.ALL, border = 10)
 		self.sizerh3.Add (self.txtEventType, 0, wx.CENTER, border = 10)
-		self.sizerh3.Add (self.txtEventDesc, 0, wx.CENTER, border = 10)
 
 		# Working directory chooser
 		self.btnChooseWorkDir = wx.Button (self, -1, "Choose working directory", size = self.btnChooseSourceDir.GetSize())
@@ -144,18 +143,21 @@ class wxFoldingInputDialog(wx.Dialog):
 			self.txtPrv.SetLabel ( self.TraceFile )
 			self.btnChooseEvent.Enable()
 			self.txtEventType.Enable()
-			self.txtEventDesc.Enable()
 			self.btnChooseSourceDir.Enable()
-			self.txtsourceDir.Enable()
-			self.txtsourceDir.SetLabel ("")
+			self.txtsourceDir.SetLabel ("optional")
+			self.txtsourceDir.Disable()
 			self.txtEventType.SetLabel ("")
-			self.txtEventDesc.SetLabel ("")
 			self.SourceDir = None
 			self.EventType = None
 
 			# Generate the available types list
 			command = FOLDING_HOME + "/bin/foldingtypes " + self.TraceFile + " > " + TMPDIR + "/folding-types." + str (os.getpid())
-			os.system (command)
+			print "Executing command: "+command
+			if not os.system (command) == 0:
+				print "Error while executing : " + command
+				return
+
+			self.Fit()
 
 		dialog.Destroy()
 
@@ -164,8 +166,8 @@ class wxFoldingInputDialog(wx.Dialog):
 		if dialog.ShowModal() == wx.ID_OK:
 			self.SourceDir = dialog.GetPath()
 			self.txtsourceDir.SetLabel (self.SourceDir)
-			if not self.EventType == None:
-				self.continueBtn.Enable()
+			self.txtsourceDir.Enable()
+			self.Fit()
 		dialog.Destroy()
 
 	def OnChooseWorkDir(self, event=None):
@@ -173,18 +175,19 @@ class wxFoldingInputDialog(wx.Dialog):
 		if dialog.ShowModal() == wx.ID_OK:
 			self.WorkDir = dialog.GetPath()
 			self.txtworkDir.SetLabel (self.WorkDir)
+			self.Fit()
 		dialog.Destroy()
 
 	def OnChooseEvent(self, event=None):
 		dialog = wxFoldingEventChooser (None, title = "Choose event type")
 		if dialog.ShowModal() == wx.ID_OK:
 			self.EventType = int (dialog.EventTypeChosen)
-			self.txtEventType.SetLabel (dialog.EventTypeChosen)
-			self.txtEventDesc.SetLabel (" ("+dialog.EventDescriptionChosen+")")
-			self.SetSizerAndFit (self.sizerv)
-			if not self.SourceDir == None:
-				self.continueBtn.Enable()
+			self.txtEventType.SetLabel (dialog.EventTypeChosen + "(" + dialog.EventDescriptionChosen + ")")
+			self.continueBtn.Enable()
+			self.Fit()
 		dialog.Destroy()
+
+
 
 class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 
@@ -503,7 +506,10 @@ class wxFolding(wx.Frame):
 		#  fuse the tracefile
 		#  data extraction
 
-		command = FOLDING_HOME + "/bin/codeblocks -source " + SourceDir + " " + TraceFile
+		command = FOLDING_HOME + "/bin/codeblocks"
+		if SourceDir:
+			command += " -source " + SourceDir
+		command += " " + TraceFile
 		print "Executing command: " + command
 		if not os.system (command) == 0:
 			print "Error while executing : " + command
