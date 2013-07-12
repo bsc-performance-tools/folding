@@ -112,7 +112,8 @@ class Process : public ParaverTrace
 bool Process::is_f90 (string &f)
 {
 	if (f.length() >= 4)
-		if (f.substr(f.length()-4) == ".f90" || f.substr(f.length()-4) == ".F90")
+		if (f.substr(f.length()-4) == ".f90" ||
+		    f.substr(f.length()-4) == ".F90")
 			return true;
 	return false;}
 
@@ -123,7 +124,9 @@ bool Process::is_cxx (string &f)
 			return true;
 
 	if (f.length() >= 4)
-		if (f.substr(f.length()-4) == ".cpp" || f.substr(f.length()-4) == ".c++")
+		if (f.substr(f.length()-4) == ".cpp" ||
+		    f.substr(f.length()-4) == ".c++" ||
+		    f.substr(f.lenght()-4) == ".cxx")
 			return true;
 
 	return false;
