@@ -224,7 +224,8 @@ class wxFoldingViewer(wx.Frame):
 				fr = FoldingResult (region, counters, numgroups, infogroups)
 				self.regions[region] = fr
 
-		os.chdir (os.path.dirname(self.DataFile))
+		if os.path.dirname (self.DataFile):
+			os.chdir (os.path.dirname(self.DataFile))
 
 		dialog = wxFoldingViewerDialog (parent = self, foldingresults = self.regions,
 		  filename = os.path.basename (self.DataFile), foldedobject = foldedobject,
