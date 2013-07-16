@@ -53,6 +53,7 @@ endif
 if NEED_BOOST_HOME
 fuse_CXXFLAGS += -I$(BOOST_HOME)/include
 codeblocks_CXXFLAGS += -I$(BOOST_HOME)/include
+foldingtypes_CXXFLAGS += -I$(BOOST_HOME)/include
 extract_CXXFLAGS += -I$(BOOST_HOME)/include
 interpolate_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
