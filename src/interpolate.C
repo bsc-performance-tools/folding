@@ -682,7 +682,7 @@ int main (int argc, char *argv[])
 
 		if (first)
 		{
-			ic.removePreviousData (objectsSelected, cFilePrefix);
+			ic.removePreviousDataFiles (objectsSelected, cFilePrefix);
 			ic.InstanceGroups[0]->removePreviousData (objectsSelected, cFilePrefix);
 			first = false;
 		}
@@ -698,9 +698,6 @@ int main (int argc, char *argv[])
 			}
 		}
 
-		ic.dumpGroupData (objectsSelected, cFilePrefix);
-		ic.gnuplot (objectsSelected, cFilePrefix, StatisticType);
-
 		cout << "Interpolation [" << interpolation->details() << "] (region = " <<
 		  *it << "), #out steps = " << interpolation->getSteps() << endl;
 		for (unsigned u = 0; u < ic.numGroups(); u++)
@@ -712,6 +709,11 @@ int main (int argc, char *argv[])
 			ic.InstanceGroups[u]->dumpData (objectsSelected, cFilePrefix);
 			ic.InstanceGroups[u]->gnuplot (objectsSelected, cFilePrefix);
 		}
+
+		ic.dumpGroupData (objectsSelected, cFilePrefix);
+		ic.gnuplot (objectsSelected, cFilePrefix, StatisticType);
+		ic.python (objectsSelected, cFilePrefix, counters);
+
 		cout << endl;
 	}
 

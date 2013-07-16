@@ -103,7 +103,7 @@ class InstanceGroup
 	void dumpData (ObjectSelection *os, string prefix);
 	void dumpInterpolatedData (ObjectSelection *os, string prefix);
 	void gnuplot (ObjectSelection *os, string prefix);
-	void python (void);
+	string python (void);
 
 	void setInterpolationPhases (vector <double> &phases)
 	  { Phases = phases; }

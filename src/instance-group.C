@@ -284,7 +284,7 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	string fdname = prefix + "." + os->toString(false, "any") 
 	  + ".dump.csv";
 	string gname = prefix + "." + regionName + "." + 
-	  common::convertInt (numGroup+1) + "." + os->toString (false, "any") +
+	  os->toString (false, "any") + "." + common::convertInt (numGroup+1) +
 	  "." + counter + ".gnuplot";
 	ofstream gplot (gname.c_str());
 
@@ -322,9 +322,9 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	  "set ylabel 'Normalized " << counter << "';" << endl <<
 	  "set y2label '" << counter << " rate (in Mevents/s)';" << endl;
 
-	gplot << "set title \"" << os->toString (true) << " - " << regionName
-	  << "." << numGroup << "\\nDuration = " << (m/1000000) << " ms, Counter = " 
-	  << idata->getAvgCounterValue() << " Kevents\"" << endl;
+	gplot << "set title \"" << os->toString (true) << " - Group " << numGroup+1
+	  << " - " << regionName << "\\nDuration = " << (m/1000000) << " ms, Counter = " 
+	  << (idata->getAvgCounterValue() / 1000) << " Kevents\"" << endl;
 
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
@@ -383,7 +383,7 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 {
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
 	string gname = prefix + "." + regionName + "." + 
-	  common::convertInt (numGroup+1) + "." + os->toString (false, "any") +
+	  os->toString (false, "any") + "." + common::convertInt (numGroup+1) +
 	  ".slopes.gnuplot";
 	ofstream gplot (gname.c_str());
 
@@ -409,8 +409,8 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 	  "set xlabel 'Time (in ms)'" << endl <<
 	  "set ylabel 'Performance counter rate (in Mevents/s)';" << endl;
 
-	gplot << "set title \"" << os->toString (true) << " - " << regionName
-	  << "." << numGroup << "\\nDuration = " << (m/1000000) << " ms\"" 
+	gplot << "set title \"" << os->toString (true) << " -  Group " << numGroup+1 
+	  <<  " - " << regionName << "\\nDuration = " << (m/1000000) << " ms\"" 
 	  << endl;
 
 	gplot << "set xtics ( 0.0 ";
@@ -467,6 +467,22 @@ void InstanceGroup::gnuplot (ObjectSelection *os, string prefix)
 	gnuplot_slopes (os, prefix);
 }
 
-void InstanceGroup::python (void)
+string InstanceGroup::python (void)
 {
+	double MIPS = 0;
+
+	map<string, InterpolationResults*>::iterator it;
+	for (it = interpolated.begin(); it != interpolated.end(); it++)
+		if (common::isMIPS((*it).first))
+		{
+			double avginst = (*it).second->getAvgCounterValue();
+			double avgtime = mean();
+			MIPS = 1000.f * ( avginst / avgtime );
+			break;
+		}
+
+	return common::convertDouble (mean() / 1000000.f, 3) +
+	  "-" + common::convertDouble (MIPS, 3) +
+	  "-" + common::convertInt (Instances.size()) +
+	  "-" + common::convertInt (Phases.size()-1);
 }

@@ -38,6 +38,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: common.C 1764 2013-05-24 14
 #include <iomanip>
 #include <fstream>
 #include <algorithm>
+#include <vector>
 #include "instance-container.H"
 
 InstanceContainer::InstanceContainer (string s)
@@ -160,6 +161,13 @@ void InstanceContainer::gnuplot (ObjectSelection *os, string prefix, StatisticTy
 	string fname = prefix + "." + os->toString(false, "any") + ".groups.csv";
 	string gname = prefix + "." + regionName + "." + os->toString (false, "any")
 	  + ".groups.gnuplot";
+	vector<string> lightcolors, darkcolors;
+	lightcolors.push_back ("#FF0000"); darkcolors.push_back ("#FF8080");
+	lightcolors.push_back ("#00B000"); darkcolors.push_back ("#80B080");
+	lightcolors.push_back ("#0000FF"); darkcolors.push_back ("#8080FF");
+	lightcolors.push_back ("#FF8000"); darkcolors.push_back ("#FF8080");
+	lightcolors.push_back ("#FF0080"); darkcolors.push_back ("#FF8080");
+	lightcolors.push_back ("#00A0A0"); darkcolors.push_back ("#80A0A0");
 
 	ofstream gplot (gname.c_str());
 
@@ -184,20 +192,20 @@ void InstanceContainer::gnuplot (ObjectSelection *os, string prefix, StatisticTy
 	  fixed << setprecision (3) << ((double) bucketsize) / 1000000. << " ms\";" << endl;
 
 #define MAXLINECOLOR 6
-	gplot
-	  << "set style line 1 pt 1 linecolor rgb \"#FF0000\"" << endl
-	  << "set style line 2 pt 2 linecolor rgb \"#00B000\"" << endl
-	  << "set style line 3 pt 3 linecolor rgb \"#0000FF\"" << endl
-	  << "set style line 4 pt 4 linecolor rgb \"#FF8000\"" << endl
-	  << "set style line 5 pt 5 linecolor rgb \"#FF0080\"" << endl
-	  << "set style line 6 pt 6 linecolor rgb \"#00A0A0\"" << endl
+	gplot << endl
+	  << "set style line 1 pt 1 lc rgb \"" << lightcolors[0] << "\"" << endl
+	  << "set style line 2 pt 2 lc rgb \"" << lightcolors[1] << "\"" << endl
+	  << "set style line 3 pt 3 lc rgb \"" << lightcolors[2] << "\"" << endl
+	  << "set style line 4 pt 4 lc rgb \"" << lightcolors[3] << "\"" << endl
+	  << "set style line 5 pt 5 lc rgb \"" << lightcolors[4] << "\"" << endl
+	  << "set style line 6 pt 6 lc rgb \"" << lightcolors[5] <<  "\"" << endl
 	  << endl 
-	  << "set style line 7 pt 1 linecolor rgb \"#FF8080\"" << endl
-	  << "set style line 8 pt 2 linecolor rgb \"#80B080\"" << endl
-	  << "set style line 9 pt 3 linecolor rgb \"#8080FF\"" << endl
-	  << "set style line 10 pt 4 linecolor rgb \"#FF8080\"" << endl
-	  << "set style line 11 pt 5 linecolor rgb \"#FF8080\"" << endl
-	  << "set style line 12 pt 6 linecolor rgb \"#80A0A0\"" << endl
+	  << "set style line 7 pt 1 lc rgb \"" << darkcolors[0] << "\"" << endl
+	  << "set style line 8 pt 2 lc rgb \"" << darkcolors[1] <<  "\"" << endl
+	  << "set style line 9 pt 3 lc rgb \"" << darkcolors[2] << "\"" << endl
+	  << "set style line 10 pt 4 lc rgb \"" << darkcolors[3] << "\"" << endl
+	  << "set style line 11 pt 5 lc rgb \"" << darkcolors[4] << "\"" << endl
+	  << "set style line 12 pt 6 lc rgb \"" << darkcolors[5] << "\"" << endl
 	  << endl;
 
 	for (unsigned u = 0; u < ngroups; u++)
@@ -205,7 +213,7 @@ void InstanceContainer::gnuplot (ObjectSelection *os, string prefix, StatisticTy
 		unsigned lstyle = (u % MAXLINECOLOR)+1;
 		InstanceGroup *ig = InstanceGroups[u];
 		unsigned long long s = (type == STATISTIC_MEAN) ? ig->mean() : ig->median();
-		gplot << "set label \"\" at " << s << ".0/1000000.0,0 point lt " << lstyle << " ps 2;" << endl;
+		gplot << "set label \"\" at " << s << ".0/1000000.0,0 point lt " << lstyle << " ps 2 lc rgb \"" << lightcolors[lstyle-1] << "\";" << endl;
 	}
 	gplot << endl;
 
@@ -220,12 +228,12 @@ void InstanceContainer::gnuplot (ObjectSelection *os, string prefix, StatisticTy
 
 		gplot << "'" << fname << "' using (strcol(1) eq 'u' && (strcol(2) eq '" 
 		  << regionName << "' && $3 == " << u+1
-		  << ") ? $4 / 1000000: NaN) : $0 ti 'Group " << u+1
+		  << ") ? $4 / 1000000.0: NaN) : $0 ti 'Group " << u+1
 		  << " (" << ig->numInstances() << "/" << ig->numExcludedInstances() 
 		  << ")' w points ls " << lstyle << ",\\" << endl;
 		gplot << "'" << fname << "' using ((strcol(1) eq 'e') && (strcol(2) eq '" 
 		  << regionName 
-		  << "' && $3 == " << u+1 << ") ? $4 / 1000000: NaN) : $0 notitle w points ls " 
+		  << "' && $3 == " << u+1 << ") ? $4 / 1000000.0: NaN) : $0 notitle w points ls " 
 		  << lstyle+MAXLINECOLOR;
 	}
 	gplot << ";" << endl;
@@ -233,12 +241,64 @@ void InstanceContainer::gnuplot (ObjectSelection *os, string prefix, StatisticTy
 	gplot.close();
 }
 
-void InstanceContainer::removePreviousData (ObjectSelection *os, string prefix)
+void InstanceContainer::python (ObjectSelection *os, string prefix,
+	set<string> counters)
 {
-	string fname = prefix + "." + os->toString(false, "any") + ".groups.csv";
+	if (ngroups > 0 && counters.size() > 0)
+	{
+		string fname = prefix + ".wxfolding";
+		bool writeheader = !common::existsFile (fname);
 
+		ofstream f (fname.c_str(), ios::app);
+		if (!f.is_open())
+		{
+			cerr << "Failed to create " << fname << endl;
+			return;
+		}
+
+		if (writeheader)
+		{
+			time_t now = time(0);
+			f << "# Folding done by " << getenv("USER") << " at " << ctime(&now);
+		}
+
+		f << "Object=" << os->toString (false, "any") << endl;
+
+		f << regionName << ";";
+
+		set<string>::iterator i;
+		for (i = counters.begin(); i != counters.end(); i++)
+			if (i == counters.begin())
+				f << *i;
+			else
+				f << "," << *i;
+
+		f << ";" << ngroups << ";";
+
+		for (unsigned u = 0; u < ngroups; u++)
+		{
+			string s = InstanceGroups[u]->python();
+			if (u == 0)
+				f << s;
+			else
+				f << "," << s;
+		}
+
+		f << endl;
+
+		f.close();
+	}
+}
+
+void InstanceContainer::removePreviousDataFiles (ObjectSelection *os, string prefix)
+{
+	string wxfname = prefix + ".wxfolding";
+	if (common::existsFile (wxfname))
+		if (unlink (wxfname.c_str()) != 0)
+			cerr << "Can't remove previous file '" << wxfname << "'" << endl;
+
+	string fname = prefix + "." + os->toString(false, "any") + ".groups.csv";
 	if (common::existsFile (fname))
 		if (unlink (fname.c_str()) != 0)
 			cerr << "Can't remove previous file '" << fname << "'" << endl;
 }
-
