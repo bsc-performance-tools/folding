@@ -7,7 +7,7 @@ if test "${FOLDING_HOME}" == ""; then
 	export FOLDING_HOME=${mydir}
 fi
 
-if test $# -ne 2 ; then
+if test $# -ne 1 ; then
 	echo Sorry... you must provide an .wxfolding file to continue
 else
 	$FOLDING_HOME/bin/wxfolding_viewer.py $@
