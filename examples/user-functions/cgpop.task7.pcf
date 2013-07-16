@@ -1,0 +1,1056 @@
+DEFAULT_OPTIONS
+
+LEVEL               THREAD
+UNITS               NANOSEC
+LOOK_BACK           100
+SPEED               1
+FLAG_ICONS          ENABLED
+NUM_OF_STATE_COLORS 1000
+YMAX_SCALE          37
+
+
+DEFAULT_SEMANTIC
+
+THREAD_FUNC          State As Is
+
+
+STATES
+0    Idle
+1    Running
+2    Not created
+3    Waiting a message
+4    Blocking Send
+5    Synchronization
+6    Test/Probe
+7    Scheduling and Fork/Join
+8    Wait/WaitAll
+9    Blocked
+10    Immediate Send
+11    Immediate Receive
+12    I/O
+13    Group Communication
+14    Tracing Disabled
+15    Others
+16    Send Receive
+17    Memory transfer
+
+
+STATES_COLOR
+0    {117,195,255}
+1    {0,0,255}
+2    {255,255,255}
+3    {255,0,0}
+4    {255,0,174}
+5    {179,0,0}
+6    {0,255,0}
+7    {255,255,0}
+8    {235,0,0}
+9    {0,162,0}
+10    {255,0,255}
+11    {100,100,177}
+12    {172,174,41}
+13    {255,144,26}
+14    {2,255,177}
+15    {192,224,0}
+16    {66,66,66}
+17    {255,0,96}
+
+
+EVENT_TYPE
+9   50000003    MPI Other
+VALUES
+31   MPI_Init
+0   Outside MPI
+
+
+EVENT_TYPE
+6    6000    BG Processor ID
+6    6001    BG A Coordinate in Torus
+6    6002    BG B Coordinate in Torus
+6    6003    BG C Coordinate in Torus
+6    6004    BG D Coordinate in Torus
+6    6005    BG E Coordinate in Torus
+
+
+EVENT_TYPE
+6    40000001    Application
+VALUES
+0      End
+1      Begin
+
+
+EVENT_TYPE
+6    40000003    Flushing Traces
+VALUES
+0      End
+1      Begin
+
+
+EVENT_TYPE
+6    40000036    Process IDentifier
+6    40000037    Parent Process IDentifier
+6    40000038    fork() depth
+
+
+EVENT_TYPE
+7  42001024 (PEVT_INST_ALL) Count all completed instructions.
+7  42001022 (PEVT_CYCLES) Total CPU Cycles 
+7  42001068 (PEVT_L1P_BAS_LU_STALL_SRT_CYC) Cycles lookup was held by full switch request table
+7  42001069 (PEVT_L1P_BAS_LU_STALL_MMIO_DCR_CYC) Cycles lookup was held by MMIO or DCR access
+7  42001070 (PEVT_L1P_BAS_LU_STALL_STRM_DET_CYC) Cycles lookup was held while a stream was established
+7  42001071 (PEVT_L1P_BAS_LU_STALL_LIST_RD_CYC) Cycles lookup was held while list fetched addresses 
+7  42001072 (PEVT_L1P_BAS_LU_STALL_LIST_WRT_CYC) Cycles lookup was held while list wrote list data
+7  42001062 (PEVT_XU_STALLED_ON_WAITRSV_CYC) Number of cycles between commit of waitrsv and wakeup by lost reservation. 
+7  42001063 (PEVT_LSU_LD_LAT_MEM_SUBSYS_CYC) load miss queue entry 0 is in use was the intent - but is broken. Doesn't indicate anything useful. 
+7  42001064 (PEVT_MMU_IERAT_MISS_CYC) Number of cycles ierat miss (edge) or latency (level) (total ierat misses or latency) 
+7  42001065 (PEVT_MMU_DERAT_MISS_CYC) Number of cycles derat miss (edge) or latency (level) (total derat misses or latency) 
+7  42001066 (PEVT_MMU_TLB_FLUSH_REQ_TOT_CYC) Number of cycles tlb flush requests total (TLB requested flushes due to TLB busy or instruction hazards) 
+7  42001067 (PEVT_L1P_BAS_LU_DRAIN_CYC) Cycles lookup was held by guarded store waiting for drain
+7  42001058 (PEVT_IU_SYNC_DEP_HIT_CYC) Stalled for SYNC/ISYNC/TLBSYNC instructions
+7  42001059 (PEVT_IU_SPR_DEP_HIT_CYC) Stalled for SPR use or update dependency
+7  42001060 (PEVT_IU_AXU_DEP_HIT_CYC) Stalled for any AXU dependency (excludes IS2 stall)
+7  42001061 (PEVT_IU_FXU_DEP_HIT_CYC) Stalled for any FXU dependency (excludes IS2 stall)
+7  42001056 (PEVT_IU_BARRIER_OP_STALL_CYC) Stalled pending barrier op resolution (each uCoded instruction will also cause a barrier operation).
+7  42001057 (PEVT_IU_SLOW_SPR_ACCESS_CYC) Stalled for MFSPR/MTSPR ops that move across the slow SPR bus.
+7  42001034 (PEVT_IU_IS1_STALL_CYC) Register Dependency Stall
+7  42001052 (PEVT_IU_IBUFF_EMPTY_CYC) Number of cycles instruction buffers are empty
+7  42001053 (PEVT_IU_IBUFF_FLUSH_CYC) Number of cycles instruction buffer address range mismatch and flush
+7  42001054 (PEVT_IU_AXU_ISSUE_PRI_LOSS_CYC) AXU instruction that is valid in issue and another thread issues because it has priority (see IS2 Stall for combined AXU/FXU issue priority loss)
+7  42001055 (PEVT_IU_IS2_STALL_CYC) Instruction Issue Stall
+7  42001049 (PEVT_IU_RSV_ANY_L2_BACK_INV_CYC) Number of cycles back invalidate from L2
+7  42001050 (PEVT_IU_L2_BACK_INV_HITS_CYC) Number of cycles back invalidate from L2, and data was contained within the instruction cache.
+7  42001017 (PEVT_IU_AXU_FXU_DEP_HIT_CYC) Stalled for any AXU/FXU dependency (excludes IS2 stall)
+7  42001051 (PEVT_IU_WAW_DEP_HIT_CYC) Stalled for Write-After-Write dependency
+7  42001040 (PEVT_AXU_FP_DS_ACTIVE_CYC) Number of cycles a Floating-Point Divide or Square Root sequence is in progress (incl single-precision).
+7  42001041 (PEVT_IU_IL1_MISS_CYC) Number of cycles a thread is waiting for a reload from the L2.
+7  42001042 (PEVT_IU_RELOAD_COLLISIONS_CYC) Number of cycles a ready thread is held off due to the L1 Cache being reloaded
+7  42001043 (PEVT_IU_IU0_REDIR_CYC) Cycles IU0 is flushed for any reason (XU, UC, BP, etc.)
+7  42001044 (PEVT_IU_IERAT_MISS_CYC) Number of cycles ierat Miss occurrence
+7  42001045 (PEVT_IU_ICACHE_FETCH_CYC) Number of cycles icache read completes for instruction
+7  42001046 (PEVT_IU_INSTR_FETCHED_CYC) Number of cycles instructions fetched, divided by 4 (only counts every 4 instructions)
+7  42001047 (PEVT_IU_FXU_ISSUE_PRI_LOSS_CYC) FXU instruction that is valid in issue and another thread issues because it has priority (see IS2 Stall for combined AXU/FXU issue priority loss)
+7  42001048 (PEVT_IU_RAW_DEP_HIT_CYC) Stalled for Read-After-Write dependency
+7  41999999 Active hardware counter set
+
+
+GRADIENT_COLOR
+0    {0,255,2}
+1    {0,244,13}
+2    {0,232,25}
+3    {0,220,37}
+4    {0,209,48}
+5    {0,197,60}
+6    {0,185,72}
+7    {0,173,84}
+8    {0,162,95}
+9    {0,150,107}
+10    {0,138,119}
+11    {0,127,130}
+12    {0,115,142}
+13    {0,103,154}
+14    {0,91,166}
+
+
+GRADIENT_NAMES
+0    Gradient 0
+1    Grad. 1/MPI Events
+2    Grad. 2/OMP Events
+3    Grad. 3/OMP locks
+4    Grad. 4/User func
+5    Grad. 5/User Events
+6    Grad. 6/General Events
+7    Grad. 7/Hardware Counters
+8    Gradient 8
+9    Gradient 9
+10    Gradient 10
+11    Gradient 11
+12    Gradient 12
+13    Gradient 13
+14    Gradient 14
+
+
+EVENT_TYPE
+0    60000019    User function
+VALUES
+0   End
+1   Unresolved
+2   _NOT_Found
+3   0000748c.long_branch_r2off.usleep+0
+4   _IO_new_file_underflow
+5   __underflow
+6   _IO_file_xsgetn
+7   _IO_sgetn
+8   _IO_fread
+9   __fxstat
+10   blksize
+11   ncio_open
+12   NC3_open
+13   NC_open
+14   nc_open
+15   _IO_new_file_fopen
+16   __fopen_internal
+17   NC_check_file_type
+18   nf_open
+19   nf90_open
+20   __libc_malloc
+21   __posix_memalign
+22   read_local_tiles_dbl
+23   read_solveriot
+24   _IO_file_doallocate
+25   _IO_doallocbuf
+26   px_get
+27   ncio_px_get
+28   fault_v1hs
+29   nc_get_NC
+30   getNCvx_double_double
+31   readNCv
+32   NC3_get_vara
+33   _WordCpy
+34   ncx_getn_double_double
+35   NC_get_vara
+36   read_NC
+37   ncio_filesize
+38   NC3_close
+39   nc_close
+40   nf_close
+41   nf90_close
+42   _IO_new_file_close_it
+43   _IO_new_fclose
+44   quad_double_copy
+45   _ConvergeCpyPlus
+46   read_tiles_dbl
+47   initdof
+48   init_solvers
+49   cgpop
+50   generic_start_main
+51   __libc_start_main
+52   getNCvx_int_double
+53   ncx_getn_int_double
+54   nc_get_vara_double
+55   get_ix_int
+56   ncx_get_int_double
+57   formhalodofck
+58   linearorderedfind
+59   fread_unlocked
+60   convertstencil
+61   esolver
+62   pcg_chrongear_linear
+63   matvec
+64   convert2dtolinear
+65   mpi2s_gshalo_update_2d_dbl
+66   update_halo
+67   00000012.long_branch_r2off.PMPI_Group_size+0
+68   global_sum_vector_dbl
+69   linearfind
+70   __xstat
+71   tzset_internal
+72   __tz_convert
+73   localtime
+74   PMPI_Comm_compare
+75   __tzfile_read
+76   get_num_procs
+77   nf90_get_var_1d_fourbyteint
+78   read_appmd
+79   init_domain_blocks
+80   px_rel
+81   ncio_px_rel
+82   read_local_tiles_int
+83   mpi2s_gshalo_init
+84   get_block_parameter
+85   nf90_get_var_2d_fourbyteint
+86   init_domain_distribution
+87   elem_NC_dimarray
+88   NC_computeshapes
+89   __L9c
+90   px_pgin
+91   _int_malloc
+92   new_NC_string
+93   v1h_get_NC_string
+94   v1h_get_NC_var
+95   v1h_get_NC_vararray
+96   malloc_consolidate
+97   _IO_new_file_seekoff
+98   _IO_seekoff_unlocked
+99   fseek
+100   mpi2s_gshalo_update_2d_int
+
+
+EVENT_TYPE
+0    60000119    User function line
+VALUES
+0   End
+1   0 (Unresolved)
+2   0 (_NOT_Found)
+3   0 (.)
+4   64 (cgpop.f90)
+5   81 (cgpop.f90)
+6   89 (cgpop.f90)
+7   90 (cgpop.f90)
+8   0 (clc_mac.s)
+9   69 (comm_compare.c)
+10   76 (comm_compare.c)
+11   84 (comm_compare.c)
+12   92 (comm_compare.c)
+13   93 (comm_compare.c)
+14   103 (comm_compare.c)
+15   86 (communicate.f90)
+16   96 (communicate.f90)
+17   97 (communicate.f90)
+18   316 (dim.c)
+19   50 (file.c)
+20   53 (file.c)
+21   214 (file.c)
+22   268 (file.c)
+23   328 (file.c)
+24   419 (file.c)
+25   103 (filedoalloc.c)
+26   175 (fileops.c)
+27   335 (fileops.c)
+28   598 (fileops.c)
+29   1098 (fileops.c)
+30   1398 (fileops.c)
+31   1437 (fileops.c)
+32   27 (fort-control.c)
+33   91 (fort-control.c)
+34   41 (fseek.c)
+35   38 (fxstat.c)
+36   361 (genops.c)
+37   423 (genops.c)
+38   500 (genops.c)
+39   523 (io_serial.f90)
+40   565 (io_serial.f90)
+41   571 (io_serial.f90)
+42   647 (io_serial.f90)
+43   62 (iofclose.c)
+44   93 (iofopen.c)
+45   44 (iofread.c)
+46   45 (iofread_u.c)
+47   71 (ioseekoff.c)
+48   194 (libc-start.c)
+49   226 (libc-start.c)
+50   103 (linear.f90)
+51   125 (linear.f90)
+52   126 (linear.f90)
+53   157 (linear.f90)
+54   158 (linear.f90)
+55   230 (linear.f90)
+56   231 (linear.f90)
+57   233 (linear.f90)
+58   237 (linear.f90)
+59   244 (linear.f90)
+60   397 (linear.f90)
+61   404 (linear.f90)
+62   405 (linear.f90)
+63   407 (linear.f90)
+64   412 (linear.f90)
+65   422 (linear.f90)
+66   494 (linear.f90)
+67   495 (linear.f90)
+68   513 (linear.f90)
+69   514 (linear.f90)
+70   43 (localtime.c)
+71   3697 (malloc.c)
+72   4291 (malloc.c)
+73   4321 (malloc.c)
+74   4415 (malloc.c)
+75   5195 (malloc.c)
+76   6355 (malloc.c)
+77   6359 (malloc.c)
+78   103 (matrix_mod.f90)
+79   104 (matrix_mod.f90)
+80   105 (matrix_mod.f90)
+81   106 (matrix_mod.f90)
+82   107 (matrix_mod.f90)
+83   115 (matrix_mod.f90)
+84   118 (matrix_mod.f90)
+85   121 (matrix_mod.f90)
+86   125 (matrix_mod.f90)
+87   126 (matrix_mod.f90)
+88   127 (matrix_mod.f90)
+89   128 (matrix_mod.f90)
+90   129 (matrix_mod.f90)
+91   130 (matrix_mod.f90)
+92   131 (matrix_mod.f90)
+93   132 (matrix_mod.f90)
+94   141 (matrix_mod.f90)
+95   143 (matrix_mod.f90)
+96   149 (matrix_mod.f90)
+97   151 (matrix_mod.f90)
+98   152 (matrix_mod.f90)
+99   157 (matrix_mod.f90)
+100   159 (matrix_mod.f90)
+101   165 (matrix_mod.f90)
+102   167 (matrix_mod.f90)
+103   168 (matrix_mod.f90)
+104   173 (matrix_mod.f90)
+105   175 (matrix_mod.f90)
+106   181 (matrix_mod.f90)
+107   183 (matrix_mod.f90)
+108   184 (matrix_mod.f90)
+109   189 (matrix_mod.f90)
+110   191 (matrix_mod.f90)
+111   197 (matrix_mod.f90)
+112   199 (matrix_mod.f90)
+113   200 (matrix_mod.f90)
+114   205 (matrix_mod.f90)
+115   207 (matrix_mod.f90)
+116   208 (matrix_mod.f90)
+117   210 (matrix_mod.f90)
+118   212 (matrix_mod.f90)
+119   213 (matrix_mod.f90)
+120   223 (matrix_mod.f90)
+121   265 (matrix_mod.f90)
+122   266 (matrix_mod.f90)
+123   268 (matrix_mod.f90)
+124   269 (matrix_mod.f90)
+125   270 (matrix_mod.f90)
+126   272 (matrix_mod.f90)
+127   273 (matrix_mod.f90)
+128   274 (matrix_mod.f90)
+129   275 (matrix_mod.f90)
+130   62 (memcpy.c)
+131   65 (memcpy.c)
+132   66 (memcpy.c)
+133   67 (memcpy.c)
+134   68 (memcpy.c)
+135   69 (memcpy.c)
+136   70 (memcpy.c)
+137   71 (memcpy.c)
+138   72 (memcpy.c)
+139   73 (memcpy.c)
+140   191 (memcpy.c)
+141   246 (memcpy.c)
+142   249 (memcpy.c)
+143   252 (memcpy.c)
+144   253 (memcpy.c)
+145   254 (memcpy.c)
+146   255 (memcpy.c)
+147   258 (memcpy.c)
+148   259 (memcpy.c)
+149   264 (memcpy.c)
+150   265 (memcpy.c)
+151   266 (memcpy.c)
+152   268 (memcpy.c)
+153   270 (memcpy.c)
+154   276 (memcpy.c)
+155   278 (memcpy.c)
+156   280 (memcpy.c)
+157   282 (memcpy.c)
+158   283 (memcpy.c)
+159   358 (memcpy.c)
+160   59 (mpi2s_gshalo.f90)
+161   71 (mpi2s_gshalo.f90)
+162   72 (mpi2s_gshalo.f90)
+163   74 (mpi2s_gshalo.f90)
+164   76 (mpi2s_gshalo.f90)
+165   78 (mpi2s_gshalo.f90)
+166   79 (mpi2s_gshalo.f90)
+167   81 (mpi2s_gshalo.f90)
+168   87 (mpi2s_gshalo.f90)
+169   91 (mpi2s_gshalo.f90)
+170   93 (mpi2s_gshalo.f90)
+171   94 (mpi2s_gshalo.f90)
+172   96 (mpi2s_gshalo.f90)
+173   97 (mpi2s_gshalo.f90)
+174   98 (mpi2s_gshalo.f90)
+175   104 (mpi2s_gshalo.f90)
+176   106 (mpi2s_gshalo.f90)
+177   143 (mpi2s_gshalo.f90)
+178   279 (mpi2s_gshalo.f90)
+179   454 (mpi2s_gshalo.f90)
+180   587 (mpi2s_gshalo.f90)
+181   623 (mpi2s_gshalo.f90)
+182   625 (mpi2s_gshalo.f90)
+183   632 (mpi2s_gshalo.f90)
+184   639 (mpi2s_gshalo.f90)
+185   647 (mpi2s_gshalo.f90)
+186   351 (nc.c)
+187   1025 (nc.c)
+188   1045 (nc.c)
+189   1123 (nc.c)
+190   1136 (nc.c)
+191   640 (ncx.c)
+192   642 (ncx.c)
+193   644 (ncx.c)
+194   652 (ncx.c)
+195   653 (ncx.c)
+196   654 (ncx.c)
+197   655 (ncx.c)
+198   795 (ncx.c)
+199   799 (ncx.c)
+200   800 (ncx.c)
+201   801 (ncx.c)
+202   802 (ncx.c)
+203   5129 (ncx.c)
+204   5131 (ncx.c)
+205   5132 (ncx.c)
+206   7590 (ncx.c)
+207   18 (netcdf3_file.f90)
+208   1911 (netcdf_expanded.f90)
+209   1966 (netcdf_expanded.f90)
+210   113 (netcdf_file.f90)
+211   20 (opa_gcc_ppc.h)
+212   115 (posixio.c)
+213   278 (posixio.c)
+214   341 (posixio.c)
+215   379 (posixio.c)
+216   427 (posixio.c)
+217   460 (posixio.c)
+218   506 (posixio.c)
+219   532 (posixio.c)
+220   616 (posixio.c)
+221   666 (posixio.c)
+222   684 (posixio.c)
+223   1647 (posixio.c)
+224   1697 (posixio.c)
+225   3767 (putget.c)
+226   3772 (putget.c)
+227   4489 (putget.c)
+228   4494 (putget.c)
+229   4498 (putget.c)
+230   4903 (putget.c)
+231   4961 (putget.c)
+232   5191 (putget.c)
+233   294 (reductions.f90)
+234   295 (reductions.f90)
+235   296 (reductions.f90)
+236   297 (reductions.f90)
+237   305 (reductions.f90)
+238   163 (simple_blocks.f90)
+239   172 (simple_blocks.f90)
+240   169 (simple_domain.f90)
+241   204 (simple_domain.f90)
+242   320 (simple_domain.f90)
+243   460 (simple_domain.f90)
+244   466 (simple_domain.f90)
+245   487 (simple_domain.f90)
+246   493 (simple_domain.f90)
+247   536 (simple_domain.f90)
+248   537 (simple_domain.f90)
+249   538 (simple_domain.f90)
+250   539 (simple_domain.f90)
+251   540 (simple_domain.f90)
+252   541 (simple_domain.f90)
+253   542 (simple_domain.f90)
+254   543 (simple_domain.f90)
+255   544 (simple_domain.f90)
+256   105 (solvers.f90)
+257   111 (solvers.f90)
+258   118 (solvers.f90)
+259   123 (solvers.f90)
+260   128 (solvers.f90)
+261   131 (solvers.f90)
+262   136 (solvers.f90)
+263   283 (solvers.f90)
+264   284 (solvers.f90)
+265   285 (solvers.f90)
+266   286 (solvers.f90)
+267   287 (solvers.f90)
+268   288 (solvers.f90)
+269   289 (solvers.f90)
+270   290 (solvers.f90)
+271   291 (solvers.f90)
+272   308 (solvers.f90)
+273   447 (solvers.f90)
+274   452 (solvers.f90)
+275   461 (solvers.f90)
+276   463 (solvers.f90)
+277   477 (solvers.f90)
+278   483 (solvers.f90)
+279   485 (solvers.f90)
+280   492 (solvers.f90)
+281   493 (solvers.f90)
+282   501 (solvers.f90)
+283   510 (solvers.f90)
+284   511 (solvers.f90)
+285   513 (solvers.f90)
+286   515 (solvers.f90)
+287   517 (solvers.f90)
+288   518 (solvers.f90)
+289   521 (solvers.f90)
+290   525 (solvers.f90)
+291   528 (solvers.f90)
+292   530 (solvers.f90)
+293   535 (solvers.f90)
+294   537 (solvers.f90)
+295   542 (solvers.f90)
+296   543 (solvers.f90)
+297   553 (solvers.f90)
+298   554 (solvers.f90)
+299   556 (solvers.f90)
+300   557 (solvers.f90)
+301   558 (solvers.f90)
+302   559 (solvers.f90)
+303   241 (string.c)
+304   182 (tzfile.c)
+305   231 (tzfile.c)
+306   440 (tzfile.c)
+307   439 (tzset.c)
+308   624 (tzset.c)
+309   99 (v1hpg.c)
+310   297 (v1hpg.c)
+311   902 (v1hpg.c)
+312   1067 (v1hpg.c)
+313   1069 (v1hpg.c)
+314   1112 (v1hpg.c)
+315   1300 (v1hpg.c)
+316   1330 (v1hpg.c)
+317   1388 (v1hpg.c)
+318   1394 (v1hpg.c)
+319   172 (var.c)
+320   1786 (var.c)
+321   38 (xstat.c)
+
+
+EVENT_TYPE
+0    30000000    Sampled functions
+0    30000001    Sampled functions (depth 1)
+0    30000002    Sampled functions (depth 2)
+0    30000003    Sampled functions (depth 3)
+0    30000004    Sampled functions (depth 4)
+0    30000005    Sampled functions (depth 5)
+0    30000006    Sampled functions (depth 6)
+VALUES
+0   End
+1   Unresolved
+2   _NOT_Found
+3   0000748c.long_branch_r2off.usleep+0
+4   _IO_new_file_underflow
+5   __underflow
+6   _IO_file_xsgetn
+7   _IO_sgetn
+8   _IO_fread
+9   __fxstat
+10   blksize
+11   ncio_open
+12   NC3_open
+13   NC_open
+14   nc_open
+15   _IO_new_file_fopen
+16   __fopen_internal
+17   NC_check_file_type
+18   nf_open
+19   nf90_open
+20   __libc_malloc
+21   __posix_memalign
+22   read_local_tiles_dbl
+23   read_solveriot
+24   _IO_file_doallocate
+25   _IO_doallocbuf
+26   px_get
+27   ncio_px_get
+28   fault_v1hs
+29   nc_get_NC
+30   getNCvx_double_double
+31   readNCv
+32   NC3_get_vara
+33   _WordCpy
+34   ncx_getn_double_double
+35   NC_get_vara
+36   read_NC
+37   ncio_filesize
+38   NC3_close
+39   nc_close
+40   nf_close
+41   nf90_close
+42   _IO_new_file_close_it
+43   _IO_new_fclose
+44   quad_double_copy
+45   _ConvergeCpyPlus
+46   read_tiles_dbl
+47   initdof
+48   init_solvers
+49   cgpop
+50   generic_start_main
+51   __libc_start_main
+52   getNCvx_int_double
+53   ncx_getn_int_double
+54   nc_get_vara_double
+55   get_ix_int
+56   ncx_get_int_double
+57   formhalodofck
+58   linearorderedfind
+59   fread_unlocked
+60   convertstencil
+61   esolver
+62   pcg_chrongear_linear
+63   matvec
+64   convert2dtolinear
+65   mpi2s_gshalo_update_2d_dbl
+66   update_halo
+67   00000012.long_branch_r2off.PMPI_Group_size+0
+68   global_sum_vector_dbl
+69   linearfind
+70   __xstat
+71   tzset_internal
+72   __tz_convert
+73   localtime
+74   PMPI_Comm_compare
+75   __tzfile_read
+76   get_num_procs
+77   nf90_get_var_1d_fourbyteint
+78   read_appmd
+79   init_domain_blocks
+80   px_rel
+81   ncio_px_rel
+82   read_local_tiles_int
+83   mpi2s_gshalo_init
+84   get_block_parameter
+85   nf90_get_var_2d_fourbyteint
+86   init_domain_distribution
+87   elem_NC_dimarray
+88   NC_computeshapes
+89   __L9c
+90   px_pgin
+91   _int_malloc
+92   new_NC_string
+93   v1h_get_NC_string
+94   v1h_get_NC_var
+95   v1h_get_NC_vararray
+96   malloc_consolidate
+97   _IO_new_file_seekoff
+98   _IO_seekoff_unlocked
+99   fseek
+100   mpi2s_gshalo_update_2d_int
+
+
+EVENT_TYPE
+0    30000100    Sampled line functions
+0    30000101    Sampled lines functions (depth 1)
+0    30000102    Sampled lines functions (depth 2)
+0    30000103    Sampled lines functions (depth 3)
+0    30000104    Sampled lines functions (depth 4)
+0    30000105    Sampled lines functions (depth 5)
+0    30000106    Sampled lines functions (depth 6)
+VALUES
+0   End
+1   0 (Unresolved)
+2   0 (_NOT_Found)
+3   0 (.)
+4   64 (cgpop.f90)
+5   81 (cgpop.f90)
+6   89 (cgpop.f90)
+7   90 (cgpop.f90)
+8   0 (clc_mac.s)
+9   69 (comm_compare.c)
+10   76 (comm_compare.c)
+11   84 (comm_compare.c)
+12   92 (comm_compare.c)
+13   93 (comm_compare.c)
+14   103 (comm_compare.c)
+15   86 (communicate.f90)
+16   96 (communicate.f90)
+17   97 (communicate.f90)
+18   316 (dim.c)
+19   50 (file.c)
+20   53 (file.c)
+21   214 (file.c)
+22   268 (file.c)
+23   328 (file.c)
+24   419 (file.c)
+25   103 (filedoalloc.c)
+26   175 (fileops.c)
+27   335 (fileops.c)
+28   598 (fileops.c)
+29   1098 (fileops.c)
+30   1398 (fileops.c)
+31   1437 (fileops.c)
+32   27 (fort-control.c)
+33   91 (fort-control.c)
+34   41 (fseek.c)
+35   38 (fxstat.c)
+36   361 (genops.c)
+37   423 (genops.c)
+38   500 (genops.c)
+39   523 (io_serial.f90)
+40   565 (io_serial.f90)
+41   571 (io_serial.f90)
+42   647 (io_serial.f90)
+43   62 (iofclose.c)
+44   93 (iofopen.c)
+45   44 (iofread.c)
+46   45 (iofread_u.c)
+47   71 (ioseekoff.c)
+48   194 (libc-start.c)
+49   226 (libc-start.c)
+50   103 (linear.f90)
+51   125 (linear.f90)
+52   126 (linear.f90)
+53   157 (linear.f90)
+54   158 (linear.f90)
+55   230 (linear.f90)
+56   231 (linear.f90)
+57   233 (linear.f90)
+58   237 (linear.f90)
+59   244 (linear.f90)
+60   397 (linear.f90)
+61   404 (linear.f90)
+62   405 (linear.f90)
+63   407 (linear.f90)
+64   412 (linear.f90)
+65   422 (linear.f90)
+66   494 (linear.f90)
+67   495 (linear.f90)
+68   513 (linear.f90)
+69   514 (linear.f90)
+70   43 (localtime.c)
+71   3697 (malloc.c)
+72   4291 (malloc.c)
+73   4321 (malloc.c)
+74   4415 (malloc.c)
+75   5195 (malloc.c)
+76   6355 (malloc.c)
+77   6359 (malloc.c)
+78   103 (matrix_mod.f90)
+79   104 (matrix_mod.f90)
+80   105 (matrix_mod.f90)
+81   106 (matrix_mod.f90)
+82   107 (matrix_mod.f90)
+83   115 (matrix_mod.f90)
+84   118 (matrix_mod.f90)
+85   121 (matrix_mod.f90)
+86   125 (matrix_mod.f90)
+87   126 (matrix_mod.f90)
+88   127 (matrix_mod.f90)
+89   128 (matrix_mod.f90)
+90   129 (matrix_mod.f90)
+91   130 (matrix_mod.f90)
+92   131 (matrix_mod.f90)
+93   132 (matrix_mod.f90)
+94   141 (matrix_mod.f90)
+95   143 (matrix_mod.f90)
+96   149 (matrix_mod.f90)
+97   151 (matrix_mod.f90)
+98   152 (matrix_mod.f90)
+99   157 (matrix_mod.f90)
+100   159 (matrix_mod.f90)
+101   165 (matrix_mod.f90)
+102   167 (matrix_mod.f90)
+103   168 (matrix_mod.f90)
+104   173 (matrix_mod.f90)
+105   175 (matrix_mod.f90)
+106   181 (matrix_mod.f90)
+107   183 (matrix_mod.f90)
+108   184 (matrix_mod.f90)
+109   189 (matrix_mod.f90)
+110   191 (matrix_mod.f90)
+111   197 (matrix_mod.f90)
+112   199 (matrix_mod.f90)
+113   200 (matrix_mod.f90)
+114   205 (matrix_mod.f90)
+115   207 (matrix_mod.f90)
+116   208 (matrix_mod.f90)
+117   210 (matrix_mod.f90)
+118   212 (matrix_mod.f90)
+119   213 (matrix_mod.f90)
+120   223 (matrix_mod.f90)
+121   265 (matrix_mod.f90)
+122   266 (matrix_mod.f90)
+123   268 (matrix_mod.f90)
+124   269 (matrix_mod.f90)
+125   270 (matrix_mod.f90)
+126   272 (matrix_mod.f90)
+127   273 (matrix_mod.f90)
+128   274 (matrix_mod.f90)
+129   275 (matrix_mod.f90)
+130   62 (memcpy.c)
+131   65 (memcpy.c)
+132   66 (memcpy.c)
+133   67 (memcpy.c)
+134   68 (memcpy.c)
+135   69 (memcpy.c)
+136   70 (memcpy.c)
+137   71 (memcpy.c)
+138   72 (memcpy.c)
+139   73 (memcpy.c)
+140   191 (memcpy.c)
+141   246 (memcpy.c)
+142   249 (memcpy.c)
+143   252 (memcpy.c)
+144   253 (memcpy.c)
+145   254 (memcpy.c)
+146   255 (memcpy.c)
+147   258 (memcpy.c)
+148   259 (memcpy.c)
+149   264 (memcpy.c)
+150   265 (memcpy.c)
+151   266 (memcpy.c)
+152   268 (memcpy.c)
+153   270 (memcpy.c)
+154   276 (memcpy.c)
+155   278 (memcpy.c)
+156   280 (memcpy.c)
+157   282 (memcpy.c)
+158   283 (memcpy.c)
+159   358 (memcpy.c)
+160   59 (mpi2s_gshalo.f90)
+161   71 (mpi2s_gshalo.f90)
+162   72 (mpi2s_gshalo.f90)
+163   74 (mpi2s_gshalo.f90)
+164   76 (mpi2s_gshalo.f90)
+165   78 (mpi2s_gshalo.f90)
+166   79 (mpi2s_gshalo.f90)
+167   81 (mpi2s_gshalo.f90)
+168   87 (mpi2s_gshalo.f90)
+169   91 (mpi2s_gshalo.f90)
+170   93 (mpi2s_gshalo.f90)
+171   94 (mpi2s_gshalo.f90)
+172   96 (mpi2s_gshalo.f90)
+173   97 (mpi2s_gshalo.f90)
+174   98 (mpi2s_gshalo.f90)
+175   104 (mpi2s_gshalo.f90)
+176   106 (mpi2s_gshalo.f90)
+177   143 (mpi2s_gshalo.f90)
+178   279 (mpi2s_gshalo.f90)
+179   454 (mpi2s_gshalo.f90)
+180   587 (mpi2s_gshalo.f90)
+181   623 (mpi2s_gshalo.f90)
+182   625 (mpi2s_gshalo.f90)
+183   632 (mpi2s_gshalo.f90)
+184   639 (mpi2s_gshalo.f90)
+185   647 (mpi2s_gshalo.f90)
+186   351 (nc.c)
+187   1025 (nc.c)
+188   1045 (nc.c)
+189   1123 (nc.c)
+190   1136 (nc.c)
+191   640 (ncx.c)
+192   642 (ncx.c)
+193   644 (ncx.c)
+194   652 (ncx.c)
+195   653 (ncx.c)
+196   654 (ncx.c)
+197   655 (ncx.c)
+198   795 (ncx.c)
+199   799 (ncx.c)
+200   800 (ncx.c)
+201   801 (ncx.c)
+202   802 (ncx.c)
+203   5129 (ncx.c)
+204   5131 (ncx.c)
+205   5132 (ncx.c)
+206   7590 (ncx.c)
+207   18 (netcdf3_file.f90)
+208   1911 (netcdf_expanded.f90)
+209   1966 (netcdf_expanded.f90)
+210   113 (netcdf_file.f90)
+211   20 (opa_gcc_ppc.h)
+212   115 (posixio.c)
+213   278 (posixio.c)
+214   341 (posixio.c)
+215   379 (posixio.c)
+216   427 (posixio.c)
+217   460 (posixio.c)
+218   506 (posixio.c)
+219   532 (posixio.c)
+220   616 (posixio.c)
+221   666 (posixio.c)
+222   684 (posixio.c)
+223   1647 (posixio.c)
+224   1697 (posixio.c)
+225   3767 (putget.c)
+226   3772 (putget.c)
+227   4489 (putget.c)
+228   4494 (putget.c)
+229   4498 (putget.c)
+230   4903 (putget.c)
+231   4961 (putget.c)
+232   5191 (putget.c)
+233   294 (reductions.f90)
+234   295 (reductions.f90)
+235   296 (reductions.f90)
+236   297 (reductions.f90)
+237   305 (reductions.f90)
+238   163 (simple_blocks.f90)
+239   172 (simple_blocks.f90)
+240   169 (simple_domain.f90)
+241   204 (simple_domain.f90)
+242   320 (simple_domain.f90)
+243   460 (simple_domain.f90)
+244   466 (simple_domain.f90)
+245   487 (simple_domain.f90)
+246   493 (simple_domain.f90)
+247   536 (simple_domain.f90)
+248   537 (simple_domain.f90)
+249   538 (simple_domain.f90)
+250   539 (simple_domain.f90)
+251   540 (simple_domain.f90)
+252   541 (simple_domain.f90)
+253   542 (simple_domain.f90)
+254   543 (simple_domain.f90)
+255   544 (simple_domain.f90)
+256   105 (solvers.f90)
+257   111 (solvers.f90)
+258   118 (solvers.f90)
+259   123 (solvers.f90)
+260   128 (solvers.f90)
+261   131 (solvers.f90)
+262   136 (solvers.f90)
+263   283 (solvers.f90)
+264   284 (solvers.f90)
+265   285 (solvers.f90)
+266   286 (solvers.f90)
+267   287 (solvers.f90)
+268   288 (solvers.f90)
+269   289 (solvers.f90)
+270   290 (solvers.f90)
+271   291 (solvers.f90)
+272   308 (solvers.f90)
+273   447 (solvers.f90)
+274   452 (solvers.f90)
+275   461 (solvers.f90)
+276   463 (solvers.f90)
+277   477 (solvers.f90)
+278   483 (solvers.f90)
+279   485 (solvers.f90)
+280   492 (solvers.f90)
+281   493 (solvers.f90)
+282   501 (solvers.f90)
+283   510 (solvers.f90)
+284   511 (solvers.f90)
+285   513 (solvers.f90)
+286   515 (solvers.f90)
+287   517 (solvers.f90)
+288   518 (solvers.f90)
+289   521 (solvers.f90)
+290   525 (solvers.f90)
+291   528 (solvers.f90)
+292   530 (solvers.f90)
+293   535 (solvers.f90)
+294   537 (solvers.f90)
+295   542 (solvers.f90)
+296   543 (solvers.f90)
+297   553 (solvers.f90)
+298   554 (solvers.f90)
+299   556 (solvers.f90)
+300   557 (solvers.f90)
+301   558 (solvers.f90)
+302   559 (solvers.f90)
+303   241 (string.c)
+304   182 (tzfile.c)
+305   231 (tzfile.c)
+306   440 (tzfile.c)
+307   439 (tzset.c)
+308   624 (tzset.c)
+309   99 (v1hpg.c)
+310   297 (v1hpg.c)
+311   902 (v1hpg.c)
+312   1067 (v1hpg.c)
+313   1069 (v1hpg.c)
+314   1112 (v1hpg.c)
+315   1300 (v1hpg.c)
+316   1330 (v1hpg.c)
+317   1388 (v1hpg.c)
+318   1394 (v1hpg.c)
+319   172 (var.c)
+320   1786 (var.c)
+321   38 (xstat.c)
+
+
+EVENT_TYPE
+9    40000018    Tracing mode:
+VALUES
+1      Detailed
+2      CPU Bursts
+
+
