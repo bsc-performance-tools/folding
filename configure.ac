@@ -200,16 +200,7 @@ AC_ARG_WITH(clang,
 )
 if test -x "${CLANGBIN}" ; then
 	AC_MSG_RESULT(${CLANGBIN})
-
-	AC_MSG_CHECKING([that clang seems a compiler])
-	${CLANGBIN} -v > ${TMPDIR:-/tmp}/clang-conftest 2> ${TMPDIR:-/tmp}/clang-conftest
-	nlines=`grep "based on LLVM" ${TMPDIR:-/tmp}/clang-conftest | wc -l`
-	if test "${nlines}" -eq 1 ; then
-		CLANG_AVAILABLE="yes"
-		AC_MSG_RESULT([yes])
-	else
-		AC_MSG_RESULT([no])
-	fi
+	CLANG_AVAILABLE="yes"
 fi
 if test "${CLANG_AVAILABLE}" = "yes" ; then
 	AC_MSG_NOTICE([clang is available and ready for providing AST information])
