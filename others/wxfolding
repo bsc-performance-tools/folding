@@ -3,6 +3,7 @@
 if test "${FOLDING_HOME}" == ""; then
 	mypath=`readlink -f ${0}`
 	mydir=`dirname ${mypath}`
+	mydir=`dirname ${mydir}`
 	export FOLDING_HOME=${mydir}
 fi
 
