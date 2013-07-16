@@ -43,8 +43,10 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "sample-selector-default.H"
 
 #include "interpolation-kriger.H"
-#include "callstack.H"
-#include "cube-holder.H"
+#if defined(HAVE_CUBE)
+# include "callstack.H"
+# include "cube-holder.H"
+#endif
 
 #include <string.h>
 #include <iostream>
@@ -844,7 +846,7 @@ int main (int argc, char *argv[])
 		}
 
 #warning Enable cube generation
-#if 0
+#if defined(HAVE_CUBE)
 		/* Generate a callstack tree for the CUBE program */
 		cout << "Generating callstack tree for CUBE (" << CWD << "/" << basename (oFileCUBE.c_str()) << ")" << endl;
 		bool found;
@@ -884,7 +886,6 @@ int main (int argc, char *argv[])
 		}
 		else
 			cerr << "Sorry... can't find 'main' symbol in the PCF file, can't generate the CUBE file" << endl;
-
 #endif
 
 		/* Copy .pcf and .row files */

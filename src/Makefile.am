@@ -30,17 +30,14 @@ interpolate_SOURCES = \
  prv-writer.C prv-writer.H \
  interpolation.C interpolation.H \
  interpolation-results.C interpolation-results.H interpolation-kriger.C interpolation-kriger.H \
- callstack.C callstack.H callstack-tree.C callstack-tree.H \
- cube-holder.C cube-holder.H \
- cube-tree.C cube-tree.H \
  interpolate.C interpolate.H
 
-#if HAVE_CUBE
-#interpolate_SOURCES += \
-# CubeLaunchFile.C CubeLaunchFile.H \
-# treenodeholder.C treenodeholder.H \
-# callstackanalysis.C callstackanalysis.H
-#endif
+if HAVE_CUBE
+interpolate_SOURCES += \
+ callstack.C callstack.H callstack-tree.C callstack-tree.H \
+ cube-holder.C cube-holder.H \
+ cube-tree.C cube-tree.H 
+endif
 
 max_diff_interpolation_points_SOURCES = max-diff-interpolation-points.c
 mean_diff_interpolation_points_SOURCES = mean-diff-interpolation-points.c
