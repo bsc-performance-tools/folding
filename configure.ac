@@ -6,7 +6,7 @@
 
 # Initialize autoconf & define package name, version and bug-report address 
 #  -- keep version in sync with src/common/extrae_version.h
-AC_INIT(folding, 0.9, tools@bsc.es)
+AC_INIT(folding, 0.99, tools@bsc.es)
 AC_CONFIG_HEADERS([folding-config.h:folding-config.h.in])
 
 # Safety check to ensure that the directory told with `--srcdir` contains the source code

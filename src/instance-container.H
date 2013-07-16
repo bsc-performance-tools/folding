@@ -62,9 +62,10 @@ class InstanceContainer
 	unsigned numGroups (void)
 	  { return ngroups; }
 
-	void removePreviousData (ObjectSelection *os, string fileprefix);
+	void removePreviousDataFiles (ObjectSelection *os, string fileprefix);
 	void dumpGroupData (ObjectSelection *os, string fileprefix);
 	void gnuplot (ObjectSelection *os, string fileprefix, StatisticType_t type);
+	void python (ObjectSelection *os, string prefix, set<string> counters);
 };
 
 #endif

@@ -6,9 +6,9 @@ if test "${FOLDING_HOME}" == ""; then
 	export FOLDING_HOME=${mydir}
 fi
 
-if test $# -ge 2 ; then
-	echo Sorry... you can provide one tracefile at a time
+if test $# -ne 2 ; then
+	echo Sorry... you must provide an .wxfolding file to continue
 else
-	$FOLDING_HOME/bin/wxfolding.py $@
+	$FOLDING_HOME/bin/wxfolding_viewer.py $@
 fi
 

@@ -2,6 +2,8 @@
 
 import wx
 import os
+import sys
+import wxfolding_viewer
 
 class wxFoldingEventChooser(wx.Dialog):
 	def __init__(self, *args, **kw):
@@ -28,7 +30,7 @@ class wxFoldingEventChooser(wx.Dialog):
 
 		lines = [line.strip() for line in open(listfile)]
 		for line in lines:
-			[evttype, evtseparator, evtdescription] = line.partition (";")
+			evttype, evtdescription = line.split (";")
 			num_items = self.lc.GetItemCount()
 			self.lc.InsertStringItem(num_items, str(evttype))
 			self.lc.SetStringItem(num_items, 1, evtdescription)
@@ -67,9 +69,9 @@ class wxFoldingEventChooser(wx.Dialog):
 
 class wxFoldingInputDialog(wx.Dialog):
 
-	def __init__(self, *args, **kw):
+	def __init__(self, tracefile, *args, **kw):
 		super(wxFoldingInputDialog, self).__init__(*args, **kw) 
-		self.TraceFile = None
+		self.TraceFile = tracefile
 		self.EventType = None
 		self.SourceDir = None
 		self.WorkDir = os.getcwd()
@@ -132,6 +134,34 @@ class wxFoldingInputDialog(wx.Dialog):
 
 		self.SetSizerAndFit(self.sizerv)
 
+		# If tracefile is not none, just process it as a button call
+		if self.TraceFile:
+			self.ChoosePrv (self.TraceFile)
+
+	# Auxiliary functions 
+	def ChoosePrv (self, TraceFile):
+		self.TraceFile = TraceFile
+		if len(self.TraceFile) > 55:
+			label = "..."+self.TraceFile[len(self.TraceFile)-55:len(self.TraceFile)]
+		else:
+			label = self.TraceFile;
+		self.txtPrv.SetLabel ( label )
+		self.btnChooseEvent.Enable()
+		self.txtEventType.Enable()
+		self.btnChooseSourceDir.Enable()
+		self.txtsourceDir.SetLabel ("optional")
+		self.txtsourceDir.Disable()
+		self.txtEventType.SetLabel ("")
+		self.SourceDir = None
+		self.EventType = None
+
+		# Generate the available types list
+		command = FOLDING_HOME + "/bin/foldingtypes " + self.TraceFile + " > " + TMPDIR + "/folding-types." + str (os.getpid())
+		print "Executing command: "+command
+		if not os.system (command) == 0:
+			print "Error while executing : " + command
+			return
+
 	# Handlers for buttons
 	def OnContinue(self, event=None):
 		self.EndModal (wx.ID_OK)
@@ -139,33 +169,19 @@ class wxFoldingInputDialog(wx.Dialog):
 	def OnChoosePrv(self, event=None):
 		dialog = wx.FileDialog (None, wildcard = "Paraver tracefiles (*.prv)|*.prv", style = wx.OPEN)
 		if dialog.ShowModal() == wx.ID_OK:
-			self.TraceFile = dialog.GetPath()
-			self.txtPrv.SetLabel ( self.TraceFile )
-			self.btnChooseEvent.Enable()
-			self.txtEventType.Enable()
-			self.btnChooseSourceDir.Enable()
-			self.txtsourceDir.SetLabel ("optional")
-			self.txtsourceDir.Disable()
-			self.txtEventType.SetLabel ("")
-			self.SourceDir = None
-			self.EventType = None
-
-			# Generate the available types list
-			command = FOLDING_HOME + "/bin/foldingtypes " + self.TraceFile + " > " + TMPDIR + "/folding-types." + str (os.getpid())
-			print "Executing command: "+command
-			if not os.system (command) == 0:
-				print "Error while executing : " + command
-				return
-
+			self.ChoosePrv (dialog.GetPath())
 			self.Fit()
-
 		dialog.Destroy()
 
 	def OnChooseSourceDir(self, event=None):
 		dialog = wx.DirDialog (None, "Choose a directory:", style = wx.DD_DEFAULT_STYLE)
 		if dialog.ShowModal() == wx.ID_OK:
 			self.SourceDir = dialog.GetPath()
-			self.txtsourceDir.SetLabel (self.SourceDir)
+			if len(self.SourceDir) > 55:
+				label = "..."+self.SourceDir[len(self.SourceDir)-55:len(self.SourceDir)]
+			else:
+				label = self.SourceDir;
+			self.txtsourceDir.SetLabel ( label )
 			self.txtsourceDir.Enable()
 			self.Fit()
 		dialog.Destroy()
@@ -174,7 +190,11 @@ class wxFoldingInputDialog(wx.Dialog):
 		dialog = wx.DirDialog (None, "Choose a directory:", style = wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
 		if dialog.ShowModal() == wx.ID_OK:
 			self.WorkDir = dialog.GetPath()
-			self.txtworkDir.SetLabel (self.WorkDir)
+			if len(self.WorkDir) > 55:
+				label = "..."+self.WorkDir[len(self.WorkDir)-55:len(self.WorkDir)]
+			else:
+				label = self.WorkDir;
+			self.txtworkDir.SetLabel ( label )
 			self.Fit()
 		dialog.Destroy()
 
@@ -182,7 +202,10 @@ class wxFoldingInputDialog(wx.Dialog):
 		dialog = wxFoldingEventChooser (None, title = "Choose event type")
 		if dialog.ShowModal() == wx.ID_OK:
 			self.EventType = int (dialog.EventTypeChosen)
-			self.txtEventType.SetLabel (dialog.EventTypeChosen + "(" + dialog.EventDescriptionChosen + ")")
+			label = dialog.EventTypeChosen + " (" + dialog.EventDescriptionChosen + ")"
+			if len(label) > 55:
+				label = label[0:55];
+			self.txtEventType.SetLabel ( label )
 			self.continueBtn.Enable()
 			self.Fit()
 		dialog.Destroy()
@@ -217,11 +240,11 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.d_chooseobject = wx.Choice (panel, -1, choices = self.objects)
 		self.d_chooseobject.Disable()
 		self.d_hsizer1 = wx.BoxSizer (wx.HORIZONTAL)
-		self.d_hsizer1.Add (self.d_useallobjects);
+		self.d_hsizer1.Add (self.d_useallobjects, 0, wx.EXPAND|wx.ALL);
 		self.d_hsizer1.AddSpacer (10)
 		self.d_hsizer1.Add (self.d_chooseobjecttxt, 0, wx.CENTER)
 		self.d_hsizer1.AddSpacer (5)
-		self.d_hsizer1.Add (self.d_chooseobject)
+		self.d_hsizer1.Add (self.d_chooseobject, 0, wx.EXPAND|wx.ALL)
 		self.d_splitgroups = wx.ToggleButton (panel, -1, "Split instances in groups")
 		self.d_splitgroups.SetValue (True)
 		self.d_limitsamples = wx.ToggleButton (panel, -1, "Limit samples")
@@ -234,11 +257,11 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.d_limitsamplesnumtxt = wx.StaticText (panel, -1, "# of samples:")
 		self.d_limitsamplesnumtxt.Disable()
 		self.d_hsizer2 = wx.BoxSizer (wx.HORIZONTAL)
-		self.d_hsizer2.Add (self.d_limitsamples);
+		self.d_hsizer2.Add (self.d_limitsamples, 0, wx.EXPAND|wx.ALL);
 		self.d_hsizer2.AddSpacer (5)
 		self.d_hsizer2.Add (self.d_limitsamplesnumtxt, 0, wx.CENTER);
 		self.d_hsizer2.AddSpacer (5)
-		self.d_hsizer2.Add (self.d_limitsamplesnum);
+		self.d_hsizer2.Add (self.d_limitsamplesnum, 0, wx.EXPAND|wx.ALL);
 		self.d_useallregions = wx.ToggleButton (panel, -1, "All regions")
 		self.d_useallregions.SetValue (True)
 		self.d_useallregions.Bind (wx.EVT_TOGGLEBUTTON, self.OnChangeUseAllRegions )
@@ -268,19 +291,19 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.d_hsizer3 = wx.BoxSizer (wx.HORIZONTAL)
 		self.d_hsizer3.Add (self.d_useallregions, 1, wx.CENTER)
 		self.d_hsizer3.AddSpacer (5)
-		self.d_hsizer3.Add (self.d_lcregions, 3)
+		self.d_hsizer3.Add (self.d_lcregions, 3, wx.EXPAND|wx.ALL)
 		self.d_hsizer3.AddSpacer (20)
 		self.d_hsizer3.Add (self.d_useallcounters, 0, wx.CENTER)
 		self.d_hsizer3.AddSpacer (5)
-		self.d_hsizer3.Add (self.d_lccounters, 3)
+		self.d_hsizer3.Add (self.d_lccounters, 3, wx.EXPAND|wx.ALL)
 		self.boxdataszr.AddSpacer (10)
-		self.boxdataszr.Add (self.d_hsizer1)
+		self.boxdataszr.Add (self.d_hsizer1, 0, wx.EXPAND|wx.ALL)
 		self.boxdataszr.AddSpacer (10)
 		self.boxdataszr.Add (self.d_splitgroups)
 		self.boxdataszr.AddSpacer (10)
-		self.boxdataszr.Add (self.d_hsizer2)
+		self.boxdataszr.Add (self.d_hsizer2, 0, wx.EXPAND|wx.ALL)
 		self.boxdataszr.AddSpacer (10)
-		self.boxdataszr.Add (self.d_hsizer3)
+		self.boxdataszr.Add (self.d_hsizer3, 0, wx.EXPAND|wx.ALL)
 		self.boxdataszr.AddSpacer (10)
 
 		# Outliers frame
@@ -297,10 +320,10 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.o_statistictxt3 = wx.StaticText (panel, -1, "sigma times")
 		self.o_hsizer1 = wx.BoxSizer (wx.HORIZONTAL)
 		self.o_hsizer1.Add (self.o_statistictxt1, 0, wx.CENTER)
-		self.o_hsizer1.Add (self.o_statistic)
+		self.o_hsizer1.Add (self.o_statistic, 0, wx.EXPAND|wx.ALL)
 		self.o_hsizer1.AddSpacer (5)
 		self.o_hsizer1.Add (self.o_statistictxt2, 0, wx.CENTER)
-		self.o_hsizer1.Add (self.o_sigmatimes)
+		self.o_hsizer1.Add (self.o_sigmatimes, 0, wx.EXPAND|wx.ALL)
 		self.o_hsizer1.AddSpacer (5)
 		self.o_hsizer1.Add (self.o_statistictxt3, 0, wx.CENTER)
 		self.outlierszr.Add (self.o_hsizer1)
@@ -341,11 +364,11 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.f_genprvobjecttxt = wx.StaticText (panel, -1, "Choose object")
 		self.f_genprvobject = wx.Choice (panel, -1, choices = self.objects)
 		self.f_hsizer1 = wx.BoxSizer (wx.HORIZONTAL)
-		self.f_hsizer1.Add (self.f_genprv);
+		self.f_hsizer1.Add (self.f_genprv, 0, wx.EXPAND|wx.ALL);
 		self.f_hsizer1.AddSpacer (10)
 		self.f_hsizer1.Add (self.f_genprvobjecttxt, 0, wx.CENTER)
 		self.f_hsizer1.AddSpacer (5)
-		self.f_hsizer1.Add (self.f_genprvobject)
+		self.f_hsizer1.Add (self.f_genprvobject, 0, wx.EXPAND|wx.ALL)
 		self.feedszr.Add (self.f_hsizer1)
 
 		# Continue button
@@ -450,7 +473,7 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.r_splitingroups = self.d_splitgroups.GetValue()
 		self.r_limitsamples = self.d_limitsamples.GetValue()
 		self.r_limitsamplesnum = self.d_limitsamplesnum.GetValue()
-		if not self.d_useallcounters.GetValue():
+		if not self.d_useallregions.GetValue():
 			self.r_regions = []
 			current = self.d_lcregions.GetNextSelected (-1)
 			while current != -1:
@@ -458,7 +481,7 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 				current = self.d_lcregions.GetNextSelected (current)
 		else:
 			self.r_regions = [ 'all' ]
-		if not self.d_useallregions.GetValue():
+		if not self.d_useallcounters.GetValue():
 			self.r_counters = []
 			current = self.d_lccounters.GetNextSelected (-1)
 			while current != -1:
@@ -481,25 +504,27 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 #
 
 class wxFolding(wx.Frame):
-	def __init__(self, *args, **kw):
+	def __init__(self, tracefile, *args, **kw):
 		super(wxFolding, self).__init__(*args, **kw) 
+		self.TraceFile = tracefile
 		self.InitUI()
 
 	def InitUI(self):    
 		self.Show(False)
 
-		dialog = wxFoldingInputDialog (self, title = "Folding (step 1: Input data)")
+		dialog = wxFoldingInputDialog (parent = self, tracefile = self.TraceFile,
+		  title = "Folding (step 1: Input data)")
 		if not dialog.ShowModal() == wx.ID_OK:
 			self.Destroy()
 			return
 
-		TraceFile = dialog.TraceFile
-		SourceDir = dialog.SourceDir
-		EventType = dialog.EventType
-		WorkDir = dialog.WorkDir
+		self.TraceFile = dialog.TraceFile
+		self.SourceDir = dialog.SourceDir
+		self.EventType = dialog.EventType
+		self.WorkDir = dialog.WorkDir
 		dialog.Destroy()
 
-		os.chdir (WorkDir)
+		os.chdir (self.WorkDir)
 
 		# Execute 1st step for the folding process
 		#  generate codeblocks
@@ -507,17 +532,17 @@ class wxFolding(wx.Frame):
 		#  data extraction
 
 		command = FOLDING_HOME + "/bin/codeblocks"
-		if SourceDir:
-			command += " -source " + SourceDir
-		command += " " + TraceFile
+		if self.SourceDir:
+			command += " -source " + self.SourceDir
+		command += " " + self.TraceFile
 		print "Executing command: " + command
 		if not os.system (command) == 0:
 			print "Error while executing : " + command
 			return
 
-		position = TraceFile.rfind (".prv")
-		TraceFileCB = TraceFile[0:position]+".codeblocks.prv"
-		command = FOLDING_HOME + "/bin/fuse " + TraceFile
+		position = self.TraceFile.rfind (".prv")
+		TraceFileCB = self.TraceFile[0:position]+".codeblocks.prv"
+		command = FOLDING_HOME + "/bin/fuse " + TraceFileCB
 		print "Executing command: " + command
 		if not os.system (command) == 0:
 			print "Error while executing : " + command
@@ -525,7 +550,7 @@ class wxFolding(wx.Frame):
 
 		position = TraceFileCB.rfind (".prv")
 		TraceFileF = TraceFileCB[0:position]+".fused.prv"
-		command = FOLDING_HOME + "/bin/extract -separator " + str(EventType) + " " + TraceFileF
+		command = FOLDING_HOME + "/bin/extract -separator " + str(self.EventType) + " " + TraceFileF
 		print "Executing command: " + command
 		if not os.system (command) == 0:
 			print "Error while executing : " + command
@@ -567,15 +592,35 @@ class wxFolding(wx.Frame):
 			print "Error while executing : " + command
 			return
 
+		wxFile = TraceFileF[0:TraceFileF.rfind(".prv")]+".wxfolding"
+
+		f = wxfolding_viewer.wxFoldingViewer (parent = None, dfile = wxFile)
+
+		self.Destroy()
+
+#
+# MAIN
+#
 
 if __name__ == "__main__":
+
+	if len (sys.argv) > 2:
+		print 'Error! Command ' + sys.argv[0] + ' can only process one tracefile at a time';
+		sys.exit (-1)
+	elif len (sys.argv) == 2:
+		tracefile = sys.argv[1]
+		if tracefile[0] != '/':
+			tracefile = os.getcwd() + '/' + tracefile
+	else:
+		tracefile = None
+
 	TMPDIR = os.getenv ("TMPDIR")
-	if TMPDIR == None:
+	if not TMPDIR:
 		TMPDIR = "/tmp"
 	FOLDING_HOME = os.getenv ("FOLDING_HOME")
-	if not FOLDING_HOME == None:
+	if FOLDING_HOME:
 		ex = wx.App()
-		f = wxFolding(None)
+		f = wxFolding (parent = None, tracefile = tracefile)
 		ex.MainLoop()
 	else:
 		print "FOLDING_HOME is not set!"
