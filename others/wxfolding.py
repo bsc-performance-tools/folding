@@ -594,7 +594,7 @@ class wxFolding(wx.Frame):
 
 		wxFile = TraceFileF[0:TraceFileF.rfind(".prv")]+".wxfolding"
 
-		f = wxfolding_viewer.wxFoldingViewer (parent = None, dfile = wxFile)
+		f = wxfolding_viewer.wxFoldingViewer (parent = None, dfile = os.path.basename (wxFile))
 
 		self.Destroy()
 
