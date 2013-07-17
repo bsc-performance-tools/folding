@@ -260,9 +260,8 @@ void InstanceContainer::python (ObjectSelection *os, string prefix,
 		{
 			time_t now = time(0);
 			f << "# Folding done by " << getenv("USER") << " at " << ctime(&now);
+			f << "Object=" << os->toString (false, "any") << endl;
 		}
-
-		f << "Object=" << os->toString (false, "any") << endl;
 
 		f << regionName << ";";
 

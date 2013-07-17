@@ -199,7 +199,7 @@ void common::CleanMetricsDirectory_r (char *dir)
 	struct dirent *de = NULL;
 	DIR *d = NULL;
 	char current[PATH_MAX];
-	getcwd (current, PATH_MAX);
+	char *c = getcwd (current, PATH_MAX);
 	struct stat sb;
 	
 	d = opendir(dir);
@@ -208,7 +208,12 @@ void common::CleanMetricsDirectory_r (char *dir)
 		cerr << "Could not open directory " << dir << endl;
 		return;
 	}
-	chdir (dir);
+	if (chdir (dir) != 0)
+	{
+		cerr << "Could not change directory to " << dir << endl;
+		perror ("");
+		return;
+	}
 
 	while (de = readdir(d))
 	{
@@ -230,23 +235,37 @@ void common::CleanMetricsDirectory_r (char *dir)
 		{
 			if ((sb.st_mode & S_IFMT) == S_IFDIR)
 			{
-				chdir (de->d_name);
+				if (chdir (de->d_name) != 0)
+				{
+					cerr << "Could not change directory to " << de->d_name << endl;
+					perror ("");
+					return;
+				}
 				common::CleanMetricsDirectory_r (de->d_name);
-				chdir (current);
+				if (chdir (c) != 0)
+				{
+					cerr << "Could not change directory to " << c << endl;
+					perror ("");
+					return;
+				}
 			}
 		}
 	}
 
-  closedir(d);
+	closedir(d);
 }
 
 void common::CleanMetricsDirectory (string &directory)
 {
 	char current[PATH_MAX];
-	getcwd (current, PATH_MAX);
+	char *res = getcwd (current, PATH_MAX);
 
 	common::CleanMetricsDirectory_r ((char*)directory.c_str());
-	chdir (current);
+	if (chdir (res) != 0)
+	{
+		cerr << "Could not change directory to " << res << endl;
+		perror ("");
+	}
 }
 
 bool common::isMIPS (string s)
@@ -328,4 +347,15 @@ bool common::decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
 	return true;
 }
 
+string common::basename (string s)
+{
+	string r;
+
+	if (s.length() > 0)
+		r = s.substr (s.rfind ('/')+1);
+
+	cout << "s = " << s << " r = " << r << endl;
+
+	return r;
+}
 

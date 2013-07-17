@@ -11,6 +11,7 @@ codeblocks_SOURCES = \
  codeblocks.C 
 
 fuse_SOURCES = \
+ common.C common.H \
  fuse.C 
 
 extract_SOURCES = \

@@ -265,7 +265,9 @@ int main (int argc, char *argv[])
 	}
 
 	tracename = string(argv[1]);
-	Process *p = new Process (argv[1], true, tracename.substr (0, tracename.rfind(".prv"))+string(".fused.prv"));
+	string bfileprefix = common::basename (tracename.substr (0, tracename.rfind(".prv")));
+
+	Process *p = new Process (argv[1], true, (bfileprefix + string(".fused.prv")).c_str());
 
 	vector<ParaverTraceApplication *> va = p->get_applications();
 	if (va.size() != 1)
@@ -291,7 +293,7 @@ int main (int argc, char *argv[])
 	ifstream ifs_pcf ((tracename.substr (0, tracename.rfind(".prv"))+string(".pcf")).c_str());
 	if (ifs_pcf.is_open())
 	{
-		ofstream ofs_pcf ((tracename.substr (0, tracename.rfind(".prv"))+string(".fused.pcf")).c_str());
+		ofstream ofs_pcf ( (bfileprefix + string (".fused.pcf")).c_str() );
 		ofs_pcf << ifs_pcf.rdbuf();
 		ifs_pcf.close();
 		ofs_pcf.close();
@@ -300,7 +302,7 @@ int main (int argc, char *argv[])
 	ifstream ifs_row ((tracename.substr (0, tracename.rfind(".prv"))+string(".row")).c_str());
 	if (ifs_row.is_open())
 	{
-		ofstream ofs_row ((tracename.substr (0, tracename.rfind(".prv"))+string(".fused.row")).c_str());
+		ofstream ofs_row ( (bfileprefix + string (".fused.row")).c_str() );
 		ofs_row << ifs_row.rdbuf();
 		ifs_row.close();
 		ofs_row.close();
