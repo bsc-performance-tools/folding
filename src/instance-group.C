@@ -319,8 +319,11 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	  "set x2tics nomirror; " << endl <<
 	  "set xrange [0:" << m << "];" << endl <<
 	  "set xlabel 'Time (in ms)'" << endl <<
-	  "set ylabel 'Normalized " << counter << "';" << endl <<
-	  "set y2label '" << counter << " rate (in Mevents/s)';" << endl;
+	  "set ylabel 'Normalized " << counter << "';" << endl;
+	if (common::isMIPS(counter))
+	  gplot << "set y2label 'MIPS';" << endl;
+	else	
+	  gplot << "set y2label '" << counter << " rate (in Mevents/s)';" << endl;
 
 	gplot << "set title \"" << os->toString (true) << " - Group " << numGroup+1
 	  << " - " << regionName << "\\nDuration = " << (m/1000000) << " ms, Counter = " 
@@ -448,9 +451,13 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 				if (counter_gnuplot[u] == ':')
 					counter_gnuplot[u] = '_';
 
-			gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
-			  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
-			  << "' axes x2y2 w lines lw 3";
+			if (common::isMIPS((*it).first))
+				gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+				  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y2 w lines lw 3";
+			else
+				gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+				  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
+				  << "' axes x2y2 w lines lw 3";
 			count++;
 		}
 	}
