@@ -196,7 +196,7 @@ class wxFoldingViewerDialog(wx.Dialog):
 		f = self.FilePrefix + "." + region + "." + self.FoldedObject + "." + \
 		  str(group) + "." + counter + ".gnuplot"
 
-		command = "gnuplot -persist " + f
+		command = "gnuplot -persist \"" + f + "\""
 		print "Executing command: " + command
 		if not os.system (command) == 0:
 			print "Error while executing : " + command
