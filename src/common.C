@@ -352,9 +352,10 @@ string common::basename (string s)
 	string r;
 
 	if (s.length() > 0)
-		r = s.substr (s.rfind ('/')+1);
-
-	cout << "s = " << s << " r = " << r << endl;
+		if (s.rfind ('/') != string::npos)
+			r = s.substr (s.rfind ('/')+1);
+		else
+			r = s;
 
 	return r;
 }
