@@ -130,6 +130,7 @@ class wxFoldingViewerDialog(wx.Dialog):
 		self.sizerv.Add (self.groupcounterselectorszr, 0, wx.EXPAND, border = 5)
 		self.sizerv.Add ((0, 0), 1, wx.EXPAND) # Take remaining vertical space 
 		self.sizerv.Add (self.quitszr, 0, wx.CENTER, border = 5)
+		self.sizerv.AddSpacer (15)
 
 		panel.SetSizer (self.sizerv)
 		self.Fit()
