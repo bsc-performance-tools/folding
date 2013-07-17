@@ -1,6 +1,6 @@
 SUBDIRS = src
 
-EXTRA_DIST = others examples
+EXTRA_DIST = others examples cfgs
 
 install-data-hook:
 	$(SED) "s|FOLDING_HOME=|FOLDING_HOME=$(prefix)|g" < others/fold.sh > $(prefix)/bin/fold.sh
