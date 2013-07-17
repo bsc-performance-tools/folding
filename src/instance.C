@@ -46,7 +46,12 @@ Instance::Instance (void)
 void Instance::Show (void)
 {
 	cout << "instance info: " << endl;
+	cout << "rname = " << RegionName << endl; 
 	cout << "ptask = " << ptask << " task = " << task << " thread = " << thread << endl;
 	cout << "group = " << group << " starttime = " << startTime << " duration = " << duration << " prvValue = " << prvValue << endl;
-	cout << "rname = " << RegionName << endl; 
+	set<string>::iterator it;
+	cout << "COUNTERS: ";
+	for (it = Counters.begin(); it != Counters.end(); it++)
+		cout << *it << " ";
+	cout << endl;
 }

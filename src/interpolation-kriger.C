@@ -102,7 +102,7 @@ InterpolationResults * InterpolationKriger::interpolate_kernel (vector<Sample*> 
 	cout << "   - Counter " << counter << ", # in samples = " << incount << endl;
 	if (!all_zeroes)
 	{
-		Kriger_Region (incount, inpoints_x, inpoints_y, steps, outpoints, 0.0f, 1.0f, nuget);
+		Kriger_Region (incount+2, inpoints_x, inpoints_y, steps, outpoints, 0.0f, 1.0f, nuget);
 
 		/* Remove values below 0 */
 		for (unsigned u = 0; u < steps; u++)
