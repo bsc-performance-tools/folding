@@ -834,10 +834,10 @@ int main (int argc, char *argv[])
 		for (unsigned u = 0; u < whichInstancesToFeed.size(); u++)
 		{
 			Instance *i = whichInstancesToFeed[u];
-			if (Instances.count(i->RegionName) > 0)
+			if (regions.find(i->RegionName) != regions.end() &&
+			  Instances.count(i->RegionName) > 0)
 			{
 				InstanceContainer ic = Instances.at (i->RegionName);
-
 				ftrace->DumpGroupInfo (objectToFeed, i);
 				ftrace->DumpInterpolationData (objectToFeed, i, ic.InstanceGroups[i->group],
 				  counterCodes);

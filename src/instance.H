@@ -57,6 +57,8 @@ class Instance
 	map<string, unsigned long long> TotalCounterValues;
 
 	Instance ();
+
+	void Show(void);
 };
 
 #endif

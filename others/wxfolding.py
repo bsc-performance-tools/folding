@@ -10,7 +10,7 @@ class wxFoldingEventChooser(wx.Dialog):
 		super(wxFoldingEventChooser, self).__init__(*args, **kw) 
             
 		self.InitUI()
-		self.SetSize((480, 240))
+		self.SetSize((480, 280))
 		self.SetTitle("Choose folding event type")
 
 		self.EventTypeChosen = None
@@ -76,7 +76,7 @@ class wxFoldingInputDialog(wx.Dialog):
 		self.SourceDir = None
 		self.WorkDir = os.getcwd()
 		self.InitUI()
-		self.SetSize((600, 240))
+		self.SetSize((600, 280))
 
         
 	def InitUI(self):
@@ -129,7 +129,7 @@ class wxFoldingInputDialog(wx.Dialog):
 		self.sizerv.Add (self.sizerh2, 0, wx.ALL, border = 1)
 		self.sizerv.Add (self.sizerh3, 0, wx.ALL, border = 1)
 		self.sizerv.Add (self.sizerh4, 0, wx.ALL, border = 1)
-		self.sizerv.AddSpacer (10)
+		self.sizerv.Add ((0, 0), 1, wx.EXPAND) # Take remaining vertical space 
 		self.sizerv.Add (self.sizerh5, 0, wx.CENTER, border = 1)
 
 		self.SetSizerAndFit(self.sizerv)
@@ -141,8 +141,8 @@ class wxFoldingInputDialog(wx.Dialog):
 	# Auxiliary functions 
 	def ChoosePrv (self, TraceFile):
 		self.TraceFile = TraceFile
-		if len(self.TraceFile) > 55:
-			label = "..."+self.TraceFile[len(self.TraceFile)-55:len(self.TraceFile)]
+		if len(self.TraceFile) > 50:
+			label = "..."+self.TraceFile[len(self.TraceFile)-50:len(self.TraceFile)]
 		else:
 			label = self.TraceFile;
 		self.txtPrv.SetLabel ( label )
@@ -177,8 +177,8 @@ class wxFoldingInputDialog(wx.Dialog):
 		dialog = wx.DirDialog (None, "Choose a directory:", style = wx.DD_DEFAULT_STYLE)
 		if dialog.ShowModal() == wx.ID_OK:
 			self.SourceDir = dialog.GetPath()
-			if len(self.SourceDir) > 55:
-				label = "..."+self.SourceDir[len(self.SourceDir)-55:len(self.SourceDir)]
+			if len(self.SourceDir) > 50:
+				label = "..."+self.SourceDir[len(self.SourceDir)-50:len(self.SourceDir)]
 			else:
 				label = self.SourceDir;
 			self.txtsourceDir.SetLabel ( label )
@@ -190,8 +190,8 @@ class wxFoldingInputDialog(wx.Dialog):
 		dialog = wx.DirDialog (None, "Choose a directory:", style = wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
 		if dialog.ShowModal() == wx.ID_OK:
 			self.WorkDir = dialog.GetPath()
-			if len(self.WorkDir) > 55:
-				label = "..."+self.WorkDir[len(self.WorkDir)-55:len(self.WorkDir)]
+			if len(self.WorkDir) > 50:
+				label = "..."+self.WorkDir[len(self.WorkDir)-50:len(self.WorkDir)]
 			else:
 				label = self.WorkDir;
 			self.txtworkDir.SetLabel ( label )
@@ -203,8 +203,8 @@ class wxFoldingInputDialog(wx.Dialog):
 		if dialog.ShowModal() == wx.ID_OK:
 			self.EventType = int (dialog.EventTypeChosen)
 			label = dialog.EventTypeChosen + " (" + dialog.EventDescriptionChosen + ")"
-			if len(label) > 55:
-				label = label[0:55];
+			if len(label) > 50:
+				label = label[0:50];
 			self.txtEventType.SetLabel ( label )
 			self.continueBtn.Enable()
 			self.Fit()
@@ -218,7 +218,7 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		super(wxFoldingInterpolateKrigerDialog, self).__init__(*args, **kw) 
 		self.TraceFile = os.path.basename (tracefile)
 		self.InitUI()
-		self.SetSize((700, 480))
+		self.SetSize((720, 520))
 
 	def InitUI(self):
 		panel = wx.Panel (self)
@@ -387,7 +387,7 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.sizerv.Add (self.interpolationszr, 0, wx.EXPAND, border = 5)
 		self.sizerv.AddSpacer (15)
 		self.sizerv.Add (self.feedszr, 0, wx.EXPAND, border = 5)
-		self.sizerv.AddSpacer (15)
+		self.sizerv.Add ((0, 0), 1, wx.EXPAND) # Take remaining vertical space 
 		self.sizerv.Add (self.continueszr, 1, wx.CENTER, border = 10)
 
 		panel.SetSizer (self.sizerv)
@@ -541,7 +541,7 @@ class wxFolding(wx.Frame):
 			return
 
 		position = self.TraceFile.rfind (".prv")
-		TraceFileCB = self.TraceFile[0:position]+".codeblocks.prv"
+		TraceFileCB = os.path.basename(self.TraceFile[0:position]+".codeblocks.prv")
 		command = FOLDING_HOME + "/bin/fuse " + TraceFileCB
 		print "Executing command: " + command
 		if not os.system (command) == 0:
@@ -584,7 +584,7 @@ class wxFolding(wx.Frame):
 		if dialog.r_genprv:
 			command += " -feed-first-occurrence " + dialog.r_genprv_object
 		extractFile = TraceFileF[0:TraceFileF.rfind(".prv")]+".extract"
-		command += " " + os.path.basename(extractFile)
+		command += " " + extractFile
 
 		dialog.Destroy ()
 		print "Executing command: " + command

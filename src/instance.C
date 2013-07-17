@@ -33,6 +33,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: interpolate.C 1764 2013-05-
 
 #include "common.H"
 #include "instance.H"
+#include <iostream>
 
 Instance::Instance (void)
 {
@@ -40,4 +41,12 @@ Instance::Instance (void)
 	group = 0;
 	startTime = duration = 0;
 	prvValue = 0;
+}
+
+void Instance::Show (void)
+{
+	cout << "instance info: " << endl;
+	cout << "ptask = " << ptask << " task = " << task << " thread = " << thread << endl;
+	cout << "group = " << group << " starttime = " << startTime << " duration = " << duration << " prvValue = " << prvValue << endl;
+	cout << "rname = " << RegionName << endl; 
 }

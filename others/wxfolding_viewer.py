@@ -44,7 +44,7 @@ class wxFoldingViewerDialog(wx.Dialog):
 		self.FilePrefix = filename[0:filename.rfind (".wxfolding")]
 		self.FoldedObject = foldedobject
 		self.InitUI()
-		self.SetSize((600, 300))
+		self.SetSize((600, 320))
         
 	def InitUI(self):
 		panel = wx.Panel (self)
@@ -128,7 +128,7 @@ class wxFoldingViewerDialog(wx.Dialog):
 		self.sizerv.Add (self.regionselectorszr, 0, wx.EXPAND, border = 5)
 		self.sizerv.AddSpacer (15)
 		self.sizerv.Add (self.groupcounterselectorszr, 0, wx.EXPAND, border = 5)
-		self.sizerv.AddSpacer (15)
+		self.sizerv.Add ((0, 0), 1, wx.EXPAND) # Take remaining vertical space 
 		self.sizerv.Add (self.quitszr, 0, wx.CENTER, border = 5)
 
 		panel.SetSizer (self.sizerv)
