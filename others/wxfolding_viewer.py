@@ -142,7 +142,7 @@ class wxFoldingViewerDialog(wx.Dialog):
 	def OnViewGroups (self, event = None):
 		f = self.FilePrefix + "." + self.rs_chooseregion.GetStringSelection() \
 		  + "." + self.FoldedObject + ".groups.gnuplot"
-		command = "gnuplot -persist " + f
+		command = "gnuplot -persist \"" + f + "\""
 		print "Executing command: " + command
 		if not os.system (command) == 0:
 			print "Error while executing : " + command
