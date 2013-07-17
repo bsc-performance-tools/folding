@@ -369,7 +369,10 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 		else
 			coma = false;
 
-		gplot << ",\\" << endl << "'" << fintname << "' u 4:(interpolation($5, strcol(3), strcol(1), $2)) ti 'Fitting [" << idata->getInterpolationDetails() << "]' axes x2y1 w lines lw 3 lc rgbcolor '#00FF00'";
+		if (coma)
+			gplot << ",\\" << endl;
+
+		gplot << "'" << fintname << "' u 4:(interpolation($5, strcol(3), strcol(1), $2)) ti 'Fitting [" << idata->getInterpolationDetails() << "]' axes x2y1 w lines lw 3 lc rgbcolor '#00FF00'";
 
 		if (idata->isSlopeCalculated())
 		{
