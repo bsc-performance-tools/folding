@@ -283,7 +283,7 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 		}
 
 	string completefile = prvFile.substr (0, prvFile.length()-4) + ".extract" ;
-	IH.outputfile.open (basename(completefile.c_str()));
+	IH.outputfile.open ((common::basename(completefile)).c_str());
 }
 
 void Process::closeFile (void)
@@ -680,7 +680,7 @@ string Process::getTypeValue (unsigned type, unsigned value)
 
 void Process::dumpSeenObjects (string filename)
 {
-	ofstream f (basename(filename.c_str()));
+	ofstream f ((common::basename(filename.c_str())).c_str());
 	if (f.is_open())
 	{
 		PTaskInformation *ptaskinfo = IH.getPTasksInformation();
@@ -701,7 +701,7 @@ void Process::dumpSeenObjects (string filename)
 
 void Process::dumpSeenCounters (string filename)
 {
-	ofstream f (basename(filename.c_str()));
+	ofstream f (filename.c_str());
 	if (f.is_open())
 	{
 		set<string>::iterator i;
@@ -714,7 +714,7 @@ void Process::dumpSeenCounters (string filename)
 
 void Process::dumpSeenRegions (string filename)
 {
-	ofstream f (basename(filename.c_str()));
+	ofstream f (filename.c_str());
 	if (f.is_open())
 	{
 		set<string>::iterator i;
@@ -806,13 +806,13 @@ int main (int argc, char *argv[])
 	p->parseBody();
 	p->closeFile();
 
-	p->dumpSeen (tracename.substr (0, tracename.length()-4));
+	p->dumpSeen (common::basename (tracename.substr (0, tracename.length()-4)));
 
 	if (p->getNCounterChanges() > 0)
 		cout << "Ignored " << p->getNCounterChanges() << " instances, most probably because of hardware counter set change." << endl;
 
-	string ControlFile = tracename.substr (0, tracename.length()-4) + ".control";
-	ofstream cfile (basename(ControlFile.c_str()));
+	string ControlFile = common::basename (tracename.substr (0, tracename.length()-4) + ".control");
+	ofstream cfile (ControlFile.c_str());
 	cfile << tracename << endl;
 	cfile << RegionSeparator << endl;
 	cfile << RegionSeparatorName << endl;

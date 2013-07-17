@@ -65,6 +65,7 @@ class common
 	static bool decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
 	  bool &ptaskany, unsigned &task, bool &taskany, unsigned &thread, bool &threadany);
 	static unsigned lookForValueString (UIParaverTraceConfig *pcf, unsigned type, string str, bool &found);
+	static string basename (string s);
 };
 
 #endif

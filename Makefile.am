@@ -11,5 +11,7 @@ install-data-hook:
 	cp others/cube-call-paraver-base.cfg $(prefix)/etc
 	cp others/breakpoints.R $(prefix)/etc
 	cp others/basicblocks.C.py others/basicblocks.F90.py $(prefix)/etc
+	$(MKDIR_P) $(prefix)/cfg
+	cp cfgs/win_folded_caller_types.cfg cfgs/win_folded_types.cfg $(prefix)/cfg
 	cp -fr examples $(prefix)
 

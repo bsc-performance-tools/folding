@@ -721,8 +721,8 @@ int main (int argc, char *argv[])
 
 	if (feedTraceType != FEED_NONE)
 	{
-		string controlFile = cFile.substr (0, cFile.rfind (".extract")) + ".control";
-		string objectsFile = cFile.substr (0, cFile.rfind (".extract")) + ".objects";
+		string controlFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".control");
+		string objectsFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".objects");
 		string traceFile;
 
 		ifstream control (controlFile.c_str());
@@ -830,7 +830,7 @@ int main (int argc, char *argv[])
 		}
 
 		/* Emit callstack into the new tracefile */
-		cout << "Generating folded trace for Paraver (" << CWD << "/" << basename (oFilePRV.c_str()) << ")" << endl;
+		cout << "Generating folded trace for Paraver (" << CWD << "/" << common::basename (oFilePRV.c_str()) << ")" << endl;
 		for (unsigned u = 0; u < whichInstancesToFeed.size(); u++)
 		{
 			Instance *i = whichInstancesToFeed[u];
@@ -848,7 +848,7 @@ int main (int argc, char *argv[])
 #warning Enable cube generation
 #if defined(HAVE_CUBE)
 		/* Generate a callstack tree for the CUBE program */
-		cout << "Generating callstack tree for CUBE (" << CWD << "/" << basename (oFileCUBE.c_str()) << ")" << endl;
+		cout << "Generating callstack tree for CUBE (" << CWD << "/" << common::basename (oFileCUBE.c_str()) << ")" << endl;
 		bool found;
 
 		 /* __libc_start_main & generic_start_main are routines seen as main in
@@ -888,21 +888,23 @@ int main (int argc, char *argv[])
 			cerr << "Sorry... can't find 'main' symbol in the PCF file, can't generate the CUBE file" << endl;
 #endif
 
+		string bfileprefix = common::basename (traceFile.substr (0, traceFile.rfind(".prv")));
+
 		/* Copy .pcf and .row files */
 		ifstream ifs_pcf ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".pcf")).c_str());
 		if (ifs_pcf.is_open())
 		{
-			ofstream ofs_pcf ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".folded.pcf")).c_str());
+			ofstream ofs_pcf ((bfileprefix + string(".folded.pcf")).c_str());
 			ofs_pcf << ifs_pcf.rdbuf();
 			ifs_pcf.close();
 			ofs_pcf.close();
 		}
-		AppendInformationToPCF (traceFile.substr (0, traceFile.rfind(".prv"))+string(".folded.pcf"), pcf, counters, feedTraceFoldType);
+		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters, feedTraceFoldType);
 
 		ifstream ifs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".row")).c_str());
 		if (ifs_row.is_open())
 		{
-			ofstream ofs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".folded.row")).c_str());
+			ofstream ofs_row ((bfileprefix + string(".folded.row")).c_str());
 			ofs_row << ifs_row.rdbuf();
 			ifs_row.close();
 			ofs_row.close();

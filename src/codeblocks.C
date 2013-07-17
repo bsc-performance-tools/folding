@@ -413,10 +413,10 @@ int main (int argc, char *argv[])
 	}
 
 	int res = ProcessParameters (argc, argv);
-
 	tracename = string(argv[res]);
-	Process *p = new Process (tracename, sourceDir, true,
-		tracename.substr (0, tracename.rfind(".prv"))+string(".codeblocks.prv"));
+	string bfileprefix = common::basename (tracename.substr (0, tracename.rfind(".prv")));
+
+	Process *p = new Process (tracename, sourceDir, true, (bfileprefix + string(".codeblocks.prv")).c_str() );
 
 	vector<ParaverTraceApplication *> va = p->get_applications();
 	if (va.size() != 1)
@@ -434,17 +434,17 @@ int main (int argc, char *argv[])
 	ifstream ifs_pcf ((tracename.substr (0, tracename.rfind(".prv"))+string(".pcf")).c_str());
 	if (ifs_pcf.is_open())
 	{
-		ofstream ofs_pcf ((tracename.substr (0, tracename.rfind(".prv"))+string(".codeblocks.pcf")).c_str());
+		ofstream ofs_pcf ( (bfileprefix + string(".codeblocks.pcf")).c_str());
 		ofs_pcf << ifs_pcf.rdbuf();
 		ifs_pcf.close();
 		ofs_pcf.close();
 	}
-	p->appendtoPCF (tracename.substr (0, tracename.rfind(".prv"))+string(".codeblocks.pcf"));
+	p->appendtoPCF (bfileprefix + string(".codeblocks.pcf"));
 
 	ifstream ifs_row ((tracename.substr (0, tracename.rfind(".prv"))+string(".row")).c_str());
 	if (ifs_row.is_open())
 	{
-		ofstream ofs_row ((tracename.substr (0, tracename.rfind(".prv"))+string(".codeblocks.row")).c_str());
+		ofstream ofs_row ( (bfileprefix + string(".codeblocks.row")).c_str());
 		ofs_row << ifs_row.rdbuf();
 		ifs_row.close();
 		ofs_row.close();
