@@ -34,6 +34,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 #include "common.H"
 
 #include <algorithm>
+#include <math.h>
 
 #include "sample-selector-distance.H"
 
@@ -81,39 +82,31 @@ void SampleSelectorDistance::Select (InstanceGroup *ig, set<string> &counters)
 					for (unsigned s = 0; s < vi[i]->Samples.size(); s++)
 						tmp.push_back (vi[i]->Samples[s]);
 			}
-	 		sort (tmp.begin(), tmp.end(), sortSamplesByTime);
 
-			double bucketsize = 1.0f / limit;
-			double from = 0.0, to = bucketsize;
-			vector<Sample*>::iterator i;
-			while (used.size() != limit)
+			for (unsigned step = 0; step < limit; step++)
 			{
-				i = tmp.begin();
+				double d_limit = limit;
+				double d_step = step;
+				double centerposition = d_step * (1.0 / d_limit) + (1.0 / (2*d_limit) );
 
-				/* Look for a sample that starts at the bucket from - to */
-				while ((*i)->nTime < from && i != tmp.end())
-					i++;
-
-				/* If the sample is within [from, to], store, if not, skip */
-				if (i != tmp.end())
+				if (tmp.size() > 0)
 				{
-					if ((*i)->nTime >= from && (*i)->nTime < to)
-					{
-						used.push_back (*i);
-						tmp.erase (i);					
-					}
-				}
+					vector<Sample*>::iterator it = tmp.begin();
+					vector<Sample*>::iterator bestposition = it;
+					double distancetobest = fabs((*it)->nTime - centerposition); 
 
-				/* Work with the next bucket, if we go beyond 1, restart */
-				from += bucketsize;
-				to += bucketsize;
-				if (from >= 1.0f || to > 1.0f)
-				{
-					from = 0.0;
-					to = bucketsize;
+					for ( ; it != tmp.end(); it++ )
+						if (fabs ((*it)->nTime - centerposition) < distancetobest)
+						{
+							distancetobest = fabs ((*it)->nTime - centerposition);
+							bestposition = it;
+						}
+
+					used.push_back (*bestposition);
+					tmp.erase (bestposition);
 				}
 			}
-
+	
 			/* All the remaining samples in tmp, should go to unused */
 			for (unsigned i = 0; i < tmp.size(); i++)
 				unused.push_back (tmp[i]);
