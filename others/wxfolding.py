@@ -257,12 +257,24 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.d_limitsamplesnum.Disable()
 		self.d_limitsamplesnumtxt = wx.StaticText (panel, -1, "# of samples:")
 		self.d_limitsamplesnumtxt.Disable()
+		self.d_limitsamplesalgorithmtxt = wx.StaticText (panel, -1, "using")
+		self.d_limitsamplesalgorithm = wx.Choice (panel, -1, choices = [ "first", "evenly distributed" ])
+		self.d_limitsamplesalgorithmtxt2 = wx.StaticText (panel, -1, "samples")
+		self.d_limitsamplesalgorithmtxt.Disable()
+		self.d_limitsamplesalgorithm.Disable()
+		self.d_limitsamplesalgorithmtxt2.Disable()
 		self.d_hsizer2 = wx.BoxSizer (wx.HORIZONTAL)
 		self.d_hsizer2.Add (self.d_limitsamples, 0, wx.EXPAND|wx.ALL);
 		self.d_hsizer2.AddSpacer (5)
 		self.d_hsizer2.Add (self.d_limitsamplesnumtxt, 0, wx.CENTER);
 		self.d_hsizer2.AddSpacer (5)
 		self.d_hsizer2.Add (self.d_limitsamplesnum, 0, wx.EXPAND|wx.ALL);
+		self.d_hsizer2.AddSpacer (5)
+		self.d_hsizer2.Add (self.d_limitsamplesalgorithmtxt, 0, wx.CENTER);
+		self.d_hsizer2.AddSpacer (5)
+		self.d_hsizer2.Add (self.d_limitsamplesalgorithm, 0, wx.EXPAND|wx.ALL);
+		self.d_hsizer2.AddSpacer (5)
+		self.d_hsizer2.Add (self.d_limitsamplesalgorithmtxt2, 0, wx.CENTER);
 		self.d_useallregions = wx.ToggleButton (panel, -1, "All regions")
 		self.d_useallregions.SetValue (True)
 		self.d_useallregions.Bind (wx.EVT_TOGGLEBUTTON, self.OnChangeUseAllRegions )
@@ -435,9 +447,15 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		if self.d_limitsamples.GetValue():
 			self.d_limitsamplesnum.Enable()
 			self.d_limitsamplesnumtxt.Enable()
+			self.d_limitsamplesalgorithmtxt.Enable()
+			self.d_limitsamplesalgorithm.Enable()
+			self.d_limitsamplesalgorithmtxt2.Enable()
 		else:
 			self.d_limitsamplesnum.Disable()
 			self.d_limitsamplesnumtxt.Disable()
+			self.d_limitsamplesalgorithmtxt.Disable()
+			self.d_limitsamplesalgorithm.Disable()
+			self.d_limitsamplesalgorithmtxt2.Disable()
 
 	def OnChangeStatistic(self, event=None):
 		if self.o_statistic.GetStringSelection() == "median":
@@ -475,6 +493,7 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.r_splitingroups = self.d_splitgroups.GetValue()
 		self.r_limitsamples = self.d_limitsamples.GetValue()
 		self.r_limitsamplesnum = self.d_limitsamplesnum.GetValue()
+		self.r_limitsamplesalg = self.d_limitsamplesalgorithm.GetStringSelection()
 		if not self.d_useallregions.GetValue():
 			self.r_regions = []
 			current = self.d_lcregions.GetNextSelected (-1)
@@ -573,7 +592,10 @@ class wxFolding(wx.Frame):
 		command += " -use-" + dialog.r_statistic
 		command += " -sigma-times " + dialog.r_sigmatimes
 		if dialog.r_limitsamples:
-			command += " -max-samples " + str(dialog.r_limitsamplesnum)
+			if dialog.r_limitsamplesalg == "evenly distributed":
+				command += " -max-samples-distance " + str(dialog.r_limitsamplesnum)
+			elif dialog.r_limitsamplesalg == "first":
+				command += " -max-samples " + str(dialog.r_limitsamplesnum)
 		for r in dialog.r_regions:
 			command += " -region " + r
 		for c in dialog.r_counters:

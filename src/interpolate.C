@@ -79,7 +79,7 @@ static StatisticType_t StatisticType = STATISTIC_MEAN;
 static double NumOfSigmaTimes = 2.0f;
 
 static set<string> wantedCounters;
-static set<string> wantedRegions;
+static set<string> wantedRegions, wantedRegionsStartWith;
 
 FoldedParaverTrace *ftrace = NULL;
 
@@ -335,6 +335,7 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-max-samples NUM" << endl
 		     << "-max-samples-distance NUM" << endl
 		     << "-region R                [where R = all by default]" << endl
+		     << "-region-start-with R     [nothing by default]" << endl
 		     << "-counter C               [where C = all by default]" << endl
 		     << "-interpolation " << endl
 			 << "          kriger STEPS NUGET PREFILTER?" << endl
@@ -412,6 +413,18 @@ int ProcessParameters (int argc, char *argv[])
 			i++;
 			if (i < argc-1)
 				wantedRegions.insert (string(argv[i]));
+			continue;
+		}
+		if (strcmp ("-region-start-with", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -region-start-with parameter" << endl;
+				exit (-1);
+			}
+			i++;
+			if (i < argc-1)
+				wantedRegionsStartWith.insert (string(argv[i]));
 			continue;
 		}
 		if (strcmp ("-sigma-times", argv[i]) == 0)
@@ -620,6 +633,13 @@ int main (int argc, char *argv[])
 		{
 			set<string>::iterator it2 = wantedRegions.begin();
 			for (; it2 != wantedRegions.end(); it2++)
+				if (*it == *it2)
+				{
+					regions.insert (*it);
+					break;
+				}
+			it2 = wantedRegionsStartWith.begin();
+			for (; it2 != wantedRegionsStartWith.end(); it2++)
 				if ((*it).find (*it2) != string::npos)
 				{
 					regions.insert (*it);
