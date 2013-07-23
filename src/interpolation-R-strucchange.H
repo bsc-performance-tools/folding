@@ -21,24 +21,34 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/folding/src/interpolate.C $
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
  | 
- | @last_commit: $Date: 2013-01-04 16:23:26 +0100 (dv, 04 gen 2013) $
- | @version:     $Revision: 1449 $
+ | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
+ | @version:     $Revision: 1764 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#include "execute-R.H"
-#include <vector>
-#include <string>
+#ifndef INTERPOLATION_RSTRUCCHANGE_H_INCLUDED
+#define INTERPOLATION_RSTRUCCHANGE_H_INCLUDED
 
-using namespace std;
+#include "interpolation.H"
 
-class Rbreakpoints : public R
+class InterpolationRstrucchange : public Interpolation
 {
+	private:
+	double h;
+
+	unsigned exec_R_strucchange (unsigned inpoints,
+	  double *ix, double *iy, unsigned outpoints, double *oy,
+	  string counter, unsigned group);
+	InterpolationResults * interpolate_kernel (vector<Sample*> vs,
+	  string counter, unsigned group);
+
 	public:
-	static void breakpoints (string file, string counter, unsigned size, double h, vector<double> &slopes, vector<double> &breakpoints, vector<unsigned> &excludedinstances);
+	InterpolationRstrucchange (unsigned steps, double H);
+	void interpolate (InstanceGroup *ig, set<string> &counters);
+	string details (void);
 };
 
-
+#endif

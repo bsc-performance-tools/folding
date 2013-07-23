@@ -1,4 +1,4 @@
-SUBDIRS = service-kriger
+SUBDIRS = service-kriger service-R
 
 bin_PROGRAMS = fuse codeblocks extract interpolate foldingtypes
 noinst_PROGRAMS = max-diff-interpolation-points mean-diff-interpolation-points
@@ -30,7 +30,9 @@ interpolate_SOURCES = \
  object-selection.H object-selection.C \
  prv-writer.C prv-writer.H \
  interpolation.C interpolation.H \
- interpolation-results.C interpolation-results.H interpolation-kriger.C interpolation-kriger.H \
+ interpolation-results.C interpolation-results.H \
+ interpolation-kriger.C interpolation-kriger.H \
+ interpolation-R-strucchange.C interpolation-R-strucchange.H \
  interpolate.C interpolate.H
 
 if HAVE_CUBE
@@ -47,7 +49,7 @@ fuse_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
 codeblocks_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
 foldingtypes_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
 extract_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
-interpolate_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Iservice-kriger -g -O
+interpolate_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Iservice-kriger -Iservice-R -g -O
 if HAVE_CUBE
 interpolate_CXXFLAGS += -I$(CUBE_DIR)/include
 endif
@@ -63,7 +65,7 @@ fuse_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
 codeblocks_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
 foldingtypes_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig 
 extract_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
-interpolate_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm
+interpolate_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm -Lservice-R -lR
 if HAVE_CUBE
 interpolate_LDFLAGS +=  -L$(CUBE_DIR)/lib -lcube3 -lz
 endif

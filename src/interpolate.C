@@ -43,6 +43,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "sample-selector-default.H"
 
 #include "interpolation-kriger.H"
+#include "interpolation-R-strucchange.H"
 #if defined(HAVE_CUBE)
 # include "callstack.H"
 # include "cube-holder.H"
@@ -339,6 +340,7 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-counter C               [where C = all by default]" << endl
 		     << "-interpolation " << endl
 			 << "          kriger STEPS NUGET PREFILTER?" << endl
+		     << "          R-strucchange STEPS H" << endl
 			 << " [DEFAULT kriger 1000 0.0001 no]" << endl
 		     << endl;
 		exit (-1);
@@ -586,6 +588,33 @@ int ProcessParameters (int argc, char *argv[])
 				InterpolationKriger *in = new InterpolationKriger (NSTEPS, NUGET, strprefilter == "yes");
 				interpolation = in;
 			}
+			if (strcmp (argv[i], "R-strucchange") == 0)
+			{
+				if (!CHECK_ENOUGH_ARGS(2, argc, i))
+				{
+					cerr << "Insufficient arguments for -interpolation R-strucchange parameter" << endl;
+					exit (-1);
+				}
+
+				unsigned NSTEPS;
+				double H;
+				i++;
+				if ((NSTEPS = atoi (argv[i])) == 0)
+				{
+					cerr << "Invalid num steps for R-strucchange interpolation (" << argv[i] << ")" << endl;
+					exit (-1);
+				}
+				i++;
+				if ((H = atof (argv[i])) == 0)
+				{
+					cerr << "Invalid h value for R-strucchange interpolation (" << argv[i] << ")" << endl;
+					exit (-1);
+				}
+
+				cout << "Selected interpolation algorithm: R-strucchange (steps = " << NSTEPS << ", h = " << H << ")" << endl;
+				InterpolationRstrucchange *in = new InterpolationRstrucchange (NSTEPS, H);
+				interpolation = in;
+			}
 			continue;
 		}
 
@@ -610,8 +639,19 @@ int main (int argc, char *argv[])
 	map<string, InstanceContainer> excludedInstances;
 	vector<Instance*> vInstances;
 	vector<Instance*> feedInstances;
-	char CWD[1024];
-	getcwd (CWD, sizeof(CWD));
+	char CWD[1024], *cwd;
+
+	if ((cwd = getcwd (CWD, sizeof(CWD))) == NULL)
+	{
+		cerr << "Sorry... can't figure my own directory!" << endl;
+		exit (-1);
+	}
+
+	if (getenv ("FOLDING_HOME") == NULL)
+	{
+		cerr << "You must define FOLDING_HOME to execute this application" << endl;
+		return -1;
+	}
 
 	objectsSelected = new ObjectSelection;
 
@@ -850,7 +890,7 @@ int main (int argc, char *argv[])
 		}
 
 		/* Emit callstack into the new tracefile */
-		cout << "Generating folded trace for Paraver (" << CWD << "/" << common::basename (oFilePRV.c_str()) << ")" << endl;
+		cout << "Generating folded trace for Paraver (" << cwd << "/" << common::basename (oFilePRV.c_str()) << ")" << endl;
 		for (unsigned u = 0; u < whichInstancesToFeed.size(); u++)
 		{
 			Instance *i = whichInstancesToFeed[u];
@@ -868,7 +908,7 @@ int main (int argc, char *argv[])
 #warning Enable cube generation
 #if defined(HAVE_CUBE)
 		/* Generate a callstack tree for the CUBE program */
-		cout << "Generating callstack tree for CUBE (" << CWD << "/" << common::basename (oFileCUBE.c_str()) << ")" << endl;
+		cout << "Generating callstack tree for CUBE (" << cwd << "/" << common::basename (oFileCUBE.c_str()) << ")" << endl;
 		bool found;
 
 		 /* __libc_start_main & generic_start_main are routines seen as main in

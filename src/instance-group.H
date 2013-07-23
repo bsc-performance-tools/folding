@@ -73,6 +73,9 @@ class InstanceGroup
 	void setSamples (map<string, vector<Sample*> > used, map<string, vector<Sample*> > unused)
 		{ this->used = used; this->unused = unused; }
 
+	unsigned getNumGroup (void)
+	  { return numGroup; }
+
 	map<string, vector<Sample*> > getSamples (void)
 		{ return this->used; }
 
