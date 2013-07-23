@@ -29,13 +29,34 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#include <string>
+static char __attribute__ ((unused)) rcsid[] = "$Id: interpolate.C 1449 2013-01-04 15:23:26Z harald $";
 
-using namespace std;
+#include "execute-R.H"
 
-class R
+#include <stdlib.h>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <unistd.h>
+
+bool R::launch (string commands)
 {
-	protected:
-	static bool launch (string commands);
-};
+	stringstream ss;
+	ss << getpid(); 
+	string script_file = string ("/tmp/folding.R.") + ss.str() + ".script";
+
+	ofstream temporal;
+	temporal.open (script_file.c_str());
+	if (temporal.is_open())
+	{
+		temporal << commands << endl;
+		string sys_command = string ("R -f ") + script_file + "> /dev/null 2> /dev/null";
+		if (system (sys_command.c_str()) != 0)
+		{
+			cerr << "R command failed" << endl;
+			exit (-1);
+		}
+	}
+}
+
 
