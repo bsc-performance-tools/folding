@@ -2,7 +2,7 @@
 
 [1] Compile libtools 1.0
 
-    You will need the boost libraries ( http://www.boost.org ) installed. If you are using a package system, make sure you have the -dev (or -devel) package installed.
+   You will need the boost libraries ( http://www.boost.org ) installed. If you are using a package system, make sure you have the -dev (or -devel) package installed.
 
    ./configure --prefix=/apps/CEPBATOOLS/libtools/1.0 --with-boost=/apps/BOOST/1_52_0
 
@@ -12,7 +12,7 @@
 
 [2] Compile the folding package
 
-   You will need the previous libtools package, the boost libraries and optionally the clang compiler 
+   You will need the previous libtools package, the boost libraries, C++/C/Fortran compilers (which you can set through CXX/CC/FC, respectively) and optionally the clang compiler.
 
    ./configure --prefix=/apps/CEPBATOOLS/folding/0.99 --with-libtools=/apps/CEPBATOOLS/libtools/1.0-16072013 --with-clang=/apps/LLVM/3.3/bin/clang --with-boost=/apps/BOOST/1_52_0
 
