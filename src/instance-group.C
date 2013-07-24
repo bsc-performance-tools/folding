@@ -367,8 +367,6 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 			gplot << "'" << fdname << "' u 4:(sampleused($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Used samples (" << usedSamples.size() << ")' axes x2y1 w points lc rgbcolor '#FF0000'";
 			coma = true;
 		}
-		else
-			coma = false;
 
 		if (coma)
 			gplot << ",\\" << endl;

@@ -31,7 +31,7 @@ linear_ndbg <- function (from, to, data)
 	sub <- subset(data, data$time >= from & data$time < to)
 	if (nrow(sub) > 1)
 	{
-		dlm <- lm (sub$counter ~ sub$time, data = sub)
+		dlm <- lm (sub$value ~ sub$time, data = sub)
 		sdlm <- summary(dlm)
 		result <- c(coef(dlm)[1], coef(dlm)[2], coef(sdlm)[4], 0)
 	}
@@ -55,7 +55,7 @@ linear <- function (from, to, data)
 	sub <- subset(data, data$time >= from & data$time < to)
 	if (nrow(sub) > 1)
 	{
-		dlm <- lm (sub$counter ~ sub$time, data = sub)
+		dlm <- lm (sub$value ~ sub$time, data = sub)
 		sdlm <- summary(dlm)
 		result <- c(coef(dlm)[1], coef(dlm)[2], coef(sdlm)[4], 0)
 	}
@@ -105,9 +105,7 @@ intersectionpoints <- function (bd, data)
 			preparams <- params
 
 		sub <- subset(data, data$time >= bd[s-1] & data$time < bd[s])
-		#sub_df_s <- sub[sample(nrow(sub), size=min(NSAMPLES,nrow(sub))), ]
-		sub_df_s <- sub[c(1:min(NSAMPLES,nrow(sub))),]
-		sub_df_o <- sub_df_s[order(sub_df_s$time),]
+		sub_df_o <- sub[order(sub$time),]
 
 		params <- linear (from = bd[s-1], to = bd[s], data = sub_df_o)
 		if (s > 2)
@@ -210,7 +208,7 @@ checkmyerror <- function (l, from, to, data)
 	for (i in 1:nrow(sub))
 	{
 		predicted <- l[1] + l[2]*sub$time[i]
-		real <- sub$counter[i]
+		real <- sub$value[i]
 		error <- error + abs (real - predicted)	
 	}
 
@@ -292,77 +290,14 @@ fuse <- function (bd, data, maxerror)
 	return (bd_result)
 }
 
-removeoutliersinstances <- function (data)
-{
-	maxinstance <- max(data$instance)
-	maxtimes <- c()
-	for (i in 1:maxinstance)
-	{
-		sub <- subset(data, data$instance == i)
-		if (nrow(sub) > 0)
-			maxtimes <- c(maxtimes, max(sub$time))
-		else
-			maxtimes <- c(maxtimes, NA)
-	}
-
-	y <- quantile(maxtimes, na.rm = TRUE)
-
-	maxtimesQ3 <- c()
-	for (i in 1:maxinstance)
-	{
-		sub <- subset(data, data$instance == i)
-		if (nrow(sub) > 0 && max(sub$time) <= y[3])
-			maxtimesQ3 <- c(maxtimesQ3, max(sub$time))
-		else
-			maxtimesQ3 <- c(maxtimesQ3, NA)
-	}
-
-	mean <- mean (maxtimesQ3, na.rm = TRUE)
-	stdev <- sd(maxtimesQ3, na.rm = TRUE)
-	Ub <- mean+1.25*stdev
-	Lb <- mean-1.25*stdev
-
-	#str <- sprintf ("mean = %f stdev = %f RANGE = [%f..%f]", mean, stdev, Lb, Ub)
-	#print (str)
-
-	removeinstances <- c()
-	for (i in 1:maxinstance)
-		if (!is.na(maxtimes[i]))
-		{
-			# Outside limits of mean +/- X * stdev ?
-			if (!(maxtimes[i] > Lb && maxtimes[i] < Ub))
-			{
-				#str <- sprintf ("Removing instance %d which has max time %f", i, maxtimes[i])
-				#print (str)
-				removeinstances <- c(removeinstances, i)
-			}
-		}
-
-	new_data <- data
-	print ("REMOVE-INSTANCES")
-	print (length(removeinstances))
-	if (length(removeinstances) > 0)
-	{
-		for (i in 1:length(removeinstances))
-		{
-			new_data <- subset (new_data, new_data$instance != removeinstances[i])
-			print (removeinstances[i])
-		}
-	}
-
-	# Should we remove the end points?
-	new_data <- subset (new_data, new_data$rtime < 1)
-
-	return (new_data)
-}
 
 #
 # MAIN code section
 #
 
-main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
+main <- function (file, H, nsteps, max_error, counter, group)
 {
-	message <- sprintf ("Working on file %s, H = %f, counter = %s", file, H, COUNTER)
+	message <- sprintf ("Working on file %s, H = %f, counter = %s, group = %d", file, H, counter, group)
 	print (message)
 
 	# Prepare my palette (based on rainbow(X) but excluding dark blue and grayscale)
@@ -370,25 +305,17 @@ main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
 	palette(mypalette)
 
 	# Read file
-	inp <- readLines(file)
-	df <- read.table(textConnection(inp))
-	names(df) <- c("cid","rtime","rcounter","instance","time","counter")
+	df <- read.csv (file = file, head = TRUE, sep=";")
 
-	df <- removeoutliersinstances (df)
-	
-	df_counter <- df[df[,"cid"]==COUNTER,]
+	df_o <- df[order(df$time),]
 
-	# df<-df[1:1000,]
-	#df_s <- df_counter[sample(nrow(df_counter), size=min(NSAMPLES,nrow(df_counter))), ]
-	df_s <- df_counter[c(1:min(NSAMPLES,nrow(df_counter))),]
-	df_o <- df_s[order(df_s$time),]
-	# bp.counter <- breakpoints (df$counter ~ df$time, h = 0.05, breaks = 10)
+	print (df_o)
 
 	# Actual computation!
 	if (nrow(df_o) > 20)
 	{
 		H <- as.integer (max(nrow(df_o) / 20, 10))
-		bp.counter <- breakpoints (df_o$counter ~ df_o$time, h = H)
+		bp.counter <- breakpoints (df_o$value ~ df_o$time, h = H)
 
 		if (DEBUG)
 			summary (bp.counter)
@@ -409,16 +336,16 @@ main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
 	}
 
 	# Prepare the plot!
-	filename <- sprintf ("%s.%f.step.original.%s.png", file,H,COUNTER)
+	filename <- sprintf ("%s.%f.step.original.%s.%d.png", file, H, counter, group)
 	png (filename, width=1024, height=768)
 	str1 <- sprintf ("h=%f", H)
-	str2 <- sprintf ("Accumulated %s", COUNTER)
+	str2 <- sprintf ("Accumulated %s", counter)
 	par(mar=c(5,4,4,5)+.1, cex=1.33)
-	plot (df_counter$counter ~ df_counter$time, main = file, sub = str1, xlab="Time (in ns)", ylab=str2, col="black")
+	plot (df_o$value ~ df_o$time, main = file, sub = str1, xlab="Time (in ns)", ylab=str2, col="black")
 	maxslope <- 0
 	for (k in 2:length(bd.time))
 	{
-		slope <- plotsegment (from = bd.time[k-1], to = bd.time[k], data = df_counter, color = k-1, text = DEBUG)
+		slope <- plotsegment (from = bd.time[k-1], to = bd.time[k], data = df_o, color = k-1, text = DEBUG)
 		maxslope <- max(maxslope, slope)
 	}
 
@@ -426,14 +353,14 @@ main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
 	par(new=TRUE)
 	plot(c(0), c(0), type = "l", axes = FALSE, bty = "n", xlab = "", ylab = "", ylim=c(0,ceiling(maxslope)), xlim=c(0,df_o$time[nrow(df_o)]))
 	for (k in 2:length(bd.time))
-		plotslopesegment (from = bd.time[k-1], to = bd.time[k], data = df_counter)
+		plotslopesegment (from = bd.time[k-1], to = bd.time[k], data = df_o)
 	axis(4)
-	str3 <- sprintf ("%s / ns", COUNTER)
+	str3 <- sprintf ("%s / ns", counter)
 	mtext(str3,side=4,line=3, cex=1.33)
 #	legend("topleft",col=c("black","blue"),lty=c(0,1),legend=c("samples","counter rate"), pch=c(1,NA), lwd=c(1,3), box.lwd=0)
 	dev.off()
 
-	new.bd.time <- intersectionpoints (bd = bd.time, data = df_counter)
+	new.bd.time <- intersectionpoints (bd = bd.time, data = df_o)
 
 	if (DEBUG)
 	{
@@ -443,41 +370,41 @@ main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
 		print (new.bd.time)
 	}
 
-	errors <- linearerrors (bd = new.bd.time, data = df_counter)
+	errors <- linearerrors (bd = new.bd.time, data = df_o)
 
 	bd.time <- new.bd.time
 
 	# Prepare the plot!
-	filename <- sprintf ("%s.%f.step.corrected.%s.png", file,H,COUNTER)
+	filename <- sprintf ("%s.%f.step.corrected.%s.%d.png", file, H, counter, group)
 	png (filename, width=1024, height=768)
 	str1 <- sprintf ("h=%f", H)
-	str2 <- sprintf ("Accumulated %s", COUNTER)
+	str2 <- sprintf ("Accumulated %s", counter)
 	par(mar=c(5,4,4,5)+.1, cex=1.33)
-	plot (df_counter$counter ~ df_counter$time, main = file, sub = str1, xlab="Time (in ns)", ylab=str2, col="black")
+	plot (df_o$value ~ df_o$time, main = file, sub = str1, xlab="Time (in ns)", ylab=str2, col="black")
 	maxslope <- 0
 	for (k in 2:length(bd.time))
 	{
-		slope <- plotsegment (from = bd.time[k-1], to = bd.time[k], data = df_counter, color = k-1, text = DEBUG)
+		slope <- plotsegment (from = bd.time[k-1], to = bd.time[k], data = df_o, color = k-1, text = DEBUG)
 		maxslope <- max(maxslope, slope)
 	}
 	par(new=TRUE)
 	maxslope <- 10
 	plot(c(0), c(0), type = "l", axes = FALSE, bty = "n", xlab = "", ylab = "", ylim=c(0,ceiling(maxslope)), xlim=c(0,df_o$time[nrow(df_o)]))
 	for (k in 2:length(bd.time))
-		plotslopesegment (from = bd.time[k-1], to = bd.time[k], data = df_counter)
+		plotslopesegment (from = bd.time[k-1], to = bd.time[k], data = df_o)
 	axis(4)
-	str3 <- sprintf ("%s / ns", COUNTER)
+	str3 <- sprintf ("%s / ns", counter)
 	mtext(str3,side=4,line=3, cex=1.33)
 #	legend("topleft",col=c("black","blue"),lty=c(0,1),legend=c("samples","counter rate"), pch=c(1,NA), lwd=c(1,3), box.lwd=0)
 	dev.off()
 
 	step <- 1
-	while (step <= NSTEPS)
+	while (step <= nsteps)
 	{
 		str <- sprintf ("Step %d", step)
 		print (str)
 
-		if (length(which(errors > MAX_ERROR)) == 0)
+		if (length(which(errors > max_error)) == 0)
 			break
 
 		new.bd.time <- c(0)
@@ -490,18 +417,17 @@ main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
 				print (message)
 			}
 
-			if (errors[e] > MAX_ERROR) 
+			if (errors[e] > max_error) 
 			{
-				sub <- subset(df_counter, df_counter$time >= bd.time[e] & df_counter$time < bd.time[e+1])
-				sub_df_s <- sub[c(1:min(NSAMPLES,nrow(sub))),]
-				sub_df_o <- sub_df_s[order(sub_df_s$time),]
+				sub <- subset(df_o, df_o$time >= bd.time[e] & df_o$time < bd.time[e+1])
+				sub_df_o <- sub[order(sub$time),]
 
 				if (nrow(sub_df_o) > 20)
 				{
 					H <- as.integer (max(nrow(sub_df_o) / 20, 10))
 					bp.counter <- tryCatch ({
 						# Instead of bd.time <- c (0, breakdates (bp.counter), 1)
-						breakpoints (sub_df_o$counter ~ sub_df_o$time, h=H)
+						breakpoints (sub_df_o$value ~ sub_df_o$time, h=H)
 					}, error = function(e){
 						return (NA)
 					})
@@ -539,7 +465,7 @@ main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
 
 		bd.time <- new.bd.time
 
-		new.bd.time <- intersectionpoints (bd = bd.time, data = df_counter)
+		new.bd.time <- intersectionpoints (bd = bd.time, data = df_o)
 
 		if (DEBUG)
 		{
@@ -552,30 +478,30 @@ main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
 		bd.time <- new.bd.time
 
 		# Prepare the plot!
-		filename <- sprintf ("%s.%f.step.%d.%s.png", file, H, step, COUNTER)
+		filename <- sprintf ("%s.%f.step.%d.%s.%d.png", file, H, step, counter, group)
 		png (filename, width=1024, height=768)
 		str1 <- sprintf ("h=%f", H)
-		str2 <- sprintf ("Accumulated %s", COUNTER)
+		str2 <- sprintf ("Accumulated %s", counter)
 		par(mar=c(5,4,4,5)+.1, cex=1.33)
-		plot (df_counter$counter ~ df_counter$time, main = file, sub=str1, xlab="Time (in ns)", ylab=str2, col="black")
+		plot (df_o$value ~ df_o$time, main = file, sub=str1, xlab="Time (in ns)", ylab=str2, col="black")
 		maxslope <- 0
 		for (k in 2:length(bd.time))
 		{
-			slope <- plotsegment (from = bd.time[k-1], to = bd.time[k], data = df_counter, color = k-1, text = DEBUG)
+			slope <- plotsegment (from = bd.time[k-1], to = bd.time[k], data = df_o, color = k-1, text = DEBUG)
 			maxslope <- max(maxslope, slope)
 		}
 		par(new=TRUE)
 		maxslope <- 10
 		plot(c(0), c(0), type = "l", axes = FALSE, bty = "n", xlab = "", ylab = "", ylim=c(0,ceiling(maxslope)), xlim=c(0,df_o$time[nrow(df_o)]))
 		for (k in 2:length(bd.time))
-			plotslopesegment (from = bd.time[k-1], to = bd.time[k], data = df_counter)
+			plotslopesegment (from = bd.time[k-1], to = bd.time[k], data = df_o)
 		axis(4)
-		str3 <- sprintf ("%s / ns", COUNTER)
+		str3 <- sprintf ("%s / ns", counter)
 		mtext(str3,side=4,line=3, cex=1.33)
 		#	legend("topleft",col=c("black","blue"),lty=c(0,1),legend=c("samples","counter rate"), pch=c(1,NA), lwd=c(1,3), box.lwd=0)
 		dev.off()
 
-		new.bd.time <- fuse (bd = bd.time, data = df_counter, maxerror = MAX_ERROR)
+		new.bd.time <- fuse (bd = bd.time, data = df_o, maxerror = max_error)
 
 		if (DEBUG)
 		{
@@ -587,7 +513,7 @@ main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
 
 		bd.time <- new.bd.time
 
-		new.bd.time <- intersectionpoints (bd = bd.time, data = df_counter)
+		new.bd.time <- intersectionpoints (bd = bd.time, data = df_o)
 
 		if (DEBUG)
 		{
@@ -599,28 +525,28 @@ main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
 
 		bd.time <- new.bd.time
 
-		errors <- linearerrors (bd = bd.time, data = df_counter)
+		errors <- linearerrors (bd = bd.time, data = df_o)
 
 		# Prepare the plot!
-		filename <- sprintf ("%s.%f.step.%d.fused.%s.png", file, H, step, COUNTER)
+		filename <- sprintf ("%s.%f.step.%d.fused.%s.%d.png", file, H, step, counter, group)
 		png (filename, width=1024, height=768)
 		str1 <- sprintf ("h=%f", H)
-		str2 <- sprintf ("Accumulated %s", COUNTER)
+		str2 <- sprintf ("Accumulated %s", counter)
 		par(mar=c(5,4,4,5)+.1, cex=1.33)
-		plot (df_counter$counter ~ df_counter$time, main = file, sub=str1, xlab="Time (in ns)", ylab=str2, col="black")
+		plot (df_o$value ~ df_o$time, main = file, sub=str1, xlab="Time (in ns)", ylab=str2, col="black")
 		maxslope <- 0
 		for (k in 2:length(bd.time))
 		{
-			slope <- plotsegment (from = bd.time[k-1], to = bd.time[k], data = df_counter, color = k-1, text = DEBUG)
+			slope <- plotsegment (from = bd.time[k-1], to = bd.time[k], data = df_o, color = k-1, text = DEBUG)
 			maxslope <- max(maxslope, slope)
 		}
 		par(new=TRUE)
 		maxslope <- 10
 		plot(c(0), c(0), type = "l", axes = FALSE, bty = "n", xlab = "", ylab = "", ylim=c(0,ceiling(maxslope)), xlim=c(0,df_o$time[nrow(df_o)]))
 		for (k in 2:length(bd.time))
-			plotslopesegment (from = bd.time[k-1], to = bd.time[k], data = df_counter)
+			plotslopesegment (from = bd.time[k-1], to = bd.time[k], data = df_o)
 		axis(4)
-		str3 <- sprintf ("%s / ns", COUNTER)
+		str3 <- sprintf ("%s / ns", counter)
 		mtext(str3,side=4,line=3, cex=1.33)
 		#	legend("topleft",col=c("black","blue"),lty=c(0,1),legend=c("samples","counter rate"), pch=c(1,NA), lwd=c(1,3), box.lwd=0)
 		dev.off()
@@ -630,12 +556,13 @@ main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
 
 	print ("FINAL-RESULTS")
 	print (length(bd.time))
-	for (k in 1:length(bd.time))
+	for (k in 1:(length(bd.time)-1))
 		print (bd.time[k])
+	print (1.0)
 
 	for (k in 2:length(bd.time))
 	{
-		l <- linear_ndbg (from = bd.time[k-1], to = bd.time[k], data = df_counter)
+		l <- linear_ndbg (from = bd.time[k-1], to = bd.time[k], data = df_o)
 		print (l[2])
 	}
 
@@ -643,21 +570,13 @@ main <- function (COUNTER, file, H, NSTEPS, MAX_ERROR, NSAMPLES)
 
 
 # Example of usage
-
-#files<-c("openmx.p1.32tasks.o1.task1.clustered.fused.extract.1.1.Cluster_1.0.points","cgpop.task1.clustered.fused.extract.1.1.Cluster_1.0.points","pmemd.pme.clustered.fused.extract.1.1.Cluster_1.0.points","rrrmhd_mpi.16tasks.ppc.clustered.fused.extract.1.1.Cluster_1.0.points")
-#files<-c("pmemd.pme.clustered.fused.extract.1.1.Cluster_1.0.points")
-#files<-c("rrrmhd_mpi.16tasks.ppc.clustered.fused.extract.1.1.Cluster_1.0.points")
-#files<-c("openmx.p1.32tasks.o1.task1.clustered.fused.extract.1.1.Cluster_1.0.points")
-#files<-c("cgpop.task1.clustered.fused.extract.1.1.Cluster_1.0.points")
-#Hs<-c(0.1,0.075,0.05,0.025,0.01)
-#Hs<-c(0.1)
-#NSTEPS <- 1
+#DEBUG <- FALSE
+#FILE <- "folding.R.20482"
+#group <- 1
+#H <- 0.01
+#NSTEPS <- 0
 #MAX_ERROR <- 0.002
-#NSAMPLES <- 1000
-#NSAMPLES <- 500
-#COUNTER <- "PM_INST_CMPL"
-#DEBUG <- T
-
-# main (files, COUNTER, Hs, NSTEPS, MAX_ERROR, NSAMPLES)
+#COUNTER <- "ctr"
+#main (FILE, H, NSTEPS, MAX_ERROR, COUNTER, group)
 
 

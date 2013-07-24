@@ -153,11 +153,20 @@ Process::Process (string prvFile, string sourceDir, bool multievents, string tra
 
 	pcf = new UIParaverTraceConfig;
 	pcf->parse (prvFile.substr (0, prvFile.length()-3) + string ("pcf"));
+
+	try {
+		vector<unsigned> SampleLocations = pcf->getEventValues (30000000);
+	} catch ( ... ) {
+		cerr << "Unable to get sample locations. Did you miss adding source code references when generating the tracefile (-e flag in mpi2prv)?" << endl;
+		exit (-1);
+	}
 }
 
 Process::~Process ()
 {
 	traceout.close ();
+
+	delete pcf;
 }
 
 void Process::prepare (void)
@@ -251,6 +260,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 		{
 			string file;
 			int line;
+
+			if (common::DEBUG())
+				cout << "Looking for CallerLine info for value " << (*it).Value << " at timestamp " << e.Timestamp << endl;
 
 			common::lookForCallerLineInfo (pcf, (*it).Value, file, line);
 

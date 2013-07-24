@@ -84,8 +84,17 @@ AC_PROG_LIBTOOL
 
 # Search for C++, C and Fortran compilers
 AC_PROG_CC
+if test "${CC}" = "" ; then
+	AC_MSG_ERROR([Cannot find C compiler])
+fi
 AC_PROG_CXX
+if test "${CXX}" = "" ; then
+	AC_MSG_ERROR([Cannot find C++ compiler])
+fi
 AC_PROG_FC
+if test "${FC}" = "" ; then
+	AC_MSG_ERROR([Cannot find Fortran compiler])
+fi
 
 AC_MSG_CHECKING([for libtools])
 AC_ARG_WITH(libtools,
@@ -103,10 +112,10 @@ fi
 if test ! -f ${LibToolsDir}/include/ParaverRecord.h -o ! -f ${LibToolsDir}/include/ParaverTrace.h ; then
 	AC_MSG_ERROR([Cannot find some header files of the libtools! Make sure that --with-libtools is pointing to the correct place.])
 fi
-if test ! -f ${LibToolsDir}/lib/libparavertraceconfig.a ; then
+if test ! -f ${LibToolsDir}/lib/libparavertraceconfig.a -a ! -f ${LibToolsDir}/lib64/libparavertraceconfig.a ; then
 	AC_MSG_ERROR([Cannot find libparavertraceconfig.a! Make sure that --with-libtools is pointing to the correct place.])
 fi
-if test ! -f ${LibToolsDir}/lib/libparavertraceparser.a ; then
+if test ! -f ${LibToolsDir}/lib/libparavertraceparser.a -a ! -f ${LibToolsDir}/lib64/libparavertraceparser.a ; then
 	AC_MSG_ERROR([Cannot find libparavertraceparser.a! Make sure that --with-libtools is pointing to the correct place.])
 fi
 AC_MSG_RESULT([found in ${LibToolsDir}])
@@ -216,5 +225,5 @@ AC_CHECK_FUNC(stat, [AC_DEFINE([HAVE_STAT],[1],[Define if have stat])])
 AC_CHECK_FUNC(stat64, [AC_DEFINE([HAVE_STAT64],[1],[Define if have stat64])])
 AC_CHECK_FUNC(access, [AC_DEFINE([HAVE_ACCESS],[1],[Define if have access])])
 
-AC_CONFIG_FILES([Makefile src/Makefile src/service-kriger/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/service-kriger/Makefile src/service-R/Makefile])
 AC_OUTPUT

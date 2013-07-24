@@ -73,52 +73,15 @@ double InterpolationKriger::Distance_Point_To_Interpolate (double inpoint_x,
 	return min_distance;
 }
 
-InterpolationResults * InterpolationKriger::interpolate_kernel (vector<Sample*> vs, string counter)
+unsigned InterpolationKriger::do_interpolate (unsigned inpoints, double *ix,
+	double *iy, unsigned outpoints, double *oy, string counter, string region,
+	unsigned group)
 {
-	InterpolationResults *res = new InterpolationResults(steps);
-	res->setInterpolationDetails (details());
+	UNREFERENCED(group);
+	UNREFERENCED(counter);
+	UNREFERENCED(region);
 
-	unsigned incount = 0;
-	for (unsigned s = 0; s < vs.size(); s++)
-		if (vs[s]->nCounterValue.count(counter) > 0)
-			incount++;
-
-	double * inpoints_x = new double [incount+2];
-	double * inpoints_y = new double [incount+2];
-	double * outpoints = res->getInterpolationResultsPtr();
-
-	bool all_zeroes = true;
-	inpoints_x[0] = inpoints_y[0] = 0;
-	for (unsigned i = 1, s = 0; s < vs.size(); s++)
-		if (vs[s]->nCounterValue.count(counter) > 0)
-		{
-			inpoints_x[i] = vs[s]->nTime;
-			inpoints_y[i] = vs[s]->nCounterValue[counter];
-			all_zeroes = all_zeroes && inpoints_y[i] == 0;
-			i++;
-		}
-	inpoints_x[incount+1] = inpoints_y[incount+1] = 1;
-
-	cout << "   - Counter " << counter << ", # in samples = " << incount << endl;
-	if (!all_zeroes)
-	{
-		Kriger_Region (incount+2, inpoints_x, inpoints_y, steps, outpoints, 0.0f, 1.0f, nuget);
-
-		/* Remove values below 0 */
-		for (unsigned u = 0; u < steps; u++)
-			if (outpoints[u] < 0)
-				outpoints[u] = 0;
-	}
-	else
-	{
-		for (unsigned u = 0; u < steps; u++)
-			outpoints[u] = 0;
-	}
-
-	delete [] inpoints_x;
-	delete [] inpoints_y;
-
-	return res;
+	Kriger_Region (inpoints, ix, iy, outpoints, oy, 0.0f, 1.0f, nuget);
 }
 
 void InterpolationKriger::pre_interpolate (double sigmaTimes, InstanceGroup *ig,
@@ -137,7 +100,8 @@ void InterpolationKriger::pre_interpolate (double sigmaTimes, InstanceGroup *ig,
 		for (it = counters.begin(); it != counters.end(); it++)
 		{
 			vector<Sample*> vs = mvs[*it];
-			InterpolationResults *ir = interpolate_kernel (vs, *it);
+			InterpolationResults *ir = interpolate_kernel (vs, *it, ig->getRegion(),
+			  ig->getNumGroup());
 
 			vector<double> distances;
 			vector<Instance *> instances;
@@ -193,59 +157,5 @@ void InterpolationKriger::pre_interpolate (double sigmaTimes, InstanceGroup *ig,
 			cout << "   " << count_excluded << " out of " << vi.size() << " instances were excluded due to their distance to a reference interpolation" << endl;
 		}
 	}
-}
-
-void InterpolationKriger::interpolate (InstanceGroup *ig, set<string> &counters)
-{
-	map<string, InterpolationResults*> res;
-	vector<Instance *> i = ig->getInstances();
-	if (i.size() > 0)
-	{
-		set<string>::iterator it;
-
-		map<string, double> SlopeFactors;
-		map<string, double> AvgCounters;
-		for (it = counters.begin(); it != counters.end(); it++)
-		{
-			SlopeFactors[*it] = 0;
-
-			unsigned long long totDuration = 0;
-			unsigned long long totCounter = 0;
-			unsigned count = 0;
-			for (unsigned u = 0; u < i.size(); u++)
-				if (i[u]->TotalCounterValues.count(*it) > 0)
-				{
-					totDuration += i[u]->duration;
-					totCounter += i[u]->TotalCounterValues[*it];
-					count++;
-				}
-
-			/* If we have any instance, calculate its slope factor 
-			   (in Mevents, div 1000, as time is in ns) */
-			if (count > 0)
-			{
-				SlopeFactors[*it] = ((double) totCounter) / ( ((double) totDuration / 1000) );
-				AvgCounters[*it] = ((double) totCounter) / ((double) count);
-			}
-		}
-
-		map<string, vector<Sample*> > mvs = ig->getSamples();
-		for (it = counters.begin(); it != counters.end(); it++)
-			if (mvs.count(*it) > 0)
-			{
-				vector<Sample*> vs = mvs[*it];
-				InterpolationResults *ir = interpolate_kernel (vs, *it);
-				ir->setAvgCounterValue (AvgCounters[*it]);
-				ir->calculateSlope (SlopeFactors[*it]);
-				res.insert (pair<string, InterpolationResults*> (*it, ir));
-			}
-	}
-
-	ig->setInterpolated (res);
-
-	vector<double> phases;
-	phases.push_back (0.0f);
-	phases.push_back (1.0f);
-	ig->setInterpolationPhases (phases);
 }
 

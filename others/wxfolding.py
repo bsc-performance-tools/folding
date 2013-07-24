@@ -122,15 +122,15 @@ class wxFoldingInputDialog(wx.Dialog):
 		self.continueBtn.Disable()
 		self.continueBtn.Bind (wx.EVT_BUTTON, self.OnContinue )
 		self.sizerh5 = wx.BoxSizer (wx.HORIZONTAL)
-		self.sizerh5.Add (self.continueBtn, 0, wx.ALL, border = 10)
+		self.sizerh5.Add (self.continueBtn, 0, wx.ALL, border = 5)
 
 		# Form layout
-		self.sizerv.Add (self.sizerh1, 0, wx.ALL, border = 1)
-		self.sizerv.Add (self.sizerh2, 0, wx.ALL, border = 1)
-		self.sizerv.Add (self.sizerh3, 0, wx.ALL, border = 1)
-		self.sizerv.Add (self.sizerh4, 0, wx.ALL, border = 1)
+		self.sizerv.Add (self.sizerh1, 0, wx.ALL)
+		self.sizerv.Add (self.sizerh2, 0, wx.ALL)
+		self.sizerv.Add (self.sizerh3, 0, wx.ALL)
+		self.sizerv.Add (self.sizerh4, 0, wx.ALL)
 		self.sizerv.Add ((0, 0), 1, wx.EXPAND) # Take remaining vertical space 
-		self.sizerv.Add (self.sizerh5, 0, wx.CENTER, border = 1)
+		self.sizerv.Add (self.sizerh5, 0, wx.CENTER)
 		self.sizerv.AddSpacer (15)
 
 		self.SetSizerAndFit(self.sizerv)
@@ -237,7 +237,6 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.d_chooseobjecttxt.Disable()
 		objectsfile = self.TraceFile[0:self.TraceFile.rfind (".prv")] + ".objects"
 		self.objects = [line.strip() for line in open(objectsfile)]
-		self.objects.sort()
 		self.d_chooseobject = wx.Choice (panel, -1, choices = self.objects)
 		self.d_chooseobject.Disable()
 		self.d_hsizer1 = wx.BoxSizer (wx.HORIZONTAL)
@@ -401,8 +400,8 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.sizerv.AddSpacer (15)
 		self.sizerv.Add (self.feedszr, 0, wx.EXPAND, border = 5)
 		self.sizerv.Add ((0, 0), 1, wx.EXPAND) # Take remaining vertical space 
-		self.sizerv.Add (self.continueszr, 1, wx.CENTER, border = 10)
-		self.sizerv.AddSpacer (15)
+		self.sizerv.Add (self.continueszr, 1, wx.CENTER, border = 5)
+		self.sizerv.AddSpacer (20)
 
 		panel.SetSizer (self.sizerv)
 		self.Fit()	

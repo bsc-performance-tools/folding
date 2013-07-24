@@ -76,6 +76,9 @@ class InstanceGroup
 	unsigned getNumGroup (void)
 	  { return numGroup; }
 
+	string getRegion (void)
+	  { return regionName; }
+
 	map<string, vector<Sample*> > getSamples (void)
 		{ return this->used; }
 

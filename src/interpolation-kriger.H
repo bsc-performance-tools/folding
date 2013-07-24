@@ -39,15 +39,17 @@ class InterpolationKriger : public Interpolation
 	private:
 	double nuget;
 
-	InterpolationResults * interpolate_kernel (vector<Sample*> vs, string counter);
+	unsigned do_interpolate (unsigned inpoints,
+		double *ix, double *iy, unsigned outpoints, double *oy, string counter,
+		string region, unsigned group);
+
 	double Distance_Point_To_Interpolate (double inpoint_x, double inpoint_y,
 	  int outcount, double *outpoints);
 
 	public:
 	InterpolationKriger (unsigned steps, double nuget, bool prefilter);
-	string details (void);
-	void interpolate (InstanceGroup *ig, set<string> &counters);
 	void pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters);
+	string details (void);
 };
 
 #endif

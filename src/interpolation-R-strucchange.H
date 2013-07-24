@@ -39,15 +39,12 @@ class InterpolationRstrucchange : public Interpolation
 	private:
 	double h;
 
-	unsigned exec_R_strucchange (unsigned inpoints,
+	unsigned do_interpolate (unsigned inpoints,
 	  double *ix, double *iy, unsigned outpoints, double *oy,
-	  string counter, unsigned group);
-	InterpolationResults * interpolate_kernel (vector<Sample*> vs,
-	  string counter, unsigned group);
+	  string counter, string region, unsigned group);
 
 	public:
 	InterpolationRstrucchange (unsigned steps, double H);
-	void interpolate (InstanceGroup *ig, set<string> &counters);
 	string details (void);
 };
 

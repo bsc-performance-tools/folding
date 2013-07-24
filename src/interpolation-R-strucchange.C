@@ -57,9 +57,9 @@ string InterpolationRstrucchange::details (void)
 }
 
 
-unsigned InterpolationRstrucchange::exec_R_strucchange (unsigned inpoints,
+unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 	double *ix, double *iy, unsigned outpoints, double *oy, string counter,
-	unsigned group)
+	string region, unsigned group)
 {
 	vector<double> breakpoints, slopes;
 	ofstream file;
@@ -69,7 +69,7 @@ unsigned InterpolationRstrucchange::exec_R_strucchange (unsigned inpoints,
 		f = "/tmp/folding.R.";
 	else
 		f = string (getenv("TMPDIR")) + "/folding.R.";
-	f.append (common::convertInt (getpid()));
+	f = f + region + "." + common::convertInt (group) + "." + common::convertInt (getpid());
 	fo = f + ".output";
 
 	file.open (f.c_str());
@@ -135,6 +135,19 @@ unsigned InterpolationRstrucchange::exec_R_strucchange (unsigned inpoints,
 					slopes.push_back (db > 0 ? db : 0.0f);
 				}
 			}
+
+			/* Write results to output buffer */
+			double partial = 0.0f;
+			for (unsigned s = 0; s < outpoints; s++)
+			{
+				double t = ((double) s) / ((double) outpoints);
+				for (unsigned i = 0; i < breakpoints.size()-1; i++)
+					if (t >= breakpoints[i] && t < breakpoints[i+1])
+					{
+						partial += slopes[i] * (1.0f / (double) outpoints);
+						oy[s] = partial;
+					}
+			}
 		}
 	}
 	else
@@ -154,115 +167,11 @@ unsigned InterpolationRstrucchange::exec_R_strucchange (unsigned inpoints,
 		}
 	}
 
-	exit (-1);
-
 	if (unlink (f.c_str()))
 		cerr << "Warning! Could not remove temporal file '" << f
 		  << "'" << endl;
+
+	return SUCCESS;
 }
 
-InterpolationResults * InterpolationRstrucchange::interpolate_kernel (
-	vector<Sample*> vs, string counter, unsigned group)
-{
-	InterpolationResults *res = new InterpolationResults(steps);
-	res->setInterpolationDetails (details());
-
-	unsigned incount = 0;
-	for (unsigned s = 0; s < vs.size(); s++)
-		if (vs[s]->nCounterValue.count(counter) > 0)
-			incount++;
-
-	double * inpoints_x = new double [incount+2];
-	double * inpoints_y = new double [incount+2];
-	double * outpoints = res->getInterpolationResultsPtr();
-
-	bool all_zeroes = true;
-	inpoints_x[0] = inpoints_y[0] = 0;
-	for (unsigned i = 1, s = 0; s < vs.size(); s++)
-		if (vs[s]->nCounterValue.count(counter) > 0)
-		{
-			inpoints_x[i] = vs[s]->nTime;
-			inpoints_y[i] = vs[s]->nCounterValue[counter];
-			all_zeroes = all_zeroes && inpoints_y[i] == 0;
-			i++;
-		}
-	inpoints_x[incount+1] = inpoints_y[incount+1] = 1;
-
-	cout << "   - Counter " << counter << ", # in samples = " << incount << endl;
-	if (!all_zeroes)
-	{
-		exec_R_strucchange (incount+2, inpoints_x, inpoints_y, steps, outpoints,
-		  counter, group);
-
-		/* Remove values below 0 */
-		for (unsigned u = 0; u < steps; u++)
-			if (outpoints[u] < 0)
-				outpoints[u] = 0;
-	}
-	else
-	{
-		for (unsigned u = 0; u < steps; u++)
-			outpoints[u] = 0;
-	}
-
-	delete [] inpoints_x;
-	delete [] inpoints_y;
-
-	return res;
-}
-
-
-void InterpolationRstrucchange::interpolate (InstanceGroup *ig, set<string> &counters)
-{
-	map<string, InterpolationResults*> res;
-	vector<Instance *> i = ig->getInstances();
-	if (i.size() > 0)
-	{
-		set<string>::iterator it;
-
-		map<string, double> SlopeFactors;
-		map<string, double> AvgCounters;
-		for (it = counters.begin(); it != counters.end(); it++)
-		{
-			SlopeFactors[*it] = 0;
-
-			unsigned long long totDuration = 0;
-			unsigned long long totCounter = 0;
-			unsigned count = 0;
-			for (unsigned u = 0; u < i.size(); u++)
-				if (i[u]->TotalCounterValues.count(*it) > 0)
-				{
-					totDuration += i[u]->duration;
-					totCounter += i[u]->TotalCounterValues[*it];
-					count++;
-				}
-
-			/* If we have any instance, calculate its slope factor 
-			   (in Mevents, div 1000, as time is in ns) */
-			if (count > 0)
-			{
-				SlopeFactors[*it] = ((double) totCounter) / ( ((double) totDuration / 1000) );
-				AvgCounters[*it] = ((double) totCounter) / ((double) count);
-			}
-		}
-
-		map<string, vector<Sample*> > mvs = ig->getSamples();
-		for (it = counters.begin(); it != counters.end(); it++)
-			if (mvs.count(*it) > 0)
-			{
-				vector<Sample*> vs = mvs[*it];
-				InterpolationResults *ir = interpolate_kernel (vs, *it, ig->getNumGroup());
-				ir->setAvgCounterValue (AvgCounters[*it]);
-				ir->calculateSlope (SlopeFactors[*it]);
-				res.insert (pair<string, InterpolationResults*> (*it, ir));
-			}
-	}
-
-	ig->setInterpolated (res);
-
-	vector<double> phases;
-	phases.push_back (0.0f);
-	phases.push_back (1.0f);
-	ig->setInterpolationPhases (phases);
-}
 
