@@ -35,22 +35,31 @@
 #include "instance-group.H"
 #include "interpolation-results.H"
 
+enum { SUCCESS, FAILED };
+
 class Interpolation
 {
 	protected:
 	unsigned steps;
 	bool prefilter;
 
+	InterpolationResults * interpolate_kernel (vector<Sample*> vs,
+	  string counter, string region, unsigned group);
+
+	virtual unsigned do_interpolate (unsigned inpoints, double *ix,
+	  double *iy, unsigned outpoints, double *oy, string counter,
+	  string region, unsigned group) = 0;
+
 	public:
 	Interpolation (unsigned steps, bool prefilter);
-	virtual string details (void) = 0;
-	virtual void interpolate (InstanceGroup *ig, set<string> &counters) = 0;
+	void interpolate (InstanceGroup *ig, set<string> &counters);
 	virtual void pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters);
 	bool preFilter (void)
 	  { return prefilter; }
 	unsigned getSteps (void)
 	  { return steps; }
 
+	virtual string details (void) = 0;
 };
 
 #endif
