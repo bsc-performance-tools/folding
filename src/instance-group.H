@@ -56,10 +56,11 @@ class InstanceGroup
 	map<string, vector<Sample*> > used;
 	map<string, vector<Sample*> > unused;
 
-	vector<double> Phases;
+	vector<double> Breakpoints;
 	vector<CallstackTree *> trees;
 
 	string regionName;
+	string groupName;
 	unsigned numGroup;
 
 	void gnuplot_single (ObjectSelection *os, string prefix, string counter,
@@ -68,7 +69,7 @@ class InstanceGroup
 
 
 	public:
-	InstanceGroup (string, unsigned);
+	InstanceGroup (string, unsigned, string);
 
 	void setSamples (map<string, vector<Sample*> > used, map<string, vector<Sample*> > unused)
 		{ this->used = used; this->unused = unused; }
@@ -111,10 +112,10 @@ class InstanceGroup
 	void gnuplot (ObjectSelection *os, string prefix);
 	string python (void);
 
-	void setInterpolationPhases (vector <double> &phases)
-	  { Phases = phases; }
-	vector<double> getInterpolationPhases (void)
-	  { return Phases; }
+	void setInterpolationBreakpoints (vector <double> breakpoints)
+	  { Breakpoints = breakpoints; }
+	vector<double> getInterpolationBreakpoints (void)
+	  { return Breakpoints; }
 
 	void setCallstackTrees (vector<CallstackTree*> vtrees)
 	  { trees = vtrees; }

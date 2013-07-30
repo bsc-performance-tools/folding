@@ -24,6 +24,8 @@ interpolate_SOURCES = \
  sample.C sample.H \
  sample-selector.H \
  sample-selector-first.H sample-selector-first.C sample-selector-distance.H sample-selector-distance.C sample-selector-default.H sample-selector-default.C \
+ instance-separator.H \
+ instance-separator-auto.H instance-separator-auto.C instance-separator-none.H instance-separator-none.C \
  instance.H instance.C \
  instance-container.C instance-container.H instance-group.C instance-group.H \
  read-extracted-data.C read-extracted-data.H \
@@ -35,6 +37,10 @@ interpolate_SOURCES = \
  interpolation-R-strucchange.C interpolation-R-strucchange.H \
  interpolate.C interpolate.H
 
+if HAVE_CLUSTERING_SUITE
+interpolate_SOURCES += \
+ instance-separator-dbscan.H instance-separator-dbscan.C
+endif
 if HAVE_CUBE
 interpolate_SOURCES += \
  callstack.C callstack.H callstack-tree.C callstack-tree.H \
@@ -50,6 +56,9 @@ codeblocks_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
 foldingtypes_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
 extract_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
 interpolate_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Iservice-kriger -Iservice-R -g -O
+if HAVE_CLUSTERING_SUITE
+interpolate_CXXFLAGS += -I$(CLUSTERING_HOME)/include
+endif
 if HAVE_CUBE
 interpolate_CXXFLAGS += -I$(CUBE_DIR)/include
 endif
@@ -66,8 +75,11 @@ codeblocks_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertracepa
 foldingtypes_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig 
 extract_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
 interpolate_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm -Lservice-R -lR
+if HAVE_CLUSTERING_SUITE
+interpolate_LDFLAGS += -L$(CLUSTERING_HOME)/lib -lClustering -lBasicClasses
+endif
 if HAVE_CUBE
-interpolate_LDFLAGS +=  -L$(CUBE_DIR)/lib -lcube3 -lz
+interpolate_LDFLAGS += -L$(CUBE_DIR)/lib -lcube3 -lz
 endif
 
 max_diff_interpolation_points_LDFLAGS = -lm

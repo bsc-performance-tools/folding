@@ -58,7 +58,7 @@ string InterpolationRstrucchange::details (void)
 
 
 unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
-	double *ix, double *iy, unsigned outpoints, double *oy, string counter,
+	double *ix, double *iy, InterpolationResults *ir, string counter,
 	string region, unsigned group)
 {
 	vector<double> breakpoints, slopes;
@@ -96,7 +96,7 @@ unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 		breakpoints.clear();
 		slopes.clear();
 
-		R::launch (Rcommands);
+		R::launch (f+".script", Rcommands);
 
 		ifstream resfile;
 		resfile.open (fo.c_str());
@@ -137,17 +137,23 @@ unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 			}
 
 			/* Write results to output buffer */
+			unsigned o_count = ir->getCount();
+			double *o_ptr = ir->getInterpolationResultsPtr();
+
 			double partial = 0.0f;
-			for (unsigned s = 0; s < outpoints; s++)
+			for (unsigned s = 0; s < o_count; s++)
 			{
-				double t = ((double) s) / ((double) outpoints);
+				double t = ((double) s) / ((double) o_count);
 				for (unsigned i = 0; i < breakpoints.size()-1; i++)
 					if (t >= breakpoints[i] && t < breakpoints[i+1])
 					{
-						partial += slopes[i] * (1.0f / (double) outpoints);
-						oy[s] = partial;
+						partial += slopes[i] * (1.0f / (double) o_count);
+						o_ptr[s] = partial;
 					}
 			}
+
+			/* Write breakpoints to the results */
+			ir->setBreakpoints (breakpoints);
 		}
 	}
 	else
@@ -167,9 +173,9 @@ unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 		}
 	}
 
-	if (unlink (f.c_str()))
-		cerr << "Warning! Could not remove temporal file '" << f
-		  << "'" << endl;
+//	if (unlink (f.c_str()))
+//		cerr << "Warning! Could not remove temporal file '" << f
+//		  << "'" << endl;
 
 	return SUCCESS;
 }

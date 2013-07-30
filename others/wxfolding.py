@@ -141,6 +141,10 @@ class wxFoldingInputDialog(wx.Dialog):
 
 	# Auxiliary functions 
 	def ChoosePrv (self, TraceFile):
+		if not os.path.isfile (TraceFile):
+			wx.MessageBox ('Cannot find tracefile ' +tracefile, 'Stop', wx.OK | wx.ICON_EXCLAMATION)
+			return
+
 		self.TraceFile = TraceFile
 		if len(self.TraceFile) > 50:
 			label = "..."+self.TraceFile[len(self.TraceFile)-50:len(self.TraceFile)]

@@ -47,6 +47,8 @@ class common
 {
 	public:
 	static string convertInt (int);
+	static string convertInt (unsigned);
+	static string convertInt (size_t st);
 	static string convertDouble (double, int);
 	static string removeSpaces (string &in);
 	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);

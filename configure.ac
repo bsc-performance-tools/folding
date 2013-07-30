@@ -202,7 +202,7 @@ AC_MSG_CHECKING([for clang compiler])
 AC_ARG_WITH(clang,
 	AC_HELP_STRING(
 		[--with-clang@<:@=ARG@:>@],
-		[Specify where the clang compilker]
+		[Specify where the clang compiler]
 	),
 	[CLANGBIN="$withval"],
 	[CLANGBIN=`which clang`]
@@ -218,6 +218,42 @@ if test "${CLANG_AVAILABLE}" = "yes" ; then
 else
 	AC_MSG_NOTICE([clang is not available. AST parsing for C/C++ files will not be available])
 fi
+
+AC_MSG_CHECKING([for Clustering suite])
+AC_ARG_WITH(clustering-suite,
+    AC_HELP_STRING(
+        [--with-clustering-suite@<:@=ARG@:>@],
+        [Specify where to locate the clustering suite]
+   ),
+   [CLUSTERING_HOME="${withval}"],
+   [CLUSTERING_HOME="none"]
+)
+if test "${CLUSTERING_HOME}" != "none" ; then
+   AC_MSG_RESULT(${CLUSTERING_HOME})
+
+   AC_MSG_CHECKING([for headers and libraries of the Clustering suite])
+   if test -r ${CLUSTERING_HOME}/include/libClustering.hpp -a \
+           -r ${CLUSTERING_HOME}/include/Partition.hpp -a \
+           -r ${CLUSTERING_HOME}/include/Point.hpp ; then
+      if test -r ${CLUSTERING_HOME}/lib/libClustering.so -a \
+              -r ${CLUSTERING_HOME}/lib/libBasicClasses.so ; then
+         AC_MSG_RESULT([found])
+         AC_DEFINE([HAVE_CLUSTERING_SUITE], [1], [Define if have clustering suite available])
+         AC_SUBST([CLUSTERING_HOME])
+         CLUSTERING_SUITE_FOUND="yes"
+      fi
+   fi
+   if test ${CLUSTERING_SUITE_FOUND} != "yes" ; then
+      AC_MSG_ERROR([Cannot find the headers or the libraries for the Clustering suite])
+   fi
+fi
+AM_CONDITIONAL(HAVE_CLUSTERING_SUITE, test "${CLUSTERING_SUITE_FOUND}" = "yes" )
+
+dnl Example of default-disabled feature
+AC_ARG_ENABLE([gui],
+    AS_HELP_STRING([--enable-gui], [Enables GUI frontend based on wxPython]))
+
+AM_CONDITIONAL(WANT_GUI_FRONTEND, test "${enable_gui}" = "yes" )
 
 AX_PROG_BOOST
 

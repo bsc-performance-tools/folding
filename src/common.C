@@ -58,10 +58,24 @@ string common::convertDouble (double d, int i)
 	return s.str();//return a string with the contents of the stream
 }
 
+string common::convertInt (unsigned u)
+{
+	stringstream s;//create a stringstream
+	s << u;//add number to the stream
+	return s.str();//return a string with the contents of the stream
+}
+
 string common::convertInt (int i)
 {
 	stringstream s;//create a stringstream
 	s << i;//add number to the stream
+	return s.str();//return a string with the contents of the stream
+}
+
+string common::convertInt (size_t st)
+{
+	stringstream s;//create a stringstream
+	s << st;//add number to the stream
 	return s.str();//return a string with the contents of the stream
 }
 
