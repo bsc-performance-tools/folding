@@ -40,7 +40,7 @@ class InterpolationRstrucchange : public Interpolation
 	double h;
 
 	unsigned do_interpolate (unsigned inpoints,
-	  double *ix, double *iy, unsigned outpoints, double *oy,
+	  double *ix, double *iy, InterpolationResults *ir,
 	  string counter, string region, unsigned group);
 
 	public:

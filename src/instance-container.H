@@ -34,6 +34,7 @@
 
 #include "instance-group.H"
 #include "interpolate.H"
+#include "instance-separator.H"
 #include <vector>
 #include <string>
 #include <map>
@@ -43,9 +44,8 @@ using namespace std;
 class InstanceContainer
 {
 	private:
-	unsigned long long bucketsize;
 	unsigned ngroups;
-	void separateInGroups (void);
+	InstanceSeparator *is;
 
 	public:
 	string regionName;
@@ -53,12 +53,12 @@ class InstanceContainer
 	vector<InstanceGroup*> InstanceGroups;
 
 	public:
-	InstanceContainer (string);
+	InstanceContainer (string, InstanceSeparator *is);
 
 	void add (Instance *i);
 	unsigned numInstances (void);
 	unsigned numSamples (void);
-	void splitInGroups (bool split);
+	void splitInGroups (void);
 	unsigned numGroups (void)
 	  { return ngroups; }
 

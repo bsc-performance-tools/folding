@@ -5,8 +5,9 @@ import os
 import sys
 
 class FoldingResultGroup:
-	def __init__ (self, duration, mips, instances, phases):
+	def __init__ (self, groupname, duration, mips, instances, phases):
 		try:
+			self.name = groupname
 			self.duration = float(duration)
 			self.mips = float(mips)
 			self.instances = int(instances)
@@ -26,8 +27,8 @@ class FoldingResult:
 			return
 		self.groupmetrics = []
 		for metric in metrics.split (','):
-			duration, mips, instances, phases = metric.split ('-');
-			frg = FoldingResultGroup (duration, mips, instances, phases)
+			groupname, duration, mips, instances, phases = metric.split ('-');
+			frg = FoldingResultGroup (groupname, duration, mips, instances, phases)
 			self.groupmetrics.append (frg)
 
 	def __hash__(self):
@@ -163,7 +164,7 @@ class wxFoldingViewerDialog(wx.Dialog):
 
 		self.gc_choosegroup.Clear()
 		for i in range (fr.numgroups):
-			self.gc_choosegroup.Append (str (i+1))
+			self.gc_choosegroup.Append (fr.groupmetrics[i].name)
 		self.gc_choosegroup.SetSelection (0)
 		self.FeedGroupInfo (region, 0)
 
@@ -191,10 +192,9 @@ class wxFoldingViewerDialog(wx.Dialog):
 			counter = "slopes"
 
 		region = self.rs_chooseregion.GetStringSelection()
-		group = self.gc_choosegroup.GetSelection() + 1
 
 		f = self.FilePrefix + "." + region + "." + self.FoldedObject + "." + \
-		  str(group) + "." + counter + ".gnuplot"
+		  self.gc_choosegroup.GetStringSelection() + "." + counter + ".gnuplot"
 
 		command = "gnuplot -persist \"" + f + "\""
 		print "Executing command: " + command

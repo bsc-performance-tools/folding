@@ -39,18 +39,14 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: interpolate.C 1449 2013-01-
 #include <iostream>
 #include <unistd.h>
 
-bool R::launch (string commands)
+bool R::launch (string fname, string commands)
 {
-	stringstream ss;
-	ss << getpid(); 
-	string script_file = string ("/tmp/folding.R.") + ss.str() + ".script";
-
 	ofstream temporal;
-	temporal.open (script_file.c_str());
+	temporal.open (fname.c_str());
 	if (temporal.is_open())
 	{
 		temporal << commands << endl;
-		string sys_command = string ("R -f ") + script_file + "> /dev/null 2> /dev/null";
+		string sys_command = string ("R -f ") + fname + "> /dev/null 2> /dev/null";
 		if (system (sys_command.c_str()) != 0)
 		{
 			cerr << "R command failed" << endl;

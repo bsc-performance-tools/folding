@@ -38,9 +38,14 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "read-extracted-data.H"
 #include "instance-container.H"
 #include "prv-writer.H"
+
 #include "sample-selector-first.H"
 #include "sample-selector-distance.H"
 #include "sample-selector-default.H"
+
+#include "instance-separator-none.H"
+#include "instance-separator-auto.H"
+#include "instance-separator-dbscan.H"
 
 #include "interpolation-kriger.H"
 #include "interpolation-R-strucchange.H"
@@ -74,7 +79,9 @@ static unsigned long long feedTraceTimes_Begin, feedTraceTimes_End;
 static string feedTraceFoldType_Definition;
 static ObjectSelection *objectToFeed = NULL;
 
-bool splitInGroups = true;
+static InstanceSeparatorNone isnone;
+static InstanceSeparatorAuto isauto;
+static InstanceSeparator *instanceseparator = &isnone;
 
 static StatisticType_t StatisticType = STATISTIC_MEAN; 
 static double NumOfSigmaTimes = 2.0f;
@@ -101,7 +108,7 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 		if (Instances.count (Region) == 0)
 		{
 			/* If first instance with this name */
-			InstanceContainer ic (Region);
+			InstanceContainer ic (Region, instanceseparator);
 			ic.add (vInstances[u]);
 			Instances.insert (pair<string, InstanceContainer> (Region, ic));
 
@@ -116,16 +123,12 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 	}
 	cout << "Done!" << endl;
 
-	if (splitInGroups)
-		cout << "Detecting groups in instances ... ";
-	else
-		cout << "Moving instances to group 0 ... ";
-
+	cout << "Detecting groups in instances ... ";
 	for (it = regions.begin(); it != regions.end(); it++)
 		if (Instances.count(*it) > 0)
 		{
 			InstanceContainer ic = Instances.at(*it);
-			ic.splitInGroups (splitInGroups);
+			ic.splitInGroups ();
 			Instances.at(*it) = ic;
 		}
 	cout << "Done!" << endl;
@@ -144,7 +147,8 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 		cout << " No. of Groups for this region : " << ic.numGroups() << endl;
 		for (unsigned u = 0; u < ic.numGroups(); u++)
 		{
-			cout << " Analysis for group " << u+1 << endl;
+			cout << " Analysis for " << instanceseparator->nameGroup (u)
+				  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
 
 			InstanceGroup *ig = ic.InstanceGroups[u];
 
@@ -326,7 +330,10 @@ int ProcessParameters (int argc, char *argv[])
 	{
 		cerr << "Insufficient number of parameters" << endl
 		     << "Available options are: " << endl
-		     << "-split-in-groups yes/no  [yes by default]" << endl
+		     << "-split-instances [no by default]" << endl
+		     << "             no" << endl
+		     << "             auto" << endl
+		     << "             dbscan minpoints epsilon" << endl
 		     << "-use-object PTASK.TASK.THREAD [where PTASK, TASK and THREAD = * by default" << endl
 		     << "-use-median" << endl
 		     << "-use-mean" << endl
@@ -348,16 +355,52 @@ int ProcessParameters (int argc, char *argv[])
 
 	for (int i = 1; i < argc-1; i++)
 	{
-		if (strcmp ("-split-in-groups", argv[i]) == 0)
+		if (strcmp ("-split-instances", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
 			{
-				cerr << "Insufficient arguments for -split-in-groups parameter" << endl;
+				cerr << "Insufficient arguments for -split-instances parameter" << endl;
 				exit (-1);
 			}
 			i++;
-			splitInGroups = strcasecmp (argv[i], "yes") == 0 || 
-			  strcasecmp (argv[i], "y") == 0;
+
+			if (strcasecmp (argv[i], "no") == 0)
+			{
+				instanceseparator = &isnone;
+			}
+			else if (strcasecmp (argv[i], "auto") == 0)
+			{
+				instanceseparator = &isauto;
+			}
+			else if (strcasecmp (argv[i], "dbscan") == 0)
+			{
+				if (!CHECK_ENOUGH_ARGS(2, argc, i))
+				{
+					cerr << "Insufficient arguments for -split-instances dbscan parameter" << endl;
+					exit (-1);
+				}
+				unsigned minpoints;
+				double eps;
+				i++;
+				if ((minpoints = atoi (argv[i])) == 0)
+				{
+					cerr << "Invalid minpoints for dbscan option (" << argv[i] << ")" << endl;
+					exit (-1);
+				}
+				i++;
+				if ((eps = atof (argv[i])) == 0)
+				{
+					cerr << "Invalid eps for dbscan option (" << argv[i] << ")" << endl;
+					exit (-1);
+				}
+				InstanceSeparatorDBSCAN *isdbscan = new InstanceSeparatorDBSCAN (minpoints, eps);
+				instanceseparator = isdbscan;
+			}
+			else
+			{
+				cerr << "Unknown parameter " << argv[i] << " for -split-instances" << endl;
+				exit (-1);
+			}
 			continue;
 		}
 		if (strcmp ("-use-object", argv[i]) == 0)
@@ -755,7 +798,8 @@ int main (int argc, char *argv[])
 			  "] (region = " << *it << "), #out steps = 1000" << endl;
 			for (unsigned u = 0; u < ic.numGroups(); u++)
 			{
-				cout << " Processing group " << u+1 << " of " << ic.numGroups() << endl;
+				cout << " Processing " << instanceseparator->nameGroup (u)
+				  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
 				interpolation->pre_interpolate (NumOfSigmaTimes, ic.InstanceGroups[u], counters);
 			}
 		}
@@ -764,7 +808,8 @@ int main (int argc, char *argv[])
 		  *it << "), #out steps = " << interpolation->getSteps() << endl;
 		for (unsigned u = 0; u < ic.numGroups(); u++)
 		{
-			cout << " * Processing group " << u+1 << " of " << ic.numGroups() << endl;
+			cout << " Processing " << instanceseparator->nameGroup (u)
+			  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
 			ss->Select (ic.InstanceGroups[u], counters);
 			interpolation->interpolate (ic.InstanceGroups[u], counters);
 			ic.InstanceGroups[u]->dumpInterpolatedData (objectsSelected, cFilePrefix);

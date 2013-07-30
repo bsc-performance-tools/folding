@@ -74,14 +74,22 @@ double InterpolationKriger::Distance_Point_To_Interpolate (double inpoint_x,
 }
 
 unsigned InterpolationKriger::do_interpolate (unsigned inpoints, double *ix,
-	double *iy, unsigned outpoints, double *oy, string counter, string region,
+	double *iy, InterpolationResults *ir, string counter, string region,
 	unsigned group)
 {
 	UNREFERENCED(group);
 	UNREFERENCED(counter);
 	UNREFERENCED(region);
 
-	Kriger_Region (inpoints, ix, iy, outpoints, oy, 0.0f, 1.0f, nuget);
+	unsigned o_count = ir->getCount();
+	double *o_ptr = ir->getInterpolationResultsPtr();
+
+	Kriger_Region (inpoints, ix, iy, o_count, o_ptr, 0.0f, 1.0f, nuget);
+
+	vector<double> breakpoints;
+	breakpoints.push_back (0.0f);
+	breakpoints.push_back (1.0f);
+	ir->setBreakpoints (breakpoints);
 }
 
 void InterpolationKriger::pre_interpolate (double sigmaTimes, InstanceGroup *ig,

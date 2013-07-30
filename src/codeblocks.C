@@ -202,8 +202,8 @@ void Process::prepare (void)
 			else if (is_c(file) || is_cxx(file))
 				sys_command = folding_home+"/etc/basicblocks.C.py "+sourceDir+"/"+file+"> /tmp/astblocks."+ss.str()+".out";
 
-			system (sys_command.c_str());
-			if (common::existsFile (string("/tmp/astblocks.")+ss.str()+".out"))
+			int res = system (sys_command.c_str());
+			if (res == 0 && common::existsFile (string("/tmp/astblocks.")+ss.str()+".out"))
 			{
 				vector< codeblock > vtmp;
 				ifstream bb_file((string("/tmp/astblocks.")+ss.str()+".out").c_str());

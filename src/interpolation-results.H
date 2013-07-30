@@ -33,6 +33,7 @@
 #define INTERPOLATION_RESULTS_H_INCLUDED
 
 #include <string>
+#include <vector>
 
 class InterpolationResults
 {
@@ -44,6 +45,7 @@ class InterpolationResults
 	double *interpolation;
 	double *slope;
 	string interpolationDetails;
+	vector<double> Breakpoints;
 
 	public:
 	InterpolationResults (unsigned count);
@@ -68,6 +70,10 @@ class InterpolationResults
 	  { interpolationDetails = s; }
 	string getInterpolationDetails (void)
 	  { return interpolationDetails; }
+	vector<double> getBreakpoints (void)
+	  { return Breakpoints; }
+	void setBreakpoints (vector<double> &breakpoints)
+	  { Breakpoints = breakpoints; }
 };
 
 #endif /* INTERPOLATION_RESULTS_H_INCLUDED */

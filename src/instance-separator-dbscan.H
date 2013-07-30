@@ -21,45 +21,30 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
+ | @file: $HeadURL$
  | 
- | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
- | @version:     $Revision: 1764 $
+ | @last_commit: $Date$
+ | @version:     $Revision$
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INTERPOLATION_H_INCLUDED
-#define INTERPOLATION_H_INCLUDED
+#ifndef INSTANCE_SEPARATOR_DBSCAN_H_INCLUDED
+#define INSTANCE_SEPARATOR_DBSCAN_H_INCLUDED
 
-#include "instance-group.H"
-#include "interpolation-results.H"
+#include "instance-separator.H"
 
-enum { SUCCESS, FAILED };
-
-class Interpolation
+class InstanceSeparatorDBSCAN : public InstanceSeparator
 {
-	protected:
-	unsigned steps;
-	bool prefilter;
-
-	InterpolationResults * interpolate_kernel (vector<Sample*> vs,
-	  string counter, string region, unsigned group);
-
-	virtual unsigned do_interpolate (unsigned inpoints, double *ix,
-	  double *iy, InterpolationResults *ir, string counter,
-	  string region, unsigned group) = 0;
+	private:
+	double eps;
+	unsigned minpoints;
 
 	public:
-	Interpolation (unsigned steps, bool prefilter);
-	void interpolate (InstanceGroup *ig, set<string> &counters);
-	virtual void pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters);
-	bool preFilter (void)
-	  { return prefilter; }
-	unsigned getSteps (void)
-	  { return steps; }
-
-	virtual string details (void) = 0;
+	InstanceSeparatorDBSCAN (unsigned minpoints, double eps);
+	unsigned separateInGroups (vector<Instance*> &vi);
+	string details(void);
+	string nameGroup (unsigned);
 };
 
-#endif
+#endif /* INSTANCE_SEPARATOR_DBSCAN_H_INCLUDED */

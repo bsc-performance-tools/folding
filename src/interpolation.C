@@ -63,7 +63,6 @@ InterpolationResults * Interpolation::interpolate_kernel (vector<Sample*> vs,
 
 	double * inpoints_x = new double [incount+2];
 	double * inpoints_y = new double [incount+2];
-	double * outpoints = res->getInterpolationResultsPtr();
 
 	bool all_zeroes = true;
 	inpoints_x[0] = inpoints_y[0] = 0;
@@ -84,16 +83,18 @@ InterpolationResults * Interpolation::interpolate_kernel (vector<Sample*> vs,
 	{
 		if (!all_zeroes)
 		{
-			do_interpolate (incount+2, inpoints_x, inpoints_y, steps,
-			  outpoints, counter, region, group);
+			do_interpolate (incount+2, inpoints_x, inpoints_y, res, counter,
+			  region, group);
 
 			/* Remove values below 0 */
+			double * outpoints = res->getInterpolationResultsPtr();
 			for (unsigned u = 0; u < steps; u++)
 				if (outpoints[u] < 0)
 					outpoints[u] = 0;
 		}
 		else
 		{
+			double * outpoints = res->getInterpolationResultsPtr();
 			for (unsigned u = 0; u < steps; u++)
 				outpoints[u] = 0;
 		}
@@ -150,6 +151,8 @@ void Interpolation::interpolate (InstanceGroup *ig, set<string> &counters)
 				vector<Sample*> vs = mvs[*it];
 				InterpolationResults *ir = interpolate_kernel (vs, *it, ig->getRegion(),
 				  ig->getNumGroup());
+				if (common::isMIPS (*it))
+					ig->setInterpolationBreakpoints (ir->getBreakpoints());
 				ir->setAvgCounterValue (AvgCounters[*it]);
 				ir->calculateSlope (SlopeFactors[*it]);
 				res.insert (pair<string, InterpolationResults*> (*it, ir));
@@ -157,10 +160,5 @@ void Interpolation::interpolate (InstanceGroup *ig, set<string> &counters)
 	}
 
 	ig->setInterpolated (res);
-
-	vector<double> phases;
-	phases.push_back (0.0f);
-	phases.push_back (1.0f);
-	ig->setInterpolationPhases (phases);
 }
 

@@ -34,18 +34,19 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: common.C 1764 2013-05-24 14
 #include "common.H"
 
 #include <math.h>
+#include <assert.h>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <algorithm>
 #include <vector>
 #include "instance-container.H"
+#include "instance-separator.H"
 
-InstanceContainer::InstanceContainer (string s)
+InstanceContainer::InstanceContainer (string s, InstanceSeparator *iseparator)
 {
-	bucketsize = 0;
 	regionName = s;
 	ngroups = 1;
+	is = iseparator;
 }
 
 void InstanceContainer::add (Instance *i)
@@ -67,57 +68,16 @@ unsigned InstanceContainer::numSamples (void)
 	return tmp;
 }
 
-static bool InstanceSortDuration (Instance *i1, Instance *i2)
-{ return i1->duration < i2->duration; }
-
-void InstanceContainer::separateInGroups (void)
+void InstanceContainer::splitInGroups (void)
 {
-	/* Less than 3 instances is a very small number to group */
-	if (Instances.size() >= 8)
-	{
-		unsigned buckets = MIN(Instances.size()/4, 100);
-
-		vector<Instance*> tmp = Instances;
-		sort (tmp.begin(), tmp.end(), InstanceSortDuration);
-
-		unsigned long long maxduration = tmp[tmp.size()-1]->duration;
-		unsigned long long minduration = tmp[0]->duration;
-		bucketsize = (maxduration - minduration) / buckets;
-
-		unsigned long long oldpos = tmp[0]->duration;
-		unsigned group = 0;
-		tmp[0]->group = group;
-
-		for (unsigned u = 1; u < tmp.size(); u++)
-		{
-			if (tmp[u]->duration > oldpos+bucketsize)
-				group++;
-
-			tmp[u]->group = group;
-			oldpos = tmp[u]->duration;
-		}
-
-		ngroups = group+1;
-	}
-	else
-	{
-		ngroups = 1;
-	}
-}
-
-void InstanceContainer::splitInGroups (bool split)
-{
-	if (split)
-	{
-		/* calculate number & split data in groups */
-		separateInGroups();
-	}
+	/* calculate number & split data in groups */
+	ngroups = is->separateInGroups (this->Instances);
 
 	/* Create instance groups, even if not need to split where in such case 
 	   everything goes to group 0 */
 	for (unsigned u = 0; u < ngroups; u++)
 	{
-		InstanceGroup *g = new InstanceGroup (regionName, u);
+		InstanceGroup *g = new InstanceGroup (regionName, u, is->nameGroup (u));
 		InstanceGroups.push_back (g);
 	}
 
@@ -188,8 +148,8 @@ void InstanceContainer::gnuplot (ObjectSelection *os, string prefix, StatisticTy
 	  "set border 1" << endl <<
 	  "set xlabel \"Time (ms)\";" << endl <<
 	  "set title \"Instance groups for " << os->toString(true) << " - Region " << 
-	  regionName << "\\n" << Instances.size() << " Instances - Bucket size " << 
-	  fixed << setprecision (3) << ((double) bucketsize) / 1000000. << " ms\";" << endl;
+	  regionName << "\\n" << Instances.size() << " Instances - " << is->details() <<
+	  endl;
 
 #define MAXLINECOLOR 6
 	gplot << endl
@@ -228,7 +188,7 @@ void InstanceContainer::gnuplot (ObjectSelection *os, string prefix, StatisticTy
 
 		gplot << "'" << fname << "' using (strcol(1) eq 'u' && (strcol(2) eq '" 
 		  << regionName << "' && $3 == " << u+1
-		  << ") ? $4 / 1000000.0: NaN) : $0 ti 'Group " << u+1
+		  << ") ? $4 / 1000000.0: NaN) : $0 ti '" << is->nameGroup (u)
 		  << " (" << ig->numInstances() << "/" << ig->numExcludedInstances() 
 		  << ")' w points ls " << lstyle << ",\\" << endl;
 		gplot << "'" << fname << "' using ((strcol(1) eq 'e') && (strcol(2) eq '" 

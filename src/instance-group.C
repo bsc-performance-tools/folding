@@ -43,10 +43,11 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: common.C 1764 2013-05-24 14
 
 using namespace std;
 
-InstanceGroup::InstanceGroup (string name, unsigned id)
+InstanceGroup::InstanceGroup (string name, unsigned id, string groupname)
 {
 	regionName = name;
 	numGroup = id;
+	groupName = groupname;
 }
 
 void InstanceGroup::add (Instance *i)
@@ -284,7 +285,7 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	string fdname = prefix + "." + os->toString(false, "any") 
 	  + ".dump.csv";
 	string gname = prefix + "." + regionName + "." + 
-	  os->toString (false, "any") + "." + common::convertInt (numGroup+1) +
+	  os->toString (false, "any") + "." + common::removeSpaces (groupName) +
 	  "." + counter + ".gnuplot";
 	ofstream gplot (gname.c_str());
 
@@ -305,8 +306,10 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	vector<Sample*> usedSamples = used[counter];
 	vector<Sample*> unusedSamples = unused[counter];
 
+	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
-	  "# set term postscript eps enhaced solid color" << endl <<
+	  "# set term postscript eps solid color" << endl <<
+	  "# set term pdfcairo solid color lw 2 font \",9\"" << endl <<
 	  "# set term png size 800,600" << endl <<
 	  "set datafile separator \";\"" << endl <<
 	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
@@ -325,7 +328,7 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	else	
 	  gplot << "set y2label '" << counter << " rate (in Mevents/s)';" << endl;
 
-	gplot << "set title \"" << os->toString (true) << " - Group " << numGroup+1
+	gplot << "set title \"" << os->toString (true) << " - " << groupName
 	  << " - " << regionName << "\\nDuration = " << (m/1000000) << " ms, Counter = " 
 	  << (idata->getAvgCounterValue() / 1000) << " Kevents\"" << endl;
 
@@ -335,14 +338,38 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	gplot << ");" << endl
 	  << "set xrange [0:" << (m / 1000000) << "]" << endl;
 
-	bool coma = false;
+	/* If the instance-group has more than the regular 0..1 breakpoints,
+	   add this into the plot */
+	vector<double> brks = idata->getBreakpoints();
+	if (brks.size () > 2)
+	{
+		gplot << endl;
+		gplot << fixed << setprecision(8);
+		for (unsigned u = 1; u < brks.size()-1; u++) /* Skip 0 and 1 */
+			gplot << "set arrow from graph "
+			  << brks[u] << ",0 to graph " << brks[u]
+			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front" << endl;
 
+		for (unsigned u = 1; u < brks.size(); u++)
+		{
+			double half = brks[u-1] + (brks[u]-brks[u-1])/2;
+			gplot << "set label \"Phase " << u << "\" at graph " << half 
+			  << ",0.95 rotate by -90 front textcolor rgb '#808080'" << endl;
+		}
+		gplot << fixed << setprecision(2);
+	}
+	else
+		gplot << endl << "# Unneeded phases separators, nb. breakpoints = " << brks.size() << endl;
+
+	/* Generate functions to filter the .csv */
 	gplot << endl << "sampleexcluded(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << "  && t eq 'e') ? ret : NaN;" << endl
 	  << "sampleunused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g ==  " << numGroup << " && t eq 'un') ? ret : NaN;" << endl
 	  << "sampleused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " && t eq 'u') ? ret : NaN;" << endl
 	  << "interpolation(ret,c,r,g) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl
 	  << "slope(ret,c,r,g) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl << endl;
 
+	bool coma = false;
+	/* Generate the plot command */
 	gplot << "plot \\" << endl;
 	if (numExcludedSamples (counter) > 0)
 	{
@@ -388,7 +415,7 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 {
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
 	string gname = prefix + "." + regionName + "." + 
-	  os->toString (false, "any") + "." + common::convertInt (numGroup+1) +
+	  os->toString (false, "any") + "." + common::removeSpaces (groupName) +
 	  ".slopes.gnuplot";
 	ofstream gplot (gname.c_str());
 
@@ -400,8 +427,10 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 
 	double m = mean();
 
+	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
-	  "# set term postscript eps enhaced solid color" << endl <<
+	  "# set term postscript eps solid color" << endl <<
+	  "# set term pdfcairo solid color lw 2 font \",9\"" << endl <<
 	  "# set term png size 800,600" << endl <<
 	  "set datafile separator \";\"" << endl <<
 	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
@@ -414,7 +443,7 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 	  "set xlabel 'Time (in ms)'" << endl <<
 	  "set ylabel 'Performance counter rate (in Mevents/s)';" << endl;
 
-	gplot << "set title \"" << os->toString (true) << " -  Group " << numGroup+1 
+	gplot << "set title \"" << os->toString (true) << " - " << groupName 
 	  <<  " - " << regionName << "\\nDuration = " << (m/1000000) << " ms\"" 
 	  << endl;
 
@@ -424,7 +453,29 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 	gplot << ");" << endl
 	  << "set xrange [0:" << (m / 1000000) << "]" << endl;
 
-	gplot << endl;
+	/* If the instance-group has more than the regular 0..1 breakpoints,
+	   add this into the plot */
+	if (Breakpoints.size () > 2)
+	{
+		gplot << endl;
+		gplot << fixed << setprecision(8);
+		for (unsigned u = 1; u < Breakpoints.size()-1; u++) /* Skip 0 and 1 */
+			gplot << "set arrow from graph "
+			  << Breakpoints[u] << ",0 to graph " << Breakpoints[u]
+			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front" << endl;
+
+		for (unsigned u = 1; u < Breakpoints.size(); u++)
+		{
+			double half = Breakpoints[u-1] + (Breakpoints[u]-Breakpoints[u-1])/2;
+			gplot << "set label \"Phase " << u << "\" at graph " << half 
+			  << ",0.95 rotate by -90 front textcolor rgb '#808080'" << endl;
+		}
+		gplot << fixed << setprecision(2);
+	}
+	else
+		gplot << endl << "# Unneeded phases separators, nb. breakpoints = " << Breakpoints.size() << endl;
+
+	/* Generate functions to filter the .csv */
 	map<string, InterpolationResults*>::iterator it;
 	for (it = interpolated.begin(); it != interpolated.end(); it++)
 		if ((*it).second->isSlopeCalculated())
@@ -438,6 +489,7 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 		}
 	gplot << endl;
 
+	/* Generate the plot command */
 	unsigned count = 0;
 	for (it = interpolated.begin(); it != interpolated.end(); it++)
 	{
@@ -490,8 +542,9 @@ string InstanceGroup::python (void)
 			break;
 		}
 
-	return common::convertDouble (mean() / 1000000.f, 3) +
+	return common::removeSpaces(groupName) + 
+	  "-" + common::convertDouble (mean() / 1000000.f, 3) +
 	  "-" + common::convertDouble (MIPS, 3) +
 	  "-" + common::convertInt (Instances.size()) +
-	  "-" + common::convertInt (Phases.size()-1);
+	  "-" + common::convertInt (Breakpoints.size() > 0 ? Breakpoints.size()-1 : 0);
 }

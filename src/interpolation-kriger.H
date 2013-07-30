@@ -40,7 +40,7 @@ class InterpolationKriger : public Interpolation
 	double nuget;
 
 	unsigned do_interpolate (unsigned inpoints,
-		double *ix, double *iy, unsigned outpoints, double *oy, string counter,
+		double *ix, double *iy, InterpolationResults *ir, string counter,
 		string region, unsigned group);
 
 	double Distance_Point_To_Interpolate (double inpoint_x, double inpoint_y,

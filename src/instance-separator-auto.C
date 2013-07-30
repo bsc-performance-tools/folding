@@ -21,45 +21,70 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/callstackanalysis.C $
+ | @file: $HeadURL$
  | 
- | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
- | @version:     $Revision: 1764 $
+ | @last_commit: $Date$
+ | @version:     $Revision$
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INTERPOLATION_H_INCLUDED
-#define INTERPOLATION_H_INCLUDED
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
-#include "instance-group.H"
-#include "interpolation-results.H"
+#include "common.H"
 
-enum { SUCCESS, FAILED };
+#include "instance-separator-auto.H"
 
-class Interpolation
+#include <algorithm>
+
+static bool InstanceSortDuration (Instance *i1, Instance *i2)
+{ return i1->duration < i2->duration; }
+
+unsigned InstanceSeparatorAuto::separateInGroups (vector<Instance*> &vi)
 {
-	protected:
-	unsigned steps;
-	bool prefilter;
+	unsigned ngroups;
 
-	InterpolationResults * interpolate_kernel (vector<Sample*> vs,
-	  string counter, string region, unsigned group);
+	/* Less than 3 instances is a very small number to group */
+	if (vi.size() >= 8)
+	{
+		unsigned buckets = MIN(vi.size()/4, 100);
 
-	virtual unsigned do_interpolate (unsigned inpoints, double *ix,
-	  double *iy, InterpolationResults *ir, string counter,
-	  string region, unsigned group) = 0;
+		vector<Instance*> tmp = vi;
+		sort (tmp.begin(), tmp.end(), InstanceSortDuration);
 
-	public:
-	Interpolation (unsigned steps, bool prefilter);
-	void interpolate (InstanceGroup *ig, set<string> &counters);
-	virtual void pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters);
-	bool preFilter (void)
-	  { return prefilter; }
-	unsigned getSteps (void)
-	  { return steps; }
+		unsigned long long maxduration = tmp[tmp.size()-1]->duration;
+		unsigned long long minduration = tmp[0]->duration;
+		bucketsize = (maxduration - minduration) / buckets;
 
-	virtual string details (void) = 0;
-};
+		unsigned long long oldpos = tmp[0]->duration;
+		unsigned group = 0;
+		tmp[0]->group = group;
 
-#endif
+		for (unsigned u = 1; u < tmp.size(); u++)
+		{
+			if (tmp[u]->duration > oldpos+bucketsize)
+				group++;
+
+			tmp[u]->group = group;
+			oldpos = tmp[u]->duration;
+		}
+
+		ngroups = group+1;
+	}
+	else
+		ngroups = 1;
+
+	return ngroups;
+}
+
+string InstanceSeparatorAuto::details (void)
+{
+	string s = "Auto / Bucket size " + common::convertDouble (((double) bucketsize) / 1000000. , 3) + " ms";
+	return s;
+}
+
+string InstanceSeparatorAuto::nameGroup (unsigned g)
+{
+	return string ("Group ") + common::convertInt (g+1);
+}
+
