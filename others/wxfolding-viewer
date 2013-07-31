@@ -10,6 +10,16 @@ fi
 if test $# -ne 1 ; then
 	echo Sorry... you must provide an .wxfolding file to continue
 else
-	$FOLDING_HOME/bin/wxfolding_viewer.py $@
+	filename=$1
+	if test ! -r ${filename} ; then
+		echo Sorry... ${filename} cannot be read. Check that it exists!
+		exit
+	fi
+	extension="${filename##*.}"
+	if test "${extension}" != "wxfolding" ; then
+		echo Sorry... ${filename} does not seem to be an input for `basename ${0}`
+		exit
+	fi
+	$FOLDING_HOME/bin/wxfolding_viewer.py ${filename}
 fi
 

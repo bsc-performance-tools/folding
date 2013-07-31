@@ -10,6 +10,20 @@ fi
 if test $# -ge 2 ; then
 	echo Sorry... you can provide one tracefile at a time
 else
-	$FOLDING_HOME/bin/wxfolding.py $@
+	if test $# -eq 1 ; then
+		filename=$1
+		if test ! -r ${filename} ; then
+			echo Sorry... ${filename} cannot be read. Check that it exists!
+			exit
+		fi
+		extension="${filename##*.}"
+		if test "${extension}" != "prv" ; then
+			echo Sorry... ${filename} does not seem to be a Paraver tracefile!
+			exit
+		fi
+		$FOLDING_HOME/bin/wxfolding.py ${filename}
+	else
+		$FOLDING_HOME/bin/wxfolding.py
+	fi
 fi
 
