@@ -45,7 +45,9 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "instance-separator-none.H"
 #include "instance-separator-auto.H"
-#include "instance-separator-dbscan.H"
+#if defined(HAVE_CLUSTERING_SUITE)
+# include "instance-separator-dbscan.H"
+#endif
 
 #include "interpolation-kriger.H"
 #include "interpolation-R-strucchange.H"
@@ -101,7 +103,7 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 {
 	set<string>::iterator it;
 
-	cout << "Allocating instances into instance container ... ";
+	cout << "Allocating instances into instance container ... " << flush;
 	for (unsigned u = 0; u < vInstances.size(); u++)
 	{
 		string Region = vInstances[u]->RegionName;
@@ -123,7 +125,7 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 	}
 	cout << "Done!" << endl;
 
-	cout << "Detecting groups in instances ... ";
+	cout << "Detecting groups in instances ... " << flush;
 	for (it = regions.begin(); it != regions.end(); it++)
 		if (Instances.count(*it) > 0)
 		{
@@ -333,7 +335,9 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-split-instances [no by default]" << endl
 		     << "             no" << endl
 		     << "             auto" << endl
+#if defined(HAVE_CLUSTERING_SUITE)
 		     << "             dbscan minpoints epsilon" << endl
+#endif
 		     << "-use-object PTASK.TASK.THREAD [where PTASK, TASK and THREAD = * by default" << endl
 		     << "-use-median" << endl
 		     << "-use-mean" << endl
@@ -372,6 +376,7 @@ int ProcessParameters (int argc, char *argv[])
 			{
 				instanceseparator = &isauto;
 			}
+#if defined(HAVE_CLUSTERING_SUITE)
 			else if (strcasecmp (argv[i], "dbscan") == 0)
 			{
 				if (!CHECK_ENOUGH_ARGS(2, argc, i))
@@ -396,6 +401,13 @@ int ProcessParameters (int argc, char *argv[])
 				InstanceSeparatorDBSCAN *isdbscan = new InstanceSeparatorDBSCAN (minpoints, eps);
 				instanceseparator = isdbscan;
 			}
+#else
+			else if (strcasecmp (argv[i], "dbscan") == 0)
+			{
+				cerr << "Sorry, instance algorithm is dbscan, but the package was not configured with its support!" << endl;
+				exit (-1);
+			}
+#endif
 			else
 			{
 				cerr << "Unknown parameter " << argv[i] << " for -split-instances" << endl;

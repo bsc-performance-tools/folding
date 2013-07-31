@@ -249,8 +249,6 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.d_hsizer1.Add (self.d_chooseobjecttxt, 0, wx.CENTER)
 		self.d_hsizer1.AddSpacer (5)
 		self.d_hsizer1.Add (self.d_chooseobject, 0, wx.EXPAND|wx.ALL)
-		self.d_splitgroups = wx.ToggleButton (panel, -1, "Split instances in groups")
-		self.d_splitgroups.SetValue (True)
 		self.d_limitsamples = wx.ToggleButton (panel, -1, "Limit samples")
 		self.d_limitsamples.SetValue (False)
 		self.d_limitsamples.Bind (wx.EVT_TOGGLEBUTTON, self.OnChangeLimitSamples )
@@ -312,15 +310,46 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.d_hsizer3.Add (self.d_useallcounters, 0, wx.CENTER)
 		self.d_hsizer3.AddSpacer (5)
 		self.d_hsizer3.Add (self.d_lccounters, 3, wx.EXPAND|wx.ALL)
-		self.boxdataszr.AddSpacer (10)
 		self.boxdataszr.Add (self.d_hsizer1, 0, wx.EXPAND|wx.ALL)
-		self.boxdataszr.AddSpacer (10)
-		self.boxdataszr.Add (self.d_splitgroups)
 		self.boxdataszr.AddSpacer (10)
 		self.boxdataszr.Add (self.d_hsizer2, 0, wx.EXPAND|wx.ALL)
 		self.boxdataszr.AddSpacer (10)
 		self.boxdataszr.Add (self.d_hsizer3, 0, wx.EXPAND|wx.ALL)
-		self.boxdataszr.AddSpacer (10)
+
+		# Grouping frame
+
+		self.grouper = wx.StaticBox (panel, -1, "Instance grouping")
+		self.grouperszr = wx.StaticBoxSizer (self.grouper, wx.VERTICAL)
+		self.g_radiogroupnone = wx.RadioButton (panel, -1, "None", style = wx.RB_GROUP )
+		self.g_radiogroupauto = wx.RadioButton (panel, -1, "Automatic" )
+		self.g_radiogroupdbscan = wx.RadioButton (panel, -1, "DBSCAN" )
+		self.r_splitalgorithm = "None"
+		self.g_radiogroupnone.Bind(wx.EVT_RADIOBUTTON, self.onRadioButton)
+		self.g_radiogroupauto.Bind (wx.EVT_RADIOBUTTON, self.onRadioButton)
+		self.g_radiogroupdbscan.Bind (wx.EVT_RADIOBUTTON, self.onRadioButton)
+		self.g_minpointstxt = wx.StaticText (panel, -1, "Min points:")
+		self.g_minpointstxt.Disable()
+		self.g_minpoints = wx.SpinCtrl (panel, -1)
+		self.g_minpoints.SetRange (1, 1000)
+		self.g_minpoints.SetValue (8)
+		self.g_minpoints.Disable()
+		self.g_epstxt = wx.StaticText (panel, -1, "Epsilon:")
+		self.g_epstxt.Disable()
+		self.g_eps = wx.TextCtrl(panel, -1, "0.01")
+		self.g_eps.Disable()
+		self.g_hsizer1 = wx.BoxSizer (wx.HORIZONTAL)
+		self.g_hsizer1.Add (self.g_radiogroupdbscan, 1, wx.EXPAND|wx.ALL)
+		self.g_hsizer1.AddSpacer (10)
+		self.g_hsizer1.Add (self.g_minpointstxt, 0, wx.CENTER)
+		self.g_hsizer1.Add (self.g_minpoints, 0, wx.CENTER)
+		self.g_hsizer1.AddSpacer (10)
+		self.g_hsizer1.Add (self.g_epstxt, 0, wx.CENTER)
+		self.g_hsizer1.Add (self.g_eps, 0, wx.CENTER)
+		self.g_vsizer1 = wx.BoxSizer (wx.VERTICAL)
+		self.g_vsizer1.Add (self.g_radiogroupnone, 0, wx.ALL)
+		self.g_vsizer1.Add (self.g_radiogroupauto, 0, wx.ALL)
+		self.g_vsizer1.Add (self.g_hsizer1, 0, wx.ALL)
+		self.grouperszr.Add (self.g_vsizer1, 0, wx.EXPAND|wx.ALL)
 
 		# Outliers frame
 
@@ -352,7 +381,7 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		self.i_stepsnum = wx.SpinCtrl (panel, -1)
 		self.i_stepsnum.SetRange (1, 10000)
 		self.i_stepsnum.SetValue (1000)
-		self.i_nugettxt = wx.StaticText (panel, -1, "Kriger nuget")
+		self.i_nugettxt = wx.StaticText (panel, -1, "Kriger nuget:")
 		self.i_nuget = wx.TextCtrl(panel, -1, "0.0001")
 		self.i_hsizer2 = wx.BoxSizer (wx.HORIZONTAL)
 		self.i_prefilter = wx.ToggleButton (panel, -1, "Apply interpolation prefilter step")
@@ -397,15 +426,17 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 		# Pack all and show
 
 		self.sizerv.Add (self.boxdataszr, 0, wx.EXPAND, border = 5)
-		self.sizerv.AddSpacer (15)
+		self.sizerv.AddSpacer (5)
+		self.sizerv.Add (self.grouperszr, 0, wx.EXPAND, border = 5)
+		self.sizerv.AddSpacer (5)
 		self.sizerv.Add (self.outlierszr, 0, wx.EXPAND, border = 5)
-		self.sizerv.AddSpacer (15)
+		self.sizerv.AddSpacer (5)
 		self.sizerv.Add (self.interpolationszr, 0, wx.EXPAND, border = 5)
-		self.sizerv.AddSpacer (15)
+		self.sizerv.AddSpacer (5)
 		self.sizerv.Add (self.feedszr, 0, wx.EXPAND, border = 5)
 		self.sizerv.Add ((0, 0), 1, wx.EXPAND) # Take remaining vertical space 
 		self.sizerv.Add (self.continueszr, 1, wx.CENTER, border = 5)
-		self.sizerv.AddSpacer (20)
+		self.sizerv.AddSpacer (5)
 
 		panel.SetSizer (self.sizerv)
 		self.Fit()	
@@ -467,8 +498,22 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 			self.o_statistictxt3.SetLabel ("sigma times")
 
 	# Handlers for buttons
-	def OnContinue(self, event=None):
 
+	def onRadioButton(self, event):
+		self.r_splitalgorithm = event.GetEventObject().GetLabel()
+		if self.r_splitalgorithm == "DBSCAN":
+			self.g_minpointstxt.Enable()
+			self.g_minpoints.Enable()
+			self.g_epstxt.Enable()
+			self.g_eps.Enable()
+		else:
+			self.g_minpointstxt.Disable()
+			self.g_minpoints.Disable()
+			self.g_epstxt.Disable()
+			self.g_eps.Disable()
+
+
+	def OnContinue(self, event=None):
 		# Check for consistency of the data first
 
 		# Check that the list use all or have something selected
@@ -493,7 +538,11 @@ class wxFoldingInterpolateKrigerDialog(wx.Dialog):
 			self.r_useobject = self.d_chooseobject.GetStringSelection()
 		else:
 			self.r_useobject = '*.*.*'
-		self.r_splitingroups = self.d_splitgroups.GetValue()
+
+		if self.r_splitalgorithm == "DBSCAN":
+			self.r_splitalgorithm_dbscan_minpoints = self.g_minpoints.GetValue()
+			self.r_splitalgorithm_dbscan_eps = float(self.g_eps.GetValue())
+
 		self.r_limitsamples = self.d_limitsamples.GetValue()
 		self.r_limitsamplesnum = self.d_limitsamplesnum.GetValue()
 		self.r_limitsamplesalg = self.d_limitsamplesalgorithm.GetStringSelection()
@@ -588,10 +637,16 @@ class wxFolding(wx.Frame):
 		# Construct the interpolate command line
 		command = FOLDING_HOME + "/bin/interpolate"
 		command += " -use-object \"" + dialog.r_useobject + "\""
-		if dialog.r_splitingroups:
-			command += " -split-in-groups yes"
+
+		if dialog.r_splitalgorithm == "DBSCAN":
+			command += " -split-instances dbscan " + \
+			  str (dialog.r_splitalgorithm_dbscan_minpoints) + \
+			  " " + str (dialog.r_splitalgorithm_dbscan_eps)
+		elif dialog.r_splitalgorithm == "Automatic":
+			command += " -split-instances auto"
 		else:
-			command += " -split-in-groups no"
+			command += " -split-instances no"
+
 		command += " -use-" + dialog.r_statistic
 		command += " -sigma-times " + dialog.r_sigmatimes
 		if dialog.r_limitsamples:
