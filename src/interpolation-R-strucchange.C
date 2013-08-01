@@ -81,8 +81,10 @@ unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 			file << ix[p] << ";" << iy[p] << endl;
 		file.close();
 
+#define R_BREAKPOINTS_FILE "breakpoints.2.R"
+
 		string Rcommands = string("\n")+
-		  "source (\"" + getenv ("FOLDING_HOME") +"/etc/breakpoints.R\")\n\n" +
+		  "source (\"" + getenv ("FOLDING_HOME") +"/etc/" + R_BREAKPOINTS_FILE + "\")\n\n" +
 		  "sink (\"" + fo + "\")\n" +
 		  "DEBUG <- FALSE\n" +
 		  "H <- " + common::convertDouble (h, 6) + "\n" +
@@ -92,6 +94,8 @@ unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 		  "NSTEPS <- 0\n" +
 		  "MAX_ERROR <- 0.002\n" +
 		  "main (FILE, H, NSTEPS, MAX_ERROR, COUNTER, GROUP)\n";
+
+#undef R_BREAKPOINTS_FILE
 
 		breakpoints.clear();
 		slopes.clear();

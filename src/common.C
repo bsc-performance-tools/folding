@@ -147,7 +147,16 @@ unsigned common::lookForValueString (UIParaverTraceConfig *pcf, unsigned type, s
 	vector<unsigned> vtypes = pcf->getEventTypes();
 	if (find (vtypes.begin(), vtypes.end(), type) != vtypes.end())
 	{
-		vector<unsigned> v = pcf->getEventValues(type);
+		vector<unsigned> v;
+		try
+		{
+			v = pcf->getEventValues(type);
+		}
+		catch (...)
+		{
+			found = false;
+			return 0;
+		}
 		for (unsigned i = 0; i < v.size(); i++)
 		{
 			string evstr = pcf->getEventValue (type, v[i]);
