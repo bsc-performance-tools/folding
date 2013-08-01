@@ -36,6 +36,6 @@ using namespace std;
 class R
 {
 	public:
-	static bool launch (string fname, string commands);
+	static bool launch (string fname, string commands, string helpiffail);
 };
 

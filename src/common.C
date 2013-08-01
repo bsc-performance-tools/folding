@@ -88,6 +88,15 @@ string common::removeSpaces (string &in)
 	return tmp;
 }
 
+string common::removeUnwantedChars (string &in)
+{
+	string tmp = in;
+	for (string::iterator it = tmp.begin(); it != tmp.end(); it++)
+		if (*it == ' ' || *it == '[' || *it == ']' || *it == '(' || *it == ')')
+			*it = '_';
+	return tmp;
+}
+
 bool common::existsFile (string file)
 {
 #if defined(HAVE_ACCESS)

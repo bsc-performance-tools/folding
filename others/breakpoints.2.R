@@ -16,16 +16,16 @@ main <- function (file, H, nsteps, max_error, counter, group)
 	# Read file
 	df <- read.csv (file = file, head = TRUE, sep=";")
 	df_o <- df[order(df$time),]
-	#print (df_o)
 
-	df_r_o <- df_o[rev(rownames(df_o)),]
-	# print (df_r_o)
+	#df_r_o <- df_o[rev(rownames(df_o)),]
+	df_r_o <- data.frame (time = rep(0, nrow(df_o)), value = rep (0, nrow(df_o)))
+	for (i in 1:nrow(df_o))
+		df_r_o[i, ] <- c(df_o$time[nrow(df_o)-i+1], df_o$value[nrow(df_o)-i+1])
 
 	# Actual computation!
-	if (nrow(df_o) > 20)
+	if (nrow(df_o) > 10)
 	{
-		H <- as.integer (max(nrow(df_o) / 20, 10))
-		bp.counter <- breakpoints (df_o$value ~ df_o$time, h = H)
+		bp.counter   <- breakpoints (df_o$value   ~ df_o$time,   h = H)
 		bp.r.counter <- breakpoints (df_r_o$value ~ df_r_o$time, h = H)
 
 		if (DEBUG)
@@ -114,7 +114,7 @@ main <- function (file, H, nsteps, max_error, counter, group)
 
 	# Prepare the plot!
 	filename <- sprintf ("%s.%f.%s.%d.png", file, H, counter, group)
-	png (filename, width=1024, height=768)
+	png (filename, width=1600, height=1200)
 	str1 <- sprintf ("h=%f", H)
 	str2 <- sprintf ("Accumulated %s", counter)
 	par(mar=c(5,4,4,5)+.1, cex=1.33)

@@ -39,7 +39,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: interpolate.C 1449 2013-01-
 #include <iostream>
 #include <unistd.h>
 
-bool R::launch (string fname, string commands)
+bool R::launch (string fname, string commands, string helpiffail)
 {
 	ofstream temporal;
 	temporal.open (fname.c_str());
@@ -49,7 +49,7 @@ bool R::launch (string fname, string commands)
 		string sys_command = string ("R -f ") + fname + "> /dev/null 2> /dev/null";
 		if (system (sys_command.c_str()) != 0)
 		{
-			cerr << "R command failed" << endl;
+			cerr << endl << "R command failed" << endl;
 			exit (-1);
 		}
 	}

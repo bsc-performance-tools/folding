@@ -50,23 +50,33 @@ class common
 	static string convertInt (unsigned);
 	static string convertInt (size_t st);
 	static string convertDouble (double, int);
+
 	static string removeSpaces (string &in);
+	static string removeUnwantedChars (string &in);
+
 	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
+
 	static bool existsFile (string file);
 	static bool existsDir (string dir);
+
 	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
 	  unsigned id, string &file, int &line);
 	static void lookForFullCallerInfo (UIParaverTraceConfig *pcf, unsigned caller,
 	  unsigned callerlineast, string &routine, string &file, int &bline, int &eline);
+	static unsigned lookForValueString (UIParaverTraceConfig *pcf, unsigned type,
+	  string str, bool &found);
+
 	static void CleanMetricsDirectory (string &directory);
 	static void CleanMetricsDirectory_r (char *directory);
+
 	static bool isMIPS (string s);
+
 	static bool DEBUG();
+
 	static bool decomposePtaskTaskThread (string &s, unsigned &ptask,
 	  unsigned &task, unsigned &thread);
 	static bool decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
 	  bool &ptaskany, unsigned &task, bool &taskany, unsigned &thread, bool &threadany);
-	static unsigned lookForValueString (UIParaverTraceConfig *pcf, unsigned type, string str, bool &found);
 	static string basename (string s);
 };
 

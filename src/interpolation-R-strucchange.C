@@ -69,7 +69,8 @@ unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 		f = "/tmp/folding.R.";
 	else
 		f = string (getenv("TMPDIR")) + "/folding.R.";
-	f = f + region + "." + common::convertInt (group) + "." + common::convertInt (getpid());
+	f = f + common::removeUnwantedChars(region) + "." + common::convertInt (group)
+	  + "." + common::convertInt (getpid());
 	fo = f + ".output";
 
 	file.open (f.c_str());
@@ -100,7 +101,11 @@ unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 		breakpoints.clear();
 		slopes.clear();
 
-		R::launch (f+".script", Rcommands);
+		R::launch (f+".script", Rcommands,
+		 "The strucchange has failed. This is likely to happen when:\n"
+         " - H is too low (try increasing H to fix)"
+		 "\n"
+		 "If none of the above can be applied, look at TMPDIR for the execution scripts and outputs\n");
 
 		ifstream resfile;
 		resfile.open (fo.c_str());
