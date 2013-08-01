@@ -163,6 +163,7 @@ class InformationHolder
 	PTaskInformation *PTasksInfo;
 	set<string> seenCounters;
 	set<string> seenRegions;
+	set<unsigned> missingRegions; /* Those regions that do not have an entry as a value in the PCF*/
 	
 	public:
 	int getNumPTasks (void)
@@ -178,10 +179,14 @@ class InformationHolder
 	  { seenCounters.insert (c); }
 	void addRegion (string r)
 	  { seenRegions.insert (r); }
+	void addMissingRegion (unsigned r)
+	  { missingRegions.insert (r); }
 	set<string> getCounters (void)
 	  { return seenCounters; }
 	set<string> getRegions (void)
 	  { return seenRegions; }
+	set<unsigned> getMissingRegions (void)
+	  { return missingRegions; }
 
 	ofstream outputfile;
 };
@@ -200,6 +205,7 @@ void InformationHolder::AllocatePTasks (int numPTasks)
 class Process : public ParaverTrace
 {
 	private:
+	string pcffile;
 	unsigned nCounterChanges;
 	list<unsigned> CallerCut;
 	string *CounterIDNames;
@@ -241,13 +247,14 @@ class Process : public ParaverTrace
 	  { return nCounterChanges; }
 
 	void dumpSeen (string fnameprefix);
+	void dumpMissingValuesIntoPCF (void);
 };
 
 Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, multievents)
 {
 	nCounterChanges = 0;
 
-	string pcffile = prvFile.substr (0, prvFile.rfind(".prv")) + string (".pcf");
+	pcffile = prvFile.substr (0, prvFile.rfind(".prv")) + string (".pcf");
 
 	pcf = new UIParaverTraceConfig;
 	try
@@ -413,11 +420,19 @@ void Process::dumpSamples (unsigned ptask, unsigned task, unsigned thread,
 		return;
 
 	/* Write the total time spent in this region */
-	string RegionName = getTypeValue (RegionSeparator, region);
-	if (RegionName.length() == 0 || RegionName == "Not found")
-		RegionName = "Unknown";
-	else
-		RegionName = common::removeSpaces (RegionName);
+	string RegionName;
+	try
+	{
+		RegionName = getTypeValue (RegionSeparator, region);
+	}
+	catch (...)
+	{
+		stringstream ss;
+		ss << region;
+		RegionName = "Unknown_" + ss.str();
+		IH.addMissingRegion (region);
+	}
+	RegionName = common::removeSpaces (RegionName);
 	IH.addRegion (RegionName);
 
 	/* Calculate totals */
@@ -665,17 +680,7 @@ string Process::getType (unsigned type)
 
 string Process::getTypeValue (unsigned type, unsigned value)
 {
-	string s;
-
-	try
-	{ s = pcf->getEventValue (type, value); }
-	catch (...)
-	{
-		cerr << "ERROR! Exception launched when looking for the description of pair type " << type << " value " << value << " in the PCF file. Check that it exists..." << endl; 
-		exit (-1);
-	}
-
-	return s;
+	return pcf->getEventValue (type, value);
 }
 
 void Process::dumpSeenObjects (string filename)
@@ -730,6 +735,31 @@ void Process::dumpSeen (string fnameprefix)
 	dumpSeenObjects (fnameprefix+".objects");
 	dumpSeenCounters (fnameprefix+".counters");
 	dumpSeenRegions (fnameprefix+".regions");
+}
+
+void Process::dumpMissingValuesIntoPCF (void)
+{
+	set<unsigned> m = IH.getMissingRegions();
+	if (m.size() > 0)
+	{
+		fstream f (pcffile.c_str(), fstream::out | fstream::app);
+		if (f.is_open())
+		{
+			f << "EVENT_TYPE" << endl
+			  << "0 " << RegionSeparator << " " << getType (RegionSeparator) << endl
+			  << "VALUES" << endl;
+			set<unsigned>::iterator i;
+			for (i = m.begin(); i != m.end(); i++)
+			{
+				cout << "Warning! Adding missing region label for type " << RegionSeparator
+				  << " value " << *i << " into " << pcffile << endl;
+				stringstream ss;
+				ss << *i;
+				f << *i << " Unknown_" << ss.str() << endl;
+			}
+		}
+		f.close();
+	}
 }
 
 } /* namespace libparaver */
@@ -807,6 +837,7 @@ int main (int argc, char *argv[])
 	p->closeFile();
 
 	p->dumpSeen (common::basename (tracename.substr (0, tracename.length()-4)));
+	p->dumpMissingValuesIntoPCF ();
 
 	if (p->getNCounterChanges() > 0)
 		cout << "Ignored " << p->getNCounterChanges() << " instances, most probably because of hardware counter set change." << endl;
@@ -817,7 +848,6 @@ int main (int argc, char *argv[])
 	cfile << RegionSeparator << endl;
 	cfile << RegionSeparatorName << endl;
 	cfile.close ();
-
 
 	return 0;
 }
