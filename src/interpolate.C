@@ -306,8 +306,12 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		PCFfile << i << " " << pcf->getEventValue(foldedType, v[i]) << endl;
 	PCFfile << endl;
 
-	PCFfile << endl << "EVENT_TYPE" << endl
-	  << "0 " << FOLDED_INSTANCE_GROUP << " Folded instance group ID" << endl << endl;
+	PCFfile 
+	  << endl << "EVENT_TYPE" << endl
+	  << "0 " << FOLDED_INSTANCE_GROUP << " Folded instance group ID" << endl
+	  << endl << "EVENT_TYPE" << endl
+	  << "0 " << FOLDED_PHASE << " Folded phase" << endl
+	  << endl;
 
 	PCFfile << endl << "EVENT_TYPE" << endl;
 	set<string>::iterator it = wantedCounters.begin();
@@ -955,10 +959,12 @@ int main (int argc, char *argv[])
 			  Instances.count(i->RegionName) > 0)
 			{
 				InstanceContainer ic = Instances.at (i->RegionName);
+				InstanceGroup *ig = ic.InstanceGroups[i->group];
+
 				ftrace->DumpGroupInfo (objectToFeed, i);
-				ftrace->DumpInterpolationData (objectToFeed, i, ic.InstanceGroups[i->group],
-				  counterCodes);
-				ftrace->DumpCallersInInstance (objectToFeed, i, ic.InstanceGroups[i->group]);
+				ftrace->DumpInterpolationData (objectToFeed, i, ig, counterCodes);
+				ftrace->DumpCallersInInstance (objectToFeed, i, ig);
+				ftrace->DumpBreakpoints (objectToFeed, i, ig);
 			}
 		}
 

@@ -64,14 +64,16 @@ class FoldedParaverTrace : public ParaverTrace
 	void DumpStartingParaverLine (void);
 	void DumpParaverLines (vector<unsigned long long> &type,
 		vector<unsigned long long > &value, unsigned long long time,
-		unsigned ptask, unsigned task, unsigned thread);
+		ObjectSelection *o);
 
 	void DumpParaverLine (unsigned long long type,
-		unsigned long long value, unsigned long long time, unsigned ptask,
-		unsigned task, unsigned thread);
+		unsigned long long value, unsigned long long time,
+	    ObjectSelection *o);
 
 	void DumpGroupInfo (ObjectSelection *o, Instance *in);
 	void DumpCallersInInstance (ObjectSelection *o, Instance *in,
+	  InstanceGroup *ig);
+	void DumpBreakpoints (ObjectSelection *o, Instance *in,
 	  InstanceGroup *ig);
 	void DumpInterpolationData (ObjectSelection *o, Instance *in,
 	  InstanceGroup *ig, map<string, unsigned> counterCodes);

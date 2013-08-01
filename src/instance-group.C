@@ -284,7 +284,7 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	  + ".slope.csv";
 	string fdname = prefix + "." + os->toString(false, "any") 
 	  + ".dump.csv";
-	string gname = prefix + "." + regionName + "." + 
+	string gname = prefix + "." + common::removeUnwantedChars(regionName) + "." + 
 	  os->toString (false, "any") + "." + common::removeSpaces (groupName) +
 	  "." + counter + ".gnuplot";
 	ofstream gplot (gname.c_str());
@@ -414,7 +414,7 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 {
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
-	string gname = prefix + "." + regionName + "." + 
+	string gname = prefix + "." + common::removeUnwantedChars(regionName) + "." + 
 	  os->toString (false, "any") + "." + common::removeSpaces (groupName) +
 	  ".slopes.gnuplot";
 	ofstream gplot (gname.c_str());
