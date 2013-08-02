@@ -1,0 +1,9 @@
+export FOLDING_HOME=/home/harald/F-trunk2
+
+#$FOLDING_HOME/bin/codeblocks $1
+#$FOLDING_HOME/bin/fuse *.codeblocks.prv
+#$FOLDING_HOME/bin/extract -separator 90000001 *fused.prv
+#$FOLDING_HOME/bin/interpolate -interpolation R-strucchange 1000 0.005 -split-instances auto -use-median -sigma-times 1.5 -region Cluster_1 -region Cluster_2 -counter PEVT_INST_ALL -max-samples-distance 800 *.extract
+#$FOLDING_HOME/bin/interpolate -split-instances auto -use-median -sigma-times 1.5 -region Cluster_1 -region Cluster_2 -counter PEVT_INST_ALL -max-samples-distance 800 -feed-first-occurrence 1.1.1 *.extract
+$FOLDING_HOME/bin/interpolate -split-instances no -use-median -sigma-times 1.5 -region Cluster_1 -counter PEVT_INST_ALL -max-samples-distance 800 -feed-first-occurrence 1.1.1 $1
+
