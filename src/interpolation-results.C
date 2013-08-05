@@ -75,8 +75,8 @@ void InterpolationResults::calculateSlope (double factor)
 
 double InterpolationResults::getSlopeAt (unsigned pos)
 {
-	assert (pos >= 0 && pos < count)
-	return slope[index];
+	assert (pos >= 0 && pos < count);
+	return slope[pos];
 }
 
 double InterpolationResults::getSlopeAt (double pos)
