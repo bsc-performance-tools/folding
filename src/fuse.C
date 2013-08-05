@@ -265,6 +265,12 @@ int main (int argc, char *argv[])
 	}
 
 	tracename = string(argv[1]);
+	if (!common::existsFile(tracename))
+	{
+		cerr << "The tracefile " << tracename << " does not exist!" << endl;
+		return -2;
+	}
+
 	string bfileprefix = common::basename (tracename.substr (0, tracename.rfind(".prv")));
 
 	Process *p = new Process (argv[1], true, (bfileprefix + string(".fused.prv")).c_str());

@@ -83,9 +83,8 @@ Sample * Callstack::lookLongestWithMain (vector<Sample*> &vs, unsigned mainid)
 void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 {
 	Sample *sroot = NULL;
-	vector<double> phase_ranges = ig->getInterpolationPhases();
+	vector<double> phase_ranges = ig->getInterpolationBreakpoints();
 	vector<Instance*> vi = ig->getInstances();
-	vector<Sample *> vs;
 	vector<CallstackTree *> vtree;
 
 	if (common::DEBUG())
@@ -97,11 +96,12 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 	/* Phases must start at 0.0 and end at 1.0 */
 	assert (phase_ranges[0]==0.0 && phase_ranges[phase_ranges.size()-1]==1.0);
 
-	for (unsigned phase = 0; phase < phase_ranges.size() - 1; phase++)
+	for (unsigned phase = 0; phase < phase_ranges.size()-1; phase++)
 	{
 		double phase_begin = phase_ranges[phase];
 		double phase_end = phase_ranges[phase+1];
 
+		vector<Sample *> vs;
 		for (unsigned i = 0; i < vi.size(); i++)
 			for (unsigned s = 0; s < vi[i]->Samples.size(); s++)
 				if (vi[i]->Samples[s]->nTime >= phase_begin && 
@@ -115,16 +115,14 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 
 		if (sroot != NULL)
 		{
-			/* Generate superroot node */
-			CallstackTree *superroot = new CallstackTree;
-
 			/* Generate a new tree using this root (main) and connecting to the superroot */
+			CallstackTree *root = new CallstackTree (sroot, 0);
 
-			CallstackTree *root = new CallstackTree (sroot, 0, superroot);
 			if (common::DEBUG())
 			{
-				cout << "Tree after adding root (with mainid = " << mainid << ")" << endl;
-				superroot->show();
+				cout << "Initial root sample & root tree" << endl;
+				sroot->show();
+				root->show();
 			}
 
 			/* Remove the root sample from the copied vector & those
@@ -141,21 +139,58 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 			/* Duplicate the vector to work with it */
 			vector<Sample*> copy = vs;
 
-			/* Try to add all samples one by one */
 			unsigned inserted;
 			do
 			{
-				CallstackTree *ct;
 				inserted = 0;
 
 				it = copy.begin();
 				while (it != copy.end())
 				{
-					if ((ct = superroot->findTopCaller (*it)) != NULL)
+					CallstackTree *ct;
+					Sample *s = *it;
+					unsigned d;
+
+					if (common::DEBUG())
 					{
-						ct->addCommon (*it);
-						inserted++;
+						cout << "Adding sample into callstack" << endl;
+						s->show();
+					}
+					if ((ct = root->findDeepestCommonCaller (s, 0, d)) != NULL)
+					{
+						if (common::DEBUG())
+							cout << "Deppest common caller info : depth = " << d 
+							  << " sample depth = " << s->CodeTriplet.size()
+							  << " where in CT = " << ct << endl;
+
+						if (d == s->CodeTriplet.size())
+						{
+							map<unsigned, CodeRefTriplet>::iterator i = s->CodeTriplet.begin();
+							CodeRefTriplet f = (*i).second;
+							ct->increaseOccurrences ();
+						}
+						else
+						{
+							CallstackTree *child = new CallstackTree (s, d);
+
+							if (common::DEBUG())
+							{
+								cout << "Inserting into following full tree" << endl;
+								root->show();
+								cout << "WHERE in tree" << endl;
+								ct->show();
+								cout << "WHAT to insert in tree" << endl;
+								child->show();
+							}
+							ct->insert (child);
+							if (common::DEBUG())
+							{
+								cout << "Resulting tree" << endl;
+								root->show();
+							}
+						}
 						it = copy.erase (it);
+						inserted++;
 					}
 					else
 						it++;
@@ -163,18 +198,19 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 
 				if (common::DEBUG())
 				{
-					cout << "Tree after processing sample " << endl;
-					superroot->show();
+					cout << "Tree after adding " << inserted << " samples in step " << endl;
+					root->show();
 				}
 
-			} while (inserted > 0 && copy.size () > 0);
+			} while (inserted > 0);
 
 			if (copy.size() > 0)
 			{
 				Instance *inst = vi[0];
 				cout << "Warning! " << copy.size() << " unused samples of "
-				  << vs.size() << " to generate the call-tree for region "
-				  << inst->RegionName << " group " << inst->group + 1 << endl;
+				  << vs.size() << " to generate the call-tree for Region "
+				  << inst->RegionName << " Group " << inst->group + 1 
+				  << " Phase " << phase + 1 << endl;
 
 				if (common::DEBUG())
 				{
@@ -183,20 +219,16 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 				}
 			}
 
-			superroot->sort();
-
 			if (common::DEBUG())
 			{
-				cout << "Final Tree" << endl;
-				superroot->show();
+				cout << "*** Final Tree ***" << endl;
+				root->show();
 			}
 
-			vtree.push_back (superroot);
+			vtree.push_back (root);
 		}
 		else
-		{
 			vtree.push_back (NULL);
-		}
 	}
 
 	assert (vtree.size() == phase_ranges.size()-1);

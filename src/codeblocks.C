@@ -426,6 +426,12 @@ int main (int argc, char *argv[])
 
 	int res = ProcessParameters (argc, argv);
 	tracename = string(argv[res]);
+	if (!common::existsFile(tracename))
+	{
+		cerr << "The tracefile " << tracename << " does not exist!" << endl;
+		return -2;
+	}
+
 	string bfileprefix = common::basename (tracename.substr (0, tracename.rfind(".prv")));
 
 	Process *p = new Process (tracename, sourceDir, true, (bfileprefix + string(".codeblocks.prv")).c_str() );

@@ -804,13 +804,18 @@ int main (int argc, char *argv[])
 	}
 
 	string tracename = string(argv[res]);
+	if (!common::existsFile(tracename))
+	{
+		cerr << "The tracefile " << tracename << " does not exist!" << endl;
+		return -2;
+	}
 
 	Process *p;
 	try
 	{ p = new Process (tracename, true); }
 	catch (...)
 	{
-		cerr << "ERROR! Exception launched when processing the file " << tracename << ". Check that it exists..." << endl; 
+		cerr << "ERROR! Exception launched when processing the file " << tracename << ". Check that it exists and it is a Paraver tracefile..." << endl; 
 		return -1;
 	}
 

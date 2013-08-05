@@ -43,15 +43,19 @@ class CodeRefTriplet
 	unsigned long long CallerLine;
 	unsigned long long CallerLineAST;
 
+
 	bool operator==(const CodeRefTriplet &other) const 
 	  { return Caller == other.Caller && 
 	         CallerLine == other.CallerLine &&
 	         CallerLineAST == other.CallerLineAST; }
+
+#if 0
 	bool operator!=(const CodeRefTriplet &other) const 
 	  { return !(*this == other); } 
 
 	bool operator< (const CodeRefTriplet &other) const
 	  { return Caller < other.Caller; }
+#endif
 };
 
 class Sample
