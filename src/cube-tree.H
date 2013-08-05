@@ -45,11 +45,6 @@ class CubeTree
 	CallstackTree *tree_node;
 	vector<CubeTree *> children;
 
-	void generateLeaf (Cube &c, Cnode *parent, CodeRefTriplet crt, 
-	  unsigned occurrences, UIParaverTraceConfig *pcf);
-	void generateSibling (Cube &, Cnode *, CallstackTree *, 
-	  UIParaverTraceConfig *pcf);
-
 	public:
 	void generate (Cube &, Cnode *, CallstackTree *, UIParaverTraceConfig *pcf);
 };

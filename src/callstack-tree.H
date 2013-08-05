@@ -37,27 +37,30 @@
 class CallstackTree
 {
 	private:
-	unsigned occurrences;
 	CodeRefTriplet nodeTriplet;
 	vector<CallstackTree*> children;
-	CallstackTree *parent;
+	unsigned occurrences;
 
-	CallstackTree * findTopCaller_r (CodeRefTriplet &ref);
+	CallstackTree* findDeepestCommonCaller_r (Sample *s, unsigned depth,
+	  unsigned& depth_common, CallstackTree* parent);
 
 	public:
-	CallstackTree (Sample *s, unsigned depth = 0, CallstackTree *parent = NULL);
-	CallstackTree (CodeRefTriplet triplet, CallstackTree *parent);
+	CallstackTree (Sample *s, unsigned depth = 0);
 	CallstackTree (void);
 
 	void show (unsigned depth = 0);
-	void sort (void);
 
-	CallstackTree *findTopCaller (Sample *s);
-	void addCommon (Sample *s, unsigned depth = 0);
-	CodeRefTriplet getNodeTriplet (void)
+	CodeRefTriplet getCodeRefTriplet (void)
 	  { return nodeTriplet; }
 	vector<CallstackTree*> getChildren (void)
 	  { return children; }
+
+	void insert (CallstackTree *other);
+
+	CallstackTree* findDeepestCommonCaller (Sample *s, unsigned depth, unsigned & depth_common);
+
+	void increaseOccurrences (unsigned c = 1)
+	  { occurrences += c; }
 	unsigned getOccurrences (void)
 	  { return occurrences; }
 };

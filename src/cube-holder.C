@@ -100,10 +100,12 @@ void CubeHolder::generateCubeTree (string name, InstanceContainer &ic,
 			Cnode *ctmp2 = c.def_cnode (rtmp2, "", 0, ctmp);
 
 			/* Generate the remaining tree */
-
-			CubeTree *ct = new CubeTree;
-			CallstackTree *cst = trees[ph];
-			ct->generate (c, ctmp2, cst, pcf);
+			if (trees[ph] != NULL)
+			{
+				CubeTree *ct = new CubeTree;
+				CallstackTree *cst = trees[ph];
+				ct->generate (c, ctmp2, cst, pcf);
+			}
 		}
 
 	}
@@ -115,7 +117,7 @@ void CubeHolder::dump (string file)
 	out << c;
 	out.close();
 
-#warning Remember to enable .launch generation
+#warning Create .launch generation
 #if 0
 			if (writecube)
 			{

@@ -438,6 +438,9 @@ VALUES
 214   yaml_comment
 215   wtxyz
 216   write_atomic_file
+250 hola-250
+251 hola-251
+252 hola-252
 
 
 EVENT_TYPE
