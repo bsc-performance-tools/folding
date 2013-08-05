@@ -769,7 +769,7 @@ int main (int argc, char *argv[])
 			if (allcounters.find (*it) != allcounters.end())
 				counters.insert (*it);
 			else
-				cout << "WARNING! Counter " << *it << " was not extracted from the tracefile!" << endl;
+				cout << "Warning! Counter " << *it << " was not extracted from the tracefile!" << endl;
 	}
 	else
 		counters = allcounters;
@@ -968,7 +968,6 @@ int main (int argc, char *argv[])
 			}
 		}
 
-#warning Enable cube generation
 #if defined(HAVE_CUBE)
 		/* Generate a callstack tree for the CUBE program */
 		cout << "Generating callstack tree for CUBE (" << cwd << "/" << common::basename (oFileCUBE.c_str()) << ")" << endl;
@@ -991,6 +990,7 @@ int main (int argc, char *argv[])
 		{
 			CubeHolder ch (counters);
 
+			ch.eraseLaunch (oFileCUBE);
 			for (it = regions.begin(); it != regions.end(); it++)
 			{
 				if (Instances.count(*it) == 0)
@@ -1002,9 +1002,9 @@ int main (int argc, char *argv[])
 					Callstack *ct = new Callstack;
 					ct->generate (ic.InstanceGroups[u], mainid);
 				}
-				ch.generateCubeTree (*it, ic, pcf);
+				ch.generateCubeTree (ic, pcf, counters);
+				ch.dumpLaunch (ic, objectsSelected, counters, oFileCUBE);
 			}
-
 			ch.dump (oFileCUBE);
 		}
 		else

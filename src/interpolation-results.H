@@ -74,6 +74,8 @@ class InterpolationResults
 	  { return Breakpoints; }
 	void setBreakpoints (vector<double> &breakpoints)
 	  { Breakpoints = breakpoints; }
+
+	double getSlopeAt (double pos);
 };
 
 #endif /* INTERPOLATION_RESULTS_H_INCLUDED */

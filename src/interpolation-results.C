@@ -35,6 +35,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 
 #include "interpolation-results.H"
 
+#include <assert.h>
+
 InterpolationResults::InterpolationResults (unsigned count)
 {
 	this->count = count;
@@ -69,5 +71,13 @@ void InterpolationResults::calculateSlope (double factor)
 
 	slope_factor = factor;
 	slope_calculated = true;
+}
+
+double InterpolationResults::getSlopeAt (double pos)
+{
+	assert (pos >= 0 && pos <= 1.0f);
+
+	unsigned index = ((unsigned) (pos * count));
+	return slope[index];
 }
 
