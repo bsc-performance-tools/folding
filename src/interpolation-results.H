@@ -76,6 +76,7 @@ class InterpolationResults
 	  { Breakpoints = breakpoints; }
 
 	double getSlopeAt (double pos);
+	double getSlopeAt (unsigned pos);
 };
 
 #endif /* INTERPOLATION_RESULTS_H_INCLUDED */
