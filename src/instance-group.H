@@ -39,11 +39,18 @@
 #include <string>
 #include <map>
 #include <set>
+#if defined(HAVE_CUBE)
+# include <cube3/Cube.h>
+#endif
 
 using namespace std;
+#if defined(HAVE_CUBE)
+using namespace cube;
+#endif
 
 class InterpolationResults;
 class CallstackTree;
+class CubeTree;
 
 class InstanceGroup
 {
@@ -58,6 +65,9 @@ class InstanceGroup
 
 	vector<double> Breakpoints;
 	vector<CallstackTree *> trees;
+#if defined(HAVE_CUBE)
+	Cnode *cubeTree;
+#endif
 
 	string regionName;
 	string groupName;
@@ -67,7 +77,6 @@ class InstanceGroup
 	  InterpolationResults *ir);
 	void gnuplot_slopes (ObjectSelection *os, string prefix);
 
-
 	public:
 	InstanceGroup (string, unsigned, string);
 
@@ -76,6 +85,9 @@ class InstanceGroup
 
 	unsigned getNumGroup (void)
 	  { return numGroup; }
+
+	string getGroupName (void)
+	  { return groupName; }
 
 	string getRegion (void)
 	  { return regionName; }
@@ -121,6 +133,13 @@ class InstanceGroup
 	  { trees = vtrees; }
 	vector<CallstackTree*> getCallstackTrees (void)
 	  { return trees; }
+
+#if defined(HAVE_CUBE)
+	void setGeneralCubeTree (Cnode *cn)
+	  { cubeTree = cn; }
+	Cnode* getGeneralCubeTree (void)
+	  { return cubeTree; }
+#endif
 };
 
 #endif

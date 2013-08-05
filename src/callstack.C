@@ -159,7 +159,7 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 					if ((ct = root->findDeepestCommonCaller (s, 0, d)) != NULL)
 					{
 						if (common::DEBUG())
-							cout << "Deppest common caller info : depth = " << d 
+							cout << "Deepest common caller info : depth = " << d 
 							  << " sample depth = " << s->CodeTriplet.size()
 							  << " where in CT = " << ct << endl;
 

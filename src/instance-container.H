@@ -61,6 +61,8 @@ class InstanceContainer
 	void splitInGroups (void);
 	unsigned numGroups (void)
 	  { return ngroups; }
+	string getRegionName (void)
+	  { return regionName; }
 
 	void removePreviousDataFiles (ObjectSelection *os, string fileprefix);
 	void dumpGroupData (ObjectSelection *os, string fileprefix);

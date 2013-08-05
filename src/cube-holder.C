@@ -34,6 +34,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 #include "common.H"
 
 #include "cube-holder.H"
+#include "interpolation-results.H"
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -71,9 +73,11 @@ CubeHolder::CubeHolder (set<string> &counters)
     }
 }
 
-void CubeHolder::generateCubeTree (string name, InstanceContainer &ic,
-	UIParaverTraceConfig *pcf)
+void CubeHolder::generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *pcf,
+	set<string> counters)
 {
+	string name = ic.getRegionName();
+
 	/* Create a node for this subtree */
 	Region *r = c.def_region (name, 0, 0, "", "", "");
 	Cnode *cnode = c.def_cnode (r, "", 0, NULL);
@@ -87,13 +91,21 @@ void CubeHolder::generateCubeTree (string name, InstanceContainer &ic,
 		Region *rtmp = c.def_region (ss.str(), 0, 0, "", "", "");
 		Cnode *ctmp = c.def_cnode (rtmp, "", 0, cnode);
 
+		InstanceGroup *ig = ic.InstanceGroups[g];
+
+		ig->setGeneralCubeTree (ctmp);
+
 		/* Get the trees for each phase */
-		vector<CallstackTree*> trees = ic.InstanceGroups[g]->getCallstackTrees();
+		vector<CallstackTree*> trees = ig->getCallstackTrees();
+
+		vector<double> bpts = ig->getInterpolationBreakpoints();
 
 		for (unsigned ph = 0; ph < trees.size(); ph++)
 		{
 			ss.str (string());
-			ss << "Phase " << ph+1;
+			ss << "Phase " << ph+1 << " [" << common::convertDouble (bpts[ph], 2)
+			  << "-" << common::convertDouble (bpts[ph+1], 2) << "]";
+
 
 			/* Create a node for this subtree */
 			Region *rtmp2 = c.def_region (ss.str(), 0, 0, "", "", "");
@@ -105,90 +117,133 @@ void CubeHolder::generateCubeTree (string name, InstanceContainer &ic,
 				CubeTree *ct = new CubeTree;
 				CallstackTree *cst = trees[ph];
 				ct->generate (c, ctmp2, cst, pcf);
+
+				setSeverities (ctmp2, ig, ph, counters); 
 			}
 		}
 
 	}
 }
 
+void CubeHolder::setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase,
+	set<string> counters)
+{
+	vector<double> bpts = ig->getInterpolationBreakpoints();
+	double portion = bpts[phase+1] - bpts[phase];
+	double inbetween = (bpts[phase+1] + bpts[phase]) / 2.0f;
+
+	double severity = (ig->mean()) * portion;
+	Metric *metric = c.get_met (DURATION);
+	cube::Thread *t = (c.get_thrdv())[0];
+	c.set_sev (metric, node, t, severity);
+
+	map<string, InterpolationResults*> iresults = ig->getInterpolated();
+	set<string>::iterator ctr;
+	for (ctr = counters.begin(); ctr != counters.end(); ctr++)
+		if (iresults.count (*ctr) > 0)
+		{
+			string nCounterID;
+			if (common::isMIPS(*ctr))
+				nCounterID = "MIPS";
+			else
+				nCounterID = (*ctr)+"pms";
+
+			severity = (iresults[*ctr])->getSlopeAt (inbetween);
+			metric = c.get_met (nCounterID);
+			cube::Thread *t = (c.get_thrdv())[0];
+			c.set_sev (metric, node, t, severity);
+		}
+}
+
 void CubeHolder::dump (string file)
 {
 	ofstream out (file.c_str());
-	out << c;
-	out.close();
+	if (out.is_open())
+	{
+		out << c;
+		out.close();
+	}
+	else
+		cerr << "Error! Cannot create " << file << endl;
+}
 
-#warning Create .launch generation
-#if 0
-			if (writecube)
+void CubeHolder::eraseLaunch (string file)
+{
+	string f = file.substr (0, file.rfind (".folded")) + ".folded.launch";
+
+	if (common::existsFile(f))
+		if (unlink(f.c_str()))
+			cerr << "Warning! Could not remove " << f << endl;
+}
+
+void CubeHolder::dumpLaunch (InstanceContainer &ic, ObjectSelection *os,
+	set<string> counters, string file)
+{
+	string prefix = file.substr (0, file.rfind (".folded"));
+
+	ofstream launch ((prefix + ".folded.launch").c_str(), std::ofstream::app);
+	if (launch.is_open())
+	{
+		string RegionName = ic.getRegionName();
+
+		for (unsigned g = 0; g < ic.numGroups(); g++)
+		{
+			/* Get the group name */
+			string groupName = ic.InstanceGroups[g]->getGroupName();
+
+			/* Get the general tree for this group */
+			Cnode *tree = ic.InstanceGroups[g]->getGeneralCubeTree();
+
+			string gname = prefix + "." + common::removeUnwantedChars(RegionName) + "." + 
+			  os->toString (false, "any") + "." + common::removeSpaces (groupName);
+
+			unsigned cnodeid = c.get_cnode_id (tree);
+
+			launch
+			  << DURATION << endl
+			  << "- cnode " << cnodeid << endl
+			  << "See all detailed counters" << endl
+			  << "gnuplot -persist " << gname << ".slopes.gnuplot" << endl;
+			launch
+			  << NO_OCCURRENCES << endl
+			  << "- cnode " << cnodeid << endl
+			  << "See all detailed counters" << endl
+			  << "gnuplot -persist " << gname << ".slopes.gnuplot" << endl;
+
+			set<string>::iterator c;
+			for (c = counters.begin(); c != counters.end(); c++)
 			{
-				ofstream output_cube_launch;
-				output_cube_launch.open ((filePrefix+".launch").c_str(), ios::out|ios::app);
-				if (!output_cube_launch.is_open())
-				{
-					cerr << "Error! Cannot create " << completefilePrefix+".launch! Dying..." << endl;
-					exit (-1);
-				}
-
-				unsigned long long deltamS = ((*i)->Tend - (*i)->Tstart) / 1000000;
-				unsigned long long counter_deltamS = (deltamS > 0) ? ((*i)->HWCvalues[CID]/deltamS) : 0;
-
-				if (common::isMIPS(CounterID))
-				{
-					unsigned cnodeid = ca_callstackanalysis::do_analysis (filePrefix, "no_Occurrences", "no_Occurrences", 0,
-						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
-						vcallstacksamples, pcf, cube, sourceDirectory);
-
-					output_cube_launch << "no_Occurrences" << endl
-					  << "- cnode " << cnodeid << endl
-					  << "See all detailed counters" << endl
-					  << "gnuplot -persist %f." << RegionName << ".slopes.gnuplot" << endl;
-
-					cnodeid = ca_callstackanalysis::do_analysis (filePrefix, "duration", "duration", (*i)->Tend - (*i)->Tstart,
-						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
-						vcallstacksamples, pcf, cube, sourceDirectory);
-
-					output_cube_launch << "duration" << endl
-					  << "- cnode " << cnodeid << endl
-					  << "See all detailed counters" << endl
-					  << "gnuplot -persist %f." << RegionName << ".slopes.gnuplot" << endl;
-				}
-
-				unsigned cnodeid;
-
-				unsigned CounterIDcode = common::lookForCounter (CounterID, pcf);
-				unsigned long long delta = (*i)->Tend - (*i)->Tstart;
-				unsigned long long Tend = (*i)->Tend + 5*delta/100;
-				unsigned long long Tstart = (5*delta/100 > (*i)->Tstart) ? 0 : (*i)->Tstart - 5*delta/100;
-
-				if (common::isMIPS(CounterID))
-					cnodeid = ca_callstackanalysis::do_analysis (filePrefix,
-						CounterID, "MIPS", counter_deltamS /* info->mean_counter */,
-						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
-						vcallstacksamples, pcf, cube, sourceDirectory);
-				else
-					cnodeid = ca_callstackanalysis::do_analysis (filePrefix,
-						CounterID, CounterID+"pms", counter_deltamS /* info->mean_counter */,
-						TranslateRegion(RegionName), RegionName, mbreakpoints[RegionName],
-						vcallstacksamples, pcf, cube, sourceDirectory);
+				launch
+				  << DURATION << endl
+				  << "- cnode " << cnodeid << endl
+				  << "See detailed " << *c << endl
+				  << "gnuplot -persist " << gname  << "." << *c
+				  << ".gnuplot" << endl;
+				launch
+				  << NO_OCCURRENCES << endl
+				  << "- cnode " << cnodeid << endl
+				  << "See detailed " << *c << endl
+				  << "gnuplot -persist " << gname  << "." << *c
+				  << ".gnuplot" << endl;
 
 				string nCounterID;
-				if (common::isMIPS(CounterID))
+				if (common::isMIPS(*c))
 					nCounterID = "MIPS";
 				else
-					nCounterID = CounterID+"pms";
+					nCounterID = (*c)+"pms";
 
-				output_cube_launch << nCounterID << endl
-				  << "- cnode " << cnodeid << endl
-				  << "See detailed " << CounterID << endl
-				  << "gnuplot -persist %f." << RegionName << "." << CounterID << ".gnuplot" << endl
+				launch
 				  << nCounterID << endl
 				  << "- cnode " << cnodeid << endl
-				  << "See " << CounterID << " in Paraver timeline" << endl;
-				output_cube_launch << "folding-cube-call-paraver.sh " << TraceToFeed << " " << Tstart << " " << Tend << " " << FOLDED_BASE+CounterIDcode << " Folded_" << CounterID << " " << feedTraceFoldType_Value << " " << feedTraceFoldType_Value_Definition << endl;
-
-				output_cube_launch.close();
+				  << "See detailed " << *c << endl
+				  << "gnuplot -persist " << gname  << "." << *c
+				  << ".gnuplot" << endl;
 			}
-#endif
+		}
+	}
+	else
+		cerr << "Error! Cannot create " << file << endl;
 
+	launch.close();
 }
 

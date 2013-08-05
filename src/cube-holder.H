@@ -55,10 +55,16 @@ class CubeHolder
 	Process *proc0;
 	Thread *thrd0;
 
+	void setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase,
+	  set<string> counters);
+
 	public:
 	CubeHolder (set<string> &counters);
-	void generateCubeTree (string name, InstanceContainer &ic,
-		UIParaverTraceConfig *pcf);
+	void generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *pcf,
+	  set<string> counters);
+	void eraseLaunch (string file);
+	void dumpLaunch (InstanceContainer &ic, ObjectSelection *os, 
+	  set<string> counters, string file);
 	void dump (string file);
 };
 
