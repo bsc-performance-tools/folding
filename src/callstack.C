@@ -86,6 +86,8 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 	vector<double> phase_ranges = ig->getInterpolationBreakpoints();
 	vector<Instance*> vi = ig->getInstances();
 	vector<CallstackTree *> vtree;
+	vector< map< unsigned, unsigned> > occPerLine;
+	vector< set< unsigned > > sASTs;
 
 	if (common::DEBUG())
 		cout << "generateTree for InstanceGroup " << ig << " mainid = " << mainid << endl;
@@ -107,6 +109,9 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 				if (vi[i]->Samples[s]->nTime >= phase_begin && 
 				    vi[i]->Samples[s]->nTime < phase_end)
 					vs.push_back (vi[i]->Samples[s]);
+
+		map<unsigned, unsigned> occurrencesPerLine;
+		set<unsigned> seenASTs;
 
 		Sample *sroot = lookLongestWithMain (vs, mainid);
 
@@ -163,10 +168,16 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 							  << " sample depth = " << s->CodeTriplet.size()
 							  << " where in CT = " << ct << endl;
 
+						map<unsigned, CodeRefTriplet>::iterator top = s->CodeTriplet.begin();
+						CodeRefTriplet codetop = (*top).second;
+						if (occurrencesPerLine.count (codetop.CallerLine) == 0)
+							occurrencesPerLine[codetop.CallerLine] = 1;
+						else
+							occurrencesPerLine[codetop.CallerLine]++;
+						seenASTs.insert (codetop.CallerLineAST);
+
 						if (d == s->CodeTriplet.size())
 						{
-							map<unsigned, CodeRefTriplet>::iterator i = s->CodeTriplet.begin();
-							CodeRefTriplet f = (*i).second;
 							ct->increaseOccurrences ();
 						}
 						else
@@ -191,6 +202,7 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 						}
 						it = copy.erase (it);
 						inserted++;
+
 					}
 					else
 						it++;
@@ -226,12 +238,19 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 			}
 
 			vtree.push_back (root);
+			occPerLine.push_back (occurrencesPerLine);
+			sASTs.push_back (seenASTs);
 		}
 		else
 			vtree.push_back (NULL);
 	}
 
 	assert (vtree.size() == phase_ranges.size()-1);
+	assert (occPerLine.size() == phase_ranges.size()-1);
+	assert (sASTs.size() == phase_ranges.size()-1);
+
 	ig->setCallstackTrees (vtree);
+	ig->setOccurrencesPerLine (occPerLine);
+	ig->setSeenASTs (sASTs);
 }
 
