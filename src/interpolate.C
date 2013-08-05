@@ -93,6 +93,8 @@ static set<string> wantedRegions, wantedRegionsStartWith;
 
 FoldedParaverTrace *ftrace = NULL;
 
+string sourceDirectory;
+
 using namespace std;
 
 
@@ -357,6 +359,7 @@ int ProcessParameters (int argc, char *argv[])
 			 << "          kriger STEPS NUGET PREFILTER?" << endl
 		     << "          R-strucchange STEPS H" << endl
 			 << " [DEFAULT kriger 1000 0.0001 no]" << endl
+		     << "-source D                [location of the source code]" << endl
 		     << endl;
 		exit (-1);
 	}
@@ -417,6 +420,28 @@ int ProcessParameters (int argc, char *argv[])
 				cerr << "Unknown parameter " << argv[i] << " for -split-instances" << endl;
 				exit (-1);
 			}
+			continue;
+		}
+		if (strcmp ("-source", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -source parameter" << endl;
+				exit (-1);
+			}
+			i++;
+			sourceDirectory = argv[i];
+			if (sourceDirectory[0] != '/')
+			{
+				char buffer[1024];
+				char *ptr;
+				ptr = getcwd (buffer, sizeof(buffer));
+				sourceDirectory = string(ptr) + "/" + sourceDirectory;
+			}
+			if (common::existsDir (sourceDirectory))
+				common::CleanMetricsDirectory (sourceDirectory);
+			else
+				cerr << "Cannot find directory " << sourceDirectory << endl;
 			continue;
 		}
 		if (strcmp ("-use-object", argv[i]) == 0)
@@ -988,7 +1013,7 @@ int main (int argc, char *argv[])
 
 		if (found)
 		{
-			CubeHolder ch (counters);
+			CubeHolder ch (pcf, counters);
 
 			ch.eraseLaunch (oFileCUBE);
 			for (it = regions.begin(); it != regions.end(); it++)
@@ -1002,8 +1027,9 @@ int main (int argc, char *argv[])
 					Callstack *ct = new Callstack;
 					ct->generate (ic.InstanceGroups[u], mainid);
 				}
-				ch.generateCubeTree (ic, pcf, counters);
+				ch.generateCubeTree (ic, pcf, sourceDirectory, counters);
 				ch.dumpLaunch (ic, objectsSelected, counters, oFileCUBE);
+				ch.dumpFileMetrics (sourceDirectory, ic, counters);
 			}
 			ch.dump (oFileCUBE);
 		}

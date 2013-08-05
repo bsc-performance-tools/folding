@@ -63,8 +63,11 @@ class InstanceGroup
 	map<string, vector<Sample*> > used;
 	map<string, vector<Sample*> > unused;
 
-	vector<double> Breakpoints;
-	vector<CallstackTree *> trees;
+	vector<double> Breakpoints; /* nb (breakpoints) = nphases+1 */
+	vector<CallstackTree *> trees; /* one per phase */
+	vector< map<unsigned, unsigned> > occurrencesPerLine; /* one per phase */
+	vector< set<unsigned> > seenASTs; /* one per phase */
+
 #if defined(HAVE_CUBE)
 	Cnode *cubeTree;
 #endif
@@ -140,8 +143,17 @@ class InstanceGroup
 	Cnode* getGeneralCubeTree (void)
 	  { return cubeTree; }
 #endif
+
+	void setOccurrencesPerLine (vector< map<unsigned, unsigned> > oxline)
+	  { occurrencesPerLine = oxline; }
+	vector< map<unsigned, unsigned> > getOccurrencesPerLine (void)
+	  { return occurrencesPerLine; }
+
+	void setSeenASTs (vector< set<unsigned> > sASTs)
+	  { seenASTs = sASTs; }
+	vector< set<unsigned> > getSeenASTs (void)
+	  { return seenASTs; }
 };
 
 #endif
-
 

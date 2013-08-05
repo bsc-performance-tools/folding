@@ -40,8 +40,10 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 #include <fstream>
 #include <sstream>
 
-CubeHolder::CubeHolder (set<string> &counters)
+CubeHolder::CubeHolder (UIParaverTraceConfig *pcf, set<string> &counters)
 {
+	this->pcf = pcf;
+
 	mach = c.def_mach ("Machine", "");
 	node = c.def_node ("Node", mach);
 	proc0 = c.def_proc ("Process 0", 0, node);
@@ -74,7 +76,7 @@ CubeHolder::CubeHolder (set<string> &counters)
 }
 
 void CubeHolder::generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *pcf,
-	set<string> counters)
+	string &sourceDir, set<string> counters)
 {
 	string name = ic.getRegionName();
 
@@ -116,14 +118,14 @@ void CubeHolder::generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *
 			{
 				CubeTree *ct = new CubeTree;
 				CallstackTree *cst = trees[ph];
-				ct->generate (c, ctmp2, cst, pcf);
+				ct->generate (c, ctmp2, cst, pcf, sourceDir);
 
 				setSeverities (ctmp2, ig, ph, counters); 
 			}
 		}
-
 	}
 }
+
 
 void CubeHolder::setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase,
 	set<string> counters)
@@ -210,33 +212,33 @@ void CubeHolder::dumpLaunch (InstanceContainer &ic, ObjectSelection *os,
 			  << "See all detailed counters" << endl
 			  << "gnuplot -persist " << gname << ".slopes.gnuplot" << endl;
 
-			set<string>::iterator c;
-			for (c = counters.begin(); c != counters.end(); c++)
+			set<string>::iterator ctr;
+			for (ctr = counters.begin(); ctr != counters.end(); ctr++)
 			{
 				launch
 				  << DURATION << endl
 				  << "- cnode " << cnodeid << endl
-				  << "See detailed " << *c << endl
-				  << "gnuplot -persist " << gname  << "." << *c
+				  << "See detailed " << *ctr << endl
+				  << "gnuplot -persist " << gname  << "." << *ctr
 				  << ".gnuplot" << endl;
 				launch
 				  << NO_OCCURRENCES << endl
 				  << "- cnode " << cnodeid << endl
-				  << "See detailed " << *c << endl
-				  << "gnuplot -persist " << gname  << "." << *c
+				  << "See detailed " << *ctr << endl
+				  << "gnuplot -persist " << gname  << "." << *ctr
 				  << ".gnuplot" << endl;
 
 				string nCounterID;
-				if (common::isMIPS(*c))
+				if (common::isMIPS(*ctr))
 					nCounterID = "MIPS";
 				else
-					nCounterID = (*c)+"pms";
+					nCounterID = (*ctr)+"pms";
 
 				launch
 				  << nCounterID << endl
 				  << "- cnode " << cnodeid << endl
-				  << "See detailed " << *c << endl
-				  << "gnuplot -persist " << gname  << "." << *c
+				  << "See detailed " << *ctr << endl
+				  << "gnuplot -persist " << gname  << "." << *ctr
 				  << ".gnuplot" << endl;
 			}
 		}
@@ -245,5 +247,98 @@ void CubeHolder::dumpLaunch (InstanceContainer &ic, ObjectSelection *os,
 		cerr << "Error! Cannot create " << file << endl;
 
 	launch.close();
+}
+
+void CubeHolder::EmitMetricFileLine (string dir, string metric, string file, unsigned line, unsigned val)
+{
+	ofstream f((dir + "/" + file + ".metrics").c_str(), std::ofstream::app);
+	if (f.is_open())
+		f << metric << " " << line << " " << val << endl;
+	f.close();
+}
+
+void CubeHolder::EmitMetricFileLine (string dir, string metric, string file, unsigned line, double val)
+{
+	ofstream f((dir + "/" + file + ".metrics").c_str(), std::ofstream::app);
+	if (f.is_open())
+		f << metric << " " << line << " " << val << endl;
+	f.close();
+}
+
+void CubeHolder::dumpFileMetrics_Lines (string dir, InstanceGroup *ig, set<string> counters)
+{
+	vector< map< unsigned, unsigned > > oXline = ig->getOccurrencesPerLine();
+
+	for (unsigned u = 0; u < oXline.size(); u++)
+	{
+		map<unsigned, unsigned> occurrencesPerLine = oXline[u];
+
+		map<unsigned, unsigned>::iterator line;
+		for (line = occurrencesPerLine.begin(); line != occurrencesPerLine.end(); line++)
+		{
+			string fname;
+			int fline;
+			common::lookForCallerLineInfo (pcf, (*line).first, fname, fline);
+			EmitMetricFileLine (dir, "#Occurrences", fname, fline, (*line).second);
+		}
+	}
+}
+
+void CubeHolder::dumpFileMetrics_ASTs (string dir, InstanceGroup *ig, set<string> counters)
+{
+	vector< set< unsigned > > oXseenASTs = ig->getSeenASTs();
+	vector<double> bpts = ig->getInterpolationBreakpoints();
+	map<string, InterpolationResults*> iresults = ig->getInterpolated();
+
+	for (unsigned phase = 0; phase < oXseenASTs.size(); phase++)
+	{
+		double portion = bpts[phase+1] - bpts[phase];
+		double duration = (ig->mean()) * portion;
+		double inbetween = (bpts[phase+1] + bpts[phase]) / 2.0f;
+
+		set<unsigned> seenASTs = oXseenASTs[phase];
+		set<unsigned>::iterator a;
+
+		for (a = seenASTs.begin(); a != seenASTs.end(); a++)
+		{
+			string routine;
+			string fname;
+			int bline, eline;
+			common::lookForFullCallerInfo (pcf, 0, *a, routine, fname, bline, eline);
+
+			for (int line = bline; line <= eline; line++)
+			{
+				/* Emit phase, duration & hwcounters */
+				EmitMetricFileLine (dir, "Phase", fname, line, phase+1);
+				EmitMetricFileLine (dir, "Duration(ms)", fname, line, duration / 1000000.f);
+
+				set<string>::iterator ctr;
+				for (ctr = counters.begin(); ctr != counters.end(); ctr++)
+				{
+					string nCounterID;
+					if (common::isMIPS(*ctr))
+						nCounterID = "MIPS";
+					else
+						nCounterID = (*ctr)+"pms";
+
+					double hwcvalue = (iresults[*ctr])->getSlopeAt (inbetween);
+					EmitMetricFileLine (dir, nCounterID, fname, line, hwcvalue);
+				}
+			}
+		}
+	}
+}
+
+void CubeHolder::dumpFileMetrics (string dir, InstanceContainer &ic, set<string> counters)
+{
+	unsigned maxgroup = 0;
+	for (unsigned g = 1; g < ic.numGroups(); g++)
+		if (ic.InstanceGroups[maxgroup]->numInstances() < ic.InstanceGroups[g]->numInstances())
+			maxgroup = g;
+
+	InstanceGroup *ig = ic.InstanceGroups[maxgroup];
+
+	dumpFileMetrics_Lines (dir, ig, counters);
+	dumpFileMetrics_ASTs (dir, ig, counters);
 }
 

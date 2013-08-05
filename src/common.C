@@ -250,12 +250,10 @@ void common::CleanMetricsDirectory_r (char *dir)
 	while (de = readdir(d))
 	{
 		int res = stat (de->d_name, &sb);
-		if (res > 0 && (sb.st_mode & S_IFMT) == S_IFREG)
-		{
+		if (res == 0 && (sb.st_mode & S_IFMT) == S_IFREG)
 			if (strlen(de->d_name) > strlen (".metrics"))
 				if (strcmp (&de->d_name[strlen(de->d_name)-strlen (".metrics")], ".metrics") == 0)
 					unlink (de->d_name);
-		}
 	}
 
 	rewinddir (d);

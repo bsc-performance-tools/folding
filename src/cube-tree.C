@@ -40,7 +40,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 #include <sstream>
 
 void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree, 
-	UIParaverTraceConfig *pcf)
+	UIParaverTraceConfig *pcf, string &sourceDir)
 {
 	CodeRefTriplet crt = ctree->getCodeRefTriplet();
 
@@ -52,7 +52,7 @@ void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree,
 
 	/* Create a node for this routine */
 	cube_region = c.def_region (routine, 0, 0, "", "", file);
-	cube_node = c.def_cnode (cube_region, file, 0, parent);
+	cube_node = c.def_cnode (cube_region, sourceDir + "/" + file, 0, parent);
 	tree_node = ctree;
 
 	/* Store # occurrences */
@@ -66,7 +66,7 @@ void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree,
 		for (unsigned u = 0; u < vctree.size(); u++)
 		{
 			CubeTree *tmp = new CubeTree;
-			tmp->generate (c, cube_node, vctree[u], pcf);
+			tmp->generate (c, cube_node, vctree[u], pcf, sourceDir);
 			children.push_back (tmp);
 		}
 	}

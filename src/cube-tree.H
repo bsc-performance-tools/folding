@@ -46,7 +46,8 @@ class CubeTree
 	vector<CubeTree *> children;
 
 	public:
-	void generate (Cube &, Cnode *, CallstackTree *, UIParaverTraceConfig *pcf);
+	void generate (Cube &, Cnode *, CallstackTree *, UIParaverTraceConfig *pcf,
+	  string &sourceDir);
 	Cnode *getCubeNode (void)
 	  { return cube_node; }
 };

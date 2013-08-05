@@ -36,6 +36,7 @@
 
 #include "cube-tree.H"
 #include "instance-container.H"
+#include "UIParaverTraceConfig.h"
 
 #include <set>
 
@@ -48,6 +49,7 @@ using namespace std;
 class CubeHolder
 {
 	private:
+	UIParaverTraceConfig *pcf;
 	Cube c;
 
 	Machine *mach;
@@ -58,14 +60,27 @@ class CubeHolder
 	void setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase,
 	  set<string> counters);
 
-	public:
-	CubeHolder (set<string> &counters);
-	void generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *pcf,
+	void dumpFileMetrics_Lines (string dir, InstanceGroup *ig,
 	  set<string> counters);
+	void dumpFileMetrics_ASTs (string dir, InstanceGroup *ig,
+	  set<string> counters);
+
+	void EmitMetricFileLine (string dir, string metric, string file, 
+	  unsigned line, unsigned val);
+	void EmitMetricFileLine (string dir, string metric, string file,
+	  unsigned line, double val);
+
+	public:
+	CubeHolder (UIParaverTraceConfig *pcf, set<string> &counters);
+	void generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *pcf,
+	  string &sourceDir, set<string> counters);
 	void eraseLaunch (string file);
 	void dumpLaunch (InstanceContainer &ic, ObjectSelection *os, 
 	  set<string> counters, string file);
 	void dump (string file);
+
+	void dumpFileMetrics (string dir, InstanceContainer &ic,
+	  set<string> counters);
 };
 
 #endif /* CUBEHOLDER_H_INCLUDED */
