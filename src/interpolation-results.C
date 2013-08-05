@@ -73,11 +73,16 @@ void InterpolationResults::calculateSlope (double factor)
 	slope_calculated = true;
 }
 
+double InterpolationResults::getSlopeAt (unsigned pos)
+{
+	assert (pos >= 0 && pos < count)
+	return slope[index];
+}
+
 double InterpolationResults::getSlopeAt (double pos)
 {
 	assert (pos >= 0 && pos <= 1.0f);
-
 	unsigned index = ((unsigned) (pos * count));
-	return slope[index];
+	return getSlopeAt (index);
 }
 
