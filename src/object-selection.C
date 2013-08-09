@@ -37,7 +37,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: common.C 1764 2013-05-24 14
 
 #include <sstream>
 
-string ObjectSelection::toString (bool prefix, string anytext)
+string ObjectSelection::toString (bool prefix, string anytext) const
 {
 	stringstream ss;
 

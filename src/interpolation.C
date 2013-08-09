@@ -58,7 +58,7 @@ InterpolationResults * Interpolation::interpolate_kernel (vector<Sample*> vs,
 
 	unsigned incount = 0;
 	for (unsigned s = 0; s < vs.size(); s++)
-		if (vs[s]->nCounterValue.count(counter) > 0)
+		if (vs[s]->hasCounter(counter))
 			incount++;
 
 	double * inpoints_x = new double [incount+2];
@@ -67,10 +67,10 @@ InterpolationResults * Interpolation::interpolate_kernel (vector<Sample*> vs,
 	bool all_zeroes = true;
 	inpoints_x[0] = inpoints_y[0] = 0;
 	for (unsigned i = 1, s = 0; s < vs.size(); s++)
-		if (vs[s]->nCounterValue.count(counter) > 0)
+		if (vs[s]->hasCounter (counter) > 0)
 		{
-			inpoints_x[i] = vs[s]->nTime;
-			inpoints_y[i] = vs[s]->nCounterValue[counter];
+			inpoints_x[i] = vs[s]->getNTime();
+			inpoints_y[i] = vs[s]->getNCounterValue (counter);
 			all_zeroes = all_zeroes && inpoints_y[i] == 0;
 			i++;
 		}
@@ -128,10 +128,10 @@ void Interpolation::interpolate (InstanceGroup *ig, set<string> &counters)
 			unsigned long long totCounter = 0;
 			unsigned count = 0;
 			for (unsigned u = 0; u < i.size(); u++)
-				if (i[u]->TotalCounterValues.count(*it) > 0)
+				if (i[u]->hasCounter (*it))
 				{
-					totDuration += i[u]->duration;
-					totCounter += i[u]->TotalCounterValues[*it];
+					totDuration += i[u]->getDuration();
+					totCounter += i[u]->getTotalCounterValue(*it);
 					count++;
 				}
 
@@ -146,6 +146,7 @@ void Interpolation::interpolate (InstanceGroup *ig, set<string> &counters)
 
 		map<string, vector<Sample*> > mvs = ig->getSamples();
 		for (it = counters.begin(); it != counters.end(); it++)
+		{
 			if (mvs.count(*it) > 0)
 			{
 				vector<Sample*> vs = mvs[*it];
@@ -157,6 +158,7 @@ void Interpolation::interpolate (InstanceGroup *ig, set<string> &counters)
 				ir->calculateSlope (SlopeFactors[*it]);
 				res.insert (pair<string, InterpolationResults*> (*it, ir));
 			}
+		}
 	}
 
 	ig->setInterpolated (res);

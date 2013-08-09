@@ -40,6 +40,7 @@ class InstanceSeparatorAuto : public InstanceSeparator
 	unsigned long long bucketsize;
 
 	public:
+	InstanceSeparatorAuto (bool keepallgroups);
 	unsigned separateInGroups (vector<Instance*> &vi);
 	string details(void);
 	string nameGroup (unsigned);

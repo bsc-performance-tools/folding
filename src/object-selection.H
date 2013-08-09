@@ -38,10 +38,11 @@ using namespace std;
 
 class ObjectSelection
 {
-	public:
+	private:
 	unsigned ptask, task, thread;
 	bool anyptask, anytask, anythread;
 
+	public:
 	ObjectSelection ()
 	  { anyptask = anytask = anythread = true; }
 
@@ -54,15 +55,24 @@ class ObjectSelection
 	  { this->ptask = ptask; this->task = task; this->thread = thread;
 	    this->anyptask = this->anytask = this->anythread = false; }
 
-	bool match (unsigned ptask, unsigned task, unsigned thread)
+	bool match (unsigned ptask, unsigned task, unsigned thread) const
 	  { return (this->anyptask || this->ptask == ptask) &&
 	           (this->anytask || this->task == task) &&
 	           (this->anythread || this->thread == thread); }
 
-	bool anyany (void)
+	bool anyany (void) const
 	  { return this->anyptask || this->anytask || this->anythread; }
 
-	string toString (bool prefix = false, string anytext = "*");
+	string toString (bool prefix = false, string anytext = "*") const;
+
+	unsigned getptask (void) const
+	  { return ptask; }
+
+	unsigned gettask (void) const
+	  { return task; }
+
+	unsigned getthread (void) const
+	  { return thread; }
 };
 
 #endif /* OBJECT_SELECTION_H_INCLUDED */

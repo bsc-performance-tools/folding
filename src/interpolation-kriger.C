@@ -115,25 +115,26 @@ void InterpolationKriger::pre_interpolate (double sigmaTimes, InstanceGroup *ig,
 			vector<Instance *> instances;
 
 			for (unsigned i = 0; i < vi.size(); i++)
-			{
-				if (vi[i]->Samples[0]->nCounterValue.count (*it) > 0)
+				if (vi[i]->hasCounter (*it))
 				{
 					double avgDistance = 0;
-					for (unsigned s = 0; s < vi[i]->Samples.size(); s++)
+					vector<Sample*> vs = vi[i]->getSamples();
+					for (unsigned s = 0; s < vs.size(); s++)
 					{
-						Sample *sample = vi[i]->Samples[s];
+						Sample *sample = vs[s];
 
-						avgDistance += Distance_Point_To_Interpolate (sample->nTime,
-						  sample->nCounterValue[*it], steps,
+						avgDistance += Distance_Point_To_Interpolate (
+						  sample->getNTime(),
+						  sample->getNCounterValue(*it),
+						  steps,
 						  ir->getInterpolationResultsPtr());
 					}
-					if (vi[i]->Samples.size() > 1)
-						avgDistance = avgDistance / vi[i]->Samples.size();
+					if (vs.size() > 1)
+						avgDistance = avgDistance / vi[i]->getNumSamples();
 
 					distances.push_back (avgDistance);
 					instances.push_back (vi[i]);
 				}
-			}
 
 			double avgDistance = 0, sigmaDistance = 0;
 			if (distances.size() > 0)

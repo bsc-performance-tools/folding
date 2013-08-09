@@ -86,9 +86,9 @@ void FoldedParaverTrace::DumpParaverLines (vector<unsigned long long> &type,
 {
 	assert (type.size() == value.size());
 
-	unsigned ptask = o->ptask;
-	unsigned task  = o->task;
-	unsigned thread = o->thread;
+	unsigned ptask = o->getptask();
+	unsigned task  = o->gettask();
+	unsigned thread = o->getthread();
 
 	if (type.size() > 0)
 	{
@@ -103,9 +103,9 @@ void FoldedParaverTrace::DumpParaverLines (vector<unsigned long long> &type,
 void FoldedParaverTrace::DumpParaverLine (unsigned long long type,
 	unsigned long long value, unsigned long long time, ObjectSelection *o)
 {
-	unsigned ptask = o->ptask;
-	unsigned task  = o->task;
-	unsigned thread = o->thread;
+	unsigned ptask = o->getptask();
+	unsigned task  = o->gettask();
+	unsigned thread = o->getthread();
 
 	/* 2:14:1:14:1:69916704358:40000003:0 */
 	traceout << "2:" << task << ":" << ptask << ":" << task << ":" << thread
@@ -127,23 +127,25 @@ void FoldedParaverTrace::DumpCallersInInstance (ObjectSelection *o, Instance *in
 	{
 		Instance *i = vInstances[u];
 
-		for (unsigned v = 0; v < i->Samples.size(); v++)
+		vector<Sample *> vs = i->getSamples();
+		for (unsigned v = 0; v < vs.size(); v++)
 		{
-			unsigned long long ts = in->startTime + 
-				(unsigned long long) (i->Samples[v]->nTime * (double)(in->duration));
+			unsigned long long ts = in->getStartTime() + 
+				(unsigned long long) (vs[v]->getNTime() * (double)(in->getDuration()));
 
 			vector<unsigned long long> types;
 			vector<unsigned long long> values;
-			map<unsigned, CodeRefTriplet>::iterator it = i->Samples[v]->CodeTriplet.begin();
-			for (; it != i->Samples[v]->CodeTriplet.end(); it++)
+			map<unsigned, CodeRefTriplet> ct = vs[v]->getCodeTriplets();
+			map<unsigned, CodeRefTriplet>::iterator it;
+			for (it = ct.begin(); it != ct.end(); it++)
 			{
 				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLER_MIN + (*it).first); /* caller + depth */
 				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_MIN + (*it).first); /* caller line + depth */
 				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_AST_MIN + (*it).first); /* caller line AST + depth */
 
-				values.push_back ((*it).second.Caller);
-				values.push_back ((*it).second.CallerLine);
-				values.push_back ((*it).second.CallerLineAST);
+				values.push_back ((*it).second.getCaller());
+				values.push_back ((*it).second.getCallerLine());
+				values.push_back ((*it).second.getCallerLineAST());
 			}
 			DumpParaverLines (types, values, ts, o);
 
@@ -158,7 +160,7 @@ void FoldedParaverTrace::DumpCallersInInstance (ObjectSelection *o, Instance *in
 	vec_zero_values.assign (vec_zero_types.size(), 0);
 
 	DumpParaverLines (vec_zero_types, vec_zero_values,
-	  in->startTime + in->duration, o);
+	  in->getStartTime() + in->getDuration(), o);
 }
 
 void FoldedParaverTrace::DumpInterpolationData (ObjectSelection *o, Instance *in,
@@ -179,13 +181,13 @@ void FoldedParaverTrace::DumpInterpolationData (ObjectSelection *o, Instance *in
 	}
 	zero_values.assign (zero_types.size(), 0);
 
-	DumpParaverLines (zero_types, zero_values, in->startTime, o);
+	DumpParaverLines (zero_types, zero_values, in->getStartTime(), o);
 
 	for (unsigned u = 0; u < steps; u++)
 	{
 		double proportion = ((double)u) / ((double) steps);
-		unsigned long long ts = in->startTime + 
-			(unsigned long long) (proportion * (double)(in->duration));
+		unsigned long long ts = in->getStartTime() + 
+			(unsigned long long) (proportion * (double)(in->getDuration()));
 
 		values.clear();
 		types.clear();
@@ -199,7 +201,7 @@ void FoldedParaverTrace::DumpInterpolationData (ObjectSelection *o, Instance *in
 		DumpParaverLines (types, values, ts, o);
 	}
 
-	DumpParaverLines (zero_types, zero_values, in->startTime + in->duration, o);
+	DumpParaverLines (zero_types, zero_values, in->getStartTime() + in->getDuration(), o);
 }
 
 
@@ -211,19 +213,19 @@ void FoldedParaverTrace::DumpGroupInfo (ObjectSelection *o, Instance *in)
 
 	types.push_back (FOLDED_INSTANCE_GROUP);
 	types.push_back (FOLDED_TYPE);
-	values.push_back (in->group+1);
-	values.push_back (in->prvValue);
+	values.push_back (in->getGroup()+1);
+	values.push_back (in->getPRVvalue());
 	zero_values.assign (types.size(), 0);
 
-	DumpParaverLines (types, values, in->startTime, o);
-	DumpParaverLines (types, zero_values, in->startTime + in->duration, o);
+	DumpParaverLines (types, values, in->getStartTime(), o);
+	DumpParaverLines (types, zero_values, in->getStartTime() + in->getDuration(), o);
 }
 
 void FoldedParaverTrace::DumpBreakpoints (ObjectSelection *o, Instance *in, InstanceGroup *ig)
 {
 	assert (!o->anyany());
 
-	DumpParaverLine (FOLDED_PHASE, 1, in->startTime, o);
+	DumpParaverLine (FOLDED_PHASE, 1, in->getStartTime(), o);
 
 	vector<double> breaks = ig->getInterpolationBreakpoints();
 	if (breaks.size() >= 2)
@@ -233,12 +235,12 @@ void FoldedParaverTrace::DumpBreakpoints (ObjectSelection *o, Instance *in, Inst
 
 		for (unsigned p = 1; p < breaks.size()-1; p++)
 		{
-			unsigned long long delta = (((double) in->duration) * breaks[p]);
-			DumpParaverLine (FOLDED_PHASE, p+1, in->startTime + delta, o);
+			unsigned long long delta = (((double) in->getDuration()) * breaks[p]);
+			DumpParaverLine (FOLDED_PHASE, p+1, in->getStartTime() + delta, o);
 		}
 	}
 
-	DumpParaverLine (FOLDED_PHASE, 0, in->startTime + in->duration, o);
+	DumpParaverLine (FOLDED_PHASE, 0, in->getStartTime() + in->getDuration(), o);
 }
 
 } /* namespace libparaver */

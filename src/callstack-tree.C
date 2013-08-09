@@ -42,18 +42,19 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 CallstackTree::CallstackTree (Sample *s, unsigned depth)
 {
 	/* Look for the depth-level of this sample, and get the node info */
-	map<unsigned, CodeRefTriplet>::reverse_iterator i = s->CodeTriplet.rbegin();
+	map<unsigned, CodeRefTriplet> crt = s->getCodeTriplets();
+	map<unsigned, CodeRefTriplet>::reverse_iterator i = crt.rbegin();
 	for (unsigned u = 0; u < depth; u++)
 		i++;
 
 	this->nodeTriplet = (*i).second;
 
 	if (common::DEBUG())
-		cout << "Creating Tree Node (" << this->nodeTriplet.Caller << ", " << 
-		  this->nodeTriplet.CallerLine << ", " << this->nodeTriplet.CallerLineAST << ")"
-		  << endl;
+		cout << "Creating Tree Node (" << this->nodeTriplet.getCaller()
+		  << ", " << this->nodeTriplet.getCallerLine()
+		  << ", " << this->nodeTriplet.getCallerLineAST() << ")" << endl;
 
-	if (depth+1 < s->CodeTriplet.size())
+	if (depth+1 < s->getCodeRefTripletSize())
 	{
 		CallstackTree *tmp = new CallstackTree (s, depth+1);
 		children.push_back (tmp);
@@ -68,13 +69,13 @@ CallstackTree::CallstackTree (void)
 	if (common::DEBUG())
 		cout << "Creating super-root node" << endl;
 
-	this->nodeTriplet.Caller = this->nodeTriplet.CallerLine = this->nodeTriplet.CallerLineAST = 0;
+	this->nodeTriplet = CodeRefTriplet (0, 0, 0);
 	this->occurrences = 0;
 }
 
 void CallstackTree::insert (CallstackTree *other)
 {
-	assert (this->nodeTriplet.Caller == other->nodeTriplet.Caller);
+	assert (this->nodeTriplet.getCaller() == other->nodeTriplet.getCaller());
 
 	// cout << "inserting " << other->children.size() << " # children " << endl;
 	for (unsigned c = 0; c < other->children.size(); c++)
@@ -84,21 +85,23 @@ void CallstackTree::insert (CallstackTree *other)
 CallstackTree* CallstackTree::findDeepestCommonCaller (Sample *s, unsigned depth, unsigned &depth_common)
 {
 	/* Look for the depth-level of this sample, and get the node info */
-	map<unsigned, CodeRefTriplet>::reverse_iterator i = s->CodeTriplet.rbegin();
+	map<unsigned, CodeRefTriplet> crt = s->getCodeTriplets();
+	map<unsigned, CodeRefTriplet>::reverse_iterator i = crt.rbegin();
 	for (unsigned u = 0; u < depth; u++)
 		i++;
+
 	CodeRefTriplet other = (*i).second;
 
-	if (this->nodeTriplet.Caller == other.Caller)
+	if (this->nodeTriplet.getCaller() == other.getCaller())
 	{
 		// cout << "other.Caller " << other.Caller << " equal" << endl;
-		if (depth+1 < s->CodeTriplet.size())
+		if (depth+1 < s->getCodeRefTripletSize())
 		{
 			i++;
 			CodeRefTriplet other_child = (*i).second;
 
 			for (unsigned u = 0; u < children.size(); u++)
-				if (children[u]->nodeTriplet.Caller == other_child.Caller)
+				if (children[u]->nodeTriplet.getCaller() == other_child.getCaller())
 					return children[u]->findDeepestCommonCaller (s, depth+1, depth_common);
 
 			depth_common = depth;
@@ -107,13 +110,13 @@ CallstackTree* CallstackTree::findDeepestCommonCaller (Sample *s, unsigned depth
 		else
 		{
 			// cout << "at the end of the callstack -> depth_common = " << s->CodeTriplet.size() << endl;
-			depth_common = s->CodeTriplet.size();
+			depth_common = s->getCodeRefTripletSize();
 			return this;
 		}
 	}
 	else
 	{
-		// cout << "other.Caller " << other.Caller << " different to " << nodeTriplet.Caller << endl;
+		// cout << "other.Caller " << other.getCaller() << " different to " << nodeTriplet.getCaller() << endl;
 		return NULL;
 	}
 }
@@ -124,7 +127,7 @@ void CallstackTree::show (unsigned depth)
 		cout << "  ";
 	if (depth > 0)
 		cout << "+";
-	cout << "Routine " << nodeTriplet.Caller << " #occ = " << occurrences
+	cout << "Routine " << nodeTriplet.getCaller() << " #occ = " << occurrences
 	  << " @ " << this << endl;
 
 	vector<CallstackTree*>::iterator i;

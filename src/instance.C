@@ -34,13 +34,30 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: interpolate.C 1764 2013-05-
 #include "common.H"
 #include "instance.H"
 #include <iostream>
+#include <algorithm>
+#include <assert.h>
 
-Instance::Instance (void)
+Instance::Instance (unsigned ptask, unsigned task, unsigned thread,
+	string region, unsigned long long startTime, unsigned long long duration,
+	set<string> &counters, map<string, unsigned long long> totalcountervalues)
 {
-	ptask = task = thread = 0;
-	group = 0;
-	startTime = duration = 0;
-	prvValue = 0;
+	this->ptask = ptask;
+	this->task = task;
+	this->thread = thread;
+	this->RegionName = region;
+	this->group = 0;
+	this->startTime = startTime;
+	this->duration = duration;
+	this->Counters = counters;
+	this->prvValue = 0;
+	this->TotalCounterValues = totalcountervalues;
+}
+
+Instance::~Instance (void)
+{
+	for (unsigned s = 0; s < Samples.size(); s++)
+		delete (Samples[s]);
+	Samples.clear();
 }
 
 void Instance::Show (void)
@@ -54,4 +71,16 @@ void Instance::Show (void)
 	for (it = Counters.begin(); it != Counters.end(); it++)
 		cout << *it << " ";
 	cout << endl;
+}
+
+bool Instance::hasCounter (string ctr) const
+{
+	//return Counters.find(ctr) != Counters.end();
+	return TotalCounterValues.count(ctr) > 0;
+}
+
+unsigned long long Instance::getTotalCounterValue (string ctr)
+{
+	assert (hasCounter(ctr));
+	return TotalCounterValues[ctr];
 }

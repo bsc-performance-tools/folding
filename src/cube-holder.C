@@ -93,7 +93,7 @@ void CubeHolder::generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *
 		Region *rtmp = c.def_region (ss.str(), 0, 0, "", "", "");
 		Cnode *ctmp = c.def_cnode (rtmp, "", 0, cnode);
 
-		InstanceGroup *ig = ic.InstanceGroups[g];
+		InstanceGroup *ig = ic.getInstanceGroup(g);
 
 		ig->setGeneralCubeTree (ctmp);
 
@@ -190,11 +190,13 @@ void CubeHolder::dumpLaunch (InstanceContainer &ic, ObjectSelection *os,
 
 		for (unsigned g = 0; g < ic.numGroups(); g++)
 		{
+			InstanceGroup *ig = ic.getInstanceGroup(g);
+
 			/* Get the group name */
-			string groupName = ic.InstanceGroups[g]->getGroupName();
+			string groupName = ig->getGroupName();
 
 			/* Get the general tree for this group */
-			Cnode *tree = ic.InstanceGroups[g]->getGeneralCubeTree();
+			Cnode *tree = ig->getGeneralCubeTree();
 
 			string gname = prefix + "." + common::removeUnwantedChars(RegionName) + "." + 
 			  os->toString (false, "any") + "." + common::removeSpaces (groupName);
@@ -249,96 +251,95 @@ void CubeHolder::dumpLaunch (InstanceContainer &ic, ObjectSelection *os,
 	launch.close();
 }
 
-void CubeHolder::EmitMetricFileLine (string dir, string metric, string file, unsigned line, unsigned val)
+void CubeHolder::EmitMetricFileLine (string dir, unsigned phase, string metric,
+	string file, unsigned line, unsigned val)
 {
 	ofstream f((dir + "/" + file + ".metrics").c_str(), std::ofstream::app);
 	if (f.is_open())
-		f << metric << " " << line << " " << val << endl;
+		f << phase << " " << metric << " " << line << " " << val << endl;
 	f.close();
 }
 
-void CubeHolder::EmitMetricFileLine (string dir, string metric, string file, unsigned line, double val)
+void CubeHolder::EmitMetricFileLine (string dir, unsigned phase, string metric,
+	string file, unsigned line, double val)
 {
 	ofstream f((dir + "/" + file + ".metrics").c_str(), std::ofstream::app);
 	if (f.is_open())
-		f << metric << " " << line << " " << val << endl;
+		f << phase << " " << metric << " " << line << " " << val << endl;
 	f.close();
 }
 
-void CubeHolder::dumpFileMetrics_Lines (string dir, InstanceGroup *ig, set<string> counters)
+void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
+	set<string> counters)
 {
-	vector< map< unsigned, unsigned > > oXline = ig->getOccurrencesPerLine();
-
-	for (unsigned u = 0; u < oXline.size(); u++)
-	{
-		map<unsigned, unsigned> occurrencesPerLine = oXline[u];
-
-		map<unsigned, unsigned>::iterator line;
-		for (line = occurrencesPerLine.begin(); line != occurrencesPerLine.end(); line++)
-		{
-			string fname;
-			int fline;
-			common::lookForCallerLineInfo (pcf, (*line).first, fname, fline);
-			EmitMetricFileLine (dir, "#Occurrences", fname, fline, (*line).second);
-		}
-	}
-}
-
-void CubeHolder::dumpFileMetrics_ASTs (string dir, InstanceGroup *ig, set<string> counters)
-{
-	vector< set< unsigned > > oXseenASTs = ig->getSeenASTs();
-	vector<double> bpts = ig->getInterpolationBreakpoints();
 	map<string, InterpolationResults*> iresults = ig->getInterpolated();
+	vector< map< unsigned, CodeRefTripletAccounting* > > aXline = ig->getAccountingPerLine();
+	vector<double> bpts = ig->getInterpolationBreakpoints();
 
-	for (unsigned phase = 0; phase < oXseenASTs.size(); phase++)
+	for (unsigned phase = 0; phase < aXline.size(); phase++)
 	{
 		double portion = bpts[phase+1] - bpts[phase];
 		double duration = (ig->mean()) * portion;
 		double inbetween = (bpts[phase+1] + bpts[phase]) / 2.0f;
 
-		set<unsigned> seenASTs = oXseenASTs[phase];
-		set<unsigned>::iterator a;
+		map<unsigned, CodeRefTripletAccounting*> accPerLine = aXline[phase];
+		map<unsigned, CodeRefTripletAccounting*>::iterator line;
 
-		for (a = seenASTs.begin(); a != seenASTs.end(); a++)
-		{
-			string routine;
-			string fname;
-			int bline, eline;
-			common::lookForFullCallerInfo (pcf, 0, *a, routine, fname, bline, eline);
+		unsigned total = 0;
+		for (line = accPerLine.begin(); line != accPerLine.end(); line++)
+			total += ((*line).second)->getCount();
+		unsigned threshold = 5*total / 100;
 
-			for (int line = bline; line <= eline; line++)
+		for (line = accPerLine.begin(); line != accPerLine.end(); line++)
+			if (((*line).second)->getCount() >= threshold)
 			{
-				/* Emit phase, duration & hwcounters */
-				EmitMetricFileLine (dir, "Phase", fname, line, phase+1);
-				EmitMetricFileLine (dir, "Duration(ms)", fname, line, duration / 1000000.f);
+				CodeRefTriplet crt = (*line).second->getCodeTriplet();
 
-				set<string>::iterator ctr;
-				for (ctr = counters.begin(); ctr != counters.end(); ctr++)
+				string filename;
+				string routine;
+				int fline, bline, eline;
+				common::lookForCallerFullInfo (pcf, crt.getCaller(), crt.getCallerLine(),
+				  crt.getCallerLineAST(), routine, filename, fline, bline, eline);
+
+				EmitMetricFileLine (dir, phase+1, "#Occurrences", filename, fline,
+				  ((*line).second)->getCount());
+
+				for (int l = bline; l <= eline; l++)
 				{
-					string nCounterID;
-					if (common::isMIPS(*ctr))
-						nCounterID = "MIPS";
-					else
-						nCounterID = (*ctr)+"pms";
+					/* Emit phase, duration & hwcounters */
+					EmitMetricFileLine (dir, phase+1, "Duration(ms)", filename, l, duration / 1000000.f);
 
-					double hwcvalue = (iresults[*ctr])->getSlopeAt (inbetween);
-					EmitMetricFileLine (dir, nCounterID, fname, line, hwcvalue);
+					set<string>::iterator ctr;
+					for (ctr = counters.begin(); ctr != counters.end(); ctr++)
+					{
+						string nCounterID;
+						if (common::isMIPS(*ctr))
+							nCounterID = "MIPS";
+						else
+							nCounterID = (*ctr)+"pms";
+
+						double hwcvalue = (iresults[*ctr])->getSlopeAt (inbetween);
+						EmitMetricFileLine (dir, phase+1, nCounterID, filename, l, hwcvalue);
+					}
 				}
 			}
-		}
 	}
 }
 
 void CubeHolder::dumpFileMetrics (string dir, InstanceContainer &ic, set<string> counters)
 {
 	unsigned maxgroup = 0;
+	InstanceGroup *maxig = ic.getInstanceGroup(maxgroup);
 	for (unsigned g = 1; g < ic.numGroups(); g++)
-		if (ic.InstanceGroups[maxgroup]->numInstances() < ic.InstanceGroups[g]->numInstances())
+	{
+		InstanceGroup *ig = ic.getInstanceGroup(g);
+		if (maxig->numInstances() < ig->numInstances())
+		{
 			maxgroup = g;
+			maxig = ic.getInstanceGroup(maxgroup);
+		}
+	}
 
-	InstanceGroup *ig = ic.InstanceGroups[maxgroup];
-
-	dumpFileMetrics_Lines (dir, ig, counters);
-	dumpFileMetrics_ASTs (dir, ig, counters);
+	dumpFileMetrics_Lines_ASTs (dir, maxig, counters);
 }
 

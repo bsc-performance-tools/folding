@@ -36,28 +36,44 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 #include "sample.H"
 
 #include <iostream>
+#include <assert.h>
+
+Sample::Sample (unsigned long long sTime, unsigned long long iTime, double nTime,
+      map<string, unsigned long long> & icountervalue,
+      map<string, double> & ncountervalue,
+      map<unsigned, CodeRefTriplet> & codetriplet)
+{
+	this->sTime = sTime;
+	this->iTime = iTime;
+	this->nTime = nTime;
+	this->iCounterValue = icountervalue;
+	this->nCounterValue = ncountervalue;
+	this->CodeTriplet = codetriplet;
+}
+
+Sample::~Sample (void)
+{
+}
 
 void Sample::show (void)
 {
-	map<unsigned, CodeRefTriplet>::reverse_iterator i = CodeTriplet.rbegin();
-	for (; i != CodeTriplet.rend(); i++)
-		cout << "Sample [" << (*i).first << " <" << (*i).second.Caller << "," << (*i).second.CallerLine << "," << (*i).second.CallerLineAST << "> ] @ " << sTime << endl;
+	map<unsigned, CodeRefTriplet>::reverse_iterator it1;
+	for (it1 = CodeTriplet.rbegin(); it1 != CodeTriplet.rend(); it1++)
+		cout << "Sample [" << (*it1).first << " <" << (*it1).second.getCaller() 
+		  << "," << (*it1).second.getCallerLine() << "," 
+		  << (*it1).second.getCallerLineAST() << "> ] @ " << sTime;
+	map<string, unsigned long long>::iterator it2;
+	cout << "[";
+	for (it2 = iCounterValue.begin(); it2 != iCounterValue.end(); it2++)
+		cout << " " << (*it2).first << "," << (*it2).second;
+	cout << " ]" << endl;
 }
 
 void Sample::processCodeTriplets (void)
 {
-/*
-	{
-		cout << "PRE size = " << CodeTriplet.size() << endl;
-		map<unsigned, CodeRefTriplet>::iterator i = CodeTriplet.begin();
-		for (; i != CodeTriplet.end(); i++)
-			cout << "PRE Sample CodeTriplet < " << (*i).second.Caller << "," << (*i).second.CallerLine << "," << (*i).second.CallerLineAST << " >" << endl;
-	}
-*/
-
 	/* Remove head callers 0..2 */
 	map<unsigned, CodeRefTriplet>::iterator i = CodeTriplet.begin();
-	if ((*i).second.Caller <= 2) /* 0 = End, 1 = Unresolved, 2 = Not found */
+	if ((*i).second.getCaller() <= 2) /* 0 = End, 1 = Unresolved, 2 = Not found */
 	{
 		do
 		{
@@ -65,7 +81,7 @@ void Sample::processCodeTriplets (void)
 			if (CodeTriplet.size() == 0)
 				break;
 			i = CodeTriplet.begin();
-		} while ((*i).second.Caller <= 2);
+		} while ((*i).second.getCaller() <= 2);
 	}
 
 	/* Remove tail callers 0..2 */
@@ -74,25 +90,35 @@ void Sample::processCodeTriplets (void)
 	map<unsigned, CodeRefTriplet>::iterator it;
 	while (i != CodeTriplet.end())
 	{
-		if ((*i).second.Caller <= 2 && !tailFound)
+		if ((*i).second.getCaller() <= 2 && !tailFound)
 		{
 			it = i;
 			tailFound = true;
 		}
-		else if ((*i).second.Caller > 2)
+		else if ((*i).second.getCaller() > 2)
 			tailFound = false;
 		i++;
 	}
 	if (tailFound)
 		CodeTriplet.erase (it, CodeTriplet.end());
-
-/*
-	{
-		cout << "POST size = " << CodeTriplet.size() << endl;
-		map<unsigned, CodeRefTriplet>::iterator i = CodeTriplet.begin();
-		for (; i != CodeTriplet.end(); i++)
-			cout << "POST Sample CodeTriplet < " << (*i).second.Caller << "," << (*i).second.CallerLine << "," << (*i).second.CallerLineAST << " >" << endl;
-	}
-*/
 }
 
+bool Sample::hasCounter (string ctr) const
+{
+	return nCounterValue.count (ctr) > 0;
+}
+
+double Sample::getNCounterValue (string ctr)
+{
+	assert (hasCounter(ctr));
+	return nCounterValue[ctr];
+}
+
+bool Sample::hasCaller (unsigned caller)
+{
+	map<unsigned, CodeRefTriplet>::iterator i;
+	for (i = CodeTriplet.begin(); i != CodeTriplet.end(); i++)
+		if ((*i).second.getCaller() == caller)
+			return true;
+	return false;
+}

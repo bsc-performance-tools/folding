@@ -74,17 +74,17 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 
 			unsigned ncounters;
 
-			if (i != NULL && i->Samples.size() > 0)
+			if (i != NULL && i->getNumSamples() > 0)
 			{
 				bool used = false;
 
-				if (os->match (i->ptask, i->task, i->thread))
+				if (os->match (i->getptask(), i->gettask(), i->getthread()))
 				{
 					Instances.push_back (i);
 					used = true;
 				}
 				if (osfeed != NULL)
-					if (osfeed->match (i->ptask, i->task, i->thread))
+					if (osfeed->match (i->getptask(), i->gettask(), i->getthread()))
 					{
 						feedInstances.push_back (i);
 						used = true;
@@ -95,21 +95,21 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 					delete i;
 			}
 
-			i = new Instance;
-			if (i == NULL)
-			{
-				cerr << "Fatal error! Cannot allocate memory for a new instance!" << endl;
-				exit (-1);
-			}
 
-			file >> i->ptask;
-			file >> i->task;
-			file >> i->thread;
-			file >> i->RegionName;
-			allregions.insert (i->RegionName);
-			file >> i->startTime;
-			file >> i->duration;
+			unsigned ptask, task, thread;
+			string RegionName;
+			unsigned long long startTime, duration;
 
+			file >> ptask;
+			file >> task;
+			file >> thread;
+			file >> RegionName;
+			allregions.insert (RegionName);
+			file >> startTime;
+			file >> duration;
+
+			set<string> icounters;
+			map<string, unsigned long long> itotalcountervalues;
 			file >> ncounters;
 			while (ncounters > 0)
 			{
@@ -117,10 +117,18 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 				unsigned long long countervalue;
 				file >> countername;
 				allcounters.insert (countername);
-				i->Counters.insert (countername);
+				icounters.insert (countername);
 				file >> countervalue;
-				i->TotalCounterValues[countername] = countervalue;
+				itotalcountervalues[countername] = countervalue;
 				ncounters--;
+			}
+
+			i = new Instance (ptask, task, thread, RegionName, startTime,
+			  duration, icounters, itotalcountervalues);
+			if (i == NULL)
+			{
+				cerr << "Fatal error! Cannot allocate memory for a new instance!" << endl;
+				exit (-1);
 			}
 		}
 		else if (type == 'S')
@@ -131,20 +139,16 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 
 			assert (i != NULL);
 
-			Sample *s = new Sample;
-			if (i == NULL)
-			{
-				cerr << "Fatal error! Cannot allocate memory for a new sample!" << endl;
-				exit (-1);
-			}
+			unsigned long long sTime, iTime;
+			double nTime;
 
+			file >> sTime;
+			file >> iTime;
+			nTime = ((double) iTime) / ((double) i->getDuration());
+
+			map<string, unsigned long long> icv;
+			map<string, double> ncv;
 			unsigned ncounters;
-			unsigned ncodereftriplets;
-
-			file >> s->sTime;
-			file >> s->iTime;
-			s->nTime = ((double) s->iTime) / ((double) i->duration);
-
 			file >> ncounters;
 			while (ncounters > 0)
 			{
@@ -152,44 +156,53 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 				unsigned long long countervalue;
 				file >> countername;
 				file >> countervalue;
-				s->iCounterValue[countername] = countervalue;
-				s->nCounterValue[countername] = ((double) countervalue / (double) i->TotalCounterValues[countername]);
+				icv[countername] = countervalue;
+				ncv[countername] =
+				  ((double) countervalue / (double) i->getTotalCounterValue (countername));
 				ncounters--;
 			}
 
+			map<unsigned, CodeRefTriplet> ct;
+			unsigned ncodereftriplets;
 			file >> ncodereftriplets;
 			while (ncodereftriplets > 0)
 			{
 				unsigned depth;
-				CodeRefTriplet triplet;
+				unsigned c, cl, clast;
 
 				file >> depth;
-				file >> triplet.Caller;
-				file >> triplet.CallerLine;
-				file >> triplet.CallerLineAST;
-
-				s->CodeTriplet[depth] = triplet;
-
+				file >> c;
+				file >> cl;
+				file >> clast;
+				CodeRefTriplet triplet (c, cl, clast);
+				ct[depth] = triplet;
 				ncodereftriplets--;
+			}
+
+			Sample *s = new Sample (sTime, iTime, nTime, icv, ncv, ct);
+			if (i == NULL)
+			{
+				cerr << "Fatal error! Cannot allocate memory for a new sample!" << endl;
+				exit (-1);
 			}
 
 			s->processCodeTriplets ();
 
-			i->Samples.push_back (s);
+			i->addSample (s);
 		}
 	}
 
-	if (i != NULL && i->Samples.size() > 0)
+	if (i != NULL && i->getNumSamples() > 0)
 	{
 		bool used = false;
 
-		if (os->match (i->ptask, i->task, i->thread))
+		if (os->match (i->getptask(), i->gettask(), i->getthread()))
 		{
 			Instances.push_back (i);
 			used = true;
 		}
 		if (osfeed != NULL)
-			if (osfeed->match (i->ptask, i->task, i->thread))
+			if (osfeed->match (i->getptask(), i->gettask(), i->getthread()))
 			{
 				feedInstances.push_back (i);
 				used = true;

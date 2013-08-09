@@ -37,6 +37,7 @@
 class InstanceSeparatorNone : public InstanceSeparator
 {
 	public:
+	InstanceSeparatorNone (bool keepallgroups);
 	unsigned separateInGroups (vector<Instance*> &vi);
 	string details(void);
 	string nameGroup (unsigned);

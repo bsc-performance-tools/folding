@@ -40,12 +40,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 
 bool Callstack::hasMain (Sample* s, unsigned mainid)
 {
-	map<unsigned, CodeRefTriplet>::iterator i = s->CodeTriplet.begin();
-	for (; i != s->CodeTriplet.end(); i++)
-		if ((*i).second.Caller == mainid)
-			return true;
-
-	return false;
+	return s->hasCaller (mainid);
 }
 
 Sample * Callstack::lookLongestWithMain (vector<Sample*> &vs, unsigned mainid)
@@ -57,20 +52,21 @@ Sample * Callstack::lookLongestWithMain (vector<Sample*> &vs, unsigned mainid)
 	for (unsigned u = 0; u < vs.size(); u++)
 	{
 		Sample *s = vs[u];
-		map<unsigned, CodeRefTriplet>::iterator i = s->CodeTriplet.begin();
-		for (; i != s->CodeTriplet.end(); i++)
+		map<unsigned, CodeRefTriplet> ct = s->getCodeTriplets();
+		map<unsigned, CodeRefTriplet>::iterator i;
+		for (i = ct.begin(); i != ct.end(); i++)
 		{
-			if ((*i).second.Caller == mainid)
+			if ((*i).second.getCaller() == mainid)
 			{
 				if (!found)
 				{
 					res = s;
-					longitude = s->CodeTriplet.size();
+					longitude = s->getCodeRefTripletSize();
 					found = true;
 				}
 				else
 				{
-					if (s->CodeTriplet.size() > longitude)
+					if (s->getCodeRefTripletSize() > longitude)
 						res = s;
 				}
 			}
@@ -86,8 +82,7 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 	vector<double> phase_ranges = ig->getInterpolationBreakpoints();
 	vector<Instance*> vi = ig->getInstances();
 	vector<CallstackTree *> vtree;
-	vector< map< unsigned, unsigned> > occPerLine;
-	vector< set< unsigned > > sASTs;
+	vector< map< unsigned, CodeRefTripletAccounting*> > accPerLine;
 
 	if (common::DEBUG())
 		cout << "generateTree for InstanceGroup " << ig << " mainid = " << mainid << endl;
@@ -100,18 +95,20 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 
 	for (unsigned phase = 0; phase < phase_ranges.size()-1; phase++)
 	{
-		double phase_begin = phase_ranges[phase];
-		double phase_end = phase_ranges[phase+1];
+		double delta = phase_ranges[phase+1] - phase_ranges[phase];
+		double phase_begin = (phase_ranges[phase] == 0.0f) ? 0.0f : phase_ranges[phase]   + 0.05*delta;
+		double phase_end = (phase_ranges[phase+1] == 1.0f) ? 1.0f : phase_ranges[phase+1] - 0.05*delta;
 
 		vector<Sample *> vs;
 		for (unsigned i = 0; i < vi.size(); i++)
-			for (unsigned s = 0; s < vi[i]->Samples.size(); s++)
-				if (vi[i]->Samples[s]->nTime >= phase_begin && 
-				    vi[i]->Samples[s]->nTime < phase_end)
-					vs.push_back (vi[i]->Samples[s]);
+		{
+			vector<Sample*> v = vi[i]->getSamples();
+			for (unsigned s = 0; s < v.size(); s++)
+				if (v[s]->getNTime() >= phase_begin && v[s]->getNTime() < phase_end)
+					vs.push_back (v[s]);
+		}
 
-		map<unsigned, unsigned> occurrencesPerLine;
-		set<unsigned> seenASTs;
+		map<unsigned, CodeRefTripletAccounting*> accountPerLine;
 
 		Sample *sroot = lookLongestWithMain (vs, mainid);
 
@@ -135,7 +132,7 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 			vector<Sample*>::iterator it = vs.begin();
 			while (it != vs.end())
 			{
-				if (*it == sroot || (*it)->CodeTriplet.size() == 0)
+				if (*it == sroot || (*it)->getCodeRefTripletSize() == 0)
 					it = vs.erase (it);
 				else
 					it++;
@@ -165,22 +162,24 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 					{
 						if (common::DEBUG())
 							cout << "Deepest common caller info : depth = " << d 
-							  << " sample depth = " << s->CodeTriplet.size()
+							  << " sample depth = " << s->getCodeRefTripletSize()
 							  << " where in CT = " << ct << endl;
 
-						map<unsigned, CodeRefTriplet>::iterator top = s->CodeTriplet.begin();
+						map<unsigned, CodeRefTriplet> crt = s->getCodeTriplets();
+						map<unsigned, CodeRefTriplet>::iterator top = crt.begin();
 						CodeRefTriplet codetop = (*top).second;
-						if (occurrencesPerLine.count (codetop.CallerLine) == 0)
-							occurrencesPerLine[codetop.CallerLine] = 1;
-						else
-							occurrencesPerLine[codetop.CallerLine]++;
-						seenASTs.insert (codetop.CallerLineAST);
-
-						if (d == s->CodeTriplet.size())
+						if (accountPerLine.count (codetop.getCallerLine()) == 0)
 						{
-							ct->increaseOccurrences ();
+							CodeRefTripletAccounting *crta = new CodeRefTripletAccounting (codetop);
+							accountPerLine[codetop.getCallerLine()] = crta;
 						}
 						else
+						{
+							CodeRefTripletAccounting *crta = accountPerLine[codetop.getCallerLine()];
+							crta->increaseCount();
+						}
+
+						if (d != s->getCodeRefTripletSize())
 						{
 							CallstackTree *child = new CallstackTree (s, d);
 
@@ -200,9 +199,11 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 								root->show();
 							}
 						}
+						else
+							ct->increaseOccurrences ();
+
 						it = copy.erase (it);
 						inserted++;
-
 					}
 					else
 						it++;
@@ -221,7 +222,7 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 				Instance *inst = vi[0];
 				cout << "Warning! " << copy.size() << " unused samples of "
 				  << vs.size() << " to generate the call-tree for Region "
-				  << inst->RegionName << " Group " << inst->group + 1 
+				  << inst->getRegionName() << " Group " << inst->getGroup() + 1 
 				  << " Phase " << phase + 1 << endl;
 
 				if (common::DEBUG())
@@ -238,19 +239,16 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 			}
 
 			vtree.push_back (root);
-			occPerLine.push_back (occurrencesPerLine);
-			sASTs.push_back (seenASTs);
+			accPerLine.push_back (accountPerLine);
 		}
 		else
 			vtree.push_back (NULL);
 	}
 
 	assert (vtree.size() == phase_ranges.size()-1);
-	assert (occPerLine.size() == phase_ranges.size()-1);
-	assert (sASTs.size() == phase_ranges.size()-1);
+	assert (accPerLine.size() == phase_ranges.size()-1);
 
 	ig->setCallstackTrees (vtree);
-	ig->setOccurrencesPerLine (occPerLine);
-	ig->setSeenASTs (sASTs);
+	ig->setAccountingPerLine (accPerLine);
 }
 
