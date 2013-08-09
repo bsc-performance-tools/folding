@@ -1,4 +1,4 @@
-SUBDIRS = service-kriger service-R
+SUBDIRS = service-kriger service-R common
 
 bin_PROGRAMS = fuse codeblocks extract interpolate foldingtypes
 noinst_PROGRAMS = max-diff-interpolation-points mean-diff-interpolation-points
@@ -7,20 +7,16 @@ foldingtypes_SOURCES = \
  folding-types.C interpolate.H
 
 codeblocks_SOURCES = \
- common.C common.H \
  codeblocks.C 
 
 fuse_SOURCES = \
- common.C common.H \
  fuse.C 
 
 extract_SOURCES = \
- common.C common.H \
  extract.C \
  interpolate.H
 
 interpolate_SOURCES = \
- common.C common.H \
  codereftriplet.H codereftriplet.C codereftriplet-accounting.H codereftriplet-accounting.C \
  sample.C sample.H \
  sample-selector.H \
@@ -52,11 +48,11 @@ endif
 max_diff_interpolation_points_SOURCES = max-diff-interpolation-points.c
 mean_diff_interpolation_points_SOURCES = mean-diff-interpolation-points.c
 
-fuse_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
-codeblocks_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
-foldingtypes_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
-extract_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
-interpolate_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Iservice-kriger -Iservice-R -g -O
+fuse_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Icommon -g -O 
+codeblocks_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Icommon -g -O
+foldingtypes_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Icommon -g -O
+extract_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Icommon -g -O
+interpolate_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Iservice-kriger -Iservice-R -Icommon -g -O
 if HAVE_CLUSTERING_SUITE
 interpolate_CXXFLAGS += -I$(CLUSTERING_HOME)/include
 endif
@@ -71,11 +67,11 @@ extract_CXXFLAGS += -I$(BOOST_HOME)/include
 interpolate_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
-fuse_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
-codeblocks_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
-foldingtypes_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig 
-extract_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
-interpolate_LDFLAGS = -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm -Lservice-R -lR
+fuse_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
+codeblocks_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
+foldingtypes_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig
+extract_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
+interpolate_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm -Lservice-R -lR
 if HAVE_CLUSTERING_SUITE
 interpolate_LDFLAGS += -L$(CLUSTERING_HOME)/lib -lClustering -lBasicClasses
 endif
