@@ -51,32 +51,32 @@ class InterpolationResults
 	InterpolationResults (unsigned count);
 	~InterpolationResults (void);
 
-	unsigned getCount (void)
+	unsigned getCount (void) const
 	  { return count; }
 	double *getInterpolationResultsPtr (void)
 	  { return interpolation; }
 	double *getSlopeResultsPtr (void)
 	  { return slope; }
 	void calculateSlope (double factor);
-	bool isSlopeCalculated (void)
+	bool isSlopeCalculated (void) const
 	  { return slope_calculated; }
-	double factorSlope (void)
+	double factorSlope (void) const
 	  { return slope_calculated?slope_factor:0; }
 	void setAvgCounterValue (double d)
 	  { avgCounterValue = d; }
-	double getAvgCounterValue (void)
+	double getAvgCounterValue (void) const
 	  { return avgCounterValue; }
 	void setInterpolationDetails (string s)
 	  { interpolationDetails = s; }
-	string getInterpolationDetails (void)
+	string getInterpolationDetails (void) const
 	  { return interpolationDetails; }
 	vector<double> getBreakpoints (void)
 	  { return Breakpoints; }
 	void setBreakpoints (vector<double> &breakpoints)
 	  { Breakpoints = breakpoints; }
 
-	double getSlopeAt (double pos);
-	double getSlopeAt (unsigned pos);
+	double getSlopeAt (double pos) const;
+	double getSlopeAt (unsigned pos) const;
 };
 
 #endif /* INTERPOLATION_RESULTS_H_INCLUDED */

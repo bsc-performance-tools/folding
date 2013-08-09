@@ -89,13 +89,12 @@ unsigned InstanceSeparatorAuto::separateInGroups (vector<Instance*> &vi)
 	return ngroups;
 }
 
-string InstanceSeparatorAuto::details (void)
+string InstanceSeparatorAuto::details (void) const
 {
-	string s = "Auto / Bucket size " + common::convertDouble (((double) bucketsize) / 1000000. , 3) + " ms";
-	return s;
+	return string ("Auto / Bucket size ") + common::convertDouble (((double) bucketsize) / 1000000. , 3) + " ms";
 }
 
-string InstanceSeparatorAuto::nameGroup (unsigned g)
+string InstanceSeparatorAuto::nameGroup (unsigned g) const
 {
 	return string ("Group ") + common::convertInt (g+1);
 }

@@ -45,7 +45,7 @@ class InterpolationRstrucchange : public Interpolation
 
 	public:
 	InterpolationRstrucchange (unsigned steps, double H);
-	string details (void);
+	string details (void) const;
 };
 
 #endif

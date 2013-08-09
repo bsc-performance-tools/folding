@@ -50,7 +50,7 @@ InterpolationKriger::InterpolationKriger (unsigned steps, double nuget,
 	this->nuget = nuget;
 }
 
-string InterpolationKriger::details (void)
+string InterpolationKriger::details (void) const
 {
 	stringstream ss;
 	ss << setprecision(1) << scientific << nuget;

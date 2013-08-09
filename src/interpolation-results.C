@@ -73,13 +73,13 @@ void InterpolationResults::calculateSlope (double factor)
 	slope_calculated = true;
 }
 
-double InterpolationResults::getSlopeAt (unsigned pos)
+double InterpolationResults::getSlopeAt (unsigned pos) const
 {
 	assert (pos >= 0 && pos < count);
 	return slope[pos];
 }
 
-double InterpolationResults::getSlopeAt (double pos)
+double InterpolationResults::getSlopeAt (double pos) const
 {
 	assert (pos >= 0 && pos <= 1.0f);
 	unsigned index = ((unsigned) (pos * count));

@@ -75,7 +75,6 @@ void Instance::Show (void)
 
 bool Instance::hasCounter (string ctr) const
 {
-	//return Counters.find(ctr) != Counters.end();
 	return TotalCounterValues.count(ctr) > 0;
 }
 

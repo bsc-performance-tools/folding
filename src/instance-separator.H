@@ -46,8 +46,8 @@ class InstanceSeparator
 	public:
 	InstanceSeparator (bool keepallgroups);
 	virtual unsigned separateInGroups (vector<Instance*> &vi) = 0;
-	virtual string details(void) = 0;
-	virtual string nameGroup (unsigned) = 0;
+	virtual string details(void) const = 0;
+	virtual string nameGroup (unsigned) const = 0;
 	void KeepLeadingGroup (vector<Instance*> &Instances, unsigned ngroups);
 };
 

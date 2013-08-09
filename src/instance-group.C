@@ -56,12 +56,12 @@ void InstanceGroup::add (Instance *i)
 	Instances.push_back (i);
 }
 
-unsigned InstanceGroup::numInstances (void)
+unsigned InstanceGroup::numInstances (void) const
 {
 	return Instances.size();
 }
 
-unsigned InstanceGroup::numSamples (void)
+unsigned InstanceGroup::numSamples (void) const
 {
 	unsigned tmp = 0;
 	for (unsigned u = 0; u < Instances.size(); u++)
@@ -83,12 +83,12 @@ void InstanceGroup::moveToExcluded (Instance *i)
 		}
 }
 
-unsigned InstanceGroup::numExcludedInstances (void)
+unsigned InstanceGroup::numExcludedInstances (void) const
 {
 	return excludedInstances.size();
 }
 
-unsigned InstanceGroup::numExcludedSamples (string counter)
+unsigned InstanceGroup::numExcludedSamples (string counter) const
 {
 	unsigned total = 0;
 
@@ -103,7 +103,7 @@ unsigned InstanceGroup::numExcludedSamples (string counter)
 	return total;
 }
 
-unsigned InstanceGroup::numExcludedSamples (void)
+unsigned InstanceGroup::numExcludedSamples (void) const
 {
 	unsigned tmp = 0;
 	for (unsigned u = 0; u < excludedInstances.size(); u++)
@@ -112,7 +112,7 @@ unsigned InstanceGroup::numExcludedSamples (void)
 	return tmp;
 }
 
-unsigned long long InstanceGroup::mean (void)
+unsigned long long InstanceGroup::mean (void) const
 {
 	unsigned long long tmp = 0;
 
@@ -125,7 +125,7 @@ unsigned long long InstanceGroup::mean (void)
 	return tmp / Instances.size();
 }
 
-unsigned long long InstanceGroup::median (void)
+unsigned long long InstanceGroup::median (void) const
 {
 	vector<unsigned long long> durations;
 
@@ -140,7 +140,7 @@ unsigned long long InstanceGroup::median (void)
 	return durations[Instances.size() / 2];
 }
 
-double InstanceGroup::stdev (void)
+double InstanceGroup::stdev (void) const
 {
 	double tmp = 0;
 	double _mean;
@@ -158,7 +158,7 @@ double InstanceGroup::stdev (void)
 	return sqrt ( tmp / (Instances.size() -1) );
 }
 
-unsigned long long InstanceGroup::MAD (void)
+unsigned long long InstanceGroup::MAD (void) const
 {
 	vector<unsigned long long> absmediandiff;
 	unsigned long long _median;

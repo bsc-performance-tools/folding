@@ -44,8 +44,8 @@ class InstanceSeparatorDBSCAN : public InstanceSeparator
 	InstanceSeparatorDBSCAN (unsigned minpoints, double eps,
 	  bool keepallgroups);
 	unsigned separateInGroups (vector<Instance*> &vi);
-	string details(void);
-	string nameGroup (unsigned);
+	string details(void) const;
+	string nameGroup (unsigned) const;
 };
 
 #endif /* INSTANCE_SEPARATOR_DBSCAN_H_INCLUDED */

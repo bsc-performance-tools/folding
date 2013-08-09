@@ -130,13 +130,12 @@ unsigned InstanceSeparatorDBSCAN::separateInGroups (vector<Instance*> &vi)
 	return ngroups;
 }
 
-string InstanceSeparatorDBSCAN::details(void)
+string InstanceSeparatorDBSCAN::details(void) const
 {
-	string s = "DBSCAN / MinPoints = " + common::convertInt (minpoints) + " eps = " + common::convertDouble (eps, 3);
-	return s;
+	return string("DBSCAN / MinPoints = ") + common::convertInt (minpoints) + " eps = " + common::convertDouble (eps, 3);
 }
 
-string InstanceSeparatorDBSCAN::nameGroup (unsigned g)
+string InstanceSeparatorDBSCAN::nameGroup (unsigned g) const
 {
 	if (keepallgroups)
 	{
