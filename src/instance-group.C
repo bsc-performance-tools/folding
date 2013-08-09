@@ -245,18 +245,26 @@ void InstanceGroup::dumpData (ObjectSelection *os, string prefix)
 			string counter = (*it).first;
 			vector<Sample*> usedSamples = (*it).second;
 			for (unsigned u = 0; u < usedSamples.size(); u++)
-				odata << "u" << ";" << regionName << ";" << numGroup << ";"
-				  << usedSamples[u]->getNTime() << ";" << counter << ";"
-				  << usedSamples[u]->getNCounterValue(counter) << endl;
+			{
+				Sample *s = usedSamples[u];
+				if (s->hasCounter(counter))
+					odata << "u" << ";" << regionName << ";" << numGroup << ";"
+					  << s->getNTime() << ";" << counter << ";"
+					  << s->getNCounterValue(counter) << endl;
+			}
 		}
 		for (it = unused.begin(); it != unused.end(); it++)
 		{
 			string counter = (*it).first;
 			vector<Sample*> unusedSamples = (*it).second;
 			for (unsigned u = 0; u < unusedSamples.size(); u++)
-				odata << "un" << ";" << regionName << ";" << numGroup << ";"
-				  << unusedSamples[u]->getNTime() << ";" << counter << ";"
-				  << unusedSamples[u]->getNCounterValue(counter) << endl;
+			{
+				Sample *s = unusedSamples[u];
+				if (s->hasCounter(counter))
+					odata << "un" << ";" << regionName << ";" << numGroup << ";"
+					  << s->getNTime() << ";" << counter << ";"
+					  << s->getNCounterValue(counter) << endl;
+			}
 		}
 	}
 
