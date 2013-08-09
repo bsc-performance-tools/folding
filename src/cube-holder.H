@@ -60,15 +60,13 @@ class CubeHolder
 	void setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase,
 	  set<string> counters);
 
-	void dumpFileMetrics_Lines (string dir, InstanceGroup *ig,
-	  set<string> counters);
-	void dumpFileMetrics_ASTs (string dir, InstanceGroup *ig,
+	void dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 	  set<string> counters);
 
-	void EmitMetricFileLine (string dir, string metric, string file, 
-	  unsigned line, unsigned val);
-	void EmitMetricFileLine (string dir, string metric, string file,
-	  unsigned line, double val);
+	void EmitMetricFileLine (string dir, unsigned phase, string metric,
+	  string file, unsigned line, unsigned val);
+	void EmitMetricFileLine (string dir, unsigned phase, string metric,
+	  string file, unsigned line, double val);
 
 	public:
 	CubeHolder (UIParaverTraceConfig *pcf, set<string> &counters);

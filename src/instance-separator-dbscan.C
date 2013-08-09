@@ -45,7 +45,9 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <iostream>
 #include <assert.h>
 
-InstanceSeparatorDBSCAN::InstanceSeparatorDBSCAN (unsigned minpoints, double epsilon)
+InstanceSeparatorDBSCAN::InstanceSeparatorDBSCAN (unsigned minpoints, 
+	double epsilon, bool keepallgroups)
+	: InstanceSeparator (keepallgroups)
 {
 	this->minpoints = minpoints;
 	this->eps = epsilon;
@@ -60,7 +62,7 @@ unsigned InstanceSeparatorDBSCAN::separateInGroups (vector<Instance*> &vi)
 
 	for (unsigned u = 0; u < vi.size(); u++)
 	{
-		double d = vi[u]->duration;
+		double d = vi[u]->getDuration();
 		vector<double> ds;
 		ds.push_back (d);
 		Point *p = new Point (ds);
@@ -68,13 +70,13 @@ unsigned InstanceSeparatorDBSCAN::separateInGroups (vector<Instance*> &vi)
 
 		if (min != 0 || max != 0)
 		{
-			if (vi[u]->duration > max)
-				max = vi[u]->duration;
-			else if (vi[u]->duration < min)
-				min = vi[u]->duration;
+			if (vi[u]->getDuration() > max)
+				max = vi[u]->getDuration();
+			else if (vi[u]->getDuration() < min)
+				min = vi[u]->getDuration();
 		}
 		else
-			min = max = vi[u]->duration;
+			min = max = vi[u]->getDuration();
 	}
 
 	vector<const Point*> vcp;
@@ -115,10 +117,17 @@ unsigned InstanceSeparatorDBSCAN::separateInGroups (vector<Instance*> &vi)
 	{
 		if (clusters[u] > ngroups)
 			ngroups = clusters[u];
-		vi[u]->group = clusters[u];
+		vi[u]->setGroup (clusters[u]);
+	}
+	ngroups++;
+
+	if (!keepallgroups && ngroups > 1)
+	{
+		KeepLeadingGroup (vi, ngroups);
+		ngroups = 1;
 	}
 
-	return ngroups+1;
+	return ngroups;
 }
 
 string InstanceSeparatorDBSCAN::details(void)
@@ -129,8 +138,13 @@ string InstanceSeparatorDBSCAN::details(void)
 
 string InstanceSeparatorDBSCAN::nameGroup (unsigned g)
 {
-	if (g == 0)
-		return "Noise";
+	if (keepallgroups)
+	{
+		if (g == 0)
+			return "Noise";
+		else
+			return string ("Group ") + common::convertInt (g);
+	}
 	else
-		return string ("Group ") + common::convertInt (g);
+		return string ("Group ") + common::convertInt (g+1);
 }

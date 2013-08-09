@@ -35,10 +35,15 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "instance-separator-none.H"
 
+InstanceSeparatorNone::InstanceSeparatorNone (bool keepallgroups)
+	: InstanceSeparator (keepallgroups)
+{
+}
+
 unsigned InstanceSeparatorNone::separateInGroups (vector<Instance*> &vi)
 {
 	for (unsigned i = 0; i < vi.size(); i++)
-		vi[i]->group = 0;
+		vi[i]->setGroup (0);
 
 	return 1;
 }

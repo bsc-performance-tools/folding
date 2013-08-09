@@ -34,33 +34,13 @@
 
 #include "map"
 
+#include "codereftriplet.H"
+
 using namespace std;
-
-class CodeRefTriplet
-{
-	public:
-	unsigned long long Caller;
-	unsigned long long CallerLine;
-	unsigned long long CallerLineAST;
-
-
-	bool operator==(const CodeRefTriplet &other) const 
-	  { return Caller == other.Caller && 
-	         CallerLine == other.CallerLine &&
-	         CallerLineAST == other.CallerLineAST; }
-
-#if 0
-	bool operator!=(const CodeRefTriplet &other) const 
-	  { return !(*this == other); } 
-
-	bool operator< (const CodeRefTriplet &other) const
-	  { return Caller < other.Caller; }
-#endif
-};
 
 class Sample
 {
-	public:
+	private:
 	unsigned long long sTime; /* integral time of the sample */
 	unsigned long long iTime; /* integral time since start of instance */
 	double nTime; /* normalized time since start of instance */
@@ -69,9 +49,26 @@ class Sample
 	map<string, double> nCounterValue; /* normalized counter value */
 	map<unsigned, CodeRefTriplet> CodeTriplet; /* Code reference triplets (caller, callerline, callerlineAST) */
 
+	public:
+	Sample (unsigned long long sTime, unsigned long long iTime, double nTime,
+	  map<string, unsigned long long> & icountervalue,
+	  map<string, double> & ncountervalue,
+	  map<unsigned, CodeRefTriplet> & codetriplet);
+	~Sample (void);
+
 	void processCodeTriplets (void);
 	void show (void);
-
+	double getNTime (void) const
+	  { return nTime; }
+	bool hasCounter (string ctr) const;
+	double getNCounterValue (string ctr);
+	map<string, double> getNCounterValue(void)
+	  { return nCounterValue; }
+	map<unsigned, CodeRefTriplet> getCodeTriplets(void)
+	  { return CodeTriplet; }
+	bool hasCaller (unsigned caller);
+	unsigned getCodeRefTripletSize(void) const
+	  { return CodeTriplet.size(); }
 };
 
 #endif

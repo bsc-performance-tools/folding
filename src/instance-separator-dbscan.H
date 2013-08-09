@@ -41,7 +41,8 @@ class InstanceSeparatorDBSCAN : public InstanceSeparator
 	unsigned minpoints;
 
 	public:
-	InstanceSeparatorDBSCAN (unsigned minpoints, double eps);
+	InstanceSeparatorDBSCAN (unsigned minpoints, double eps,
+	  bool keepallgroups);
 	unsigned separateInGroups (vector<Instance*> &vi);
 	string details(void);
 	string nameGroup (unsigned);

@@ -49,7 +49,7 @@ void SampleSelectorDistance::configure (unsigned limit)
 	this->limitset = true;
 }
 
-static bool sortSamplesByTime (Sample *s1, Sample *s2) { return s1->nTime < s2->nTime; }
+static bool sortSamplesByTime (Sample *s1, Sample *s2) { return s1->getNTime() < s2->getNTime(); }
 
 void SampleSelectorDistance::Select (InstanceGroup *ig, set<string> &counters)
 {
@@ -64,11 +64,8 @@ void SampleSelectorDistance::Select (InstanceGroup *ig, set<string> &counters)
 		unsigned cnt = 0;
 
 		for (unsigned i = 0; i < vi.size(); i++)
-		{
-			bool has_counter = vi[i]->Counters.find (*c) != vi[i]->Counters.end();
-			if (has_counter)
-				cnt += vi[i]->Samples.size();
-		}
+			if (vi[i]->hasCounter(*c))
+				cnt += vi[i]->getNumSamples();
 
 		if (limitset && cnt > limit)
 		{
@@ -76,12 +73,12 @@ void SampleSelectorDistance::Select (InstanceGroup *ig, set<string> &counters)
 
 			/* tmp will contain all the samples with the c counter */
 			for (unsigned i = 0; i < vi.size(); i++)
-			{
-				bool has_counter = vi[i]->Counters.find (*c) != vi[i]->Counters.end();
-				if (has_counter)
-					for (unsigned s = 0; s < vi[i]->Samples.size(); s++)
-						tmp.push_back (vi[i]->Samples[s]);
-			}
+				if (vi[i]->hasCounter(*c))
+				{
+					vector<Sample*> vs = vi[i]->getSamples();
+					for (unsigned s = 0; s < vs.size(); s++)
+						tmp.push_back (vs[s]);
+				}
 
 			for (unsigned step = 0; step < limit; step++)
 			{
@@ -93,12 +90,12 @@ void SampleSelectorDistance::Select (InstanceGroup *ig, set<string> &counters)
 				{
 					vector<Sample*>::iterator it = tmp.begin();
 					vector<Sample*>::iterator bestposition = it;
-					double distancetobest = fabs((*it)->nTime - centerposition); 
+					double distancetobest = fabs((*it)->getNTime() - centerposition); 
 
 					for ( ; it != tmp.end(); it++ )
-						if (fabs ((*it)->nTime - centerposition) < distancetobest)
+						if (fabs ((*it)->getNTime() - centerposition) < distancetobest)
 						{
-							distancetobest = fabs ((*it)->nTime - centerposition);
+							distancetobest = fabs ((*it)->getNTime() - centerposition);
 							bestposition = it;
 						}
 
@@ -116,12 +113,12 @@ void SampleSelectorDistance::Select (InstanceGroup *ig, set<string> &counters)
 			/* We don't reach the limit, just set all the samples with the counter into used */
 			for (unsigned i = 0; i < vi.size(); i++)
 			{
-				bool has_counter = vi[i]->Counters.find (*c) != vi[i]->Counters.end();
-				for (unsigned s = 0; s < vi[i]->Samples.size(); s++)
-					if (!has_counter)
-						unused.push_back (vi[i]->Samples[s]);
-					else
-						used.push_back (vi[i]->Samples[s]);
+				if (vi[i]->hasCounter(*c))
+				{
+					vector<Sample*> vs = vi[i]->getSamples();
+					for (unsigned s = 0; s < vs.size(); s++)
+						used.push_back (vs[s]);
+				}
 			}
 		}
 

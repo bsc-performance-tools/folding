@@ -40,10 +40,15 @@ using namespace std;
 
 class InstanceSeparator
 {
+	protected:
+	bool keepallgroups;
+
 	public:
+	InstanceSeparator (bool keepallgroups);
 	virtual unsigned separateInGroups (vector<Instance*> &vi) = 0;
 	virtual string details(void) = 0;
 	virtual string nameGroup (unsigned) = 0;
+	void KeepLeadingGroup (vector<Instance*> &Instances, unsigned ngroups);
 };
 
 #endif /* INSTANCE_SEPARATOR_H_INCLUDED */

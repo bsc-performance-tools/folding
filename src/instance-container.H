@@ -46,8 +46,6 @@ class InstanceContainer
 	private:
 	unsigned ngroups;
 	InstanceSeparator *is;
-
-	public:
 	string regionName;
 	vector<Instance*> Instances;
 	vector<InstanceGroup*> InstanceGroups;
@@ -56,6 +54,8 @@ class InstanceContainer
 	InstanceContainer (string, InstanceSeparator *is);
 
 	void add (Instance *i);
+	const vector<Instance *> getInstances (void) const
+	  { return Instances; }
 	unsigned numInstances (void);
 	unsigned numSamples (void);
 	void splitInGroups (void);
@@ -63,6 +63,7 @@ class InstanceContainer
 	  { return ngroups; }
 	string getRegionName (void)
 	  { return regionName; }
+	InstanceGroup* getInstanceGroup (unsigned g);
 
 	void removePreviousDataFiles (ObjectSelection *os, string fileprefix);
 	void dumpGroupData (ObjectSelection *os, string fileprefix);

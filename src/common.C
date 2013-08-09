@@ -195,7 +195,7 @@ void common::lookForCallerLineInfo (UIParaverTraceConfig *pcf, unsigned id,
 	file = cl.substr (pos_open+1, pos_close-pos_open-1);
 }
 
-void common::lookForFullCallerInfo (UIParaverTraceConfig *pcf, unsigned caller,
+void common::lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller,
 	unsigned callerlineast, string &routine, string &file, int &bline, int &eline)
 {
 	string cl = pcf->getEventValue (30000200, callerlineast);
@@ -224,6 +224,15 @@ void common::lookForFullCallerInfo (UIParaverTraceConfig *pcf, unsigned caller,
 	int pos_close = cl.find (")");
 	file = cl.substr (pos_open+1, pos_close-pos_open-1);
 	routine = pcf->getEventValue (30000000, caller);
+}
+
+void common::lookForCallerFullInfo (UIParaverTraceConfig *pcf, unsigned caller,
+	  unsigned callerline, unsigned callerlineast, string &routine, string &file,
+	  int &line, int &bline, int &eline)
+{
+	lookForCallerASTInfo (pcf, caller, callerlineast, routine, file, bline,
+	  eline);
+	lookForCallerLineInfo (pcf, callerline, file, line);
 }
 
 void common::CleanMetricsDirectory_r (char *dir)

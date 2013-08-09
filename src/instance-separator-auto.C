@@ -37,14 +37,20 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include <algorithm>
 
+
+InstanceSeparatorAuto::InstanceSeparatorAuto (bool keepallgroups)
+	: InstanceSeparator (keepallgroups)
+{
+}
+
 static bool InstanceSortDuration (Instance *i1, Instance *i2)
-{ return i1->duration < i2->duration; }
+{ return i1->getDuration() < i2->getDuration(); }
 
 unsigned InstanceSeparatorAuto::separateInGroups (vector<Instance*> &vi)
 {
 	unsigned ngroups;
 
-	/* Less than 3 instances is a very small number to group */
+	/* Less than 8 instances is a very small number to group */
 	if (vi.size() >= 8)
 	{
 		unsigned buckets = MIN(vi.size()/4, 100);
@@ -52,27 +58,33 @@ unsigned InstanceSeparatorAuto::separateInGroups (vector<Instance*> &vi)
 		vector<Instance*> tmp = vi;
 		sort (tmp.begin(), tmp.end(), InstanceSortDuration);
 
-		unsigned long long maxduration = tmp[tmp.size()-1]->duration;
-		unsigned long long minduration = tmp[0]->duration;
+		unsigned long long maxduration = tmp[tmp.size()-1]->getDuration();
+		unsigned long long minduration = tmp[0]->getDuration();
 		bucketsize = (maxduration - minduration) / buckets;
 
-		unsigned long long oldpos = tmp[0]->duration;
+		unsigned long long oldpos = tmp[0]->getDuration();
 		unsigned group = 0;
-		tmp[0]->group = group;
+		tmp[0]->setGroup (group);
 
 		for (unsigned u = 1; u < tmp.size(); u++)
 		{
-			if (tmp[u]->duration > oldpos+bucketsize)
+			if (tmp[u]->getDuration() > oldpos+bucketsize)
 				group++;
 
-			tmp[u]->group = group;
-			oldpos = tmp[u]->duration;
+			tmp[u]->setGroup (group);
+			oldpos = tmp[u]->getDuration();
 		}
 
 		ngroups = group+1;
 	}
 	else
 		ngroups = 1;
+
+	if (!keepallgroups && ngroups > 1)
+	{
+		KeepLeadingGroup (vi, ngroups);
+		ngroups = 1;
+	}
 
 	return ngroups;
 }

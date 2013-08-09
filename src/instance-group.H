@@ -34,6 +34,7 @@
 
 #include "instance.H"
 #include "object-selection.H"
+#include "codereftriplet-accounting.H"
 #include <fstream>
 #include <vector>
 #include <string>
@@ -65,8 +66,7 @@ class InstanceGroup
 
 	vector<double> Breakpoints; /* nb (breakpoints) = nphases+1 */
 	vector<CallstackTree *> trees; /* one per phase */
-	vector< map<unsigned, unsigned> > occurrencesPerLine; /* one per phase */
-	vector< set<unsigned> > seenASTs; /* one per phase */
+	vector< map<unsigned, CodeRefTripletAccounting*> > accountsPerLine;/* one per phase */
 
 #if defined(HAVE_CUBE)
 	Cnode *cubeTree;
@@ -144,15 +144,10 @@ class InstanceGroup
 	  { return cubeTree; }
 #endif
 
-	void setOccurrencesPerLine (vector< map<unsigned, unsigned> > oxline)
-	  { occurrencesPerLine = oxline; }
-	vector< map<unsigned, unsigned> > getOccurrencesPerLine (void)
-	  { return occurrencesPerLine; }
-
-	void setSeenASTs (vector< set<unsigned> > sASTs)
-	  { seenASTs = sASTs; }
-	vector< set<unsigned> > getSeenASTs (void)
-	  { return seenASTs; }
+	void setAccountingPerLine (vector< map<unsigned, CodeRefTripletAccounting*> > axline)
+	  { accountsPerLine = axline; }
+	vector< map<unsigned, CodeRefTripletAccounting*> > getAccountingPerLine (void)
+	  { return accountsPerLine; }
 };
 
 #endif

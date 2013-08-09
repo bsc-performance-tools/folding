@@ -61,8 +61,11 @@ class common
 
 	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
 	  unsigned id, string &file, int &line);
-	static void lookForFullCallerInfo (UIParaverTraceConfig *pcf, unsigned caller,
+	static void lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller,
 	  unsigned callerlineast, string &routine, string &file, int &bline, int &eline);
+	static void lookForCallerFullInfo (UIParaverTraceConfig *pcf, unsigned caller,
+	  unsigned callerline, unsigned callerlineast, string &routine, string &file,
+	  int &line, int &bline, int &eline);
 	static unsigned lookForValueString (UIParaverTraceConfig *pcf, unsigned type,
 	  string str, bool &found);
 

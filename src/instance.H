@@ -42,9 +42,8 @@ using namespace std;
 
 class Instance
 {
-	public:
+	private:
 	vector<Sample*> Samples;
-
 	unsigned ptask;
 	unsigned task;
 	unsigned thread;
@@ -56,9 +55,42 @@ class Instance
 	set<string> Counters;
 	map<string, unsigned long long> TotalCounterValues;
 
-	Instance ();
+	public:
+	Instance (unsigned ptask, unsigned task, unsigned thread, string region,
+	  unsigned long long startTime, unsigned long long duration,
+	  set<string> &counters, map<string, unsigned long long> totalcountervalues);
+	~Instance(void);
 
 	void Show(void);
+	
+	bool hasCounter (string c) const;
+	void addSample (Sample *s)
+	  { Samples.push_back (s); }
+	vector<Sample*> getSamples(void)
+	  { return Samples; }
+	unsigned getNumSamples(void) const
+	  { return Samples.size(); }
+	void setGroup (unsigned g)
+	  { this->group = g; }
+	unsigned getGroup (void) const
+	  { return group; }
+	unsigned long long getPRVvalue (void) const
+	  { return prvValue; }
+	void setPRVvalue (unsigned long long v)
+	  { this->prvValue = v; }
+	unsigned long long getDuration (void) const
+	  { return duration; }
+	unsigned long long getStartTime (void) const
+	  { return startTime; }
+	unsigned getptask (void) const
+	  { return ptask; }
+	unsigned gettask (void) const
+	  { return task; }
+	unsigned getthread (void) const
+	  { return thread; }
+	unsigned long long getTotalCounterValue (string ctr);
+	string getRegionName(void) const
+	  { return RegionName; }
 };
 
 #endif

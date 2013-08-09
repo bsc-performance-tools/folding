@@ -46,12 +46,12 @@ void SampleSelectorDefault::Select (InstanceGroup *ig, set<string> &counters)
 		vector<Sample*> used, unused;
 
 		for (unsigned i = 0; i < vi.size(); i++)
-		{
-			bool has_counter = vi[i]->Counters.count (*c) > 0;
-			if (has_counter)
-				for (unsigned s = 0; s < vi[i]->Samples.size(); s++)
-						used.push_back (vi[i]->Samples[s]);
-		}
+			if (vi[i]->hasCounter (*c))
+			{
+				vector<Sample*> vs = vi[i]->getSamples();
+				for (unsigned s = 0; s < vs.size(); s++)
+					used.push_back (vs[s]);
+			}
 
 		used_res[*c] = used;
 		unused_res[*c] = unused;

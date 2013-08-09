@@ -47,8 +47,8 @@ void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree,
 	string routine, file;
 	int bline, eline;
 
-	common::lookForFullCallerInfo (pcf, crt.Caller, crt.CallerLineAST, routine,
-	  file, bline, eline);
+	common::lookForCallerASTInfo (pcf, crt.getCaller(), crt.getCallerLineAST(),
+		routine, file, bline, eline);
 
 	/* Create a node for this routine */
 	cube_region = c.def_region (routine, 0, 0, "", "", file);

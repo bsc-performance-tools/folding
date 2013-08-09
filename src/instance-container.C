@@ -63,7 +63,7 @@ unsigned InstanceContainer::numSamples (void)
 {
 	unsigned tmp = 0;
 	for (unsigned u = 0; u < Instances.size(); u++)
-		tmp += Instances[u]->Samples.size();
+		tmp += Instances[u]->getNumSamples();
 
 	return tmp;
 }
@@ -82,14 +82,14 @@ void InstanceContainer::splitInGroups (void)
 	}
 
 	for (unsigned u = 0; u < Instances.size(); u++)
-		if (Instances[u]->group < ngroups)
+		if (Instances[u]->getGroup() < ngroups)
 		{
-			InstanceGroups[Instances[u]->group]->add (Instances[u]);
+			InstanceGroups[Instances[u]->getGroup()]->add (Instances[u]);
 		}
 		else
 		{
 			/* This should not happen! */
-			cerr << "Invalid group " << Instances[u]->group << " for instance. This should not happen, proceed with caution!" << endl;
+			cerr << "Invalid group " << Instances[u]->getGroup() << " for instance. This should not happen, proceed with caution!" << endl;
 		}
 }
 
@@ -106,10 +106,10 @@ void InstanceContainer::dumpGroupData (ObjectSelection *os, string prefix)
 		{
 			vector<Instance*> v = InstanceGroups[g]->getInstances();
 			for (unsigned u = 0; u < v.size(); u++)
-				odata << "u;" << regionName << ";" << g+1 << ";" << v[u]->duration << endl;
+				odata << "u;" << regionName << ";" << g+1 << ";" << v[u]->getDuration() << endl;
 			v = InstanceGroups[g]->getExcludedInstances();
 			for (unsigned u = 0; u < v.size(); u++)
-				odata << "e;" << regionName << ";" << g+1 << ";" << v[u]->duration << endl;
+				odata << "e;" << regionName << ";" << g+1 << ";" << v[u]->getDuration() << endl;
 		}
 	}
 
@@ -260,4 +260,12 @@ void InstanceContainer::removePreviousDataFiles (ObjectSelection *os, string pre
 	if (common::existsFile (fname))
 		if (unlink (fname.c_str()) != 0)
 			cerr << "Can't remove previous file '" << fname << "'" << endl;
+}
+
+InstanceGroup* InstanceContainer::getInstanceGroup (unsigned g)
+{
+	assert (g >= 0);
+	assert (g < ngroups);
+
+	return InstanceGroups[g];
 }

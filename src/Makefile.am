@@ -21,10 +21,11 @@ extract_SOURCES = \
 
 interpolate_SOURCES = \
  common.C common.H \
+ codereftriplet.H codereftriplet.C codereftriplet-accounting.H codereftriplet-accounting.C \
  sample.C sample.H \
  sample-selector.H \
  sample-selector-first.H sample-selector-first.C sample-selector-distance.H sample-selector-distance.C sample-selector-default.H sample-selector-default.C \
- instance-separator.H \
+ instance-separator.H instance-separator.C \
  instance-separator-auto.H instance-separator-auto.C instance-separator-none.H instance-separator-none.C \
  instance.H instance.C \
  instance-container.C instance-container.H instance-group.C instance-group.H \

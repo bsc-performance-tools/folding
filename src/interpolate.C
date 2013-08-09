@@ -81,8 +81,9 @@ static unsigned long long feedTraceTimes_Begin, feedTraceTimes_End;
 static string feedTraceFoldType_Definition;
 static ObjectSelection *objectToFeed = NULL;
 
-static InstanceSeparatorNone isnone;
-static InstanceSeparatorAuto isauto;
+static InstanceSeparatorNone isnone (true);
+static InstanceSeparatorAuto isauto_all (true);
+static InstanceSeparatorAuto isauto_lead (false);
 static InstanceSeparator *instanceseparator = &isnone;
 
 static StatisticType_t StatisticType = STATISTIC_MEAN; 
@@ -101,14 +102,15 @@ using namespace std;
 void GroupFilterAndDumpStatistics (set<string> &regions,
 	vector<Instance*> &vInstances,
 	map<string, InstanceContainer> &Instances,
-	map<string, InstanceContainer> &excludedInstances)
+	map<string, InstanceContainer> &excludedInstances,
+	vector<Instance*> &feedInstances)
 {
 	set<string>::iterator it;
 
 	cout << "Allocating instances into instance container ... " << flush;
 	for (unsigned u = 0; u < vInstances.size(); u++)
 	{
-		string Region = vInstances[u]->RegionName;
+		string Region = vInstances[u]->getRegionName();
 		if (Instances.count (Region) == 0)
 		{
 			/* If first instance with this name */
@@ -154,7 +156,7 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 			cout << " Analysis for " << instanceseparator->nameGroup (u)
 				  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
 
-			InstanceGroup *ig = ic.InstanceGroups[u];
+			InstanceGroup *ig = ic.getInstanceGroup (u);
 
 			cout << "  No. of Instances = " << ig->numInstances() << " for a total of " << ig->numSamples() << " samples";
 			if (StatisticType == STATISTIC_MEAN)
@@ -165,33 +167,36 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 
 				cout << ", mean = " << (mean/1000000.f) << "ms stdev = " 
 				  << (stdev/1000000.f) << "ms" << endl;
+
 				unsigned total = ig->numInstances();
-
-				/* Remove while traversing */
-				unsigned within = 0;
-				vector<Instance*> vinstances = ig->getInstances();
-				vector<Instance*>::iterator iter = vinstances.begin();
-				while (iter != vinstances.end())
+				if (total > 0)
 				{
-					if ((*iter)->duration >= lolimit && (*iter)->duration <= uplimit)
+					/* Remove while traversing */
+					unsigned within = 0;
+					vector<Instance*> vinstances = ig->getInstances();
+					vector<Instance*>::iterator iter = vinstances.begin();
+					while (iter != vinstances.end())
 					{
-						within++;
-						iter++;
+						if ((*iter)->getDuration() >= lolimit && (*iter)->getDuration() <= uplimit)
+						{
+							within++;
+							iter++;
+						}
+						else
+						{
+							ig->moveToExcluded (*iter);
+							iter = vinstances.erase (iter);
+						}
 					}
-					else
-					{
-						ig->moveToExcluded (*iter);
-						iter = vinstances.erase (iter);
-					}
-				}
 
-				mean = ig->mean();
-				stdev = ig->stdev();
-				cout << "  No. of Instances within mean+/-"
-				  << NumOfSigmaTimes << "*stdev = [ " << (lolimit/1000000.f) << "ms, "
-				  << (uplimit / 1000000.f) << "ms ] = " << within << " ~ " << (within*100)/total
-				  << "% of the population, mean = " << (mean/1000000.f) 
-				  << "ms stdev = " << (stdev/1000000.f) << "ms" << endl;
+					mean = ig->mean();
+					stdev = ig->stdev();
+					cout << "  No. of Instances within mean+/-"
+					  << NumOfSigmaTimes << "*stdev = [ " << (lolimit/1000000.f) << "ms, "
+					  << (uplimit / 1000000.f) << "ms ] = " << within << " ~ " << (within*100)/total
+					  << "% of the population, mean = " << (mean/1000000.f) 
+					  << "ms stdev = " << (stdev/1000000.f) << "ms" << endl;
+				}
 			}
 			else if (StatisticType == STATISTIC_MEDIAN)
 			{
@@ -201,38 +206,60 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 
 				cout << ", median = " << (median / 1000000.f) << "ms mad = " 
 				  << (mad / 1000000.f) << "ms" << endl;
+
 				unsigned total = ig->numInstances();
-
-				/* Count & Remove while traversing */
-				unsigned within = 0;
-				vector<Instance*> vinstances = ig->getInstances();
-				vector<Instance*>::iterator iter = vinstances.begin();
-				while (iter != vinstances.end())
+				if (total > 0)
 				{
-					if ((*iter)->duration >= lolimit && (*iter)->duration <= uplimit )
+					/* Count & Remove while traversing */
+					unsigned within = 0;
+					vector<Instance*> vinstances = ig->getInstances();
+					vector<Instance*>::iterator iter = vinstances.begin();
+					while (iter != vinstances.end())
 					{
-						within++;
-						iter++;
+						if ((*iter)->getDuration() >= lolimit && (*iter)->getDuration() <= uplimit )
+						{
+							within++;
+							iter++;
+						}
+						else
+						{
+							ig->moveToExcluded (*iter);
+							iter = vinstances.erase (iter);
+						}
 					}
-					else
-					{
-						ig->moveToExcluded (*iter);
-						iter = vinstances.erase (iter);
-					}
-				}
 
-				median = ig->median();
-				mad = ig->MAD();
-				cout << "  No. of Instances within median +/-" << NumOfSigmaTimes 
-				  << "*mad = [ " << (lolimit / 1000000.f) << "ms, "
-				  << (uplimit / 1000000.f)<< "ms ] = " << within << " ~ "
-				  << (within*100)/total << "% of the population, median = "
-				  << (median / 1000000.f) << "ms mad = " << (mad / 1000000.f) << "ms" << endl;
+					median = ig->median();
+					mad = ig->MAD();
+					cout << "  No. of Instances within median +/-" << NumOfSigmaTimes 
+					  << "*mad = [ " << (lolimit / 1000000.f) << "ms, "
+					  << (uplimit / 1000000.f)<< "ms ] = " << within << " ~ "
+					  << (within*100)/total << "% of the population, median = "
+					  << (median / 1000000.f) << "ms mad = " << (mad / 1000000.f) << "ms" << endl;
+				}
 			}
 		}
 		cout << "-----" << endl;
 	}
 	cout << endl;
+
+	/* Ensure that the feedInstances are not excluded either in from grouping
+	   or being excluded due to user request */
+	vector<Instance*>::iterator fiterator = feedInstances.begin();
+	while (fiterator != feedInstances.end())
+	{
+		bool found = false;
+		for (it = regions.begin(); it != regions.end() && !found; it++)
+			if (Instances.count(*it) > 0)
+			{
+				InstanceContainer ic = Instances.at(*it);
+				const vector<Instance*> vi = ic.getInstances();
+				found = find(vi.begin(), vi.end(), (*fiterator)) != vi.end();
+			}
+		if (!found)
+			fiterator = feedInstances.erase (fiterator);
+		else
+			fiterator++;
+	}
 }
 
 void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
@@ -340,9 +367,9 @@ int ProcessParameters (int argc, char *argv[])
 		     << "Available options are: " << endl
 		     << "-split-instances [no by default]" << endl
 		     << "             no" << endl
-		     << "             auto" << endl
+		     << "             auto lead?" << endl
 #if defined(HAVE_CLUSTERING_SUITE)
-		     << "             dbscan minpoints epsilon" << endl
+		     << "             dbscan minpoints epsilon lead?" << endl
 #endif
 		     << "-use-object PTASK.TASK.THREAD [where PTASK, TASK and THREAD = * by default" << endl
 		     << "-use-median" << endl
@@ -381,12 +408,29 @@ int ProcessParameters (int argc, char *argv[])
 			}
 			else if (strcasecmp (argv[i], "auto") == 0)
 			{
-				instanceseparator = &isauto;
+				if (!CHECK_ENOUGH_ARGS(1, argc, i))
+				{
+					cerr << "Insufficient arguments for -split-instances auto parameter" << endl;
+					exit (-1);
+				}
+
+				i++;
+				string lead = argv[i];
+				if (lead != "yes" && lead != "no")
+				{
+					cerr << "Invalid leading group selection value '" << lead << "'. Turning into 'no'." << endl;
+					lead = "no";
+				}
+
+				if (lead == "yes")
+					instanceseparator = &isauto_lead;
+				else
+					instanceseparator = &isauto_all;
 			}
 #if defined(HAVE_CLUSTERING_SUITE)
 			else if (strcasecmp (argv[i], "dbscan") == 0)
 			{
-				if (!CHECK_ENOUGH_ARGS(2, argc, i))
+				if (!CHECK_ENOUGH_ARGS(3, argc, i))
 				{
 					cerr << "Insufficient arguments for -split-instances dbscan parameter" << endl;
 					exit (-1);
@@ -405,7 +449,14 @@ int ProcessParameters (int argc, char *argv[])
 					cerr << "Invalid eps for dbscan option (" << argv[i] << ")" << endl;
 					exit (-1);
 				}
-				InstanceSeparatorDBSCAN *isdbscan = new InstanceSeparatorDBSCAN (minpoints, eps);
+				i++;
+				string lead = argv[i];
+				if (lead != "yes" && lead != "no")
+				{
+					cerr << "Invalid leading group selection value '" << lead << "'. Turning into 'no'." << endl;
+					lead = "no";
+				}
+				InstanceSeparatorDBSCAN *isdbscan = new InstanceSeparatorDBSCAN (minpoints, eps, lead != "yes");
 				instanceseparator = isdbscan;
 			}
 #else
@@ -812,7 +863,8 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
-	GroupFilterAndDumpStatistics (regions, vInstances, Instances, excludedInstances);
+	GroupFilterAndDumpStatistics (regions, vInstances, Instances,
+	  excludedInstances, feedInstances);
 
 	string cFile = argv[res];
 	string cFilePrefix = cFile.substr (0, cFile.rfind (".extract"));
@@ -829,7 +881,7 @@ int main (int argc, char *argv[])
 		if (first)
 		{
 			ic.removePreviousDataFiles (objectsSelected, cFilePrefix);
-			ic.InstanceGroups[0]->removePreviousData (objectsSelected, cFilePrefix);
+			ic.getInstanceGroup(0)->removePreviousData (objectsSelected, cFilePrefix);
 			first = false;
 		}
 
@@ -841,7 +893,8 @@ int main (int argc, char *argv[])
 			{
 				cout << " Processing " << instanceseparator->nameGroup (u)
 				  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
-				interpolation->pre_interpolate (NumOfSigmaTimes, ic.InstanceGroups[u], counters);
+				interpolation->pre_interpolate (NumOfSigmaTimes, ic.getInstanceGroup(u),
+				  counters);
 			}
 		}
 
@@ -849,13 +902,14 @@ int main (int argc, char *argv[])
 		  *it << "), #out steps = " << interpolation->getSteps() << endl;
 		for (unsigned u = 0; u < ic.numGroups(); u++)
 		{
+			InstanceGroup *ig = ic.getInstanceGroup(u);
 			cout << " Processing " << instanceseparator->nameGroup (u)
 			  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
-			ss->Select (ic.InstanceGroups[u], counters);
-			interpolation->interpolate (ic.InstanceGroups[u], counters);
-			ic.InstanceGroups[u]->dumpInterpolatedData (objectsSelected, cFilePrefix);
-			ic.InstanceGroups[u]->dumpData (objectsSelected, cFilePrefix);
-			ic.InstanceGroups[u]->gnuplot (objectsSelected, cFilePrefix);
+			ss->Select (ig, counters);
+			interpolation->interpolate (ig, counters);
+			ig->dumpInterpolatedData (objectsSelected, cFilePrefix);
+			ig->dumpData (objectsSelected, cFilePrefix);
+			ig->gnuplot (objectsSelected, cFilePrefix);
 		}
 
 		ic.dumpGroupData (objectsSelected, cFilePrefix);
@@ -944,13 +998,15 @@ int main (int argc, char *argv[])
 			for (unsigned u = 0; u < feedInstances.size(); u++)
 			{
 				Instance *i = feedInstances[u];
-				if (i->startTime >= feedTraceTimes_Begin  && i->startTime <= feedTraceTimes_End)
+				if (i->getStartTime() >= feedTraceTimes_Begin && i->getStartTime() <= feedTraceTimes_End)
 				{
 					bool found;
-					i->prvValue = common::lookForValueString (pcf,
- 						feedTraceFoldType, i->RegionName, found);
+					unsigned long long pv = common::lookForValueString (pcf,
+ 						feedTraceFoldType, i->getRegionName(), found);
 					if (!found)
-						cerr << "Can't find value for '" << i->RegionName <<"' in type " << feedTraceFoldType << endl;
+						cerr << "Can't find value for '" << i->getRegionName() <<"' in type " << feedTraceFoldType << endl;
+					else
+						i->setPRVvalue (pv);
 					whichInstancesToFeed.push_back (i);
 				}
 			}
@@ -961,14 +1017,16 @@ int main (int argc, char *argv[])
 			for (unsigned u = 0; u < feedInstances.size(); u++)
 			{
 				Instance *i = feedInstances[u];
-				pair<string, unsigned> RG = make_pair (i->RegionName, i->group);
+				pair<string, unsigned> RG = make_pair (i->getRegionName(), i->getGroup());
 				if (usedRegions.find(RG) == usedRegions.end())
 				{
 					bool found;
-					i->prvValue = common::lookForValueString (pcf,
- 						feedTraceFoldType, i->RegionName, found);
+					unsigned long long pv= common::lookForValueString (pcf,
+ 						feedTraceFoldType, i->getRegionName(), found);
 					if (!found)
-						cerr << "Can't find value for '" << i->RegionName <<"' in type " << feedTraceFoldType << endl;
+						cerr << "Can't find value for '" << i->getRegionName() <<"' in type " << feedTraceFoldType << endl;
+					else
+						i->setPRVvalue (pv);
 					whichInstancesToFeed.push_back (i);
 					usedRegions.insert (RG);
 				}
@@ -980,11 +1038,11 @@ int main (int argc, char *argv[])
 		for (unsigned u = 0; u < whichInstancesToFeed.size(); u++)
 		{
 			Instance *i = whichInstancesToFeed[u];
-			if (regions.find(i->RegionName) != regions.end() &&
-			  Instances.count(i->RegionName) > 0)
+			if (regions.find(i->getRegionName()) != regions.end() &&
+			  Instances.count(i->getRegionName()) > 0)
 			{
-				InstanceContainer ic = Instances.at (i->RegionName);
-				InstanceGroup *ig = ic.InstanceGroups[i->group];
+				InstanceContainer ic = Instances.at (i->getRegionName());
+				InstanceGroup *ig = ic.getInstanceGroup(i->getGroup());
 
 				ftrace->DumpGroupInfo (objectToFeed, i);
 				ftrace->DumpInterpolationData (objectToFeed, i, ig, counterCodes);
@@ -1025,7 +1083,7 @@ int main (int argc, char *argv[])
 				for (unsigned u = 0; u < ic.numGroups(); u++)
 				{
 					Callstack *ct = new Callstack;
-					ct->generate (ic.InstanceGroups[u], mainid);
+					ct->generate (ic.getInstanceGroup(u), mainid);
 				}
 				ch.generateCubeTree (ic, pcf, sourceDirectory, counters);
 				ch.dumpLaunch (ic, objectsSelected, counters, oFileCUBE);

@@ -34,6 +34,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: common.C 1764 2013-05-24 14
 #include "common.H"
 
 #include <math.h>
+#include <stdlib.h>
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -64,7 +65,7 @@ unsigned InstanceGroup::numSamples (void)
 {
 	unsigned tmp = 0;
 	for (unsigned u = 0; u < Instances.size(); u++)
-		tmp += Instances[u]->Samples.size();
+		tmp += Instances[u]->getNumSamples();
 
 	return tmp;
 }
@@ -92,12 +93,12 @@ unsigned InstanceGroup::numExcludedSamples (string counter)
 	unsigned total = 0;
 
 	for (unsigned i = 0; i < excludedInstances.size(); i++)
-		for (unsigned u = 0; u < excludedInstances[i]->Samples.size(); u++)
-		{
-			Sample *s = excludedInstances[i]->Samples[u];
-			if (s->nCounterValue.count (counter) > 0)
+	{
+		vector<Sample*> vs = excludedInstances[i]->getSamples();
+		for (unsigned u = 0; u < vs.size(); u++)
+			if (vs[u]->hasCounter (counter))
 				total++;
-		}
+	}
 
 	return total;
 }
@@ -106,7 +107,7 @@ unsigned InstanceGroup::numExcludedSamples (void)
 {
 	unsigned tmp = 0;
 	for (unsigned u = 0; u < excludedInstances.size(); u++)
-		tmp += excludedInstances[u]->Samples.size();
+		tmp += excludedInstances[u]->getNumSamples();
 
 	return tmp;
 }
@@ -119,7 +120,7 @@ unsigned long long InstanceGroup::mean (void)
 		return tmp;
 
 	for (unsigned u = 0; u < Instances.size(); u++)
-		tmp += Instances[u]->duration;
+		tmp += Instances[u]->getDuration();
 
 	return tmp / Instances.size();
 }
@@ -132,7 +133,7 @@ unsigned long long InstanceGroup::median (void)
 		return 0;
 
 	for (unsigned u = 0; u < Instances.size(); u++)
-		durations.push_back (Instances[u]->duration);
+		durations.push_back (Instances[u]->getDuration());
 
 	sort (durations.begin(), durations.end());
 
@@ -150,7 +151,7 @@ double InstanceGroup::stdev (void)
 	_mean = this->mean();
 	for (unsigned u = 0; u < Instances.size(); u++)
 	{
-		double d = Instances[u]->duration;
+		double d = Instances[u]->getDuration();
 		tmp += ( (d-_mean) * (d-_mean) );
 	}
 
@@ -167,10 +168,7 @@ unsigned long long InstanceGroup::MAD (void)
 
 	_median = this->median();
 	for (unsigned u = 0; u < Instances.size(); u++)
-		if (Instances[u]->duration > _median)
-			absmediandiff.push_back (Instances[u]->duration - _median);
-		else
-			absmediandiff.push_back (_median - Instances[u]->duration);
+		absmediandiff.push_back (llabs (Instances[u]->getDuration() - _median));
 
 	sort (absmediandiff.begin(), absmediandiff.end());
 
@@ -244,15 +242,21 @@ void InstanceGroup::dumpData (ObjectSelection *os, string prefix)
 		map<string, vector<Sample*> >::iterator it;
 		for (it = used.begin(); it != used.end(); it++)
 		{
+			string counter = (*it).first;
 			vector<Sample*> usedSamples = (*it).second;
 			for (unsigned u = 0; u < usedSamples.size(); u++)
-				odata << "u" << ";" << regionName << ";" << numGroup << ";" << usedSamples[u]->nTime << ";" << (*it).first << ";" << usedSamples[u]->nCounterValue[(*it).first] << endl;
+				odata << "u" << ";" << regionName << ";" << numGroup << ";"
+				  << usedSamples[u]->getNTime() << ";" << counter << ";"
+				  << usedSamples[u]->getNCounterValue(counter) << endl;
 		}
 		for (it = unused.begin(); it != unused.end(); it++)
 		{
+			string counter = (*it).first;
 			vector<Sample*> unusedSamples = (*it).second;
 			for (unsigned u = 0; u < unusedSamples.size(); u++)
-				odata << "un" << ";" << regionName << ";" << numGroup << ";" << unusedSamples[u]->nTime << ";" << (*it).first << ";" << unusedSamples[u]->nCounterValue[(*it).first] << endl;
+				odata << "un" << ";" << regionName << ";" << numGroup << ";"
+				  << unusedSamples[u]->getNTime() << ";" << counter << ";"
+				  << unusedSamples[u]->getNCounterValue(counter) << endl;
 		}
 	}
 
@@ -260,14 +264,15 @@ void InstanceGroup::dumpData (ObjectSelection *os, string prefix)
 	{
 		for (unsigned i = 0; i < excludedInstances.size(); i++)
 		{
-			Instance *inst = excludedInstances[i];
-			for (unsigned u = 0; u < inst->Samples.size(); u++)
+			vector<Sample*> vs = excludedInstances[i]->getSamples();
+			for (unsigned s = 0; s < vs.size(); s++)
 			{
-				double time = inst->Samples[u]->nTime;
-				map<string, double> counters = inst->Samples[u]->nCounterValue;
-				map<string, double>::iterator it = counters.begin();
-				for ( ; it != counters.end(); it++)
-					odata << "e" << ";" << regionName << ";" << numGroup << ";" << time << ";" << (*it).first << ";" << (*it).second << endl;
+				double time = vs[s]->getNTime();
+				map<string, double> counters = vs[s]->getNCounterValue();
+				map<string, double>::iterator it;
+				for (it = counters.begin() ; it != counters.end(); it++)
+					odata << "e" << ";" << regionName << ";" << numGroup << ";"
+					  << time << ";" << (*it).first << ";" << (*it).second << endl;
 			}
 		}
 	}
