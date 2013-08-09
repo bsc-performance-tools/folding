@@ -48,15 +48,14 @@ unsigned InstanceSeparatorNone::separateInGroups (vector<Instance*> &vi)
 	return 1;
 }
 
-string InstanceSeparatorNone::details (void)
+string InstanceSeparatorNone::details (void) const
 {
-	return "No instance grouping";
+	return string ("No instance grouping");
 }
 
-string InstanceSeparatorNone::nameGroup (unsigned g)
+string InstanceSeparatorNone::nameGroup (unsigned g) const
 {
 	UNREFERENCED(g);
-
 	return string ("Group");
 }
 

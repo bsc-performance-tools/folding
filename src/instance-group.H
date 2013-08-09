@@ -86,13 +86,13 @@ class InstanceGroup
 	void setSamples (map<string, vector<Sample*> > used, map<string, vector<Sample*> > unused)
 		{ this->used = used; this->unused = unused; }
 
-	unsigned getNumGroup (void)
+	unsigned getNumGroup (void) const
 	  { return numGroup; }
 
-	string getGroupName (void)
+	string getGroupName (void) const
 	  { return groupName; }
 
-	string getRegion (void)
+	string getRegion (void) const
 	  { return regionName; }
 
 	map<string, vector<Sample*> > getSamples (void)
@@ -101,20 +101,20 @@ class InstanceGroup
 	vector<Instance*> getInstances(void)
 	  { return Instances; };
 	void add (Instance *i);
-	unsigned numInstances (void);
-	unsigned numSamples (void);
+	unsigned numInstances (void) const;
+	unsigned numSamples (void) const;
 
 	vector<Instance*> getExcludedInstances(void)
 	  { return excludedInstances; };
 	void moveToExcluded (Instance *i);
-	unsigned numExcludedInstances (void);
-	unsigned numExcludedSamples (string counter);
-	unsigned numExcludedSamples (void);
+	unsigned numExcludedInstances (void) const;
+	unsigned numExcludedSamples (string counter) const;
+	unsigned numExcludedSamples (void) const;
 
-	unsigned long long mean (void);
-	unsigned long long median (void);
-	double stdev (void);
-	unsigned long long MAD (void);
+	unsigned long long mean (void) const;
+	unsigned long long median (void) const;
+	double stdev (void) const;
+	unsigned long long MAD (void) const;
 
 	void setInterpolated (map<string, InterpolationResults*> i)
 	  { interpolated = i; }

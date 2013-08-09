@@ -49,7 +49,7 @@ class InterpolationKriger : public Interpolation
 	public:
 	InterpolationKriger (unsigned steps, double nuget, bool prefilter);
 	void pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters);
-	string details (void);
+	string details (void) const;
 };
 
 #endif

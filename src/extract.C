@@ -78,12 +78,19 @@ class Sample
 
 class ThreadInformation
 {
+	private:
+	bool seen;
+
 	public:
 	vector<Sample> Samples;
-	bool seen;
 
 	unsigned long long CurrentRegion;
 	unsigned long long StartRegion;
+
+	bool getSeen (void) const
+	  { return seen; }
+	void setSeen (bool b)
+	  { seen = b; }
 
 	ThreadInformation ();
 	~ThreadInformation ();
@@ -166,7 +173,7 @@ class InformationHolder
 	set<unsigned> missingRegions; /* Those regions that do not have an entry as a value in the PCF*/
 	
 	public:
-	int getNumPTasks (void)
+	int getNumPTasks (void) const
 	{ return numPTasks; };
 
 	PTaskInformation* getPTasksInformation (void)
@@ -614,7 +621,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 			  thi[thread].StartRegion, e.Timestamp - thi[thread].StartRegion,
 			  thi[thread].Samples);
 			thi[thread].Samples.clear();
-			thi[thread].seen = true;
+			thi[thread].setSeen (true);
 		}
 
 		thi[thread].CurrentRegion = ValueSeparator;
@@ -696,7 +703,7 @@ void Process::dumpSeenObjects (string filename)
 			{
 				ThreadInformation *threadinfo = taskinfo[task].getThreadsInformation();
 				for (unsigned thread = 0; thread < taskinfo[task].getNumThreads(); thread++)
-					if (threadinfo[thread].seen)
+					if (threadinfo[thread].getSeen())
 						f << ptask+1 << "." << task+1 << "." << thread+1 << endl;
 			} 
 		}

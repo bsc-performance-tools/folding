@@ -42,8 +42,8 @@ class InstanceSeparatorAuto : public InstanceSeparator
 	public:
 	InstanceSeparatorAuto (bool keepallgroups);
 	unsigned separateInGroups (vector<Instance*> &vi);
-	string details(void);
-	string nameGroup (unsigned);
+	string details(void) const;
+	string nameGroup (unsigned) const;
 };
 
 #endif /* INSTANCE_SEPARATOR_AUTO_H_INCLUDED */

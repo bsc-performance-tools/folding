@@ -55,14 +55,25 @@ namespace libparaver {
 
 class codeblock 
 {
-	public:
+	private:
 	unsigned beginline;
 	unsigned endline;
 	unsigned ID;
 	bool inuse;
 
+	public:
 	codeblock (unsigned beginline, unsigned endline, unsigned id);
 	codeblock& operator=( const codeblock& other );
+	unsigned getBeginLine(void) const
+	  { return beginline; }
+	unsigned getEndLine(void) const
+	  { return endline; }
+	unsigned getID(void) const
+	  { return ID; }
+	bool inUse(void) const
+	  { return inuse; }
+	void setinUse(bool b)
+	  { inuse = b; }
 };
 
 codeblock::codeblock (unsigned beginline, unsigned endline, unsigned id)
@@ -97,9 +108,9 @@ class Process : public ParaverTrace
 	void prepare (void);
 	void appendtoPCF (string file);
 
-	bool is_f90 (string &f);
-	bool is_cxx (string &f);
-	bool is_c (string &f);
+	bool is_f90 (string &f) const;
+	bool is_cxx (string &f) const;
+	bool is_c (string &f) const;
 
 	void processState (struct state_t &s);
 	void processMultiEvent (struct multievent_t &e);
@@ -109,7 +120,7 @@ class Process : public ParaverTrace
 	void processComment (string &c);
 };
 
-bool Process::is_f90 (string &f)
+bool Process::is_f90 (string &f) const
 {
 	if (f.length() >= 4)
 		if (f.substr(f.length()-4) == ".f90" ||
@@ -117,7 +128,7 @@ bool Process::is_f90 (string &f)
 			return true;
 	return false;}
 
-bool Process::is_cxx (string &f)
+bool Process::is_cxx (string &f) const
 {
 	if (f.length() >= 2)
 		if (f.substr(f.length()-2) == ".C")
@@ -132,7 +143,7 @@ bool Process::is_cxx (string &f)
 	return false;
 }
 
-bool Process::is_c (string &f)
+bool Process::is_c (string &f) const
 {
 	if (f.length() >= 2)
 		if (f.substr(f.length()-2) == ".c")
@@ -274,10 +285,10 @@ void Process::processMultiEvent (struct multievent_t &e)
 				for (unsigned u = 0; u < v.size()-1; u++)
 				{
 					codeblock c = v[u];
-					if (line >= c.beginline && line <= c.endline )
+					if (line >= c.getBeginLine() && line <= c.getEndLine() )
 					{
-						newvalue = c.ID;
-						c.inuse = true;
+						newvalue = c.getID();
+						c.setinUse (true);
 
 						/* Store any change back into vector & map */
 						v[u] = c;
@@ -364,8 +375,8 @@ void Process::appendtoPCF (string file)
 		for (unsigned u = 0; u < vblocks.size(); u++)
 		{
 			codeblock c = vblocks[u];
-			if (c.inuse)
-				PCFfile << c.ID << " " << c.beginline << "-" << c.endline << " (" << sourceDir  << "/" << (*it).first << ")" << endl;
+			if (c.inUse())
+				PCFfile << c.getID() << " " << c.getBeginLine() << "-" << c.getEndLine() << " (" << sourceDir  << "/" << (*it).first << ")" << endl;
 		}
 	}
 	PCFfile << endl;

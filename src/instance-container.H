@@ -56,12 +56,12 @@ class InstanceContainer
 	void add (Instance *i);
 	const vector<Instance *> getInstances (void) const
 	  { return Instances; }
-	unsigned numInstances (void);
+	unsigned numInstances (void) const;
 	unsigned numSamples (void);
 	void splitInGroups (void);
-	unsigned numGroups (void)
+	unsigned numGroups (void) const
 	  { return ngroups; }
-	string getRegionName (void)
+	string getRegionName (void) const
 	  { return regionName; }
 	InstanceGroup* getInstanceGroup (unsigned g);
 

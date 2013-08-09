@@ -49,7 +49,7 @@ InterpolationRstrucchange::InterpolationRstrucchange (unsigned steps, double h)
 	this->h = h;
 }
 
-string InterpolationRstrucchange::details (void)
+string InterpolationRstrucchange::details (void) const
 {
 	stringstream ss;
 	ss << setprecision(1) << scientific << h;

@@ -54,7 +54,7 @@ void InstanceContainer::add (Instance *i)
 	Instances.push_back (i);
 }
 
-unsigned InstanceContainer::numInstances (void)
+unsigned InstanceContainer::numInstances (void) const
 {
 	return Instances.size();
 }

@@ -50,7 +50,7 @@ class CallstackTree
 
 	void show (unsigned depth = 0);
 
-	CodeRefTriplet getCodeRefTriplet (void)
+	CodeRefTriplet getCodeRefTriplet (void) const
 	  { return nodeTriplet; }
 	vector<CallstackTree*> getChildren (void)
 	  { return children; }
@@ -61,7 +61,7 @@ class CallstackTree
 
 	void increaseOccurrences (unsigned c = 1)
 	  { occurrences += c; }
-	unsigned getOccurrences (void)
+	unsigned getOccurrences (void) const
 	  { return occurrences; }
 };
 

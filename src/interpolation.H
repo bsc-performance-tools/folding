@@ -54,12 +54,12 @@ class Interpolation
 	Interpolation (unsigned steps, bool prefilter);
 	void interpolate (InstanceGroup *ig, set<string> &counters);
 	virtual void pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters);
-	bool preFilter (void)
+	bool preFilter (void) const
 	  { return prefilter; }
-	unsigned getSteps (void)
+	unsigned getSteps (void) const
 	  { return steps; }
 
-	virtual string details (void) = 0;
+	virtual string details (void) const = 0;
 };
 
 #endif
