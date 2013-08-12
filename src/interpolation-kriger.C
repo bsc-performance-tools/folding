@@ -45,9 +45,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 
 InterpolationKriger::InterpolationKriger (unsigned steps, double nuget, 
 	bool prefilter) 
-	: Interpolation(steps, prefilter)
+	: Interpolation(steps, prefilter), nuget (nuget)
 {
-	this->nuget = nuget;
 }
 
 string InterpolationKriger::details (void) const
@@ -95,8 +94,7 @@ unsigned InterpolationKriger::do_interpolate (unsigned inpoints, double *ix,
 void InterpolationKriger::pre_interpolate (double sigmaTimes, InstanceGroup *ig,
 	set<string> &counters)
 {
-	SampleSelectorDistance ssd;
-	ssd.configure (1000);	/* Get up to 1000 samples for this IG */
+	SampleSelectorDistance ssd(1000);
 	ssd.Select (ig, counters);
 
 	vector<Instance *> vi = ig->getInstances();

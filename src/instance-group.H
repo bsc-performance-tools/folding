@@ -56,6 +56,10 @@ class CubeTree;
 class InstanceGroup
 {
 	private:
+	const string regionName;
+	const string groupName;
+	const unsigned numGroup;
+
 	vector<Instance*> Instances;
 	vector<Instance*> excludedInstances;
 
@@ -71,10 +75,6 @@ class InstanceGroup
 #if defined(HAVE_CUBE)
 	Cnode *cubeTree;
 #endif
-
-	string regionName;
-	string groupName;
-	unsigned numGroup;
 
 	void gnuplot_single (ObjectSelection *os, string prefix, string counter,
 	  InterpolationResults *ir);

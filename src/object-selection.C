@@ -37,6 +37,23 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: common.C 1764 2013-05-24 14
 
 #include <sstream>
 
+ObjectSelection::ObjectSelection () : anyptask (true), anytask(true),
+	anythread(true), ptask(0), task(0), thread(0)
+{
+}
+
+ObjectSelection::ObjectSelection (unsigned ptask, bool aptask, unsigned task,
+	bool atask, unsigned thread, bool athread) : anyptask (aptask), anytask(atask),
+	anythread(anythread), ptask(ptask), task(task), thread(thread)
+{
+}
+
+ObjectSelection::ObjectSelection (unsigned ptask, unsigned task, unsigned thread) :
+	anyptask(false), anytask(false), anythread(false), ptask(ptask), task(task),
+	thread(thread)
+{
+}
+
 string ObjectSelection::toString (bool prefix, string anytext) const
 {
 	stringstream ss;

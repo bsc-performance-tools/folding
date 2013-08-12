@@ -43,15 +43,15 @@ using namespace std;
 class Instance
 {
 	private:
-	vector<Sample*> Samples;
-	unsigned ptask;
-	unsigned task;
-	unsigned thread;
-	string RegionName;
-	unsigned group;
-	unsigned long long startTime;
-	unsigned long long duration;
+	const string RegionName;
+	const unsigned ptask;
+	const unsigned task;
+	const unsigned thread;
+	const unsigned long long startTime;
+	const unsigned long long duration;
 	unsigned long long prvValue;
+	unsigned group;
+	vector<Sample*> Samples;
 	set<string> Counters;
 	map<string, unsigned long long> TotalCounterValues;
 

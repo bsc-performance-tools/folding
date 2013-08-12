@@ -38,7 +38,8 @@
 class InterpolationResults
 {
 	private:
-	unsigned count;
+	const unsigned count;
+
 	bool slope_calculated;
 	double slope_factor;
 	double avgCounterValue;

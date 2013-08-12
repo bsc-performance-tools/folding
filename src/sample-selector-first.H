@@ -37,12 +37,13 @@
 class SampleSelectorFirst : public SampleSelector
 {
 	private:
-	unsigned limit;
-	bool limitset;
+	const unsigned limit;
+	const bool limitset;
 
 	public:
 	SampleSelectorFirst (void);
-	void configure (unsigned limit);
+	SampleSelectorFirst (unsigned limit);
+
 	virtual void Select (InstanceGroup *, set<string> &counters);
 };
 

@@ -79,7 +79,7 @@ string common::convertInt (size_t st)
 	return s.str();//return a string with the contents of the stream
 }
 
-string common::removeSpaces (string &in)
+string common::removeSpaces (const string &in)
 {
 	string tmp = in;
 	for (string::iterator it = tmp.begin(); it != tmp.end(); it++)
@@ -88,7 +88,7 @@ string common::removeSpaces (string &in)
 	return tmp;
 }
 
-string common::removeUnwantedChars (string &in)
+string common::removeUnwantedChars (const string &in)
 {
 	string tmp = in;
 	for (string::iterator it = tmp.begin(); it != tmp.end(); it++)

@@ -37,9 +37,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 
 #include <assert.h>
 
-InterpolationResults::InterpolationResults (unsigned count)
+InterpolationResults::InterpolationResults (unsigned count) : count(count)
 {
-	this->count = count;
 	slope_calculated = false;
 	interpolation = new double[count];
 	slope = new double[count];

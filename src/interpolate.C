@@ -590,19 +590,15 @@ int ProcessParameters (int argc, char *argv[])
 				exit (-1);
 			}
 
-			SampleSelectorFirst *ssf = new SampleSelectorFirst;
-			int numsamples;
-
 			i++;
-			if (atoi (argv[i]) == 0)
+			int numsamples;
+			if ((numsamples = atoi (argv[i])) == 0)
 			{
 				cerr << "Invalid -max-samples" << argv[i] << endl;
 				exit (-1);
 			}
-			else
-				numsamples = atoi(argv[i]);
 
-			ssf->configure (numsamples);
+			SampleSelectorFirst *ssf = new SampleSelectorFirst (numsamples);
 			ss = ssf;
 			continue;
 		}
@@ -614,19 +610,15 @@ int ProcessParameters (int argc, char *argv[])
 				exit (-1);
 			}
 
-			SampleSelectorDistance *ssd = new SampleSelectorDistance;
-			int numsamples;
-
 			i++;
-			if (atoi (argv[i]) == 0)
+			int numsamples;
+			if ((numsamples = atoi (argv[i])) == 0)
 			{
 				cerr << "Invalid -max-samples-distance" << argv[i] << endl;
 				exit (-1);
 			}
-			else
-				numsamples = atoi(argv[i]);
 
-			ssd->configure (numsamples);
+			SampleSelectorDistance *ssd = new SampleSelectorDistance (numsamples);
 			ss = ssd;
 			continue;
 		}

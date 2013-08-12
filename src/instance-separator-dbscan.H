@@ -37,8 +37,8 @@
 class InstanceSeparatorDBSCAN : public InstanceSeparator
 {
 	private:
-	double eps;
-	unsigned minpoints;
+	const double eps;
+	const unsigned minpoints;
 
 	public:
 	InstanceSeparatorDBSCAN (unsigned minpoints, double eps,

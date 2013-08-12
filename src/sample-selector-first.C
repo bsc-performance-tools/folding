@@ -35,15 +35,12 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 
 #include "sample-selector-first.H"
 
-SampleSelectorFirst::SampleSelectorFirst (void)
+SampleSelectorFirst::SampleSelectorFirst (void) : limitset(false), limit(0)
 {
-	this->limitset = false;
 }
 
-void SampleSelectorFirst::configure (unsigned limit)
+SampleSelectorFirst::SampleSelectorFirst (unsigned limit) : limitset(true), limit(limit)
 {
-	this->limit = limit;
-	this->limitset = true;
 }
 
 void SampleSelectorFirst::Select (InstanceGroup *ig, set<string> &counters)

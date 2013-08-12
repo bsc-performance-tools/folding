@@ -35,15 +35,13 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 
 #include "codereftriplet-accounting.H"
 
-CodeRefTriplet::CodeRefTriplet (void)
+CodeRefTriplet::CodeRefTriplet (void) : Caller(0), CallerLine(0), CallerLineAST(0)
 {
 }
 
 CodeRefTriplet::CodeRefTriplet (unsigned Caller, unsigned CallerLine, 
-	unsigned CallerLineAST)
+	unsigned CallerLineAST) : Caller(Caller), CallerLine(CallerLine),
+	CallerLineAST(CallerLineAST)
 {
-	this->Caller = Caller;
-	this->CallerLine = CallerLine;
-	this->CallerLineAST = CallerLineAST;
 }
 
