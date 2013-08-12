@@ -261,5 +261,5 @@ AC_CHECK_FUNC(stat, [AC_DEFINE([HAVE_STAT],[1],[Define if have stat])])
 AC_CHECK_FUNC(stat64, [AC_DEFINE([HAVE_STAT64],[1],[Define if have stat64])])
 AC_CHECK_FUNC(access, [AC_DEFINE([HAVE_ACCESS],[1],[Define if have access])])
 
-AC_CONFIG_FILES([Makefile src/Makefile src/service-kriger/Makefile src/service-R/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/common/Makefile src/service-kriger/Makefile src/service-R/Makefile])
 AC_OUTPUT
