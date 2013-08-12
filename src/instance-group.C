@@ -44,11 +44,9 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: common.C 1764 2013-05-24 14
 
 using namespace std;
 
-InstanceGroup::InstanceGroup (string name, unsigned id, string groupname)
+InstanceGroup::InstanceGroup (string name, unsigned id, string groupname) :
+	regionName (name), numGroup (id), groupName (groupname)
 {
-	regionName = name;
-	numGroup = id;
-	groupName = groupname;
 }
 
 void InstanceGroup::add (Instance *i)

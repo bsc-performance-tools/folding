@@ -38,15 +38,12 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 
 #include "sample-selector-distance.H"
 
-SampleSelectorDistance::SampleSelectorDistance (void)
+SampleSelectorDistance::SampleSelectorDistance (void) : limitset(false), limit(0)
 {
-	this->limitset = false;
 }
 
-void SampleSelectorDistance::configure (unsigned limit)
+SampleSelectorDistance::SampleSelectorDistance (unsigned limit) : limitset(true), limit(limit)
 {
-	this->limit = limit;
-	this->limitset = true;
 }
 
 static bool sortSamplesByTime (Sample *s1, Sample *s2) { return s1->getNTime() < s2->getNTime(); }

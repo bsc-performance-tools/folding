@@ -37,7 +37,7 @@
 class InterpolationKriger : public Interpolation
 {
 	private:
-	double nuget;
+	const double nuget;
 
 	unsigned do_interpolate (unsigned inpoints,
 		double *ix, double *iy, InterpolationResults *ir, string counter,

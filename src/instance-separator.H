@@ -41,7 +41,7 @@ using namespace std;
 class InstanceSeparator
 {
 	protected:
-	bool keepallgroups;
+	const bool keepallgroups;
 
 	public:
 	InstanceSeparator (bool keepallgroups);

@@ -37,8 +37,8 @@
 class CodeRefTripletAccounting
 {
 	private:
+	const CodeRefTriplet c;
 	unsigned count;
-	CodeRefTriplet c;
 
 	public:
 	CodeRefTripletAccounting (const CodeRefTriplet &c, const unsigned count = 1);

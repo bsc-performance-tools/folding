@@ -40,8 +40,8 @@ enum { SUCCESS, FAILED };
 class Interpolation
 {
 	protected:
-	unsigned steps;
-	bool prefilter;
+	const unsigned steps;
+	const bool prefilter;
 
 	InterpolationResults * interpolate_kernel (vector<Sample*> vs,
 	  string counter, string region, unsigned group);

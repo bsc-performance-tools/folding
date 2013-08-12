@@ -40,16 +40,12 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: interpolate.C 1764 2013-05-
 Instance::Instance (unsigned ptask, unsigned task, unsigned thread,
 	string region, unsigned long long startTime, unsigned long long duration,
 	set<string> &counters, map<string, unsigned long long> totalcountervalues)
+	: RegionName(region), ptask(ptask), task(task), thread(thread),
+	startTime(startTime), duration(duration)
 {
-	this->ptask = ptask;
-	this->task = task;
-	this->thread = thread;
-	this->RegionName = region;
 	this->group = 0;
-	this->startTime = startTime;
-	this->duration = duration;
-	this->Counters = counters;
 	this->prvValue = 0;
+	this->Counters = counters;
 	this->TotalCounterValues = totalcountervalues;
 }
 

@@ -51,8 +51,8 @@ class common
 	static string convertInt (size_t st);
 	static string convertDouble (double, int);
 
-	static string removeSpaces (string &in);
-	static string removeUnwantedChars (string &in);
+	static string removeSpaces (const string &in);
+	static string removeUnwantedChars (const string &in);
 
 	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
 

@@ -35,9 +35,9 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: instance-separator-none.C 2
 
 #include "instance-separator.H"
 
-InstanceSeparator::InstanceSeparator (bool keepallgroups)
+InstanceSeparator::InstanceSeparator (bool keepallgroups) :
+	keepallgroups (keepallgroups)
 {
-	this->keepallgroups = keepallgroups;
 }
 
 void InstanceSeparator::KeepLeadingGroup (vector<Instance*> &Instances, unsigned ngroups)

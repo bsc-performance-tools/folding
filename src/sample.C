@@ -42,12 +42,10 @@ Sample::Sample (unsigned long long sTime, unsigned long long iTime, double nTime
       map<string, unsigned long long> & icountervalue,
       map<string, double> & ncountervalue,
       map<unsigned, CodeRefTriplet> & codetriplet)
+	: sTime (sTime), iTime(iTime), nTime (nTime)
 {
-	this->sTime = sTime;
-	this->iTime = iTime;
-	this->nTime = nTime;
-	this->iCounterValue = icountervalue;
 	this->nCounterValue = ncountervalue;
+	this->iCounterValue = icountervalue;
 	this->CodeTriplet = codetriplet;
 }
 

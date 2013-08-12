@@ -44,9 +44,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 
 
 InterpolationRstrucchange::InterpolationRstrucchange (unsigned steps, double h) 
-	: Interpolation(steps, false)
+	: Interpolation(steps, false), h(h)
 {
-	this->h = h;
 }
 
 string InterpolationRstrucchange::details (void) const

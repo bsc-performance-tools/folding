@@ -39,21 +39,18 @@ using namespace std;
 class ObjectSelection
 {
 	private:
-	unsigned ptask, task, thread;
-	bool anyptask, anytask, anythread;
+	const unsigned ptask;
+	const unsigned task;
+	const unsigned thread;
+	const bool anyptask;
+	const bool anytask;
+	const bool anythread;
 
 	public:
-	ObjectSelection ()
-	  { anyptask = anytask = anythread = true; }
-
+	ObjectSelection ();
 	ObjectSelection (unsigned ptask, bool aptask, unsigned task, bool atask,
-	  unsigned thread, bool athread)
-	  { this->ptask = ptask; this->task = task; this->thread = thread;
-	    this->anyptask = aptask; this->anytask = atask; this->anythread = athread; }
-
-	ObjectSelection (unsigned ptask, unsigned task, unsigned thread)
-	  { this->ptask = ptask; this->task = task; this->thread = thread;
-	    this->anyptask = this->anytask = this->anythread = false; }
+	  unsigned thread, bool athread);
+	ObjectSelection (unsigned ptask, unsigned task, unsigned thread);
 
 	bool match (unsigned ptask, unsigned task, unsigned thread) const
 	  { return (this->anyptask || this->ptask == ptask) &&

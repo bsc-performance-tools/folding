@@ -38,10 +38,9 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 
 #include "interpolation.H"
 
-Interpolation::Interpolation (unsigned steps, bool prefilter)
+Interpolation::Interpolation (unsigned steps, bool prefilter) : steps(steps),
+	prefilter(prefilter)
 {
-	this->steps = steps;
-	this->prefilter = prefilter;
 }
 
 void Interpolation::pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters)

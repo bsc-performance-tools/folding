@@ -41,10 +41,9 @@ using namespace std;
 class Sample
 {
 	private:
-	unsigned long long sTime; /* integral time of the sample */
-	unsigned long long iTime; /* integral time since start of instance */
-	double nTime; /* normalized time since start of instance */
-
+	const unsigned long long sTime; /* integral time of the sample */
+	const unsigned long long iTime; /* integral time since start of instance */
+	const double nTime; /* normalized time since start of instance */
 	map<string, unsigned long long> iCounterValue; /* integral counter value */
 	map<string, double> nCounterValue; /* normalized counter value */
 	map<unsigned, CodeRefTriplet> CodeTriplet; /* Code reference triplets (caller, callerline, callerlineAST) */

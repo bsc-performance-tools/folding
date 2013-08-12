@@ -35,9 +35,9 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 
 #include "codereftriplet-accounting.H"
 
-CodeRefTripletAccounting::CodeRefTripletAccounting (const CodeRefTriplet &c, const unsigned count) 
+CodeRefTripletAccounting::CodeRefTripletAccounting (const CodeRefTriplet &c,
+	const unsigned count) : c(c)
 {
-	this->c = c;
 	this->count = count;
 }
 

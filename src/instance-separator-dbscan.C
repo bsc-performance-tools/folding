@@ -47,10 +47,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 InstanceSeparatorDBSCAN::InstanceSeparatorDBSCAN (unsigned minpoints, 
 	double epsilon, bool keepallgroups)
-	: InstanceSeparator (keepallgroups)
+	: InstanceSeparator (keepallgroups), eps(epsilon), minpoints(minpoints)
 {
-	this->minpoints = minpoints;
-	this->eps = epsilon;
 }
 
 unsigned InstanceSeparatorDBSCAN::separateInGroups (vector<Instance*> &vi)
