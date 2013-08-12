@@ -285,6 +285,10 @@ void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 		map<unsigned, CodeRefTripletAccounting*> accPerLine = aXline[phase];
 		map<unsigned, CodeRefTripletAccounting*>::iterator line;
 
+		/* Annotate here the ASTs where we have dumped info in order to avoid
+		   duplications */
+		set<unsigned> processedASTs;
+
 		unsigned total = 0;
 		for (line = accPerLine.begin(); line != accPerLine.end(); line++)
 			total += ((*line).second)->getCount();
@@ -304,23 +308,27 @@ void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 				EmitMetricFileLine (dir, phase+1, "#Occurrences", filename, fline,
 				  ((*line).second)->getCount());
 
-				for (int l = bline; l <= eline; l++)
+				if (processedASTs.count(crt.getCallerLineAST()) == 0)
 				{
-					/* Emit phase, duration & hwcounters */
-					EmitMetricFileLine (dir, phase+1, "Duration(ms)", filename, l, duration / 1000000.f);
-
-					set<string>::iterator ctr;
-					for (ctr = counters.begin(); ctr != counters.end(); ctr++)
+					for (int l = bline; l <= eline; l++)
 					{
-						string nCounterID;
-						if (common::isMIPS(*ctr))
-							nCounterID = "MIPS";
-						else
-							nCounterID = (*ctr)+"pms";
+						/* Emit phase, duration & hwcounters */
+						EmitMetricFileLine (dir, phase+1, "Duration(ms)", filename, l, duration / 1000000.f);
 
-						double hwcvalue = (iresults[*ctr])->getSlopeAt (inbetween);
-						EmitMetricFileLine (dir, phase+1, nCounterID, filename, l, hwcvalue);
+						set<string>::iterator ctr;
+						for (ctr = counters.begin(); ctr != counters.end(); ctr++)
+						{
+							string nCounterID;
+							if (common::isMIPS(*ctr))
+								nCounterID = "MIPS";
+							else
+								nCounterID = (*ctr)+"pms";
+
+							double hwcvalue = (iresults[*ctr])->getSlopeAt (inbetween);
+							EmitMetricFileLine (dir, phase+1, nCounterID, filename, l, hwcvalue);
+						}
 					}
+					processedASTs.insert (crt.getCallerLineAST());
 				}
 			}
 	}
