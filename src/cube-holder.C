@@ -336,18 +336,21 @@ void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 
 void CubeHolder::dumpFileMetrics (string dir, InstanceContainer &ic, set<string> counters)
 {
-	unsigned maxgroup = 0;
-	InstanceGroup *maxig = ic.getInstanceGroup(maxgroup);
-	for (unsigned g = 1; g < ic.numGroups(); g++)
+	if (common::existsDir (dir))
 	{
-		InstanceGroup *ig = ic.getInstanceGroup(g);
-		if (maxig->numInstances() < ig->numInstances())
+		unsigned maxgroup = 0;
+		InstanceGroup *maxig = ic.getInstanceGroup(maxgroup);
+		for (unsigned g = 1; g < ic.numGroups(); g++)
 		{
-			maxgroup = g;
-			maxig = ic.getInstanceGroup(maxgroup);
+			InstanceGroup *ig = ic.getInstanceGroup(g);
+			if (maxig->numInstances() < ig->numInstances())
+			{
+				maxgroup = g;
+				maxig = ic.getInstanceGroup(maxgroup);
+			}
 		}
-	}
 
-	dumpFileMetrics_Lines_ASTs (dir, maxig, counters);
+		dumpFileMetrics_Lines_ASTs (dir, maxig, counters);
+	}
 }
 

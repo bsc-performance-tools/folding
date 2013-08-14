@@ -39,10 +39,10 @@ class Callstack
 {
 	private:
 	Sample *lookLongestWithMain (vector<Sample*> &vs, unsigned mainid);
-	bool hasMain (Sample* s, unsigned mainid);
+	Sample *lookLongest (vector<Sample*> &vs);
 
 	public:
-	void generate (InstanceGroup *ig, unsigned mainid = 0);
+	void generate (InstanceGroup *ig, bool hasmain, unsigned mainid);
 };
 
 #endif /* CALLSTACK_H_INCLUDED */

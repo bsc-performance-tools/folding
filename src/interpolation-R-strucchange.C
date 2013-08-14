@@ -46,13 +46,25 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 InterpolationRstrucchange::InterpolationRstrucchange (unsigned steps, double h) 
 	: Interpolation(steps, false), h(h)
 {
+#if defined(HAVE_R_DOPARALLEL)
+	bool b;
+	nprocs = common::getNumCores(b);
+	if (!b)
+	{
+		nprocs = common::getNumProcessors(b);
+		if (!b)
+			nprocs = 1;
+	}
+#else
+	nprocs = 1;
+#endif
 }
 
 string InterpolationRstrucchange::details (void) const
 {
 	stringstream ss;
 	ss << setprecision(1) << scientific << h;
-	return string ("R+strucchange (h=") + ss.str() + ")";
+	return string ("R+strucchange (h=") + ss.str() + ",np=" + common::convertInt (nprocs) + ")";
 }
 
 
@@ -81,7 +93,7 @@ unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 			file << ix[p] << ";" << iy[p] << endl;
 		file.close();
 
-#define R_BREAKPOINTS_FILE "breakpoints.2.R"
+#define R_BREAKPOINTS_FILE "breakpoints.3.R"
 
 		string Rcommands = string("\n")+
 		  "source (\"" + getenv ("FOLDING_HOME") +"/etc/" + R_BREAKPOINTS_FILE + "\")\n\n" +
@@ -93,7 +105,8 @@ unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 		  "FILE <- \"" + f + "\"\n" +
 		  "NSTEPS <- 0\n" +
 		  "MAX_ERROR <- 0.002\n" +
-		  "main (FILE, H, NSTEPS, MAX_ERROR, COUNTER, GROUP)\n";
+		  "NCORES <- " + common::convertInt (nprocs) + "\n" +
+		  "main (FILE, H, NSTEPS, MAX_ERROR, COUNTER, GROUP, NCORES)\n";
 
 #undef R_BREAKPOINTS_FILE
 

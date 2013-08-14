@@ -1055,36 +1055,32 @@ int main (int argc, char *argv[])
 		if (!found)
 			mainid = common::lookForValueString (pcf,
 			  EXTRAE_SAMPLE_CALLER_MIN, "generic_start_main", found);
-
 		/* Default to regular main symbol */
 		if (!found)
 			mainid = common::lookForValueString (pcf,
 			  EXTRAE_SAMPLE_CALLER_MIN, "main", found);
+		if (!found)
+			mainid = 0;
+		
+		CubeHolder ch (pcf, counters);
 
-		if (found)
+		ch.eraseLaunch (oFileCUBE);
+		for (it = regions.begin(); it != regions.end(); it++)
 		{
-			CubeHolder ch (pcf, counters);
+			if (Instances.count(*it) == 0)
+				continue;
 
-			ch.eraseLaunch (oFileCUBE);
-			for (it = regions.begin(); it != regions.end(); it++)
+			InstanceContainer ic = Instances.at(*it);
+			for (unsigned u = 0; u < ic.numGroups(); u++)
 			{
-				if (Instances.count(*it) == 0)
-					continue;
-
-				InstanceContainer ic = Instances.at(*it);
-				for (unsigned u = 0; u < ic.numGroups(); u++)
-				{
-					Callstack *ct = new Callstack;
-					ct->generate (ic.getInstanceGroup(u), mainid);
-				}
-				ch.generateCubeTree (ic, pcf, sourceDirectory, counters);
-				ch.dumpLaunch (ic, objectsSelected, counters, oFileCUBE);
-				ch.dumpFileMetrics (sourceDirectory, ic, counters);
+				Callstack *ct = new Callstack;
+				ct->generate (ic.getInstanceGroup(u), found, mainid);
 			}
-			ch.dump (oFileCUBE);
+			ch.generateCubeTree (ic, pcf, sourceDirectory, counters);
+			ch.dumpLaunch (ic, objectsSelected, counters, oFileCUBE);
+			ch.dumpFileMetrics (sourceDirectory, ic, counters);
 		}
-		else
-			cerr << "Sorry... can't find 'main' symbol in the PCF file, can't generate the CUBE file" << endl;
+		ch.dump (oFileCUBE);
 #endif
 
 		string bfileprefix = common::basename (traceFile.substr (0, traceFile.rfind(".prv")));

@@ -38,16 +38,31 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 
 #include "callstack.H"
 
-bool Callstack::hasMain (Sample* s, unsigned mainid)
-{
-	return s->hasCaller (mainid);
-}
-
 Sample * Callstack::lookLongestWithMain (vector<Sample*> &vs, unsigned mainid)
 {
 	Sample *res = NULL;
-	bool found = false;
-	unsigned longitude;
+
+	for (unsigned u = 0; u < vs.size(); u++)
+	{
+		Sample *s = vs[u];
+		if (s->hasCaller(mainid))
+		{
+			if (res != NULL)
+			{
+				if (s->getCodeRefTripletSize() > res->getCodeRefTripletSize())
+					res = s;
+			}
+			else
+				res = s;
+		}
+	}
+
+	return res;
+}
+
+Sample * Callstack::lookLongest (vector<Sample*> &vs)
+{
+	Sample *res = NULL;
 
 	for (unsigned u = 0; u < vs.size(); u++)
 	{
@@ -55,28 +70,19 @@ Sample * Callstack::lookLongestWithMain (vector<Sample*> &vs, unsigned mainid)
 		map<unsigned, CodeRefTriplet> ct = s->getCodeTriplets();
 		map<unsigned, CodeRefTriplet>::iterator i;
 		for (i = ct.begin(); i != ct.end(); i++)
-		{
-			if ((*i).second.getCaller() == mainid)
+			if (res != NULL)
 			{
-				if (!found)
-				{
+				if (s->getCodeRefTripletSize() > res->getCodeRefTripletSize())
 					res = s;
-					longitude = s->getCodeRefTripletSize();
-					found = true;
-				}
-				else
-				{
-					if (s->getCodeRefTripletSize() > longitude)
-						res = s;
-				}
 			}
-		}
+			else
+				res = s;
 	}
 
 	return res;
 }
 
-void Callstack::generate (InstanceGroup *ig, unsigned mainid)
+void Callstack::generate (InstanceGroup *ig, bool hasmain, unsigned mainid)
 {
 	Sample *sroot = NULL;
 	vector<double> phase_ranges = ig->getInterpolationBreakpoints();
@@ -85,7 +91,8 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 	vector< map< unsigned, CodeRefTripletAccounting*> > accPerLine;
 
 	if (common::DEBUG())
-		cout << "generateTree for InstanceGroup " << ig << " mainid = " << mainid << endl;
+		cout << "generateTree for InstanceGroup " << ig << " with main? " << hasmain
+		  << " mainid = " << mainid << endl;
 
 	/* Phases must have at least two elements [0.0, 1.0] */
 	assert (phase_ranges.size() >= 2);
@@ -110,7 +117,11 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 
 		map<unsigned, CodeRefTripletAccounting*> accountPerLine;
 
-		Sample *sroot = lookLongestWithMain (vs, mainid);
+		Sample *sroot;
+		if (hasmain)
+			sroot = lookLongestWithMain (vs, mainid);
+		else
+			sroot = lookLongest (vs);
 
 		if (common::DEBUG())
 			cout << "sroot = " << sroot << " in phase " << phase << endl;
@@ -118,7 +129,16 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 		if (sroot != NULL)
 		{
 			/* Generate a new tree using this root (main) and connecting to the superroot */
-			CallstackTree *root = new CallstackTree (sroot, 0);
+			CallstackTree *root;
+			if (!hasmain)
+			{
+				/* If we don't have a main, invent it, and join the remaining part */
+				root = new CallstackTree ();
+				CallstackTree *pseudoroot = new CallstackTree (sroot, 0);
+				root->insert (pseudoroot);
+			}
+			else
+				root = new CallstackTree (sroot, 0);
 
 			if (common::DEBUG())
 			{
@@ -158,7 +178,13 @@ void Callstack::generate (InstanceGroup *ig, unsigned mainid)
 						cout << "Adding sample into callstack" << endl;
 						s->show();
 					}
-					if ((ct = root->findDeepestCommonCaller (s, 0, d)) != NULL)
+
+					if (!hasmain)
+						ct = root->findDeepestCommonCallerWithoutMain (s, d);
+					else
+						ct = root->findDeepestCommonCaller (s, 0, d);
+
+					if (ct != NULL)
 					{
 						if (common::DEBUG())
 							cout << "Deepest common caller info : depth = " << d 
