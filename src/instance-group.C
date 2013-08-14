@@ -327,10 +327,10 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	  "set x2range [0:1];" << endl <<
 	  "set yrange [0:1];" << endl <<
 	  "set y2range [0:*];" << endl <<
-	  "set ytics nomirror; " << endl <<
-	  "set y2tics nomirror; " << endl <<
-	  "set xtics nomirror; " << endl <<
-	  "set x2tics nomirror; " << endl <<
+	  "set ytics nomirror;" << endl <<
+	  "set y2tics nomirror;" << endl <<
+	  "set xtics nomirror format \"%%.2f\";" << endl <<
+	  "set x2tics nomirror format \"%%.2f\";" << endl <<
 	  "set xrange [0:" << m << "];" << endl <<
 	  "set xlabel 'Time (in ms)'" << endl <<
 	  "set ylabel 'Normalized " << counter << "';" << endl;
@@ -447,9 +447,9 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
 	  "set x2range [0:1];" << endl <<
 	  "set yrange [0:*];" << endl <<
-	  "set ytics mirror; " << endl <<
-	  "set xtics nomirror; " << endl <<
-	  "set x2tics nomirror; " << endl <<
+	  "set ytics mirror;" << endl <<
+	  "set xtics nomirror format \"%%.2f\";" << endl <<
+	  "set x2tics nomirror format \"%%.2f\";" << endl <<
 	  "set xrange [0:" << m << "];" << endl <<
 	  "set xlabel 'Time (in ms)'" << endl <<
 	  "set ylabel 'Performance counter rate (in Mevents/s)';" << endl;

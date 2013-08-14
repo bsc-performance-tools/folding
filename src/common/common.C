@@ -36,6 +36,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <sys/stat.h>
 
@@ -399,3 +400,43 @@ string common::basename (string s)
 	return r;
 }
 
+unsigned common::getNumCores (bool &found)
+{
+	unsigned ncores = 0;
+	found = false;
+
+	ifstream procinfo ("/proc/cpuinfo");
+	if (procinfo.is_open())
+	{
+		string line;
+		while (getline(procinfo, line) && !found)
+		{
+			if (line.find ("cpu cores") == 0) // at the begin of the line
+				if (line.find (":") != string::npos)
+				{
+					string tmp = line.substr (line.find (":")+1);
+					ncores = atoi (tmp.c_str());
+					found = true;
+				}
+		}
+		procinfo.close();
+	}
+	return ncores;
+}
+
+unsigned common::getNumProcessors (bool &found)
+{
+	found = false;
+	unsigned nprocessors = 0;
+
+	ifstream procinfo ("/proc/cpuinfo");
+	if (procinfo.is_open())
+	{
+		string line;
+		while (getline(procinfo, line))
+			if (line.find ("processor") == 0) // at the begin of the line
+				nprocessors++;
+		procinfo.close();
+	}
+	return nprocessors;
+}

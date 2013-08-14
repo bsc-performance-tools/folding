@@ -47,7 +47,7 @@ class CubeTree
 
 	public:
 	void generate (Cube &, Cnode *, CallstackTree *, UIParaverTraceConfig *pcf,
-	  string &sourceDir);
+	  string &sourceDir, unsigned depth = 0);
 	Cnode *getCubeNode (void)
 	  { return cube_node; }
 };

@@ -46,6 +46,9 @@ using namespace libparaver;
 class common
 {
 	public:
+	static unsigned getNumCores (bool &found);
+	static unsigned getNumProcessors (bool &found);
+
 	static string convertInt (int);
 	static string convertInt (unsigned);
 	static string convertInt (size_t st);

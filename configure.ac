@@ -182,6 +182,25 @@ if test -x "${RBIN}" ; then
 		else
 			AC_MSG_RESULT([no])
 		fi
+
+		AC_MSG_CHECKING(that R has the doParallel package)
+		echo "library(doParallel)" > ${TMPDIR:-/tmp}/Rconftest
+		echo "registerDoParallel(cores=1)" >> ${TMPDIR:-/tmp}/Rconftest
+		echo "getDoParName()" >> ${TMPDIR:-/tmp}/Rconftest
+		echo "getDoParVersion()" >> ${TMPDIR:-/tmp}/Rconftest
+		${RBIN} -f ${TMPDIR:-/tmp}/Rconftest > ${TMPDIR:-/tmp}/Rconftest.out 2> /dev/null
+		grep 1 ${TMPDIR:-/tmp}/Rconftest.out > ${TMPDIR:-/tmp}/Rconftest.out.grep
+		doparallel=`tail -2 ${TMPDIR:-/tmp}/Rconftest.out.grep | head -1 | cut -d\" -f2`
+		if test "${doparallel}" = "doParallel" ; then
+			R_DOPARALLEL_AVAILABLE=yes
+			AC_MSG_RESULT([yes])
+			AC_MSG_CHECKING(for the doParallel package version)
+			version=`tail -1 ${TMPDIR:-/tmp}/Rconftest.out.grep | cut -d\" -f 2`
+			AC_MSG_RESULT($version)
+		else
+			AC_MSG_RESULT([no])
+		fi
+
 	else
 		AC_MSG_RESULT([no])
 	fi
@@ -189,7 +208,12 @@ else
 	AC_MSG_RESULT([Not found])
 fi
 if test "${R_STRUCCHANGE_AVAILABLE}" = "yes" ; then
-	AC_MSG_NOTICE([Segmented linear regression through R+strucchange is available])
+	if test "${R_DOPARALLEL_AVAILABLE}" = "yes" ;  then
+		AC_MSG_NOTICE([Segmented linear regression through R+strucchange is available through parallel version])
+		AC_DEFINE([HAVE_R_DOPARALLEL], [1], [Define if R has doParallel package])
+	else
+		AC_MSG_NOTICE([Segmented linear regression through R+strucchange is available through serial version])
+	fi
 	AC_DEFINE([HAVE_R],[1],[Define if have R available])
 	AC_DEFINE_UNQUOTED([R_BINARY],["${RBIN}"],[Define binary for R])
 elif test "${R_AVAILABLE}" = yes ; then

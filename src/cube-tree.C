@@ -40,15 +40,24 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: callstackanalysis.C 1764 20
 #include <sstream>
 
 void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree, 
-	UIParaverTraceConfig *pcf, string &sourceDir)
+	UIParaverTraceConfig *pcf, string &sourceDir, unsigned depth)
 {
 	CodeRefTriplet crt = ctree->getCodeRefTriplet();
 
 	string routine, file;
 	int bline, eline;
 
-	common::lookForCallerASTInfo (pcf, crt.getCaller(), crt.getCallerLineAST(),
-		routine, file, bline, eline);
+	/* If this is the top of the tree and the node is a fake main,
+	   rename the routine into "main*" */
+	if (depth == 0 && crt.getCaller() == 0)
+	{
+		routine = "main*";
+		file = "";
+		bline = eline = 0;
+	}
+	else
+		common::lookForCallerASTInfo (pcf, crt.getCaller(), crt.getCallerLineAST(),
+			routine, file, bline, eline);
 
 	/* Create a node for this routine */
 	cube_region = c.def_region (routine, 0, 0, "", "", file);
@@ -66,7 +75,7 @@ void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree,
 		for (unsigned u = 0; u < vctree.size(); u++)
 		{
 			CubeTree *tmp = new CubeTree;
-			tmp->generate (c, cube_node, vctree[u], pcf, sourceDir);
+			tmp->generate (c, cube_node, vctree[u], pcf, sourceDir, depth+1);
 			children.push_back (tmp);
 		}
 	}

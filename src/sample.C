@@ -56,10 +56,11 @@ Sample::~Sample (void)
 void Sample::show (void)
 {
 	map<unsigned, CodeRefTriplet>::reverse_iterator it1;
+	cout << "Sample @ " << sTime << endl;
 	for (it1 = CodeTriplet.rbegin(); it1 != CodeTriplet.rend(); it1++)
-		cout << "Sample [" << (*it1).first << " <" << (*it1).second.getCaller() 
+		cout << "[ " << (*it1).first << " <" << (*it1).second.getCaller() 
 		  << "," << (*it1).second.getCallerLine() << "," 
-		  << (*it1).second.getCallerLineAST() << "> ] @ " << sTime;
+		  << (*it1).second.getCallerLineAST() << "> ]" << endl;
 	map<string, unsigned long long>::iterator it2;
 	cout << "[";
 	for (it2 = iCounterValue.begin(); it2 != iCounterValue.end(); it2++)

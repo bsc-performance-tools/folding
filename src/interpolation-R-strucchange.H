@@ -38,6 +38,7 @@ class InterpolationRstrucchange : public Interpolation
 {
 	private:
 	const double h;
+	unsigned nprocs;
 
 	unsigned do_interpolate (unsigned inpoints,
 	  double *ix, double *iy, InterpolationResults *ir,

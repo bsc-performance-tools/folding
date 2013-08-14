@@ -75,11 +75,44 @@ CallstackTree::CallstackTree (void)
 
 void CallstackTree::insert (CallstackTree *other)
 {
-	assert (this->nodeTriplet.getCaller() == other->nodeTriplet.getCaller());
+	assert (
+	  this->nodeTriplet.getCaller() == other->nodeTriplet.getCaller()
+	  ||
+	  this->nodeTriplet.getCaller() == 0);
 
-	// cout << "inserting " << other->children.size() << " # children " << endl;
-	for (unsigned c = 0; c < other->children.size(); c++)
-		children.push_back (other->children[c]);
+	/* If we don't have a main, add the 'other' tree as a children of the root, 
+	   otherwise, add the other child as the children of this! */
+	if (this->nodeTriplet.getCaller() == 0)
+	{
+		children.push_back (other);
+	}
+	else
+	{
+		for (unsigned c = 0; c < other->children.size(); c++)
+			children.push_back (other->children[c]);
+	}
+}
+
+CallstackTree* CallstackTree::findDeepestCommonCallerWithoutMain (Sample *s, unsigned &depth_common)
+{
+	/* Only applicable to super-root (or fake main) */
+	assert (this->nodeTriplet.getCaller() == 0);
+
+	/* Get the head of the stack */
+	map<unsigned, CodeRefTriplet> crt = s->getCodeTriplets();
+	map<unsigned, CodeRefTriplet>::reverse_iterator i = crt.rbegin();
+	CodeRefTriplet other = (*i).second;
+
+	/* If a children matched with the head of the stack, follow it */
+	for (unsigned u = 0; u < children.size(); u++)
+		if (children[u]->nodeTriplet.getCaller() == other.getCaller())
+			return children[u]->findDeepestCommonCaller (s, 0, depth_common);
+	/* Set depth to 0, because this is the fake main and it isn't actually
+	   accounted in the tree */
+
+	/* If there isn't a common child, return this, which should be the super-root */
+	depth_common = 0;
+	return this;
 }
 
 CallstackTree* CallstackTree::findDeepestCommonCaller (Sample *s, unsigned depth, unsigned &depth_common)

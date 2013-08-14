@@ -57,7 +57,10 @@ class CallstackTree
 
 	void insert (CallstackTree *other);
 
-	CallstackTree* findDeepestCommonCaller (Sample *s, unsigned depth, unsigned & depth_common);
+	CallstackTree* findDeepestCommonCaller (Sample *s, unsigned depth,
+	  unsigned & depth_common);
+	CallstackTree* findDeepestCommonCallerWithoutMain (Sample *s,
+	  unsigned &depth_common);
 
 	void increaseOccurrences (unsigned c = 1)
 	  { occurrences += c; }

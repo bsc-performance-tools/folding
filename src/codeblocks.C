@@ -221,7 +221,7 @@ void Process::prepare (void)
 				unsigned preline = 1, lastline;
 				while (bb_file >> lastline)
 				{
-					codeblock c (preline, lastline, total_id++);
+					codeblock c(preline, lastline, total_id++);
 					vtmp.push_back (c);
 					preline = lastline;
 				}
@@ -272,17 +272,18 @@ void Process::processMultiEvent (struct multievent_t &e)
 			string file;
 			int line;
 
-			if (common::DEBUG())
-				cout << "Looking for CallerLine info for value " << (*it).Value << " at timestamp " << e.Timestamp << endl;
-
 			common::lookForCallerLineInfo (pcf, (*it).Value, file, line);
+
+			if (common::DEBUG())
+				cout << "Looking for CallerLine info for value " << (*it).Value << " file = "
+				  << file << " at line " << line << " at timestamp " << e.Timestamp << endl;
 
 			int newvalue;
 			if (fileblocks.count(file) > 0)
 			{
 				bool within_astblock = false;
 				vector< codeblock > v = fileblocks[file];
-				for (unsigned u = 0; u < v.size()-1; u++)
+				for (unsigned u = 0; u < v.size(); u++)
 				{
 					codeblock c = v[u];
 					if (line >= c.getBeginLine() && line <= c.getEndLine() )

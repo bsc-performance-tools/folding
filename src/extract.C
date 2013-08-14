@@ -51,6 +51,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "interpolate.H"
 
 unsigned long long RegionSeparator = 0;
+string RegionSeparatorName;
 
 using namespace std;
 
@@ -239,8 +240,8 @@ class Process : public ParaverTrace
 	public:
 	Process (string prvFile, bool multievents);
 
-	string getType (unsigned type);
-	string getTypeValue (unsigned type, unsigned value);
+	string getType (unsigned type, bool &found);
+	string getTypeValue (unsigned type, unsigned value, bool &found);
 	void allocateBuffers (void);
 	void closeFile (void);
 	void processState (struct state_t &s);
@@ -288,12 +289,17 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 	for (unsigned u = 0, j = 0; u < vtypes.size(); u++)
 		if ( vtypes[u] >= PAPI_MIN_COUNTER && vtypes[u] <= PAPI_MAX_COUNTER )
 		{
-			string s = getType (vtypes[u]);
-			CounterUsed[j] = false;
-			CounterIDs[j] = vtypes[u];
-			CounterIDNames[j] = s.substr (s.find ('(')+1, s.find (')', s.find ('(')+1) - (s.find ('(') + 1));
-			HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?1:0;
-			j++;
+			bool found;
+			string s = getType (vtypes[u], found);
+			/* It should always exist because it was returned by getEventTypes... */
+			if (found)
+			{
+				CounterUsed[j] = false;
+				CounterIDs[j] = vtypes[u];
+				CounterIDNames[j] = s.substr (s.find ('(')+1, s.find (')', s.find ('(')+1) - (s.find ('(') + 1));
+				HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?1:0;
+				j++;
+			}
 		}
 
 	string completefile = prvFile.substr (0, prvFile.length()-4) + ".extract" ;
@@ -427,16 +433,13 @@ void Process::dumpSamples (unsigned ptask, unsigned task, unsigned thread,
 		return;
 
 	/* Write the total time spent in this region */
-	string RegionName;
-	try
-	{
-		RegionName = getTypeValue (RegionSeparator, region);
-	}
-	catch (...)
+	bool RegionFound;
+	string RegionName = getTypeValue (RegionSeparator, region, RegionFound);
+	if (!RegionFound)
 	{
 		stringstream ss;
 		ss << region;
-		RegionName = "Unknown_" + ss.str();
+		RegionName = "Value_" + ss.str();
 		IH.addMissingRegion (region);
 	}
 	RegionName = common::removeSpaces (RegionName);
@@ -670,24 +673,37 @@ void Process::allocateBuffers (void)
 
 }
 
-string Process::getType (unsigned type)
+string Process::getType (unsigned type, bool &found)
 {
+	found = true;
 	string s;
 
 	try
 	{ s = pcf->getEventType (type); }
 	catch (...)
 	{
-		cerr << "ERROR! Exception launched when looking for the description of type " << type << " in the PCF file. Check that it exists..." << endl; 
-		exit (-1);
+		cerr << "Warning! Did not find the description of type " << type << " in the PCF file... Will add the definition" << endl; 
+		found = false;
+		s = "";
 	}
 
 	return s;
 }
 
-string Process::getTypeValue (unsigned type, unsigned value)
+string Process::getTypeValue (unsigned type, unsigned value, bool &found)
 {
-	return pcf->getEventValue (type, value);
+	found = true;
+	string s;
+
+	try
+	{ s = pcf->getEventValue (type, value); }
+	catch (...)
+	{
+		found = false;
+		s = "";
+	}
+
+	return s;
 }
 
 void Process::dumpSeenObjects (string filename)
@@ -753,7 +769,7 @@ void Process::dumpMissingValuesIntoPCF (void)
 		if (f.is_open())
 		{
 			f << "EVENT_TYPE" << endl
-			  << "0 " << RegionSeparator << " " << getType (RegionSeparator) << endl
+			  << "0 " << RegionSeparator << " " << RegionSeparatorName << endl
 			  << "VALUES" << endl;
 			set<unsigned>::iterator i;
 			for (i = m.begin(); i != m.end(); i++)
@@ -762,7 +778,7 @@ void Process::dumpMissingValuesIntoPCF (void)
 				  << " value " << *i << " into " << pcffile << endl;
 				stringstream ss;
 				ss << *i;
-				f << *i << " Unknown_" << ss.str() << endl;
+				f << *i << " Value_" << ss.str() << endl;
 			}
 		}
 		f.close();
@@ -826,21 +842,40 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
+	bool found;
 	cout << "Checking for basic caller information" << flush;
-	string t1 = p->getType (EXTRAE_SAMPLE_CALLER_MIN);
+	string t1 = p->getType (EXTRAE_SAMPLE_CALLER_MIN, found);
+	if (!found)
+	{
+		cerr << endl << "Unable to get caller information (event type " << EXTRAE_SAMPLE_CALLER_MIN << ")" << endl;
+		exit (-1);
+	}
 	cout << ", caller line information" << flush;
-	string t2 = p->getType (EXTRAE_SAMPLE_CALLERLINE_MIN);
+	string t2 = p->getType (EXTRAE_SAMPLE_CALLERLINE_MIN, found);
+	if (!found)
+	{
+		cerr << endl << "Unable to get caller line information (event type " << EXTRAE_SAMPLE_CALLERLINE_MIN << ")" << endl;
+		exit (-1);
+	}
 	cout << ", caller line AST information" << flush;
-	string t3 = p->getType (EXTRAE_SAMPLE_CALLERLINE_AST_MIN);
+	string t3 = p->getType (EXTRAE_SAMPLE_CALLERLINE_AST_MIN, found);
 	cout << " Done" << endl;
+	if (!found)
+	{
+		cerr << endl << "Unable to get caller line AST information (event type " << EXTRAE_SAMPLE_CALLERLINE_AST_MIN << ")" << endl;
+		exit (-1);
+	}
 
 	/* By loading these t1-3 we ensure that the all callers triplets exist */
-
-	string RegionSeparatorName = p->getType (RegionSeparator);
-	if (RegionSeparatorName.length() > 0)
-		RegionSeparatorName = common::removeSpaces (RegionSeparatorName);
-	else
-		RegionSeparatorName = "Unknown";
+	bool RegionSeparatorFound;
+	RegionSeparatorName = p->getType (RegionSeparator, RegionSeparatorFound);
+	if (!RegionSeparatorFound)
+	{
+		stringstream ss;
+		ss << RegionSeparator;
+		RegionSeparatorName = "Event_" + ss.str();
+	}
+	RegionSeparatorName = common::removeSpaces (RegionSeparatorName);
 
 	cout << "Extracting data for type " << RegionSeparator << " (" << RegionSeparatorName << ")" << endl;
 
