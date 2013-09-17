@@ -44,7 +44,7 @@ ObjectSelection::ObjectSelection () : anyptask (true), anytask(true),
 
 ObjectSelection::ObjectSelection (unsigned ptask, bool aptask, unsigned task,
 	bool atask, unsigned thread, bool athread) : anyptask (aptask), anytask(atask),
-	anythread(anythread), ptask(ptask), task(task), thread(thread)
+	anythread(athread), ptask(ptask), task(task), thread(thread)
 {
 }
 

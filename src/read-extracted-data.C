@@ -163,9 +163,10 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 			}
 
 			map<unsigned, CodeRefTriplet> ct;
-			unsigned ncodereftriplets;
+			unsigned ncodereftriplets, ncrt;
 			file >> ncodereftriplets;
-			while (ncodereftriplets > 0)
+			ncrt = ncodereftriplets;
+			while (ncrt > 0)
 			{
 				unsigned depth;
 				unsigned c, cl, clast;
@@ -176,7 +177,7 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 				file >> clast;
 				CodeRefTriplet triplet (c, cl, clast);
 				ct[depth] = triplet;
-				ncodereftriplets--;
+				ncrt--;
 			}
 
 			Sample *s = new Sample (sTime, iTime, nTime, icv, ncv, ct);
@@ -186,7 +187,8 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 				exit (-1);
 			}
 
-			s->processCodeTriplets ();
+			if (ncodereftriplets > 0)
+				s->processCodeTriplets ();
 
 			i->addSample (s);
 		}
