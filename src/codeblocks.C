@@ -396,7 +396,7 @@ int ProcessParameters (int argc, char *argv[])
 	{
 		cerr << "Insufficient number of parameters" << endl
 		     << "Available options are: " << endl
-		     << "-source DIR [where DIR poitns to the application source code]" << endl
+		     << "-source DIR [where DIR points to the application source code]" << endl
 		     << endl;
 		exit (-1);
 	}
