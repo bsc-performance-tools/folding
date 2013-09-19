@@ -1,0 +1,4 @@
+* Apply folding on all tasks, instead of one by one.
+  - Feed first instances, nevertheless their task?
+
+* Let -separator in extract to be a string and look it in the pcf?
