@@ -2,3 +2,11 @@
   - Feed first instances, nevertheless their task?
 
 * Let -separator in extract to be a string and look it in the pcf?
+
+* Const-ify access members that access to hash via
+  const_iterator <-> find
+  like
+    Instance::getTotalCounterValue
+    InstanceContainer::getInstanceGroup
+    Sample::getNCounterValue
+    Sample::hasCaller
