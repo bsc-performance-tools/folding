@@ -10,3 +10,6 @@
     InstanceContainer::getInstanceGroup
     Sample::getNCounterValue
     Sample::hasCaller
+
+* Detect that the end of the instance does not have counters!
+  Warn at least during extract
