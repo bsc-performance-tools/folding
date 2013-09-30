@@ -13,3 +13,6 @@
 
 * Detect that the end of the instance does not have counters!
   Warn at least during extract
+
+* Automatically search in the slopes the performance counters responsible
+  for the change in the MIPS rate.
