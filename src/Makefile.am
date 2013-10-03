@@ -71,7 +71,7 @@ fuse_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lpa
 codeblocks_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
 foldingtypes_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig
 extract_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
-interpolate_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm -Lservice-R -lR
+interpolate_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm -Lservice-R -lR -lrt
 if HAVE_CLUSTERING_SUITE
 interpolate_LDFLAGS += -L$(CLUSTERING_HOME)/lib -lClustering -lBasicClasses
 endif
