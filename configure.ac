@@ -241,6 +241,7 @@ if test "${CLANG_AVAILABLE}" = "yes" ; then
 	AC_DEFINE_UNQUOTED([CLANG_BINARY],["${CLANGBIN}"],[Define binary for clang])
 else
 	AC_MSG_NOTICE([clang is not available. AST parsing for C/C++ files will not be available])
+	AC_DEFINE_UNQUOTED([CLANG_BINARY],[""],[Define for clang])
 fi
 
 AC_MSG_CHECKING([for Clustering suite])
