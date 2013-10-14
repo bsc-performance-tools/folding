@@ -96,6 +96,6 @@ string InstanceSeparatorAuto::details (void) const
 
 string InstanceSeparatorAuto::nameGroup (unsigned g) const
 {
-	return string ("Group ") + common::convertInt (g+1);
+	return string ("Group_") + common::convertInt (g);
 }
 

@@ -251,19 +251,19 @@ void CubeHolder::dumpLaunch (InstanceContainer &ic, ObjectSelection *os,
 	launch.close();
 }
 
-void CubeHolder::EmitMetricFileLine (string dir, unsigned phase, string metric,
-	string file, unsigned line, unsigned val)
+void CubeHolder::EmitMetricFileLine (string &dir, string &file, string &region, 
+	unsigned phase, string metric, unsigned line, unsigned val)
 {
-	ofstream f((dir + "/" + file + ".metrics").c_str(), std::ofstream::app);
+	ofstream f((dir+"/"+file+"."+region+".metrics").c_str(), std::ofstream::app);
 	if (f.is_open())
 		f << phase << " " << metric << " " << line << " " << val << endl;
 	f.close();
 }
 
-void CubeHolder::EmitMetricFileLine (string dir, unsigned phase, string metric,
-	string file, unsigned line, double val)
+void CubeHolder::EmitMetricFileLine (string &dir, string &file, string &region, 
+	unsigned phase, string metric, unsigned line, double val)
 {
-	ofstream f((dir + "/" + file + ".metrics").c_str(), std::ofstream::app);
+	ofstream f((dir+"/"+file+"."+region+".metrics").c_str(), std::ofstream::app);
 	if (f.is_open())
 		f << phase << " " << metric << " " << line << " " << val << endl;
 	f.close();
@@ -272,9 +272,42 @@ void CubeHolder::EmitMetricFileLine (string dir, unsigned phase, string metric,
 void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 	set<string> counters)
 {
+	string region = ig->getRegion();
 	map<string, InterpolationResults*> iresults = ig->getInterpolated();
 	vector< map< unsigned, CodeRefTripletAccounting* > > aXline = ig->getAccountingPerLine();
 	vector<double> bpts = ig->getInterpolationBreakpoints();
+
+	map<unsigned, unsigned> totalCounts;
+	map<unsigned, map<unsigned, unsigned> > totalCountsPerPhase;
+	for (unsigned phase = 0; phase < aXline.size(); phase++)
+	{
+		map<unsigned, CodeRefTripletAccounting*> accPerLine = aXline[phase];
+		map<unsigned, CodeRefTripletAccounting*>::iterator line;
+
+		/* Calculate the threshold per AST */
+		for (line = accPerLine.begin(); line != accPerLine.end(); line++)
+		{
+			CodeRefTriplet crt = (*line).second->getCodeTriplet();
+
+			if (totalCounts.count (crt.getCallerLineAST()) == 0)
+				totalCounts[crt.getCallerLineAST()] = ((*line).second)->getCount();
+			else
+				totalCounts[crt.getCallerLineAST()] += ((*line).second)->getCount();
+
+			if (totalCountsPerPhase.count(crt.getCallerLineAST()) == 0)
+			{
+				map<unsigned, unsigned> CountPerPhase;
+				CountPerPhase[phase] = ((*line).second)->getCount();
+				totalCountsPerPhase[crt.getCallerLineAST()] = CountPerPhase;
+			}
+			else
+			{
+				map<unsigned, unsigned> CountPerPhase = totalCountsPerPhase[crt.getCallerLineAST()];
+				CountPerPhase[phase] += ((*line).second)->getCount();
+				totalCountsPerPhase[crt.getCallerLineAST()] = CountPerPhase;
+			}
+		}
+	}
 
 	for (unsigned phase = 0; phase < aXline.size(); phase++)
 	{
@@ -289,31 +322,28 @@ void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 		   duplications */
 		set<unsigned> processedASTs;
 
-		unsigned total = 0;
 		for (line = accPerLine.begin(); line != accPerLine.end(); line++)
-			total += ((*line).second)->getCount();
-		unsigned threshold = 5*total / 100;
+		{
+			CodeRefTriplet crt = (*line).second->getCodeTriplet();
+			string filename;
+			string routine;
+			int fline, bline, eline;
+			common::lookForCallerFullInfo (pcf, crt.getCaller(), crt.getCallerLine(),
+			  crt.getCallerLineAST(), routine, filename, fline, bline, eline);
 
-		for (line = accPerLine.begin(); line != accPerLine.end(); line++)
-			if (((*line).second)->getCount() >= threshold)
+			map<unsigned, unsigned> CountsPerPhase = totalCountsPerPhase[crt.getCallerLineAST()];
+			if (CountsPerPhase[phase] >= (totalCounts[crt.getCallerLineAST()] * 5) / 100)
 			{
-				CodeRefTriplet crt = (*line).second->getCodeTriplet();
-
-				string filename;
-				string routine;
-				int fline, bline, eline;
-				common::lookForCallerFullInfo (pcf, crt.getCaller(), crt.getCallerLine(),
-				  crt.getCallerLineAST(), routine, filename, fline, bline, eline);
-
-				EmitMetricFileLine (dir, phase+1, "#Occurrences", filename, fline,
-				  ((*line).second)->getCount());
+				EmitMetricFileLine (dir, filename, region, phase+1,
+				  "#Occurrences", fline, ((*line).second)->getCount());
 
 				if (processedASTs.count(crt.getCallerLineAST()) == 0)
 				{
 					for (int l = bline; l <= eline; l++)
 					{
 						/* Emit phase, duration & hwcounters */
-						EmitMetricFileLine (dir, phase+1, "Duration(ms)", filename, l, duration / 1000000.f);
+						EmitMetricFileLine (dir, filename, region, phase+1,
+						  "Duration(ms)", l, duration / 1000000.f);
 
 						set<string>::iterator ctr;
 						for (ctr = counters.begin(); ctr != counters.end(); ctr++)
@@ -325,12 +355,14 @@ void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 								nCounterID = (*ctr)+"pms";
 
 							double hwcvalue = (iresults[*ctr])->getSlopeAt (inbetween);
-							EmitMetricFileLine (dir, phase+1, nCounterID, filename, l, hwcvalue);
+							EmitMetricFileLine (dir, filename, region, phase+1,
+							  nCounterID, l, hwcvalue);
 						}
 					}
 					processedASTs.insert (crt.getCallerLineAST());
 				}
 			}
+		}
 	}
 }
 

@@ -56,6 +56,6 @@ string InstanceSeparatorNone::details (void) const
 string InstanceSeparatorNone::nameGroup (unsigned g) const
 {
 	UNREFERENCED(g);
-	return string ("Group");
+	return string ("Group_0");
 }
 

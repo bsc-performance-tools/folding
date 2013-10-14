@@ -135,13 +135,5 @@ string InstanceSeparatorDBSCAN::details(void) const
 
 string InstanceSeparatorDBSCAN::nameGroup (unsigned g) const
 {
-	if (keepallgroups)
-	{
-		if (g == 0)
-			return "Noise";
-		else
-			return string ("Group ") + common::convertInt (g);
-	}
-	else
-		return string ("Group ") + common::convertInt (g+1);
+	return string ("Group_") + common::convertInt (g);
 }
