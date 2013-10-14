@@ -377,7 +377,7 @@ void Process::appendtoPCF (string file)
 		{
 			codeblock c = vblocks[u];
 			if (c.inUse())
-				PCFfile << c.getID() << " " << c.getBeginLine() << "-" << c.getEndLine() << " (" << sourceDir  << "/" << (*it).first << ")" << endl;
+				PCFfile << c.getID() << " " << c.getBeginLine() << "-" << c.getEndLine() << " (" << (*it).first << ")" << endl;
 		}
 	}
 	PCFfile << endl;

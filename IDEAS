@@ -3,16 +3,15 @@
 
 * Let -separator in extract to be a string and look it in the pcf?
 
-* Const-ify access members that access to hash via
-  const_iterator <-> find
-  like
-    Instance::getTotalCounterValue
-    InstanceContainer::getInstanceGroup
-    Sample::getNCounterValue
-    Sample::hasCaller
-
 * Detect that the end of the instance does not have counters!
   Warn at least during extract
 
 * Automatically search in the slopes the performance counters responsible
   for the change in the MIPS rate.
+
+* FIX
+  boost::exception_detail::clone_impl<libparaver::UIParaverTrace::error>
+  message is printed if the tracefile does not exist when using the -feed-first-occurrence
+
+* NEW:
+  Load xml model into interpolate and use the counters indicated there!
