@@ -33,6 +33,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: common.C 1764 2013-05-24 14
 
 #include "common.H"
 
+#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include <algorithm>
@@ -205,9 +206,20 @@ void InstanceGroup::dumpInterpolatedData (ObjectSelection *os, string prefix)
 		ofstream int_data, sl_data;
 		int_data.open (fintname.c_str(), std::ofstream::app);
 		sl_data.open (fslname.c_str(), std::ofstream::app);
+
+		bool instructionCounterPresent = false;
+		string instructionsCounter;
+
 		map<string, InterpolationResults*>::iterator it;
 		for (it = interpolated.begin(); it != interpolated.end(); it++)
 		{
+			// If this is a MIPS counter, annotate it to calculate counters vs inst ratios
+			if (common::isMIPS((*it).first) && !instructionCounterPresent)
+			{
+				instructionsCounter = (*it).first;
+				instructionCounterPresent = true;
+			}
+
 			InterpolationResults *ir = (*it).second;
 			unsigned count = ir->getCount();
 			double d_count = (double) count;
@@ -222,6 +234,36 @@ void InstanceGroup::dumpInterpolatedData (ObjectSelection *os, string prefix)
 				sl_data << regionName << ";" << numGroup << ";" << counter << ";" << d_j / d_count << ";" << data_s[u] << endl;
 			}
 		}
+
+		// Process all counters and calculate the ratio against instruction counter
+		if (instructionCounterPresent)
+		{
+			InterpolationResults *ir_instruction = interpolated[instructionsCounter];
+			double *data_s_i = ir_instruction->getSlopeResultsPtr();
+			unsigned count_i = ir_instruction->getCount();
+			double d_count_i = (double) count_i;
+	
+			for (it = interpolated.begin(); it != interpolated.end(); it++)
+			{
+				// Skip counters related to MIPS
+				if (common::isMIPS((*it).first))
+					continue;
+	
+				InterpolationResults *ir = (*it).second;
+	
+				// This should always happen, but it's good to check
+				assert (ir->getCount() == ir_instruction->getCount());
+	
+				string counter = (*it).first;
+				double *data_s = ir->getSlopeResultsPtr();
+				for (unsigned u = 0; u < count_i; u++)
+				{
+					double d_j = (double) u;
+					sl_data << regionName << ";" << numGroup << ";" << counter << "_per_ins;" << d_j / d_count_i << ";" << data_s[u]/data_s_i[u] << endl;
+				}
+			}
+		}
+
 		int_data.close ();
 		sl_data.close ();
 	}
@@ -350,8 +392,16 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	gplot << ");" << endl
 	  << "set xrange [0:" << (m / 1000000) << "]" << endl;
 
+	/* Mark the mean rate in the plot */
+	gplot << "# Mean rate" << endl;
+	gplot << endl 
+	  << "set label \"\" at first " << (m/1000000)
+	  << ", second " << (idata->getAvgCounterValue() / 1000)/(m/1000000)
+	  << " point pt 3 ps 2 lc rgbcolor \"#707070\"" << endl;
+
 	/* If the instance-group has more than the regular 0..1 breakpoints,
 	   add this into the plot */
+	gplot << "# Breakpoints" << endl;
 	vector<double> brks = idata->getBreakpoints();
 	if (brks.size () > 2)
 	{
@@ -374,6 +424,7 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 		gplot << endl << "# Unneeded phases separators, nb. breakpoints = " << brks.size() << endl;
 
 	/* Generate functions to filter the .csv */
+	gplot << "# Data accessors to CSV" << endl;
 	gplot << endl << "sampleexcluded(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << "  && t eq 'e') ? ret : NaN;" << endl
 	  << "sampleunused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g ==  " << numGroup << " && t eq 'un') ? ret : NaN;" << endl
 	  << "sampleused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " && t eq 'u') ? ret : NaN;" << endl
@@ -382,7 +433,9 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 
 	bool coma = false;
 	/* Generate the plot command */
-	gplot << "plot \\" << endl;
+	gplot << "# Plot command" << endl;
+	gplot << "plot \\" << endl << 
+	  "NaN w points pt 3 lc rgbcolor \"#707070\" ti 'Mean " << counter << " rate',\\" << endl;
 	if (numExcludedSamples (counter) > 0)
 	{
 		gplot << "'" << fdname << "' u 4:(sampleexcluded($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Excluded samples (" << numExcludedSamples(counter) << ")' axes x2y1 w points lc rgbcolor '#A0A0A0'";
@@ -423,12 +476,16 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	gplot.close();
 }
 
-void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
+void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix, bool per_instruction)
 {
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
 	string gname = prefix + "." + os->toString (false, "any") + "." +
 	  common::removeUnwantedChars(regionName) + "." + 
-	  common::removeSpaces (groupName) + ".slopes.gnuplot";
+	  common::removeSpaces (groupName);
+	if (per_instruction)
+		gname += ".ratio_per_ins.gnuplot";
+	else
+		gname += ".slopes.gnuplot";
 	ofstream gplot (gname.c_str());
 
 	if (!gplot.is_open())
@@ -448,12 +505,20 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
 	  "set x2range [0:1];" << endl <<
 	  "set yrange [0:*];" << endl <<
-	  "set ytics mirror;" << endl <<
 	  "set xtics nomirror format \"%.2f\";" << endl <<
 	  "set x2tics nomirror format \"%.2f\";" << endl <<
 	  "set xrange [0:" << m << "];" << endl <<
-	  "set xlabel 'Time (in ms)'" << endl <<
-	  "set ylabel 'Performance counter rate (in Mevents/s)';" << endl;
+	  "set xlabel 'Time (in ms)'" << endl;
+	if (per_instruction)
+	{
+		gplot << "set ylabel 'Counter ratio per instruction';" <<
+		  "set y2label 'MIPS';" << endl <<
+		  "set ytics nomirror;" << endl <<
+		  "set y2tics nomirror;" << endl;
+	}
+	else
+		gplot << "set ylabel 'Performance counter rate (in Mevents/s)';" << endl <<
+	  "set ytics mirror;" << endl;
 
 	gplot << "set title \"" << os->toString (true) << " - " << groupName 
 	  <<  " - " << regionName << "\\nDuration = " << (m/1000000) << " ms\"" 
@@ -496,8 +561,12 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
 				if (counter_gnuplot[u] == ':')
 					counter_gnuplot[u] = '_';
+
 			gplot << "slope_" << counter_gnuplot << "(ret,c,r,g) = (c eq '" << (*it).first
 			  << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl;
+			if (!common::isMIPS((*it).first))
+				gplot << "ratio_" << counter_gnuplot << "(ret,c,r,g) = (c eq '" << (*it).first
+				  << "_per_ins' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl;
 		}
 	gplot << endl;
 
@@ -518,12 +587,25 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 					counter_gnuplot[u] = '_';
 
 			if (common::isMIPS((*it).first))
-				gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
-				  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y2 w lines lw 3";
+	  		{
+				if (per_instruction)
+					gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y2 w lines lw 3";
+				else
+					gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y1 w lines lw 3";
+			}
 			else
-				gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
-				  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
-				  << "' axes x2y2 w lines lw 3";
+			{
+				if (per_instruction)
+					gplot << "'" << fslname << "' u 4:(ratio_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
+					  << "/ins' axes x2y1 w lines lw 3";
+				else
+					gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
+					  << "' axes x2y1 w lines lw 3";
+			}
 			count++;
 		}
 	}
@@ -534,10 +616,16 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix)
 
 void InstanceGroup::gnuplot (ObjectSelection *os, string prefix)
 {
+	bool has_instruction_counter = false;
 	map<string, InterpolationResults*>::iterator it;
 	for (it = interpolated.begin(); it != interpolated.end(); it++)
+	{
+		has_instruction_counter |= common::isMIPS((*it).first);
 		gnuplot_single (os, prefix, (*it).first, (*it).second);
-	gnuplot_slopes (os, prefix);
+	}
+	gnuplot_slopes (os, prefix, false);
+	if (has_instruction_counter)
+		gnuplot_slopes (os, prefix, true);
 }
 
 string InstanceGroup::python (void)

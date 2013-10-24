@@ -16,10 +16,3 @@
 * NEW:
   Load xml model into interpolate and use the counters indicated there!
 
-* FIX
-$FOLDING_HOME/bin/interpolate -counter INSTRUCTION_RETIRED -counter BR_INST_RETIRED -counter PAPI_L2_DCM -use-median -sigma-times 1.5 -max-samples-distance 750 -interpolation R-strucchang 1000 0.1 -source ../source.new -feed-first-occurrence *.extract
-Misunderstood parameter: 1000
-Misunderstood parameter: 0.1
-Insufficient arguments for -feed-first-occurrence parameter
-  -> Problem should be R-strucchange ?
-
