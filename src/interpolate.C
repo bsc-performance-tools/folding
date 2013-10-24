@@ -715,7 +715,7 @@ int ProcessParameters (int argc, char *argv[])
 				InterpolationKriger *in = new InterpolationKriger (NSTEPS, NUGET, strprefilter == "yes");
 				interpolation = in;
 			}
-			if (strcmp (argv[i], "R-strucchange") == 0)
+			else if (strcmp (argv[i], "R-strucchange") == 0)
 			{
 				if (!CHECK_ENOUGH_ARGS(2, argc, i))
 				{
@@ -741,6 +741,10 @@ int ProcessParameters (int argc, char *argv[])
 				cout << "Selected interpolation algorithm: R-strucchange (steps = " << NSTEPS << ", h = " << H << ")" << endl;
 				InterpolationRstrucchange *in = new InterpolationRstrucchange (NSTEPS, H);
 				interpolation = in;
+			}
+			else
+			{
+				cerr << "Invalid interpolation algorithm" << endl;
 			}
 			continue;
 		}
@@ -787,6 +791,7 @@ int main (int argc, char *argv[])
 	ReadExtractData::ReadDataFromFile (argv[res], objectsSelected,
 	  allcounters, allregions, vInstances, objectToFeed, feedInstances);
 
+	// Accumulate in wantedRegions the regions to be folded, ignoring the rest
 	if (wantedRegions.find (string("all")) != wantedRegions.end())
 	{
 		set<string>::iterator it = allregions.begin();
@@ -815,6 +820,7 @@ int main (int argc, char *argv[])
 		}
 	}
 
+	// If regions are given but none found, show which are available
 	if (regions.size() == 0)
 	{
 		cerr << "Error! No regions selected through filters. Available regions in the extracted data are: " << endl;
@@ -828,6 +834,7 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
+	// Accumulate in wantedCounters the counters to be folded, ignoring the rest
 	if (wantedCounters.find (string("all")) == wantedCounters.end())
 	{
 		/* If all is not given, check for those counters that actually exist in the
@@ -842,6 +849,7 @@ int main (int argc, char *argv[])
 	else
 		counters = allcounters;
 
+	// If counters are given but none found, show which are available
 	if (counters.size() == 0)
 	{
 		cerr << "Error! No counters given. Available counters in the extracted data are: " << endl;
@@ -855,12 +863,14 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
+	// Filter read data and show some statistics
 	GroupFilterAndDumpStatistics (regions, vInstances, Instances,
 	  excludedInstances, feedInstances);
 
 	string cFile = argv[res];
 	string cFilePrefix = cFile.substr (0, cFile.rfind (".extract"));
 
+	// Apply the folding to each region
 	set<string>::iterator it;
 	bool first = true;
 	for (it = regions.begin(); it != regions.end(); it++)
@@ -911,6 +921,7 @@ int main (int argc, char *argv[])
 		cout << endl;
 	}
 
+	// Generate a new PRV & CUBE files for the folded data
 	if (feedTraceType != FEED_NONE)
 	{
 		string controlFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".control");
@@ -964,7 +975,6 @@ int main (int argc, char *argv[])
 		unsigned long long prv_out_start, prv_out_end;
 
 		string oFilePRV = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.prv";
-		string oFileCUBE = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.cube";
 		ftrace = new FoldedParaverTrace (oFilePRV, traceFile, true);
 
 		ftrace->parseBody();
@@ -1043,8 +1053,31 @@ int main (int argc, char *argv[])
 			}
 		}
 
+		string bfileprefix = common::basename (traceFile.substr (0, traceFile.rfind(".prv")));
+
+		/* Copy .pcf and .row files */
+		ifstream ifs_pcf ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".pcf")).c_str());
+		if (ifs_pcf.is_open())
+		{
+			ofstream ofs_pcf ((bfileprefix + string(".folded.pcf")).c_str());
+			ofs_pcf << ifs_pcf.rdbuf();
+			ifs_pcf.close();
+			ofs_pcf.close();
+		}
+		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters, feedTraceFoldType);
+
+		ifstream ifs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".row")).c_str());
+		if (ifs_row.is_open())
+		{
+			ofstream ofs_row ((bfileprefix + string(".folded.row")).c_str());
+			ofs_row << ifs_row.rdbuf();
+			ifs_row.close();
+			ofs_row.close();
+		}
+
 #if defined(HAVE_CUBE)
 		/* Generate a callstack tree for the CUBE program */
+		string oFileCUBE = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.cube";
 		cout << "Generating callstack tree for CUBE (" << cwd << "/" << common::basename (oFileCUBE.c_str()) << ")" << endl;
 		bool found;
 
@@ -1082,28 +1115,6 @@ int main (int argc, char *argv[])
 		}
 		ch.dump (oFileCUBE);
 #endif
-
-		string bfileprefix = common::basename (traceFile.substr (0, traceFile.rfind(".prv")));
-
-		/* Copy .pcf and .row files */
-		ifstream ifs_pcf ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".pcf")).c_str());
-		if (ifs_pcf.is_open())
-		{
-			ofstream ofs_pcf ((bfileprefix + string(".folded.pcf")).c_str());
-			ofs_pcf << ifs_pcf.rdbuf();
-			ifs_pcf.close();
-			ofs_pcf.close();
-		}
-		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters, feedTraceFoldType);
-
-		ifstream ifs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".row")).c_str());
-		if (ifs_row.is_open())
-		{
-			ofstream ofs_row ((bfileprefix + string(".folded.row")).c_str());
-			ofs_row << ifs_row.rdbuf();
-			ifs_row.close();
-			ofs_row.close();
-		}
 	}
 
 	return 0;

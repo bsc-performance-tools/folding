@@ -156,7 +156,8 @@ class wxFoldingViewerDialog(wx.Dialog):
 	def FeedGroupAndCounter (self, region):
 		fr = self.FoldingResults[region]
 		self.gc_lccounters.DeleteAllItems()
-		self.gc_lccounters.InsertStringItem (0, str("All"))
+		self.gc_lccounters.InsertStringItem (0, str("All (slope/ins)"))
+		self.gc_lccounters.InsertStringItem (1, str("All (slopes)"))
 		for line in fr.counters:
 			num_items = self.gc_lccounters.GetItemCount()
 			self.gc_lccounters.InsertStringItem (num_items, str(line))
@@ -186,14 +187,16 @@ class wxFoldingViewerDialog(wx.Dialog):
 
 	def OnViewCounter(self, e):
 		index = self.gc_lccounters.GetFocusedItem()
-		if index > 0:
-			counter = self.gc_lccounters.GetItem (index, 0).GetText()
-		else:
+		if index == 0:
+			counter = "ratio_per_ins"
+		elif index == 1:
 			counter = "slopes"
+		else:
+			counter = self.gc_lccounters.GetItem (index, 0).GetText()
 
 		region = self.rs_chooseregion.GetStringSelection()
 
-		f = self.FilePrefix + "." + region + "." + self.FoldedObject + "." + \
+		f = self.FilePrefix + "." + self.FoldedObject + "." + region + "." + \
 		  self.gc_choosegroup.GetStringSelection() + "." + counter + ".gnuplot"
 
 		command = "gnuplot -persist \"" + f + "\""
