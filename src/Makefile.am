@@ -14,6 +14,8 @@ fuse_SOURCES = \
 
 extract_SOURCES = \
  extract.C \
+ prv-semantic.H \
+ prv-semantic-CSV.H prv-semantic-CSV.C \
  interpolate.H
 
 interpolate_SOURCES = \
@@ -26,7 +28,6 @@ interpolate_SOURCES = \
  instance.H instance.C \
  instance-container.C instance-container.H instance-group.C instance-group.H \
  read-extracted-data.C read-extracted-data.H \
- object-selection.H object-selection.C \
  prv-writer.C prv-writer.H \
  interpolation.C interpolation.H \
  interpolation-results.C interpolation-results.H \

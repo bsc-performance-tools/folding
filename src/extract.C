@@ -38,6 +38,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "ParaverTraceTask.h"
 #include "ParaverTraceApplication.h"
 #include "UIParaverTraceConfig.h"
+#include "prv-semantic-CSV.H"
 
 #include <sstream>
 #include <iostream>
@@ -52,6 +53,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 unsigned long long RegionSeparator = 0;
 string RegionSeparatorName;
+PRVSemanticCSV *Semantics = NULL;
 
 using namespace std;
 
@@ -224,6 +226,8 @@ class Process : public ParaverTrace
 	UIParaverTraceConfig *pcf;
 	InformationHolder IH;
 	unsigned numCounterIDs;
+	bool TimeOffsetSet;	
+	unsigned long long TimeOffset;
 
 	bool checkSamples (vector<Sample> &Samples);
 	void dumpSamples (unsigned ptask, unsigned task, unsigned thread,
@@ -260,6 +264,7 @@ class Process : public ParaverTrace
 
 Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, multievents)
 {
+	TimeOffsetSet = false;
 	nCounterChanges = 0;
 
 	pcffile = prvFile.substr (0, prvFile.rfind(".prv")) + string (".pcf");
@@ -325,7 +330,16 @@ unsigned Process::LookupCounter (unsigned long long Counter, bool &found)
 
 void Process::processComment (string &c)
 {
-	UNREFERENCED(c);
+	if (Semantics != NULL && !TimeOffsetSet)
+	{
+		if (c.find ("Cut time range") != string::npos)
+			// Ensure that Offset and from are there
+			if (c.find ("Offset ") != string::npos && c.find (" from ") != string::npos)
+			{
+				string tmp = c.substr (c.find ("Offset ") + strlen ("Offset "), c.find(" from ") - c.find ("Offset "));
+				TimeOffset = atoll (tmp.c_str());
+			}
+	}
 }
 
 void Process::processCommunicator (string &c)
@@ -585,13 +599,36 @@ void Process::processMultiEvent (struct multievent_t &e)
 			}
 		}
 
-		if ((*it).Type == RegionSeparator)
+		if (Semantics == NULL)
 		{
-			if (common::DEBUG())
-				cout << "Found separator (" << RegionSeparator << "," << (*it).Value << ") at timestamp " << e.Timestamp << endl;
+			if ((*it).Type == RegionSeparator)
+			{
+				if (common::DEBUG())
+					cout << "Found separator (" << RegionSeparator << "," << (*it).Value << ") at timestamp " << e.Timestamp << endl;
 
-			FoundSeparator = true;
-			ValueSeparator = (*it).Value;
+				FoundSeparator = true;
+				ValueSeparator = (*it).Value;
+			}
+		}
+	}
+
+	if (Semantics != NULL)
+	{
+		vector<PRVSemanticValue *> vs = Semantics->getSemantics (e.ObjectID.ptask, e.ObjectID.task, e.ObjectID.thread);
+		for (unsigned s = 0; s < vs.size(); s++)
+		{
+			//if (vs[s]->getFrom() == e.Timestamp + TimeOffset || vs[s]->getTo() == e.Timestamp + TimeOffset)
+			if (vs[s]->getFrom() == e.Timestamp + TimeOffset)
+			{
+				FoundSeparator = true;
+				string tmp = vs[s]->getValue().substr (0, vs[s]->getValue().find("."));
+				ValueSeparator = atoi (tmp.c_str());
+
+				if (common::DEBUG())
+					cout << "Found semantic separator value " << vs[s]->getValue() << " [" << ValueSeparator << "] at timestamp " << e.Timestamp << endl;
+
+				break;
+			}
 		}
 	}
 
@@ -796,7 +833,8 @@ int ProcessParameters (int argc, char *argv[])
 	{
 		cerr << "Insufficient number of parameters" << endl
 		     << "Available options are: " << endl
-		     << "-separator S" << endl;
+		     << "-separator S" << endl
+		     << "-semantic F" << endl;
 		exit (-1);
 	}
 
@@ -811,6 +849,34 @@ int ProcessParameters (int argc, char *argv[])
 				RegionSeparator = atoi(argv[i]);
 			continue;
 		}
+		else if (strcmp ("-semantic", argv[i]) == 0)
+		{
+			i++;
+			if (common::existsFile(argv[i]))
+			{
+				cout << "Reading semantic file " << argv[i] << endl;
+				Semantics = new PRVSemanticCSV (argv[i]);
+				if (Semantics == NULL)
+				{
+					cerr << "Cannot allocate memory for semantic parser" << endl;
+					exit (-1);
+				}
+				else
+				{
+					if (!Semantics->getSucceeded())
+					{
+						cerr << "An error ocurred while parsing the semantic file" << endl;
+						exit (-1);
+					}
+				}
+			}
+			else
+			{
+				cerr << "The file " << argv[i] << " does exist. Dying ... " << endl;
+				exit (-1);
+			}
+			continue;
+		}
 	}
 
 	return argc-1;
@@ -820,9 +886,9 @@ int main (int argc, char *argv[])
 {
 	int res = ProcessParameters (argc, argv);
 
-	if (RegionSeparator == 0)
+	if (RegionSeparator == 0 && Semantics == NULL)
 	{
-		cerr << "Error! Please, provide a valid separator for -separator parameter" << endl;
+		cerr << "Error! Please, provide a valid separator for -separator parameter or a semantic CSV file through -semantic" << endl;
 		exit (-1);
 	}
 
@@ -867,24 +933,33 @@ int main (int argc, char *argv[])
 	}
 
 	/* By loading these t1-3 we ensure that the all callers triplets exist */
-	bool RegionSeparatorFound;
-	RegionSeparatorName = p->getType (RegionSeparator, RegionSeparatorFound);
-	if (!RegionSeparatorFound)
+	if (Semantics == NULL)
 	{
-		stringstream ss;
-		ss << RegionSeparator;
-		RegionSeparatorName = "Event_" + ss.str();
-	}
-	RegionSeparatorName = common::removeSpaces (RegionSeparatorName);
+		bool RegionSeparatorFound;
+		RegionSeparatorName = p->getType (RegionSeparator, RegionSeparatorFound);
+		if (!RegionSeparatorFound)
+		{
+			stringstream ss;
+			ss << RegionSeparator;
+			RegionSeparatorName = "Event_" + ss.str();
+		}
+		RegionSeparatorName = common::removeSpaces (RegionSeparatorName);
 
-	cout << "Extracting data for type " << RegionSeparator << " (" << RegionSeparatorName << ")" << endl;
+		cout << "Extracting data for type " << RegionSeparator << " (" << RegionSeparatorName << ")" << endl;
+	}
+	else
+		cout << "Extracting data for semantic values" << endl;
 
 	p->allocateBuffers ();
 	p->parseBody();
 	p->closeFile();
 
-	p->dumpSeen (common::basename (tracename.substr (0, tracename.length()-4)));
-	p->dumpMissingValuesIntoPCF ();
+	// Emit seen event types when passing a separator manually
+	if (!Semantics)
+	{
+		p->dumpSeen (common::basename (tracename.substr (0, tracename.length()-4)));
+		p->dumpMissingValuesIntoPCF ();
+	}
 
 	if (p->getNCounterChanges() > 0)
 		cout << "Ignored " << p->getNCounterChanges() << " instances, most probably because of hardware counter set change." << endl;
