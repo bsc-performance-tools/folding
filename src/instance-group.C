@@ -21,15 +21,15 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common.C $
+ | @file: $HeadURL$
  | 
- | @last_commit: $Date: 2013-05-24 16:08:28 +0200 (dv, 24 mai 2013) $
- | @version:     $Revision: 1764 $
+ | @last_commit: $Date$
+ | @version:     $Revision$
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id: common.C 1764 2013-05-24 14:08:28Z harald $";
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
 

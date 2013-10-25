@@ -21,15 +21,15 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/instance-separator-none.C $
+ | @file: $HeadURL$
  | 
- | @last_commit: $Date: 2013-07-30 17:51:45 +0200 (Tue, 30 Jul 2013) $
- | @version:     $Revision: 2021 $
+ | @last_commit: $Date$
+ | @version:     $Revision$
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id: instance-separator-none.C 2021 2013-07-30 15:51:45Z harald $";
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
 

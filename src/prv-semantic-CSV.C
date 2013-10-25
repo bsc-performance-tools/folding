@@ -21,15 +21,15 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/interpolate.C $
+ | @file: $HeadURL$
  | 
- | @last_commit: $Date: 2013-10-24 17:58:55 +0200 (Thu, 24 Oct 2013) $
- | @version:     $Revision: 2245 $
+ | @last_commit: $Date$
+ | @version:     $Revision$
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id: interpolate.C 2245 2013-10-24 15:58:55Z harald $";
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
 
