@@ -21,15 +21,15 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/fuse.C $
+ | @file: $HeadURL$
  | 
- | @last_commit: $Date: 2012-10-22 17:55:35 +0200 (dl, 22 oct 2012) $
- | @version:     $Revision: 1289 $
+ | @last_commit: $Date$
+ | @version:     $Revision$
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id: fuse.C 1289 2012-10-22 15:55:35Z harald $";
+static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
 

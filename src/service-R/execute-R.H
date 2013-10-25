@@ -21,10 +21,10 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/folding/src/interpolate.C $
+ | @file: $HeadURL$
  | 
- | @last_commit: $Date: 2013-01-04 16:23:26 +0100 (dv, 04 gen 2013) $
- | @version:     $Revision: 1449 $
+ | @last_commit: $Date$
+ | @version:     $Revision$
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
