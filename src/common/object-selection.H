@@ -52,6 +52,20 @@ class ObjectSelection
 	  unsigned thread, bool athread);
 	ObjectSelection (unsigned ptask, unsigned task, unsigned thread);
 
+	const bool operator< (ObjectSelection param) const
+	{
+		if (anyptask || anytask || anythread ||
+		    param.anyptask || param.anytask ||  param.anythread)
+		return false;
+
+		if (ptask < param.ptask)
+			return true;
+		else if (task < param.task)
+			return true;
+		else
+			return thread < param.thread;
+	}
+
 	bool match (unsigned ptask, unsigned task, unsigned thread) const
 	  { return (this->anyptask || this->ptask == ptask) &&
 	           (this->anytask || this->task == task) &&
