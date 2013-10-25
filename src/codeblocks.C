@@ -243,7 +243,10 @@ void Process::prepare (void)
 
 void Process::processComment (string &c)
 {
-	traceout << "#" << c << endl;
+	if (c.substr(0, strlen("Paraver")) != "Paraver")
+		traceout << "# " << c << endl;
+	else
+		traceout << "#" << c << endl;
 }
 
 void Process::processCommunicator (string &c)

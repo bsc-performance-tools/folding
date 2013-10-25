@@ -40,6 +40,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include <iostream>
 #include <fstream>
+#include <string.h>
 
 using namespace std;
 
@@ -152,7 +153,10 @@ Process::~Process ()
 
 void Process::processComment (string &c)
 {
-	traceout << "#" << c << endl;
+	if (c.substr(0, strlen("Paraver")) != "Paraver")
+		traceout << "# " << c << endl;
+	else
+		traceout << "#" << c << endl;
 }
 
 void Process::processCommunicator (string &c)
