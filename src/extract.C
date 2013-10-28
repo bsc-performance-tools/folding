@@ -53,7 +53,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 unsigned long long RegionSeparator = 0;
 string RegionSeparatorName;
-PRVSemanticCSV *Semantics = NULL;
+string PRVSemanticCSVName;
 
 using namespace std;
 
@@ -226,6 +226,7 @@ class Process : public ParaverTrace
 	UIParaverTraceConfig *pcf;
 	InformationHolder IH;
 	unsigned numCounterIDs;
+	PRVSemanticCSV *Semantics;
 
 	bool TimeOffsetSet;	 // Specific to CSV support
 	unsigned long long TimeOffset; // Specific to CSV support
@@ -257,8 +258,11 @@ class Process : public ParaverTrace
 	void processCommunicator (string &c);
 	void processComment (string &c);
 
-	unsigned getNCounterChanges (void)
+	unsigned getNCounterChanges (void) const
 	  { return nCounterChanges; }
+
+	bool givenSemanticsCSV(void) const
+	  { return Semantics != NULL; }
 
 	void dumpSeen (string fnameprefix);
 	void dumpMissingValuesIntoPCF (void);
@@ -268,6 +272,24 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 {
 	TimeOffsetSet = false;
 	nCounterChanges = 0;
+
+	if (PRVSemanticCSVName.length() > 0)
+	{
+		Semantics = new PRVSemanticCSV (PRVSemanticCSVName.c_str());
+		if (Semantics == NULL)
+		{
+			cerr << "Cannot allocate memory for semantic parser" << endl;
+			exit (-1);
+		}
+		else
+		{
+			if (!Semantics->getSucceeded())
+			{
+				cerr << "An error ocurred while parsing the semantic file" << endl;
+				exit (-1);
+			}
+		}
+	}
 
 	pcffile = prvFile.substr (0, prvFile.rfind(".prv")) + string (".pcf");
 
@@ -881,20 +903,7 @@ int ProcessParameters (int argc, char *argv[])
 			if (common::existsFile(argv[i]))
 			{
 				cout << "Reading semantic file " << argv[i] << endl;
-				Semantics = new PRVSemanticCSV (argv[i]);
-				if (Semantics == NULL)
-				{
-					cerr << "Cannot allocate memory for semantic parser" << endl;
-					exit (-1);
-				}
-				else
-				{
-					if (!Semantics->getSucceeded())
-					{
-						cerr << "An error ocurred while parsing the semantic file" << endl;
-						exit (-1);
-					}
-				}
+				PRVSemanticCSVName = argv[i];
 			}
 			else
 			{
@@ -912,7 +921,7 @@ int main (int argc, char *argv[])
 {
 	int res = ProcessParameters (argc, argv);
 
-	if (RegionSeparator == 0 && Semantics == NULL)
+	if (RegionSeparator == 0 && PRVSemanticCSVName.length() == 0)
 	{
 		cerr << "Error! Please, provide a valid separator for -separator parameter or a semantic CSV file through -semantic" << endl;
 		exit (-1);
@@ -959,7 +968,7 @@ int main (int argc, char *argv[])
 	}
 
 	/* By loading these t1-3 we ensure that the all callers triplets exist */
-	if (Semantics == NULL)
+	if (!p->givenSemanticsCSV())
 	{
 		bool RegionSeparatorFound;
 		RegionSeparatorName = p->getType (RegionSeparator, RegionSeparatorFound);
@@ -983,7 +992,7 @@ int main (int argc, char *argv[])
 	p->dumpSeen (common::basename (tracename.substr (0, tracename.length()-4)));
 
 	// Emit seen event types when passing a separator manually
-	if (!Semantics)
+	if (!p->givenSemanticsCSV())
 		p->dumpMissingValuesIntoPCF ();
 
 	if (p->getNCounterChanges() > 0)

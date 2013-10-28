@@ -41,7 +41,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <iterator>
 #include <iostream>
 
-PRVSemanticCSV::PRVSemanticCSV (char *file)
+PRVSemanticCSV::PRVSemanticCSV (const char *file)
 {
 	unsigned lineno = 0;
 
