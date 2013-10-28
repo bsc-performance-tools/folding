@@ -476,7 +476,7 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	gplot.close();
 }
 
-void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix, bool per_instruction)
+string InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix, bool per_instruction)
 {
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
 	string gname = prefix + "." + os->toString (false, "any") + "." +
@@ -491,7 +491,7 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix, bool per
 	if (!gplot.is_open())
 	{
 		cerr << "Failed to create " << gname << endl;
-		return;
+		return "";
 	}
 
 	double m = mean();
@@ -612,20 +612,36 @@ void InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix, bool per
 	gplot << ";" << endl;
 
 	gplot.close();
+
+	return gname;
 }
 
 void InstanceGroup::gnuplot (ObjectSelection *os, string prefix)
 {
 	bool has_instruction_counter = false;
 	map<string, InterpolationResults*>::iterator it;
+
+	/* Dump single plots first */
 	for (it = interpolated.begin(); it != interpolated.end(); it++)
 	{
 		has_instruction_counter |= common::isMIPS((*it).first);
 		gnuplot_single (os, prefix, (*it).first, (*it).second);
 	}
-	gnuplot_slopes (os, prefix, false);
+
+	/* If has instruction counter, generate this in addition to .slopes */
+	string name_slopes, name_inst_ctr;
 	if (has_instruction_counter)
-		gnuplot_slopes (os, prefix, true);
+		name_inst_ctr = gnuplot_slopes (os, prefix, true);
+	name_slopes = gnuplot_slopes (os, prefix, false);
+
+	/* If has instruction counter, let the new plot be the summary, otherwise
+	   let the .slopes be the summary */
+	if (has_instruction_counter && name_inst_ctr.length() > 0)
+		cout << "Summary plot for region " << regionName << " ("
+		  << name_inst_ctr << ")" << endl;
+	if (name_slopes.length() > 0)
+		cout << "Summary plot for region " << regionName << " ("
+		  << name_slopes << ")"  << endl;
 }
 
 string InstanceGroup::python (void)

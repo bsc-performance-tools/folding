@@ -78,7 +78,7 @@ class InstanceGroup
 
 	void gnuplot_single (ObjectSelection *os, string prefix, string counter,
 	  InterpolationResults *ir);
-	void gnuplot_slopes (ObjectSelection *os, string prefix, bool per_instruction);
+	string gnuplot_slopes (ObjectSelection *os, string prefix, bool per_instruction);
 
 	public:
 	InstanceGroup (string, unsigned, string);
