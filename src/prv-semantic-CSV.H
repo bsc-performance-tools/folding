@@ -45,7 +45,7 @@ using namespace std;
 class PRVSemanticCSV
 {
 	public:
-	PRVSemanticCSV (char *file);
+	PRVSemanticCSV (const char *file);
 
 	vector<PRVSemanticValue*> getSemantics (const ObjectSelection &o);
 	vector<PRVSemanticValue*> getSemantics (unsigned ptask, unsigned task, unsigned thread);
