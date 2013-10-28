@@ -10,20 +10,21 @@ fi
 EXTENSION_PRV="${1##*.}"
 if test "${EXTENSION_PRV}" != "prv" ; then
 	echo "Invalid extension for a Paraver tracefile"
+	exit
 fi
 EXTENSION_CSV="${2##*.}"
 if test "${EXTENSION_CSV}" != "csv" ; then
 	echo "Invalid extension for a Paraver tracefile"
+	exit
 fi
+
+cd `dirname ${1}`
 
 BASENAME_PRV="${1%.*}"
 BASENAME_CSV="${2%.*}"
 
-echo ${BASENAME_PRV}
-echo ${BASENAME_CSV}
-
 ${FOLDING_HOME}/bin/codeblocks "${BASENAME_PRV}.prv"
 ${FOLDING_HOME}/bin/fuse "${BASENAME_PRV}.codeblocks.prv"
 ${FOLDING_HOME}/bin/extract -semantic "${BASENAME_CSV}.csv" "${BASENAME_PRV}.codeblocks.fused.prv"
-${FOLDING_HOME}/bin/interpolate -max-samples-distance 2000 "${BASENAME_PRV}.codeblocks.fused.extract"
+${FOLDING_HOME}/bin/interpolate -max-samples-distance 2000 -feed-first-occurrence 1.1.1 "${BASENAME_PRV}.codeblocks.fused.extract"
 
