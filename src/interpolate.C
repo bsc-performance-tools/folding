@@ -327,6 +327,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		PCFfile << endl;
 	}
 
+#if 0 /* FIX? Due to Semantics CSV passed! */
 	PCFfile << endl << "EVENT_TYPE" << endl
 	  << "0 " << FOLDED_TYPE << " Folded type : " << pcf->getEventType (foldedType)
 	  << endl << "VALUES" << endl;
@@ -341,6 +342,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 	  << endl << "EVENT_TYPE" << endl
 	  << "0 " << FOLDED_PHASE << " Folded phase" << endl
 	  << endl;
+#endif
 
 	PCFfile << endl << "EVENT_TYPE" << endl;
 	set<string>::iterator it = wantedCounters.begin();
@@ -1022,6 +1024,7 @@ int main (int argc, char *argv[])
 				pair<string, unsigned> RG = make_pair (i->getRegionName(), i->getGroup());
 				if (usedRegions.find(RG) == usedRegions.end())
 				{
+#if 0 /* FIX Due to Semantic CSV passed? */
 					bool found;
 					unsigned long long pv= common::lookForValueString (pcf,
  						feedTraceFoldType, i->getRegionName(), found);
@@ -1029,6 +1032,7 @@ int main (int argc, char *argv[])
 						cerr << "Can't find value for '" << i->getRegionName() <<"' in type " << feedTraceFoldType << endl;
 					else
 						i->setPRVvalue (pv);
+#endif
 					whichInstancesToFeed.push_back (i);
 					usedRegions.insert (RG);
 				}

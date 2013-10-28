@@ -226,8 +226,10 @@ class Process : public ParaverTrace
 	UIParaverTraceConfig *pcf;
 	InformationHolder IH;
 	unsigned numCounterIDs;
-	bool TimeOffsetSet;	
-	unsigned long long TimeOffset;
+
+	bool TimeOffsetSet;	 // Specific to CSV support
+	unsigned long long TimeOffset; // Specific to CSV support
+	vector<string> SemanticIndex; // Specific to CSV support
 
 	bool checkSamples (vector<Sample> &Samples);
 	void dumpSamples (unsigned ptask, unsigned task, unsigned thread,
@@ -447,17 +449,23 @@ void Process::dumpSamples (unsigned ptask, unsigned task, unsigned thread,
 		return;
 
 	/* Write the total time spent in this region */
-	bool RegionFound;
-	string RegionName = getTypeValue (RegionSeparator, region, RegionFound);
-	if (!RegionFound)
+	string RegionName;
+	if (Semantics == NULL)
 	{
-		stringstream ss;
-		ss << region;
-		RegionName = "Value_" + ss.str();
-		IH.addMissingRegion (region);
+		bool RegionFound;
+		RegionName = getTypeValue (RegionSeparator, region, RegionFound);
+		if (!RegionFound)
+		{
+			stringstream ss;
+			ss << region;
+			RegionName = "Value_" + ss.str();
+			IH.addMissingRegion (region);
+		}
+		RegionName = common::removeSpaces (RegionName);
+		IH.addRegion (RegionName);
 	}
-	RegionName = common::removeSpaces (RegionName);
-	IH.addRegion (RegionName);
+	else
+		RegionName = SemanticIndex[region-1];
 
 	/* Calculate totals */
 	map<unsigned, unsigned long long> totals;
@@ -623,6 +631,24 @@ void Process::processMultiEvent (struct multievent_t &e)
 				FoundSeparator = true;
 				string tmp = vs[s]->getValue().substr (0, vs[s]->getValue().find("."));
 				ValueSeparator = atoi (tmp.c_str());
+				if (vs[s]->getValue() != "End")
+				{
+					ValueSeparator = 0;
+					for (unsigned i = 0; i < SemanticIndex.size(); i++)
+						if (SemanticIndex[i] == vs[s]->getValue())
+						{
+							ValueSeparator = i+1;
+							break;
+						}
+					if (ValueSeparator == 0)
+					{
+						SemanticIndex.push_back (vs[s]->getValue());
+						ValueSeparator = SemanticIndex.size();
+					}
+				}
+				else
+					ValueSeparator = 0;
+
 
 				if (common::DEBUG())
 					cout << "Found semantic separator value " << vs[s]->getValue() << " [" << ValueSeparator << "] at timestamp " << e.Timestamp << endl;
@@ -783,8 +809,8 @@ void Process::dumpSeenRegions (string filename)
 	if (f.is_open())
 	{
 		set<string>::iterator i;
-		set<string> ctrs = IH.getRegions ();
-		for (i = ctrs.begin(); i != ctrs.end(); i++)
+		set<string> regions = IH.getRegions ();
+		for (i = regions.begin(); i != regions.end(); i++)
 			f << *i << endl;
 	}
 	f.close();
@@ -954,12 +980,11 @@ int main (int argc, char *argv[])
 	p->parseBody();
 	p->closeFile();
 
+	p->dumpSeen (common::basename (tracename.substr (0, tracename.length()-4)));
+
 	// Emit seen event types when passing a separator manually
 	if (!Semantics)
-	{
-		p->dumpSeen (common::basename (tracename.substr (0, tracename.length()-4)));
 		p->dumpMissingValuesIntoPCF ();
-	}
 
 	if (p->getNCounterChanges() > 0)
 		cout << "Ignored " << p->getNCounterChanges() << " instances, most probably because of hardware counter set change." << endl;
