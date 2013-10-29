@@ -110,7 +110,7 @@ unsigned InstanceSeparatorDBSCAN::separateInGroups (vector<Instance*> &vi)
 	assert (clusters.size() ==  vi.size());
 
 	/* Calculate num groups and associate each instance to its group */
-	unsigned ngroups = 0;
+	int ngroups = 0;
 	for (unsigned u = 0; u < clusters.size(); u++)
 	{
 		if (clusters[u] > ngroups)

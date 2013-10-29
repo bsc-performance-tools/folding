@@ -45,7 +45,7 @@ void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree,
 	CodeRefTriplet crt = ctree->getCodeRefTriplet();
 
 	string routine, file;
-	int bline, eline;
+	unsigned bline, eline;
 
 	/* If this is the top of the tree and the node is a fake main,
 	   rename the routine into "main*" */

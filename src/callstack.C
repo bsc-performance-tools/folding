@@ -84,7 +84,6 @@ Sample * Callstack::lookLongest (vector<Sample*> &vs)
 
 void Callstack::generate (InstanceGroup *ig, bool hasmain, unsigned mainid)
 {
-	Sample *sroot = NULL;
 	vector<double> phase_ranges = ig->getInterpolationBreakpoints();
 	vector<Instance*> vi = ig->getInstances();
 	vector<CallstackTree *> vtree;

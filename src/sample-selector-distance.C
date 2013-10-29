@@ -46,8 +46,6 @@ SampleSelectorDistance::SampleSelectorDistance (unsigned limit) : limitset(true)
 {
 }
 
-static bool sortSamplesByTime (Sample *s1, Sample *s2) { return s1->getNTime() < s2->getNTime(); }
-
 void SampleSelectorDistance::Select (InstanceGroup *ig, set<string> &counters)
 {
 	map<string, vector<Sample*> > used_res, unused_res;

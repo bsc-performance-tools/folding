@@ -568,11 +568,10 @@ void Process::dumpSamples (unsigned ptask, unsigned task, unsigned thread,
 void Process::processMultiEvent (struct multievent_t &e)
 {
 	bool FoundSeparator = false;
-	bool FoundPhaseSeparator = false;
 	unsigned long long ValueSeparator = 0;
-	unsigned ptask = e.ObjectID.ptask - 1;
-	unsigned task = e.ObjectID.task - 1;
-	unsigned thread = e.ObjectID.thread - 1;
+	int ptask = e.ObjectID.ptask - 1;
+	int task = e.ObjectID.task - 1;
+	int thread = e.ObjectID.thread - 1;
 
 	if (ptask >= IH.getNumPTasks())
 		return;
@@ -797,13 +796,13 @@ void Process::dumpSeenObjects (string filename)
 	if (f.is_open())
 	{
 		PTaskInformation *ptaskinfo = IH.getPTasksInformation();
-		for (unsigned ptask = 0; ptask < IH.getNumPTasks(); ptask++)
+		for (int ptask = 0; ptask < IH.getNumPTasks(); ptask++)
 		{
 			TaskInformation *taskinfo = ptaskinfo[ptask].getTasksInformation();
-			for (unsigned task = 0; task < ptaskinfo[ptask].getNumTasks(); task++)
+			for (int task = 0; task < ptaskinfo[ptask].getNumTasks(); task++)
 			{
 				ThreadInformation *threadinfo = taskinfo[task].getThreadsInformation();
-				for (unsigned thread = 0; thread < taskinfo[task].getNumThreads(); thread++)
+				for (int thread = 0; thread < taskinfo[task].getNumThreads(); thread++)
 					if (threadinfo[thread].getSeen())
 						f << ptask+1 << "." << task+1 << "." << thread+1 << endl;
 			} 
