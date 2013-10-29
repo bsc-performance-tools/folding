@@ -66,7 +66,7 @@ InterpolationResults * Interpolation::interpolate_kernel (vector<Sample*> vs,
 	bool all_zeroes = true;
 	inpoints_x[0] = inpoints_y[0] = 0;
 	for (unsigned i = 1, s = 0; s < vs.size(); s++)
-		if (vs[s]->hasCounter (counter) > 0)
+		if (vs[s]->hasCounter (counter))
 		{
 			inpoints_x[i] = vs[s]->getNTime();
 			inpoints_y[i] = vs[s]->getNCounterValue (counter);
