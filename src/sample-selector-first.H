@@ -37,8 +37,8 @@
 class SampleSelectorFirst : public SampleSelector
 {
 	private:
-	const unsigned limit;
 	const bool limitset;
+	const unsigned limit;
 
 	public:
 	SampleSelectorFirst (void);

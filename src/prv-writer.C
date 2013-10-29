@@ -93,7 +93,8 @@ void FoldedParaverTrace::DumpParaverLines (vector<unsigned long long> &type,
 	if (type.size() > 0)
 	{
 		/* 2:14:1:14:1:69916704358:40000003:0 */
-		traceout << "2:" << task << ":1:" << task << ":" << thread << ":" << time;
+		traceout << "2:" << task << ":" << ptask << " :" << task << ":" << thread <<
+		  ":" << time;
 		for (unsigned i = 0; i < type.size(); i++)
 			traceout << ":" << type[i] << ":" << value[i];
 		traceout << endl;
@@ -168,7 +169,7 @@ void FoldedParaverTrace::DumpInterpolationData (ObjectSelection *o, Instance *in
 {
 	vector<unsigned long long> types, values;
 	vector<unsigned long long> zero_types, zero_values;
-	unsigned steps;
+	unsigned steps = 0;
 
 	assert (!o->anyany());
 

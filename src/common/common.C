@@ -187,7 +187,7 @@ unsigned common::lookForValueString (UIParaverTraceConfig *pcf, unsigned type, s
 }
 
 void common::lookForCallerLineInfo (UIParaverTraceConfig *pcf, unsigned id,
-	string &file, int &line)
+	string &file, unsigned &line)
 {
 	string cl = pcf->getEventValue (30000100, id);
 	line = atoi ((cl.substr (0, cl.find (" "))).c_str());
@@ -197,7 +197,8 @@ void common::lookForCallerLineInfo (UIParaverTraceConfig *pcf, unsigned id,
 }
 
 void common::lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller,
-	unsigned callerlineast, string &routine, string &file, int &bline, int &eline)
+	unsigned callerlineast, string &routine, string &file, unsigned &bline,
+	unsigned &eline)
 {
 	string cl = pcf->getEventValue (30000200, callerlineast);
 
@@ -229,7 +230,7 @@ void common::lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller,
 
 void common::lookForCallerFullInfo (UIParaverTraceConfig *pcf, unsigned caller,
 	  unsigned callerline, unsigned callerlineast, string &routine, string &file,
-	  int &line, int &bline, int &eline)
+	  unsigned &line, unsigned &bline, unsigned &eline)
 {
 	lookForCallerASTInfo (pcf, caller, callerlineast, routine, file, bline,
 	  eline);

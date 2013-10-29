@@ -974,7 +974,6 @@ int main (int argc, char *argv[])
 		}
 
 		UIParaverTraceConfig *pcf = NULL;
-		unsigned long long prv_out_start, prv_out_end;
 
 		string oFilePRV = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.prv";
 		ftrace = new FoldedParaverTrace (oFilePRV, traceFile, true);

@@ -57,8 +57,8 @@ class InstanceGroup
 {
 	private:
 	const string regionName;
-	const string groupName;
 	const unsigned numGroup;
+	const string groupName;
 
 	vector<Instance*> Instances;
 	vector<Instance*> excludedInstances;

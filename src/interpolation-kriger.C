@@ -89,6 +89,8 @@ unsigned InterpolationKriger::do_interpolate (unsigned inpoints, double *ix,
 	breakpoints.push_back (0.0f);
 	breakpoints.push_back (1.0f);
 	ir->setBreakpoints (breakpoints);
+
+	return SUCCESS;
 }
 
 void InterpolationKriger::pre_interpolate (double sigmaTimes, InstanceGroup *ig,

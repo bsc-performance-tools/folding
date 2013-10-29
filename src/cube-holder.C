@@ -327,7 +327,7 @@ void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 			CodeRefTriplet crt = (*line).second->getCodeTriplet();
 			string filename;
 			string routine;
-			int fline, bline, eline;
+			unsigned fline, bline, eline;
 			common::lookForCallerFullInfo (pcf, crt.getCaller(), crt.getCallerLine(),
 			  crt.getCallerLineAST(), routine, filename, fline, bline, eline);
 
@@ -339,7 +339,7 @@ void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 
 				if (processedASTs.count(crt.getCallerLineAST()) == 0)
 				{
-					for (int l = bline; l <= eline; l++)
+					for (unsigned l = bline; l <= eline; l++)
 					{
 						/* Emit phase, duration & hwcounters */
 						EmitMetricFileLine (dir, filename, region, phase+1,

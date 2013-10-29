@@ -194,7 +194,7 @@ void Process::prepare (void)
 	for (unsigned i = 0; i < SampleLocations.size(); i++)
 	{
 		string file;
-		int line;
+		unsigned line;
 
 		/* Skip End, Not Found & Unresolved */
 		if (SampleLocations[i] <= 2)
@@ -273,7 +273,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 		if ((*it).Type >= 30000100 && (*it).Type <= 30000199)
 		{
 			string file;
-			int line;
+			unsigned line;
 
 			common::lookForCallerLineInfo (pcf, (*it).Value, file, line);
 

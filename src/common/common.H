@@ -63,12 +63,12 @@ class common
 	static bool existsDir (string dir);
 
 	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
-	  unsigned id, string &file, int &line);
+	  unsigned id, string &file, unsigned &line);
 	static void lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller,
-	  unsigned callerlineast, string &routine, string &file, int &bline, int &eline);
+	  unsigned callerlineast, string &routine, string &file, unsigned &bline, unsigned &eline);
 	static void lookForCallerFullInfo (UIParaverTraceConfig *pcf, unsigned caller,
 	  unsigned callerline, unsigned callerlineast, string &routine, string &file,
-	  int &line, int &bline, int &eline);
+	  unsigned &line, unsigned &bline, unsigned &eline);
 	static unsigned lookForValueString (UIParaverTraceConfig *pcf, unsigned type,
 	  string str, bool &found);
 
