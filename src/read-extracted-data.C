@@ -69,7 +69,7 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 		if (type == 'I')
 		{
 			/* Example of Instance */
-			/* I 0 21 0 Noise 66497311585 14440850 4 PAPI_L1_TCM 130601127 PAPI_L2_TCM 92102842 PAPI_TOT_INS 292544086466 PAPI_TOT_CYC 157143491176 */
+			/* I 1 1 1 main 36108906999 145894729 3 UNHALTED_CORE_CYCLES 377893506 INSTRUCTION_RETIRED 240152588 RESOURCE_STALLS:FCSW 0 */
 			/* I ptask task thread RegionName startTime duration #counters <counter_name, total counter value > */
 
 			unsigned ncounters;
@@ -134,7 +134,7 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 		else if (type == 'S')
 		{
 			/* Example of Sample */
-			/* S 66500183981 4 PAPI_L1_TCM 130577685 PAPI_L2_TCM 92093104 PAPI_TOT_INS 292543310043 PAPI_TOT_CYC 157140202452 1 0 4 4119 4119 */
+			/* S 36145340222 36433223 5 UNHALTED_CORE_CYCLES 94368325 INSTRUCTION_RETIRED 66006147 RESOURCE_STALLS:FCSW 0 2 0 3 9 9 1 4 3 3 */
 			/* S time #counters <counter name, counter value> #code triplets <depth, caller, caller line, caller line AST */
 
 			assert (i != NULL);
