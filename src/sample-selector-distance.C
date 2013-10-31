@@ -88,7 +88,8 @@ void SampleSelectorDistance::Select (InstanceGroup *ig, set<string> &counters)
 					double distancetobest = fabs((*it)->getNTime() - centerposition); 
 
 					for ( ; it != tmp.end(); it++ )
-						if (fabs ((*it)->getNTime() - centerposition) < distancetobest)
+						if ((*it)->hasCounter (*c) && 
+						    fabs ((*it)->getNTime() - centerposition) < distancetobest)
 						{
 							distancetobest = fabs ((*it)->getNTime() - centerposition);
 							bestposition = it;
