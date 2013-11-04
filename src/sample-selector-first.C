@@ -59,7 +59,6 @@ void SampleSelectorFirst::Select (InstanceGroup *ig, set<string> &counters)
 			{
 				vector<Sample*> vs = vi[i]->getSamples();
 				for (unsigned s = 0; s < vs.size(); s++)
-				{
 					if (vs[s]->hasCounter(*c))
 					{
 						if (limitset && used.size() >= limit)
@@ -67,9 +66,6 @@ void SampleSelectorFirst::Select (InstanceGroup *ig, set<string> &counters)
 						else
 							used.push_back (vs[s]);
 					}
-					else
-						unused.push_back (vs[s]);
-				}
 			}
 
 		used_res[*c] = used;
