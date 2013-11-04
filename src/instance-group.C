@@ -279,7 +279,6 @@ void InstanceGroup::dumpData (ObjectSelection *os, string prefix)
 
 	if (Instances.size() > 0)
 	{
-		/* Emit hwc for both used & unused sets */
 		map<string, vector<Sample*> >::iterator it;
 		for (it = used.begin(); it != used.end(); it++)
 		{
@@ -307,35 +306,6 @@ void InstanceGroup::dumpData (ObjectSelection *os, string prefix)
 					  << s->getNCounterValue(counter) << endl;
 			}
 		}
-
-		/* Emit addresses for those samples that have them */
-		for (it = used.begin(); it != used.end(); it++)
-		{
-			string counter = (*it).first;
-			vector<Sample*> usedSamples = (*it).second;
-			for (unsigned u = 0; u < usedSamples.size(); u++)
-			{
-				Sample *s = usedSamples[u];
-				if (s->hasAddress())
-					if (!(s->getAddress() & 0x8000000))
-						odata << "a" << ";" << regionName << ";" << numGroup << ";"
-						  << s->getNTime() << ";" << s->getAddress() << endl;
-			}
-		}
-		for (it = unused.begin(); it != unused.end(); it++)
-		{
-			string counter = (*it).first;
-			vector<Sample*> usedSamples = (*it).second;
-			for (unsigned u = 0; u < usedSamples.size(); u++)
-			{
-				Sample *s = usedSamples[u];
-				if (s->hasAddress())
-					if (!(s->getAddress() & 0x8000000))
-						odata << "a" << ";" << regionName << ";" << numGroup << ";"
-						  << s->getNTime() << ";" << s->getAddress() << endl;
-			}
-		}
-		
 	}
 
 	if (excludedInstances.size() > 0)
@@ -397,19 +367,20 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 	  "# set term png size 800,600" << endl <<
 	  "set datafile separator \";\"" << endl <<
 	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
-	  "set x2range [0:1]" << endl <<
-	  "set yrange [0:1]" << endl <<
-	  "set y2range [0:*]" << endl <<
-	  "set ytics nomirror" << endl <<
-	  "set y2tics nomirror" << endl <<
-	  "set xtics nomirror format \"%.2f\"" << endl <<
-	  "set x2tics nomirror format \"%.2f\"" << endl <<
+	  "set x2range [0:1];" << endl <<
+	  "set yrange [0:1];" << endl <<
+	  "set y2range [0:*];" << endl <<
+	  "set ytics nomirror;" << endl <<
+	  "set y2tics nomirror;" << endl <<
+	  "set xtics nomirror format \"%.2f\";" << endl <<
+	  "set x2tics nomirror format \"%.2f\";" << endl <<
+	  "set xrange [0:" << m << "];" << endl <<
 	  "set xlabel 'Time (in ms)'" << endl <<
-	  "set ylabel 'Normalized " << counter << "'" << endl;
+	  "set ylabel 'Normalized " << counter << "';" << endl;
 	if (common::isMIPS(counter))
 	  gplot << "set y2label 'MIPS';" << endl;
 	else	
-	  gplot << "set y2label '" << counter << " rate (in Mevents/s)'" << endl;
+	  gplot << "set y2label '" << counter << " rate (in Mevents/s)';" << endl;
 
 	gplot << "set title \"" << os->toString (true) << " - " << groupName
 	  << " - " << regionName << "\\nDuration = " << (m/1000000) << " ms, Counter = " 
@@ -454,11 +425,11 @@ void InstanceGroup::gnuplot_single (ObjectSelection *os, string prefix,
 
 	/* Generate functions to filter the .csv */
 	gplot << "# Data accessors to CSV" << endl;
-	gplot << endl << "sampleexcluded(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << "  && t eq 'e') ? ret : NaN" << endl
-	  << "sampleunused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g ==  " << numGroup << " && t eq 'un') ? ret : NaN" << endl
-	  << "sampleused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " && t eq 'u') ? ret : NaN" << endl
-	  << "interpolation(ret,c,r,g) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl
-	  << "slope(ret,c,r,g) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl << endl;
+	gplot << endl << "sampleexcluded(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << "  && t eq 'e') ? ret : NaN;" << endl
+	  << "sampleunused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g ==  " << numGroup << " && t eq 'un') ? ret : NaN;" << endl
+	  << "sampleused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " && t eq 'u') ? ret : NaN;" << endl
+	  << "interpolation(ret,c,r,g) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl
+	  << "slope(ret,c,r,g) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl << endl;
 
 	bool coma = false;
 	/* Generate the plot command */
@@ -532,21 +503,22 @@ string InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix, bool p
 	  "# set term png size 800,600" << endl <<
 	  "set datafile separator \";\"" << endl <<
 	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
-	  "set x2range [0:1]" << endl <<
-	  "set yrange [0:*]" << endl <<
-	  "set xtics nomirror format \"%.2f\"" << endl <<
-	  "set x2tics nomirror format \"%.2f\"" << endl <<
+	  "set x2range [0:1];" << endl <<
+	  "set yrange [0:*];" << endl <<
+	  "set xtics nomirror format \"%.2f\";" << endl <<
+	  "set x2tics nomirror format \"%.2f\";" << endl <<
+	  "set xrange [0:" << m << "];" << endl <<
 	  "set xlabel 'Time (in ms)'" << endl;
 	if (per_instruction)
 	{
-		gplot << "set ylabel 'Counter ratio per instruction'" <<
-		  "set y2label 'MIPS'" << endl <<
-		  "set ytics nomirror" << endl <<
-		  "set y2tics nomirror" << endl;
+		gplot << "set ylabel 'Counter ratio per instruction';" <<
+		  "set y2label 'MIPS';" << endl <<
+		  "set ytics nomirror;" << endl <<
+		  "set y2tics nomirror;" << endl;
 	}
 	else
-		gplot << "set ylabel 'Performance counter rate (in Mevents/s)'" << endl <<
-	  "set ytics mirror" << endl;
+		gplot << "set ylabel 'Performance counter rate (in Mevents/s)';" << endl <<
+	  "set ytics mirror;" << endl;
 
 	gplot << "set title \"" << os->toString (true) << " - " << groupName 
 	  <<  " - " << regionName << "\\nDuration = " << (m/1000000) << " ms\"" 
@@ -591,10 +563,10 @@ string InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix, bool p
 					counter_gnuplot[u] = '_';
 
 			gplot << "slope_" << counter_gnuplot << "(ret,c,r,g) = (c eq '" << (*it).first
-			  << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl;
+			  << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl;
 			if (!common::isMIPS((*it).first))
 				gplot << "ratio_" << counter_gnuplot << "(ret,c,r,g) = (c eq '" << (*it).first
-				  << "_per_ins' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl;
+				  << "_per_ins' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl;
 		}
 	gplot << endl;
 
@@ -644,123 +616,6 @@ string InstanceGroup::gnuplot_slopes (ObjectSelection *os, string prefix, bool p
 	return gname;
 }
 
-string InstanceGroup::gnuplot_addresses (ObjectSelection *os, string prefix)
-{
-	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
-	string fdname = prefix + "." + os->toString(false, "any") 
-	  + ".dump.csv";
-	string gname = prefix + "." + os->toString (false, "any") + "." +
-	  common::removeUnwantedChars(regionName) + "." + 
-	  common::removeSpaces (groupName);
-	gname += ".addresses.gnuplot";
-
-	ofstream gplot (gname.c_str());
-
-	if (!gplot.is_open())
-	{
-		cerr << "Failed to create " << gname << endl;
-		return "";
-	}
-
-	double m = mean();
-
-	/* Generate the header, constant part of the plot */
-	gplot << fixed << setprecision(2) <<
-	  "# set term postscript eps solid color" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\"" << endl <<
-	  "# set term png size 800,600" << endl <<
-	  "set datafile separator \";\"" << endl <<
-	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
-	  "set x2range [0:1]" << endl <<
-	  "set yrange [0:*]" << endl <<
-	  "set xtics nomirror format \"%.2f\"" << endl <<
-	  "set x2tics nomirror format \"%.2f\"" << endl <<
-	  "set xrange [0:" << m << "]" << endl <<
-	  "set xlabel 'Time (in ms)'" << endl;
-
-	gplot << "set ylabel 'Performance counter rate (in Mevents/s)'" << endl <<
-	  "set ytics nomirror" << endl <<
-	  "set y2label 'Addresses referenced'" << endl <<
-	  "set y2tics nomirror" << endl;
-
-	gplot << "set title \"" << os->toString (true) << " - " << groupName 
-	  <<  " - " << regionName << "\\nDuration = " << (m/1000000) << " ms\"" 
-	  << endl;
-
-	gplot << "set xtics ( 0.0 ";
-	for (int i = 1; i <= 5; i++)
-		gplot << ", " << i*(m/1000000)/5;
-	gplot << ");" << endl
-	  << "set xrange [0:" << (m / 1000000) << "]" << endl;
-
-	/* If the instance-group has more than the regular 0..1 breakpoints,
-	   add this into the plot */
-	if (Breakpoints.size () > 2)
-	{
-		gplot << endl;
-		gplot << fixed << setprecision(8);
-		for (unsigned u = 1; u < Breakpoints.size()-1; u++) /* Skip 0 and 1 */
-			gplot << "set arrow from graph "
-			  << Breakpoints[u] << ",0 to graph " << Breakpoints[u]
-			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front" << endl;
-
-		for (unsigned u = 1; u < Breakpoints.size(); u++)
-		{
-			double half = Breakpoints[u-1] + (Breakpoints[u]-Breakpoints[u-1])/2;
-			gplot << "set label \"Phase " << u << "\" at graph " << half 
-			  << ",0.95 rotate by -90 front textcolor rgb '#808080'" << endl;
-		}
-		gplot << fixed << setprecision(2);
-	}
-	else
-		gplot << endl << "# Unneeded phases separators, nb. breakpoints = " << Breakpoints.size() << endl;
-
-	/* Generate functions to filter the .csv */
-	map<string, InterpolationResults*>::iterator it;
-	for (it = interpolated.begin(); it != interpolated.end(); it++)
-		if ((*it).second->isSlopeCalculated())
-		{
-			string counter_gnuplot = (*it).first;
-			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
-				if (counter_gnuplot[u] == ':')
-					counter_gnuplot[u] = '_';
-
-			gplot << "slope_" << counter_gnuplot << "(ret,c,r,g) = (c eq '" << (*it).first
-			  << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl;
-		}
-	gplot << "address(ret,r,g) = (r eq '" << regionName <<
-	  "' && g == 0) ? ret : NaN;" << endl << endl;
-
-	/* Generate the plot command */
-	unsigned count = 0;
-	for (it = interpolated.begin(); it != interpolated.end(); it++)
-	{
-		if ((*it).second->isSlopeCalculated())
-		{
-			if (count == 0)
-				gplot << "plot \\" << endl;
-			else
-				gplot << ",\\" << endl;
-
-			string counter_gnuplot = (*it).first;
-			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
-				if (counter_gnuplot[u] == ':')
-					counter_gnuplot[u] = '_';
-
-			gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
-				  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y1 w lines lw 3";
-
-			count++;
-		}
-	}
-	gplot << ",\\" << endl << 
-	  "'" << fdname << "' u 4:(address($5, strcol(2), $3)) ti 'Address' axes x2y2 w points;" << endl;
-
-	gplot.close();
-
-	return gname;
-}
-
 void InstanceGroup::gnuplot (ObjectSelection *os, string prefix)
 {
 	bool has_instruction_counter = false;
@@ -787,15 +642,6 @@ void InstanceGroup::gnuplot (ObjectSelection *os, string prefix)
 	if (name_slopes.length() > 0)
 		cout << "Summary plot for region " << regionName << " ("
 		  << name_slopes << ")"  << endl;
-
-	/* Check if address sampling should be emitted */
-	bool anyaddress = false;
-	set<Sample*>::iterator s;
-	for (s = allsamples.begin(); s != allsamples.end() && !anyaddress; s++)
-		anyaddress = (*s)->hasAddress();
-
-	if (anyaddress)
-		name_slopes = gnuplot_addresses (os, prefix);
 }
 
 string InstanceGroup::python (void)
@@ -818,27 +664,3 @@ string InstanceGroup::python (void)
 	  "-" + common::convertInt (Instances.size()) +
 	  "-" + common::convertInt (Breakpoints.size() > 0 ? Breakpoints.size()-1 : 0);
 }
-
-void InstanceGroup::setSamples (map<string, vector<Sample*> > &used,
-	map<string, vector<Sample*> > &unused)
-{
-	this->used = used;
-	this->unused = unused;
-
-	allsamples.clear();
-
-	map<string, vector<Sample*> >::iterator i;
-	for (i = used.begin(); i != used.end(); i++)
-	{
-		vector<Sample*> vs = (*i).second;
-		for (unsigned s = 0; s < vs.size(); s++)
-			allsamples.insert (vs[s]);
-	}
-	for (i = unused.begin(); i != unused.end(); i++)
-	{
-		vector<Sample*> vs = (*i).second;
-		for (unsigned s = 0; s < vs.size(); s++)
-			allsamples.insert (vs[s]);
-	}
-}
-
