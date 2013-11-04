@@ -60,7 +60,12 @@ void SampleSelectorDistance::Select (InstanceGroup *ig, set<string> &counters)
 
 		for (unsigned i = 0; i < vi.size(); i++)
 			if (vi[i]->hasCounter(*c))
-				cnt += vi[i]->getNumSamples();
+			{
+				vector<Sample*> vs = vi[i]->getSamples();
+				for (unsigned s = 0; s < vs.size(); s++)
+					if (vs[s].hasCounter(*c))
+						cnt++;
+			}
 
 		if (limitset && cnt > limit)
 		{
@@ -72,7 +77,8 @@ void SampleSelectorDistance::Select (InstanceGroup *ig, set<string> &counters)
 				{
 					vector<Sample*> vs = vi[i]->getSamples();
 					for (unsigned s = 0; s < vs.size(); s++)
-						tmp.push_back (vs[s]);
+						if (vs[s].hasCouner(*c))
+							tmp.push_back (vs[s]);
 				}
 
 			for (unsigned step = 0; step < limit; step++)
