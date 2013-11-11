@@ -33,7 +33,13 @@ interpolate_SOURCES = \
  interpolation-results.C interpolation-results.H \
  interpolation-kriger.C interpolation-kriger.H \
  interpolation-R-strucchange.C interpolation-R-strucchange.H \
- interpolate.C interpolate.H
+ interpolate.C interpolate.H \
+ model/componentnode.H \
+ model/componentnode_constant.C model/componentnode_constant.H \
+ model/componentnode_data.C model/componentnode_data.H \
+ model/componentnode_derived.C model/componentnode_derived.H \
+ model/componentmodel.C model/componentmodel.H \
+ model/model.C model/model.H
 
 if HAVE_CLUSTERING_SUITE
 interpolate_SOURCES += \
@@ -53,7 +59,7 @@ fuse_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Icommon -g -O
 codeblocks_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Icommon -g -O
 foldingtypes_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Icommon -g -O
 extract_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Icommon -g -O
-interpolate_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Iservice-kriger -Iservice-R -Icommon -g -O
+interpolate_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -Imodel -Iservice-kriger -Iservice-R -Icommon $(XML_CPPFLAGS) -g -O
 if HAVE_CLUSTERING_SUITE
 interpolate_CXXFLAGS += -I$(CLUSTERING_HOME)/include
 endif
@@ -72,7 +78,7 @@ fuse_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lpa
 codeblocks_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
 foldingtypes_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig
 extract_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
-interpolate_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm -Lservice-R -lR -lrt
+interpolate_LDFLAGS = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm -Lservice-R -lR -lrt $(XML_LIBS)
 if HAVE_CLUSTERING_SUITE
 interpolate_LDFLAGS += -L$(CLUSTERING_HOME)/lib -lClustering -lBasicClasses
 endif

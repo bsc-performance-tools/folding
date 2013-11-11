@@ -44,6 +44,8 @@
 # include <cube3/Cube.h>
 #endif
 
+#include "model.H"
+
 using namespace std;
 #if defined(HAVE_CUBE)
 using namespace cube;
@@ -76,9 +78,12 @@ class InstanceGroup
 	Cnode *cubeTree;
 #endif
 
-	void gnuplot_single (ObjectSelection *os, string prefix, string counter,
-	  InterpolationResults *ir);
-	string gnuplot_slopes (ObjectSelection *os, string prefix, bool per_instruction);
+	void gnuplot_single (const ObjectSelection *os, const string & prefix, 
+		const string & counter, InterpolationResults *ir);
+	string gnuplot_slopes (const ObjectSelection *os, const string & prefix,
+		bool per_instruction);
+	string gnuplot_model (const ObjectSelection *os, const string & prefix,
+		const Model *m);
 
 	public:
 	InstanceGroup (string, unsigned, string);
@@ -121,10 +126,12 @@ class InstanceGroup
 	map<string, InterpolationResults*> getInterpolated (void)
 	  { return interpolated; }
 
-	void removePreviousData (ObjectSelection *os, string prefix);
+	void removePreviousData (ObjectSelection *os, const string & prefix);
 	void dumpData (ObjectSelection *os, string prefix);
-	void dumpInterpolatedData (ObjectSelection *os, string prefix);
-	void gnuplot (ObjectSelection *os, string prefix);
+	void dumpInterpolatedData (ObjectSelection *os, const string & prefix,
+	  const vector<Model*> &models);
+	void gnuplot (const ObjectSelection *os, const string & prefix,
+	  const vector<Model*> &models);
 	string python (void);
 
 	void setInterpolationBreakpoints (vector <double> breakpoints)
