@@ -21,34 +21,80 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/instance-group.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-11-04 15:24:07 +0100 (Mon, 04 Nov 2013) $
+ | @version:     $Revision: 2284 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INSTANCE_SEPARATOR_H_INCLUDED
-#define INSTANCE_SEPARATOR_H_INCLUDED
+static char __attribute__ ((unused)) rcsid[] = "$Id: instance-group.C 2284 2013-11-04 14:24:07Z harald $";
 
-#include <vector>
-#include <string>
-#include "instance.H"
+#include "common.H"
 
-using namespace std;
+#include "componentnode_derived.H"
 
-class InstanceSeparator
+#include <assert.h>
+#include <iostream>
+
+ComponentNode_derived::ComponentNode_derived (Operator o, ComponentNode *c1,
+	ComponentNode *c2) : op(o), child1(c1), child2(c2)
 {
-	protected:
-	const bool keepallgroups;
+	assert (op == ADD || op == SUB || op == MUL || op == DIV);
+}
 
-	public:
-	InstanceSeparator (bool keepallgroups);
-	virtual unsigned separateInGroups (vector<Instance*> &vi) = 0;
-	virtual string details(void) const = 0;
-	virtual string nameGroup (unsigned) const = 0;
-	void KeepLeadingGroup (vector<Instance*> &Instances, unsigned ngroups);
-};
+double ComponentNode_derived::evaluate (map<string,InterpolationResults*> &ir,
+	unsigned pos) const
+{
+	double v1 = child1->evaluate (ir, pos);
+	double v2 = child2->evaluate (ir, pos);
 
-#endif /* INSTANCE_SEPARATOR_H_INCLUDED */
+	double res = 0;
+	switch (op)
+	{
+		case ADD: res = v1+v2;
+		break;
+		case SUB: res = v1-v2;
+		break;
+		case MUL: res = v1*v2;
+		break;
+		case DIV: res = v1/v2;
+		break;
+	}
+
+	return res;
+}
+
+void ComponentNode_derived::show (unsigned depth) const
+{
+	for (unsigned u = 0; u < depth; u++)
+		cout << "  ";
+
+	cout << "DERIVED ";
+	switch (op)
+	{
+		case ADD: cout << "+" << endl;
+		break;
+		case SUB: cout << "-" << endl;
+		break;
+		case MUL: cout << "*" << endl;
+		break;
+		case DIV: cout << "/" << endl;
+		break;
+	}
+
+	child1->show (depth+1);
+	child2->show (depth+1);
+}
+
+set<string> ComponentNode_derived::requiredCounters (void) const
+{
+	set<string> res;
+	set<string> tmp1 = child1->requiredCounters();
+	set<string> tmp2 = child2->requiredCounters();
+	res.insert (tmp1.begin(), tmp1.end());
+	res.insert (tmp2.begin(), tmp2.end());
+	return res;
+}
+

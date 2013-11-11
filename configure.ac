@@ -6,7 +6,7 @@
 
 # Initialize autoconf & define package name, version and bug-report address 
 #  -- keep version in sync with src/common/extrae_version.h
-AC_INIT(folding, 0.99, tools@bsc.es)
+AC_INIT(folding, 1.0rc1, tools@bsc.es)
 AC_CONFIG_HEADERS([folding-config.h:folding-config.h.in])
 
 # Safety check to ensure that the directory told with `--srcdir` contains the source code
@@ -95,6 +95,12 @@ AC_PROG_FC
 if test "${FC}" = "" ; then
 	AC_MSG_ERROR([Cannot find Fortran compiler])
 fi
+
+AM_PATH_XML2(
+	[2.5.0],
+	[AC_DEFINE([HAVE_XML2], [1], [Defined if libxml2 exists])],
+	[AC_MSG_ERROR(Cannot find xml2-config of libXML 2.5.0 (or above))]
+)
 
 AC_MSG_CHECKING([for libtools])
 AC_ARG_WITH(libtools,
@@ -285,6 +291,29 @@ AX_PROG_BOOST
 AC_CHECK_FUNC(stat, [AC_DEFINE([HAVE_STAT],[1],[Define if have stat])])
 AC_CHECK_FUNC(stat64, [AC_DEFINE([HAVE_STAT64],[1],[Define if have stat64])])
 AC_CHECK_FUNC(access, [AC_DEFINE([HAVE_ACCESS],[1],[Define if have access])])
+
+# Regular C headers
+AC_MSG_NOTICE([Checking for availability of C headers])
+AC_CHECK_HEADERS(
+	[assert.h dirent.h math.h stdio.h stdlib.h string.h time.h unistd.h],
+	[],
+	[AC_MSG_ERROR([Cannot find required header])])
+
+# Regular C headers in sys/
+AC_CHECK_HEADERS(
+	[sys/stat.h sys/types.h],
+	[],
+	[AC_MSG_ERROR([Cannot find required header])])
+
+# Specific C++ headers
+AC_MSG_NOTICE([Checking for availability of C++ headers])
+AC_LANG_PUSH([C++])
+AC_CHECK_HEADERS(
+	[algorithm exception fstream iomanip iostream iterator list map set \
+	 sstream string vector],
+	[],
+	[AC_MSG_ERROR([Cannot find required header])])
+AC_LANG_POP([C++])
 
 AC_CONFIG_FILES([Makefile src/Makefile src/common/Makefile src/service-kriger/Makefile src/service-R/Makefile])
 AC_OUTPUT

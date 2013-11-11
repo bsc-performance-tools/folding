@@ -21,34 +21,48 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/instance-group.H $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-10-29 13:39:46 +0100 (Tue, 29 Oct 2013) $
+ | @version:     $Revision: 2259 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INSTANCE_SEPARATOR_H_INCLUDED
-#define INSTANCE_SEPARATOR_H_INCLUDED
+#ifndef COMPONENTMODEL_H_INCLUDED
+#define COMPONENTMODEL_H_INCLUDED
 
-#include <vector>
 #include <string>
-#include "instance.H"
+#include <set>
 
-using namespace std;
+#include "componentnode.H"
 
-class InstanceSeparator
+class ComponentModel
 {
-	protected:
-	const bool keepallgroups;
+	private:
+	const string Name;
+	const string Color;
+	const string TitleName;
+	const string PlotLocation;
+	const ComponentNode *CNode;
 
 	public:
-	InstanceSeparator (bool keepallgroups);
-	virtual unsigned separateInGroups (vector<Instance*> &vi) = 0;
-	virtual string details(void) const = 0;
-	virtual string nameGroup (unsigned) const = 0;
-	void KeepLeadingGroup (vector<Instance*> &Instances, unsigned ngroups);
+	ComponentModel (const string &Name, const string &TitleName, 
+	  const string &PlotLocation, const string &Color, ComponentNode *CN);
+
+	string getName (void) const
+	  { return Name; }
+	string getPlotLocation (void) const
+	  { return PlotLocation; }
+	const ComponentNode *getComponentNode (void) const
+	  { return CNode; }
+	set<string> requiredCounters (void) const;
+	string getTitleName (void) const
+	  { return TitleName; }
+	string getColor (void) const
+	  { return Color; }
+	bool hasColor (void) const
+	  { return Color.length() > 0; }
 };
 
-#endif /* INSTANCE_SEPARATOR_H_INCLUDED */
+#endif /* COMPONENTMODEL_H_INCLUDED */

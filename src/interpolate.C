@@ -55,6 +55,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 # include "callstack.H"
 # include "cube-holder.H"
 #endif
+#include "model.H"
 
 #include <string.h>
 #include <iostream>
@@ -67,6 +68,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <assert.h>
 
 static ObjectSelection *objectsSelected;
+
+static vector<Model*> models;
 
 static SampleSelectorDefault ssdefault; 
 static SampleSelector *ss = &ssdefault;
@@ -473,9 +476,8 @@ int ProcessParameters (int argc, char *argv[])
 				cerr << "Unknown parameter " << argv[i] << " for -split-instances" << endl;
 				exit (-1);
 			}
-			continue;
 		}
-		if (strcmp ("-source", argv[i]) == 0)
+		else if (strcmp ("-source", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
 			{
@@ -495,9 +497,8 @@ int ProcessParameters (int argc, char *argv[])
 				common::CleanMetricsDirectory (sourceDirectory);
 			else
 				cerr << "Cannot find directory " << sourceDirectory << endl;
-			continue;
 		}
-		if (strcmp ("-use-object", argv[i]) == 0)
+		else if (strcmp ("-use-object", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
 			{
@@ -520,17 +521,15 @@ int ProcessParameters (int argc, char *argv[])
 			  thread, athread);
 			continue;
 		}
-		if (strcmp ("-use-median", argv[i]) == 0)
+		else if (strcmp ("-use-median", argv[i]) == 0)
 		{
 			StatisticType = STATISTIC_MEDIAN;
-			continue;
 		}
-		if (strcmp ("-use-mean", argv[i]) == 0)
+		else if (strcmp ("-use-mean", argv[i]) == 0)
 		{
 			StatisticType = STATISTIC_MEAN;
-			continue;
 		}
-		if (strcmp ("-counter", argv[i]) == 0)
+		else if (strcmp ("-counter", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
 			{
@@ -540,9 +539,8 @@ int ProcessParameters (int argc, char *argv[])
 			i++;
 			if (i < argc-1)
 				wantedCounters.insert (string(argv[i]));
-			continue;
 		}
-		if (strcmp ("-region", argv[i]) == 0)
+		else if (strcmp ("-region", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
 			{
@@ -552,9 +550,8 @@ int ProcessParameters (int argc, char *argv[])
 			i++;
 			if (i < argc-1)
 				wantedRegions.insert (string(argv[i]));
-			continue;
 		}
-		if (strcmp ("-region-start-with", argv[i]) == 0)
+		else if (strcmp ("-region-start-with", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
 			{
@@ -564,9 +561,8 @@ int ProcessParameters (int argc, char *argv[])
 			i++;
 			if (i < argc-1)
 				wantedRegionsStartWith.insert (string(argv[i]));
-			continue;
 		}
-		if (strcmp ("-sigma-times", argv[i]) == 0)
+		else if (strcmp ("-sigma-times", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
 			{
@@ -582,9 +578,8 @@ int ProcessParameters (int argc, char *argv[])
 			}
 			else
 				NumOfSigmaTimes = atof(argv[i]);
-			continue;
 		}
-		if (strcmp ("-max-samples", argv[i]) == 0)
+		else if (strcmp ("-max-samples", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
 			{
@@ -602,9 +597,8 @@ int ProcessParameters (int argc, char *argv[])
 
 			SampleSelectorFirst *ssf = new SampleSelectorFirst (numsamples);
 			ss = ssf;
-			continue;
 		}
-		if (strcmp ("-max-samples-distance", argv[i]) == 0)
+		else if (strcmp ("-max-samples-distance", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
 			{
@@ -622,9 +616,8 @@ int ProcessParameters (int argc, char *argv[])
 
 			SampleSelectorDistance *ssd = new SampleSelectorDistance (numsamples);
 			ss = ssd;
-			continue;
 		}
-		if (strcmp ("-feed-time", argv[i]) == 0)
+		else if (strcmp ("-feed-time", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(3, argc, i))
 			{
@@ -652,10 +645,8 @@ int ProcessParameters (int argc, char *argv[])
 				exit (-1);
 			}
 			objectToFeed = new ObjectSelection (ptask, task, thread);
-
-			continue;
 		}
-		if (strcmp ("-feed-first-occurrence", argv[i]) == 0)
+		else if (strcmp ("-feed-first-occurrence", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
 			{
@@ -674,10 +665,8 @@ int ProcessParameters (int argc, char *argv[])
 				exit (-1);
 			}
 			objectToFeed = new ObjectSelection (ptask, task, thread);
-
-			continue;
 		}
-		if (strcmp ("-interpolation", argv[i]) == 0)
+		else if (strcmp ("-interpolation", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
 			{
@@ -748,13 +737,25 @@ int ProcessParameters (int argc, char *argv[])
 			{
 				cerr << "Invalid interpolation algorithm" << endl;
 			}
-			continue;
 		}
+		else if (strcmp ("-model", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -model parameter" << endl;
+				exit (-1);
+			}
+			i++;
 
-		cout << "Misunderstood parameter: " << argv[i] << endl;
+			Model *m = new Model;
+			m->loadXML (argv[i]);
+			models.push_back (m);
+		}
+		else
+			cout << "Misunderstood parameter: " << argv[i] << endl;
 	}
 
-	if (wantedCounters.size() == 0)
+	if (wantedCounters.size() == 0 && models.size() == 0)
 		wantedCounters.insert (string("all"));
 
 	if (wantedRegions.size() == 0)
@@ -836,6 +837,25 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
+	// If we have to calculate models, add their required counter
+	bool AllCountersForModels = true;
+	for (unsigned m = 0; m < models.size(); m++)
+	{
+		set<string> requiredCounters = models[m]->requiredCounters();
+		set<string>::iterator c;
+		for (c = requiredCounters.begin(); c != requiredCounters.end(); c++)
+		{
+			if (allcounters.find (*c) == allcounters.end())
+			{
+				cout << "Warning! Counter " << *c << " pointed by model " << 
+				  models[m]->getName() << " cannot be find in the extracted data!" << endl;
+				AllCountersForModels = false;
+			}
+			else
+				counters.insert (*c);
+		}
+	}
+
 	// Accumulate in wantedCounters the counters to be folded, ignoring the rest
 	if (wantedCounters.find (string("all")) == wantedCounters.end())
 	{
@@ -846,15 +866,16 @@ int main (int argc, char *argv[])
 			if (allcounters.find (*it) != allcounters.end())
 				counters.insert (*it);
 			else
-				cout << "Warning! Counter " << *it << " was not extracted from the tracefile!" << endl;
+				cout << "Warning! Counter " << *it << " cannot be find in the extracted data!" << endl;
 	}
 	else
 		counters = allcounters;
 
 	// If counters are given but none found, show which are available
-	if (counters.size() == 0)
+	if (!AllCountersForModels || counters.size() == 0)
 	{
-		cerr << "Error! No counters given. Available counters in the extracted data are: " << endl;
+		cerr << "Error! No counters given, or if given they are not found. " << 
+		  "Available counters in the extracted data are: " << endl;
 		set<string>::iterator it;
 		for (it = allcounters.begin(); it != allcounters.end(); it++)
 			if (it != allcounters.begin())
@@ -911,9 +932,9 @@ int main (int argc, char *argv[])
 			  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
 			ss->Select (ig, counters);
 			interpolation->interpolate (ig, counters);
-			ig->dumpInterpolatedData (objectsSelected, cFilePrefix);
+			ig->dumpInterpolatedData (objectsSelected, cFilePrefix, models);
 			ig->dumpData (objectsSelected, cFilePrefix);
-			ig->gnuplot (objectsSelected, cFilePrefix);
+			ig->gnuplot (objectsSelected, cFilePrefix, models);
 		}
 
 		ic.dumpGroupData (objectsSelected, cFilePrefix);

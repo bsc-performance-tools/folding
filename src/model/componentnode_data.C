@@ -21,34 +21,45 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/instance-group.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-11-04 15:24:07 +0100 (Mon, 04 Nov 2013) $
+ | @version:     $Revision: 2284 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INSTANCE_SEPARATOR_H_INCLUDED
-#define INSTANCE_SEPARATOR_H_INCLUDED
+static char __attribute__ ((unused)) rcsid[] = "$Id: instance-group.C 2284 2013-11-04 14:24:07Z harald $";
 
-#include <vector>
-#include <string>
-#include "instance.H"
+#include "common.H"
 
-using namespace std;
+#include "componentnode_data.H"
 
-class InstanceSeparator
+#include <assert.h>
+#include <iostream>
+
+ComponentNode_data::ComponentNode_data (string &ctr) : counter (ctr)
 {
-	protected:
-	const bool keepallgroups;
+}
 
-	public:
-	InstanceSeparator (bool keepallgroups);
-	virtual unsigned separateInGroups (vector<Instance*> &vi) = 0;
-	virtual string details(void) const = 0;
-	virtual string nameGroup (unsigned) const = 0;
-	void KeepLeadingGroup (vector<Instance*> &Instances, unsigned ngroups);
-};
+double ComponentNode_data::evaluate (map<string,InterpolationResults*> &ir,
+	unsigned pos) const
+{
+	assert (ir.count (counter) > 0);
+	return (ir[counter])->getSlopeAt (pos);
+}
 
-#endif /* INSTANCE_SEPARATOR_H_INCLUDED */
+void ComponentNode_data::show (unsigned depth) const
+{
+	for (unsigned u = 0; u < depth; u++)
+		cout << "  ";
+	cout << "DATA - " << counter << endl;
+}
+
+set<string> ComponentNode_data::requiredCounters (void) const
+{
+	set<string> res;
+	res.insert (counter);
+	return res;
+}
+

@@ -1,0 +1,59 @@
+<?xml version='1.0'?>
+
+<model name="stalldistribution" title-name="Stall distribution" y1="Stalls (%)" y2="MIPS" y1-stacked="no">
+
+	<component name="stalls" title-name="Stalls" where="y1" color="red">
+		<operation type='*'>
+			<operation type='/'>
+				<value> RESOURCE_STALLS </value>
+				<value> PAPI_TOT_CYC </value>
+			</operation>
+			<value> 100 </value>
+		</operation>
+	</component>
+
+	<component name="lld" title-name="Stalls:LD" where="y1" color="blue">
+		<operation type='*'>
+			<operation type='/'>
+				<value> RESOURCE_STALLS:LB </value>
+				<value> PAPI_TOT_CYC </value>
+			</operation>
+			<value> 100 </value>
+		</operation>
+	</component>
+
+	<component name="lsr" title-name="Stalls:SB" where="y1" color="green">
+		<operation type='*'>
+			<operation type='/'>
+				<value> RESOURCE_STALLS:SB </value>
+				<value> PAPI_TOT_CYC </value>
+			</operation>
+			<value> 100 </value>
+		</operation>
+	</component>
+
+	<component name="lrs" title-name="Stalls:RS" where="y1" color="yellow">
+		<operation type='*'>
+			<operation type='/'>
+				<value> RESOURCE_STALLS:RS </value>
+				<value> PAPI_TOT_CYC </value>
+			</operation>
+			<value> 100 </value>
+		</operation>
+	</component>
+
+	<component name="rob" title-name="Stalls:ROB" where="y1" color="orange">
+		<operation type='*'>
+			<operation type='/'>
+				<value> RESOURCE_STALLS:ROB </value>
+				<value> PAPI_TOT_CYC </value>
+			</operation>
+			<value> 100 </value>
+		</operation>
+	</component>
+
+	<component name="mips" title-name="MIPS" where="y2" color="black">
+		<value> PAPI_TOT_INS </value>
+	</component>
+
+</model>

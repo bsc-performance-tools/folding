@@ -12,7 +12,3 @@
 * FIX
   boost::exception_detail::clone_impl<libparaver::UIParaverTrace::error>
   message is printed if the tracefile does not exist when using the -feed-first-occurrence
-
-* NEW:
-  Load xml model into interpolate and use the counters indicated there!
-

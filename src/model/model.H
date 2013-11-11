@@ -21,34 +21,64 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/instance-group.H $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-10-29 13:39:46 +0100 (Tue, 29 Oct 2013) $
+ | @version:     $Revision: 2259 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INSTANCE_SEPARATOR_H_INCLUDED
-#define INSTANCE_SEPARATOR_H_INCLUDED
+#ifndef MODEL_H_INCLUDED
+#define MODEL_H_INCLUDED
 
-#include <vector>
+#include <set>
 #include <string>
-#include "instance.H"
+
+#include "componentmodel.H"
+#include "componentnode_constant.H"
+#include "componentnode_data.H"
+#include "componentnode_derived.H"
+#include "componentnode.H"
+
+#include <libxml/xmlmemory.h>
+#include <libxml/parser.h>
 
 using namespace std;
 
-class InstanceSeparator
+class Model
 {
-	protected:
-	const bool keepallgroups;
+	private:
+	string Name;
+	string Y1AxisName;
+	string Y2AxisName;
+	bool Y1Stacked;
+	string TitleName;
+
+	vector< ComponentModel* > components;
+
+	ComponentNode * loadXML_component_componentnode (xmlDocPtr xmldoc,
+	  xmlNodePtr current_tag, unsigned depth = 0);
+	ComponentModel * loadXML_component (xmlDocPtr xmldoc, xmlNodePtr tag);
 
 	public:
-	InstanceSeparator (bool keepallgroups);
-	virtual unsigned separateInGroups (vector<Instance*> &vi) = 0;
-	virtual string details(void) const = 0;
-	virtual string nameGroup (unsigned) const = 0;
-	void KeepLeadingGroup (vector<Instance*> &Instances, unsigned ngroups);
+	Model ();
+	bool loadXML (char *f);
+	set<string> requiredCounters (void) const;
+
+	string getName(void) const
+	  { return Name; }
+	string getY1AxisName (void) const
+	  { return Y1AxisName; }
+	string getY2AxisName (void) const
+	  { return Y2AxisName; }
+	bool isY1Stacked (void) const
+	  { return Y1Stacked; }
+	vector< ComponentModel *> getComponents (void) const
+	  { return components; }
+	string getTitleName(void) const
+	  { return TitleName; }
 };
 
-#endif /* INSTANCE_SEPARATOR_H_INCLUDED */
+#endif /* MODEL_H_INCLUDED */
+
