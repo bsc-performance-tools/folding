@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 
-<model name="stalldistribution" title-name="Stall distribution" y1="Stalls (%)" y2="MIPS" y1-stacked="no">
+<model name="stalldistribution" title-name="Stall distribution" y1="Stalls (% over total cycles)" y2="MIPS" y1-stacked="no">
 
 	<component name="stalls" title-name="Stalls" where="y1" color="red">
 		<operation type='*'>

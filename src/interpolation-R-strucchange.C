@@ -93,7 +93,7 @@ unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 			file << ix[p] << ";" << iy[p] << endl;
 		file.close();
 
-#define R_BREAKPOINTS_FILE "breakpoints.3.R"
+#define R_BREAKPOINTS_FILE "breakpoints.R"
 
 		string Rcommands = string("\n")+
 		  "source (\"" + getenv ("FOLDING_HOME") +"/etc/" + R_BREAKPOINTS_FILE + "\")\n\n" +
