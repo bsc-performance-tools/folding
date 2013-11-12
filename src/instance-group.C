@@ -288,26 +288,14 @@ void InstanceGroup::dumpInterpolatedData (ObjectSelection *os,
 			vector<ComponentModel*> vcm = model->getComponents();
 			for (unsigned cm = 0; cm < vcm.size(); cm++)
 			{
-				string cfilename = prefix + "." + os->toString(false, "any") + "." +
-				  common::removeUnwantedChars (regionName) + "." + 
-				  common::removeSpaces (groupName) + "." + 
-				  model->getName() + "_" + vcm[cm]->getName() + ".slope.csv";
-
-				ofstream cfile;
-				cfile.open (cfilename.c_str());
-
-				assert (cfile.is_open());
-
 				const ComponentNode * cn = vcm[cm]->getComponentNode();
 				for (unsigned u = 1; u < nsteps; u++)
 				{
 					double d_j = (double) u;
-					cfile << regionName << ";" << numGroup << ";" <<
+					sl_data << regionName << ";" << numGroup << ";" <<
 					  model->getName() << "_" << vcm[cm]->getName() << ";" <<
 					  d_j / d_steps << ";" << cn->evaluate (interpolated, u) << endl;
 				}
-
-				cfile.close();
 			}
 		}
 
@@ -560,7 +548,7 @@ string InstanceGroup::gnuplot_slopes (const ObjectSelection *os,
 	  "set xlabel 'Time (in ms)'" << endl;
 	if (per_instruction)
 	{
-		gplot << "set ylabel 'Counter ratio per instruction'" <<
+		gplot << "set ylabel 'Counter ratio per instruction'" << endl <<
 		  "set y2label 'MIPS'" << endl <<
 		  "set ytics nomirror" << endl <<
 		  "set y2tics nomirror" << endl;
@@ -770,19 +758,16 @@ string InstanceGroup::gnuplot_model (const ObjectSelection *os,
 
 		const ComponentNode * cn = vcm[cm]->getComponentNode();
 
-		string cfilename = prefix + "." + os->toString(false, "any") + "." +
-		  common::removeUnwantedChars (regionName) + "." + 
-		  common::removeSpaces (groupName) + "." + 
-		  m->getName() + "_" + vcm[cm]->getName() + ".slope.csv";
-
 		string Yaxis = vcm[cm]->getPlotLocation();
 
 		if (Yaxis == "y1" && m->isY1Stacked())
-			gplot << "'" << cfilename << "' u (slope_" << m->getName() << "_" <<
-			  vcm[cm]->getName() << "($5, strcol(3), strcol(1), $2)) ti '" << 
+			// First grep the data we want from the CSV
+			gplot << "'< grep ^\"" << regionName << ";" << numGroup << ";" << m->getName() <<
+			  "_" << vcm[cm]->getName() << ";\" " << fslname << "' u (slope_" << m->getName() <<
+			  "_" << vcm[cm]->getName() << "($5, strcol(3), strcol(1), $2)) ti '" << 
 			  vcm[cm]->getTitleName() << "' axes x1" << Yaxis;
 		else
-			gplot << "'" << cfilename << "' u 4:(slope_" << m->getName() << "_" <<
+			gplot << "'" << fslname << "' u 4:(slope_" << m->getName() << "_" <<
 			  vcm[cm]->getName() << "($5, strcol(3), strcol(1), $2)) ti '" << 
 			  vcm[cm]->getTitleName() << "' axes x2" << Yaxis  << " w lines lw 3";
 
