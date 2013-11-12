@@ -1,13 +1,20 @@
-There are two examples provided. One is applied to the user routines instrumented by Extrae itself, and another which is applied to clusters.
+There are three examples provided. Two of them refer to basic folding capabilities, described in section I). There is an additional example (described in section II) that refers to the usage of performance tools in conjunction with the folding.
 
-For the former example, run:
+Section I) Basic usage 
 
-cd $FOLDING_PREFIX/examples/user-functions
-$FOLDING_PREFIX/bin/fold.sh 60000019 444.namd.2400000 1.1
+There are two examples provided to demonstrate the usage of the folding capabilities when a tracefile contains information of user routines instrumented using Extrae itself, and another which relies on using the clusters information.
+
+  For the user functions example, run:
+
+  cd $FOLDING_PREFIX/examples/user-functions
+  $FOLDING_PREFIX/bin/fold.sh 60000019 444.namd.2400000 1.1
 
 
-For the latter example, run:
+  For the clusters example, run:
 
-cd $FOLDING_PREFIX/examples/clusters
-$FOLDING_PREFIX/bin/fold.sh 90000001 cgpop.task1.clustered 1.1
+  cd $FOLDING_PREFIX/examples/clusters
+  $FOLDING_PREFIX/bin/fold.sh 90000001 cgpop.task1.clustered 1.1
+
+
+Section II) Usage with performance models
 
