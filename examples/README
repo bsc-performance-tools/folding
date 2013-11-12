@@ -18,3 +18,13 @@ There are two examples provided to demonstrate the usage of the folding capabili
 
 Section II) Usage with performance models
 
+  Pass to the interpolate step the parameters the model you want to apply (listed from a) to c) )
+   a) -model ${FOLDING_HOME}/etc/models/architecture-impact.xml
+   b) -model ${FOLDING_HOME}/etc/models/instruction-mix.xml
+   c) -model ${FOLDING_HOME}/etc/models/stall-distribution.xml
+
+   Model a) requires PAPI_TOT_INS, PAPI_LD_INS, PAPI_SR_INS, PAPI_BR_INS, PAPI_BR_MSP, PAPI_L1_DCM, PAPI_L2_DCM, PAPI_L2_DCH, and PAPI_L3_TCH.
+   Model b) requires PAPI_TOT_INS, PAPI_LD_INS, PAPI_SR_INS, PAPI_BR_UNC, PAPI_BR_CN, PAPI_FP_INS, PAPI_VEC_DP, and PAPI_VEC_SP
+   Model c) requires PAPI_TOT_INS, PAPI_TOT_CYC, RESOURCE_STALLS, RESOURCE_STALLS:LB, RESOURCE_STALS:SB, RESOURCE_STALLS:RS, RESOURCE_STALLS:ROB [*]
+
+[*] This model uses Intel SandyBridge specific counters. This model may not be appliable to processors from other manufacturers or even different processors from Intel.
