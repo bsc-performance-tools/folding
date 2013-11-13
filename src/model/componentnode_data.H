@@ -41,6 +41,7 @@ class ComponentNode_data : public ComponentNode
 
 	public:
 	ComponentNode_data (string &ctr);
+	~ComponentNode_data ();
 
 	double evaluate (map<string,InterpolationResults*> &ir, unsigned pos) const;
 	void show (unsigned depth) const;

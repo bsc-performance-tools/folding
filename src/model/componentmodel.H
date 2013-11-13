@@ -49,6 +49,7 @@ class ComponentModel
 	public:
 	ComponentModel (const string &Name, const string &TitleName, 
 	  const string &PlotLocation, const string &Color, ComponentNode *CN);
+	~ComponentModel ();
 
 	string getName (void) const
 	  { return Name; }

@@ -43,6 +43,9 @@ using namespace std;
 class ComponentNode
 {
 	public:
+	ComponentNode();
+	virtual ~ComponentNode() = 0;
+
 	virtual double evaluate (map<string,InterpolationResults*> &ir,
 	  unsigned pos) const = 0;
 	virtual void show (unsigned depth = 0) const = 0;

@@ -111,6 +111,17 @@ Model::Model ()
 {
 }
 
+Model::~Model ()
+{
+	vector<ComponentModel*>:: iterator it = components.begin();
+	while (it != components.end())
+	{
+		ComponentModel *ptr = *it;
+		it = components.erase (it);
+		delete ptr;
+	}
+}
+
 bool Model::loadXML (char *f)
 {
 	if (!common::existsFile (f))

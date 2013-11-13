@@ -41,6 +41,10 @@ ComponentNode_constant::ComponentNode_constant (double ct) : constant(ct)
 {
 }
 
+ComponentNode_constant::~ComponentNode_constant ()
+{
+}
+
 double ComponentNode_constant::evaluate (map<string,InterpolationResults*> &ir,
 	unsigned pos) const
 {

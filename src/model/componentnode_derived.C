@@ -44,6 +44,12 @@ ComponentNode_derived::ComponentNode_derived (Operator o, ComponentNode *c1,
 	assert (op == ADD || op == SUB || op == MUL || op == DIV);
 }
 
+ComponentNode_derived::~ComponentNode_derived ()
+{
+	delete child1;
+	delete child2;
+}
+
 double ComponentNode_derived::evaluate (map<string,InterpolationResults*> &ir,
 	unsigned pos) const
 {

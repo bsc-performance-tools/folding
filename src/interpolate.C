@@ -879,8 +879,12 @@ int main (int argc, char *argv[])
 					cout << *it;
 			cout << endl << endl;
 
+			Model *todelete = *m;
+
 			// Remove this model, and continue
 			m = models.erase (m);
+
+			delete todelete;
 		}
 		else
 		{
