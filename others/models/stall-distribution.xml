@@ -12,7 +12,7 @@
 		</operation>
 	</component>
 
-	<component name="lld" title-name="Stalls:LD" where="y1" color="blue">
+	<component name="lld" title-name="Stalls:LB" where="y1" color="blue">
 		<operation type='*'>
 			<operation type='/'>
 				<value> RESOURCE_STALLS:LB </value>
