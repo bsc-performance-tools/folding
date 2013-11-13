@@ -42,6 +42,11 @@ ComponentModel::ComponentModel (const string &Name, const string &TitleName,
 {
 }
 
+ComponentModel::~ComponentModel ()
+{
+	delete CNode;
+}
+
 set<string> ComponentModel::requiredCounters (void) const
 {
 	return CNode->requiredCounters();

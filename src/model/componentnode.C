@@ -33,37 +33,14 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: instance-group.C 2284 2013-
 
 #include "common.H"
 
-#include "componentnode_data.H"
+#include "componentnode.H"
 
-#include <assert.h>
 #include <iostream>
 
-ComponentNode_data::ComponentNode_data (string &ctr) : counter (ctr)
+ComponentNode::ComponentNode ()
 {
 }
 
-ComponentNode_data::~ComponentNode_data ()
+ComponentNode::~ComponentNode ()
 {
 }
-
-double ComponentNode_data::evaluate (map<string,InterpolationResults*> &ir,
-	unsigned pos) const
-{
-	assert (ir.count (counter) > 0);
-	return (ir[counter])->getSlopeAt (pos);
-}
-
-void ComponentNode_data::show (unsigned depth) const
-{
-	for (unsigned u = 0; u < depth; u++)
-		cout << "  ";
-	cout << "DATA - " << counter << endl;
-}
-
-set<string> ComponentNode_data::requiredCounters (void) const
-{
-	set<string> res;
-	res.insert (counter);
-	return res;
-}
-

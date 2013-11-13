@@ -41,6 +41,7 @@ class ComponentNode_constant : public ComponentNode
 
 	public:
 	ComponentNode_constant (double ct);
+	~ComponentNode_constant ();
 
 	double evaluate (map<string,InterpolationResults*> &ir, unsigned pos) const;
 	void show (unsigned depth) const;

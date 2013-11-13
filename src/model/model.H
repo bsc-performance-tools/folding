@@ -63,6 +63,8 @@ class Model
 
 	public:
 	Model ();
+	~Model ();
+
 	bool loadXML (char *f);
 	set<string> requiredCounters (void) const;
 

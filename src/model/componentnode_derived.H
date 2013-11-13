@@ -45,6 +45,7 @@ class ComponentNode_derived : public ComponentNode
 
 	public:
 	ComponentNode_derived (Operator o, ComponentNode *c1, ComponentNode *c2);
+	~ComponentNode_derived ();
 
 	double evaluate (map<string,InterpolationResults*> &ir, unsigned pos) const;
 	void show (unsigned depth) const;

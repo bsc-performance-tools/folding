@@ -34,7 +34,7 @@ interpolate_SOURCES = \
  interpolation-kriger.C interpolation-kriger.H \
  interpolation-R-strucchange.C interpolation-R-strucchange.H \
  interpolate.C interpolate.H \
- model/componentnode.H \
+ model/componentnode.H model/componentnode.C \
  model/componentnode_constant.C model/componentnode_constant.H \
  model/componentnode_data.C model/componentnode_data.H \
  model/componentnode_derived.C model/componentnode_derived.H \
