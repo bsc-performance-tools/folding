@@ -767,8 +767,8 @@ int ProcessParameters (int argc, char *argv[])
 
 int main (int argc, char *argv[])
 {
-	set<string> allcounters, counters;
-	set<string> allregions, regions;
+	set<string> presentCounters, counters;
+	set<string> presentRegions, regions;
 	map<string, InstanceContainer> Instances;
 	map<string, InstanceContainer> excludedInstances;
 	vector<Instance*> vInstances;
@@ -792,19 +792,19 @@ int main (int argc, char *argv[])
 	int res = ProcessParameters (argc, argv);
 
 	ReadExtractData::ReadDataFromFile (argv[res], objectsSelected,
-	  allcounters, allregions, vInstances, objectToFeed, feedInstances);
+	  presentCounters, presentRegions, vInstances, objectToFeed, feedInstances);
 
 	// Accumulate in wantedRegions the regions to be folded, ignoring the rest
 	if (wantedRegions.find (string("all")) != wantedRegions.end())
 	{
-		set<string>::iterator it = allregions.begin();
-		for (; it != allregions.end(); it++)
+		set<string>::iterator it = presentRegions.begin();
+		for (; it != presentRegions.end(); it++)
 			regions.insert (*it);
 	}
 	else
 	{
-		set<string>::iterator it = allregions.begin();
-		for (; it != allregions.end(); it++)
+		set<string>::iterator it = presentRegions.begin();
+		for (; it != presentRegions.end(); it++)
 		{
 			set<string>::iterator it2 = wantedRegions.begin();
 			for (; it2 != wantedRegions.end(); it2++)
@@ -828,8 +828,8 @@ int main (int argc, char *argv[])
 	{
 		cerr << "Error! No regions selected through filters. Available regions in the extracted data are: " << endl;
 		set<string>::iterator it;
-		for (it = allregions.begin(); it != allregions.end(); it++)
-			if (it != allregions.begin())
+		for (it = presentRegions.begin(); it != presentRegions.end(); it++)
+			if (it != presentRegions.begin())
 				cout << ", " << *it;
 			else
 				cout << *it;
@@ -838,21 +838,56 @@ int main (int argc, char *argv[])
 	}
 
 	// If we have to calculate models, add their required counter
-	bool AllCountersForModels = true;
-	for (unsigned m = 0; m < models.size(); m++)
+	set<string> tmp;
+	vector<Model*>::iterator m = models.begin();
+	bool models_given = !models.empty();
+	while (m != models.end())
 	{
-		set<string> requiredCounters = models[m]->requiredCounters();
+		bool first_not_found = true;
+		bool all_found = true;
+		set<string> requiredCounters = (*m)->requiredCounters();
 		set<string>::iterator c;
 		for (c = requiredCounters.begin(); c != requiredCounters.end(); c++)
 		{
-			if (allcounters.find (*c) == allcounters.end())
+			if (presentCounters.find (*c) == presentCounters.end())
 			{
+				if (first_not_found)
+				{
+					cout << endl <<  "Warning! Model " << (*m)->getName() <<
+					  " will not be calculated!" << endl;
+					first_not_found = false;
+				}
 				cout << "Warning! Counter " << *c << " pointed by model " << 
-				  models[m]->getName() << " cannot be find in the extracted data!" << endl;
-				AllCountersForModels = false;
+				  (*m)->getName() << " cannot be find in the extracted data!" <<
+				  endl;
+				all_found = false;
 			}
 			else
-				counters.insert (*c);
+				tmp.insert (*c);
+		}
+
+		// If any counter was not present, show available counters and ignore the
+		// model. If all are present, add into counters set
+		if (!all_found)
+		{
+			cout << "Available counters: ";
+			set<string>::iterator it;
+			for (it = presentCounters.begin(); it != presentCounters.end(); it++)
+				if (it != presentCounters.begin())
+					cout << ", " << *it;
+				else
+					cout << *it;
+			cout << endl << endl;
+
+			// Remove this model, and continue
+			m = models.erase (m);
+		}
+		else
+		{
+			counters.insert (tmp.begin(), tmp.end());
+
+			// Advance to the next model
+			m++;
 		}
 	}
 
@@ -863,26 +898,35 @@ int main (int argc, char *argv[])
 		  extracted data */
 		set<string>::iterator it;
 		for (it = wantedCounters.begin(); it != wantedCounters.end(); it++)
-			if (allcounters.find (*it) != allcounters.end())
+			if (presentCounters.find (*it) != presentCounters.end())
 				counters.insert (*it);
 			else
-				cout << "Warning! Counter " << *it << " cannot be find in the extracted data!" << endl;
+				cout << "Warning! Counter " << *it <<
+				  " cannot be find in the extracted data!" << endl << endl;
 	}
 	else
-		counters = allcounters;
+		counters = presentCounters;
 
 	// If counters are given but none found, show which are available
-	if (!AllCountersForModels || counters.size() == 0)
+	if (!models_given && counters.size() == 0)
 	{
 		cerr << "Error! No counters given, or if given they are not found. " << 
 		  "Available counters in the extracted data are: " << endl;
 		set<string>::iterator it;
-		for (it = allcounters.begin(); it != allcounters.end(); it++)
-			if (it != allcounters.begin())
+		for (it = presentCounters.begin(); it != presentCounters.end(); it++)
+			if (it != presentCounters.begin())
 				cout << ", " << *it;
 			else
 				cout << *it;
 		cout << endl;
+		cout << "Aborting, nothing to do ..." << endl;
+		return -1;
+	}
+	else if (models_given && counters.size() == 0)
+	{
+		// There is no need to replicate the message showing the available
+		// counters
+		cout << "Aborting, nothing to do ..." << endl;
 		return -1;
 	}
 
