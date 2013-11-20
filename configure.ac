@@ -18,6 +18,11 @@ AC_CONFIG_AUX_DIR(config)
 # Loads some shell variables like host_cpu and host_os, to get the host information 
 AC_CANONICAL_SYSTEM
 
+# Initialize automake
+AM_INIT_AUTOMAKE
+AM_SILENT_RULES([yes])
+AM_PROG_MKDIR_P
+
 # Write defines in the output header file for the architecture and operating system
 case "${target_cpu}" in
   armv7l)    Architecture="arm"
@@ -71,9 +76,6 @@ AM_CONDITIONAL(OS_FREEBSD,   test "${OperatingSystem}" = "freebsd" )
 AM_CONDITIONAL(OS_DARWIN,    test "${OperatingSystem}" = "darwin" )
 AM_CONDITIONAL(OS_SOLARIS,   test "${OperatingSystem}" = "solaris" )
 
-# Initialize automake
-AM_INIT_AUTOMAKE
-AM_PROG_MKDIR_P
 
 # Specify the output configuration header file
 # AM_CONFIG_HEADER(folding-config.h)
