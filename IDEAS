@@ -12,3 +12,10 @@
 * FIX
   boost::exception_detail::clone_impl<libparaver::UIParaverTrace::error>
   message is printed if the tracefile does not exist when using the -feed-first-occurrence
+
+* class Options, that holds all options of interpolate.C
+
+* class FoldingIO, that reads & writes .extract file
+
+* class GNUPLOT generator?
+   - remove gnuplot generation from isntance-group.C?
