@@ -194,9 +194,9 @@ unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
 		}
 	}
 
-//	if (unlink (f.c_str()))
-//		cerr << "Warning! Could not remove temporal file '" << f
-//		  << "'" << endl;
+	if (unlink (f.c_str()))
+		cerr << "Warning! Could not remove temporal file '" << f
+		  << "'" << endl;
 
 	return SUCCESS;
 }
