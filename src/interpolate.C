@@ -714,6 +714,7 @@ int ProcessParameters (int argc, char *argv[])
 					exit (-1);
 				}
 
+#if defined(HAVE_R)
 				unsigned NSTEPS;
 				double H;
 				i++;
@@ -732,6 +733,9 @@ int ProcessParameters (int argc, char *argv[])
 				cout << "Selected interpolation algorithm: R-strucchange (steps = " << NSTEPS << ", h = " << H << ")" << endl;
 				InterpolationRstrucchange *in = new InterpolationRstrucchange (NSTEPS, H);
 				interpolation = in;
+#else
+				cout << "Cannot use R-strucchange algorithm because it was not available at configure time!" << endl;
+#endif
 			}
 			else
 			{
