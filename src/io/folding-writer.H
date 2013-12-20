@@ -35,6 +35,8 @@
 #include <string>
 #include <set>
 #include <fstream>
+#include <vector>
+
 #include "sample.H"
 
 using namespace std;

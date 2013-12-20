@@ -32,8 +32,9 @@
 #ifndef SAMPLE_H_INCLUDED
 #define SAMPLE_H_INCLUDED
 
-#include "map"
-#include "set"
+#include <map>
+#include <set>
+#include <string>
 
 #include "codereftriplet.H"
 
