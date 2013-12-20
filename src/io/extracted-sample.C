@@ -1,3 +1,4 @@
+
 /*****************************************************************************\
  *                        ANALYSIS PERFORMANCE TOOLS                         *
  *                                   Folding                                 *
@@ -21,80 +22,43 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/read-extracted-data.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-10-29 12:09:15 +0100 (Tue, 29 Oct 2013) $
+ | @version:     $Revision: 2257 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INSTANCE_H_INCLUDED
-#define INSTANCE_H_INCLUDED
+static char __attribute__ ((unused)) rcsid[] = "$Id: read-extracted-data.C 2257 2013-10-29 11:09:15Z harald $";
 
-#include "sample.H"
-#include <vector>
-#include <string>
-#include <map>
-#include <set>
+#include "common.H"
 
-using namespace std;
+#include "extracted-sample.H"
 
-class Instance
+#include <assert.h>
+
+extractedSample::extractedSample (unsigned long long TS,
+	const map<string, unsigned long long> & CV,
+	const map<unsigned, unsigned long long> & C,
+	const map<unsigned, unsigned long long> & CL,
+	const map<unsigned, unsigned long long> & CLA)
+	: Timestamp (TS), CounterValues (CV), Caller (C), CallerLine (CL),
+	  CallerLineAST(CLA)
 {
-	private:
-	const string RegionName;
-	const unsigned ptask;
-	const unsigned task;
-	const unsigned thread;
-	const unsigned long long startTime;
-	const unsigned long long duration;
-	unsigned long long prvValue;
-	unsigned group;
-	vector<Sample*> Samples;
-	set<string> Counters;
-	map<string, unsigned long long> TotalCounterValues;
+}
 
-	public:
-	Instance (unsigned ptask, unsigned task, unsigned thread, string region,
-	  unsigned long long startTime, unsigned long long duration,
-	  set<string> &counters, map<string, unsigned long long> totalcountervalues);
-	~Instance(void);
+set<string> extractedSample::getCounters (void)
+{
+	set<string> res;
+	map<string, unsigned long long>::iterator it = CounterValues.begin();
+	for (; it != CounterValues.end(); it++)
+		res.insert ((*it).first);
+}
 
-	void Show(void);
-	
-	bool hasCounter (string c) const;
-	void addSample (Sample *s)
-	  { Samples.push_back (s); }
-	vector<Sample*> getSamples(void)
-	  { return Samples; }
-	unsigned getNumSamples(void) const
-	  { return Samples.size(); }
-	void setGroup (unsigned g)
-	  { this->group = g; }
-	unsigned getGroup (void) const
-	  { return group; }
-	unsigned long long getPRVvalue (void) const
-	  { return prvValue; }
-	void setPRVvalue (unsigned long long v)
-	  { this->prvValue = v; }
-	unsigned long long getDuration (void) const
-	  { return duration; }
-	unsigned long long getStartTime (void) const
-	  { return startTime; }
-	unsigned getptask (void) const
-	  { return ptask; }
-	unsigned gettask (void) const
-	  { return task; }
-	unsigned getthread (void) const
-	  { return thread; }
-	unsigned long long getTotalCounterValue (string ctr);
-	map<string, unsigned long long> & getTotalCounterValues (void)
-	  { return TotalCounterValues; }
-	string getRegionName(void) const
-	  { return RegionName; }
-};
-
-#endif
-
+unsigned long long extractedSample::getCounterValue (string C)
+{
+	assert (CounterValues.count(C) > 0);
+	return CounterValues[C];
+}
 

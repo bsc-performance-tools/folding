@@ -13,7 +13,7 @@ if WANT_GUI_FRONTEND
 endif
 	$(MKDIR_P) $(prefix)/etc
 	cp others/cube-call-paraver-base.cfg $(prefix)/etc
-	cp others/breakpoints.R others/breakpoints.2.R others/breakpoints.3.R $(prefix)/etc
+	cp others/breakpoints.R $(prefix)/etc
 	cp others/basicblocks.C.py others/basicblocks.F90.py $(prefix)/etc
 	cp -r others/models $(prefix)/etc
 	$(MKDIR_P) $(prefix)/cfg

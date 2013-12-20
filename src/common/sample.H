@@ -21,80 +21,65 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/sample.H $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-10-25 17:11:45 +0200 (Fri, 25 Oct 2013) $
+ | @version:     $Revision: 2250 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INSTANCE_H_INCLUDED
-#define INSTANCE_H_INCLUDED
+#ifndef SAMPLE_H_INCLUDED
+#define SAMPLE_H_INCLUDED
 
-#include "sample.H"
-#include <vector>
-#include <string>
-#include <map>
-#include <set>
+#include "map"
+#include "set"
+
+#include "codereftriplet.H"
 
 using namespace std;
 
-class Instance
+class Sample
 {
 	private:
-	const string RegionName;
-	const unsigned ptask;
-	const unsigned task;
-	const unsigned thread;
-	const unsigned long long startTime;
-	const unsigned long long duration;
-	unsigned long long prvValue;
-	unsigned group;
-	vector<Sample*> Samples;
-	set<string> Counters;
-	map<string, unsigned long long> TotalCounterValues;
+	const unsigned long long sTime; /* integral time of the sample */
+	const unsigned long long iTime; /* integral time since start of instance */
+	double nTime; /* normalized time since start of instance */
+	map<string, unsigned long long> iCounterValue; /* integral counter value */
+	map<string, double> nCounterValue; /* normalized counter value */
+	map<unsigned, CodeRefTriplet> CodeTriplet; /* Code reference triplets (caller, callerline, callerlineAST) */
 
 	public:
-	Instance (unsigned ptask, unsigned task, unsigned thread, string region,
-	  unsigned long long startTime, unsigned long long duration,
-	  set<string> &counters, map<string, unsigned long long> totalcountervalues);
-	~Instance(void);
 
-	void Show(void);
-	
-	bool hasCounter (string c) const;
-	void addSample (Sample *s)
-	  { Samples.push_back (s); }
-	vector<Sample*> getSamples(void)
-	  { return Samples; }
-	unsigned getNumSamples(void) const
-	  { return Samples.size(); }
-	void setGroup (unsigned g)
-	  { this->group = g; }
-	unsigned getGroup (void) const
-	  { return group; }
-	unsigned long long getPRVvalue (void) const
-	  { return prvValue; }
-	void setPRVvalue (unsigned long long v)
-	  { this->prvValue = v; }
-	unsigned long long getDuration (void) const
-	  { return duration; }
-	unsigned long long getStartTime (void) const
-	  { return startTime; }
-	unsigned getptask (void) const
-	  { return ptask; }
-	unsigned gettask (void) const
-	  { return task; }
-	unsigned getthread (void) const
-	  { return thread; }
-	unsigned long long getTotalCounterValue (string ctr);
-	map<string, unsigned long long> & getTotalCounterValues (void)
-	  { return TotalCounterValues; }
-	string getRegionName(void) const
-	  { return RegionName; }
+	/* sTime = sample time within the full exec, iTime time since instance */
+	Sample (unsigned long long sTime, unsigned long long iTime,
+	  map<string, unsigned long long> & icountervalue,
+	  map<unsigned, CodeRefTriplet> & codetriplet);
+
+	~Sample (void);
+
+	void normalizeData (unsigned long long instaceDuration,
+		map<string, unsigned long long> & instanceCounterValue);
+	void processCodeTriplets (void);
+	void show (void);
+	unsigned long long getTime (void) const
+	  { return sTime; }
+	unsigned long long getiTime (void) const
+	  { return iTime; }
+	double getNTime (void) const
+	  { return nTime; }
+	bool hasCounter (string ctr) const;
+	double getNCounterValue (string ctr);
+	unsigned long long getCounterValue (string ctr);
+	map<string, double> getNCounterValue(void)
+	  { return nCounterValue; }
+	map<unsigned, CodeRefTriplet> getCodeTriplets(void)
+	  { return CodeTriplet; }
+	bool hasCaller (unsigned caller);
+	unsigned getCodeRefTripletSize(void) const
+	  { return CodeTriplet.size(); }
+	set<string> getCounters (void);
 };
 
 #endif
-
 

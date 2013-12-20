@@ -21,80 +21,32 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/read-extracted-data.H $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-10-25 17:11:45 +0200 (Fri, 25 Oct 2013) $
+ | @version:     $Revision: 2250 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INSTANCE_H_INCLUDED
-#define INSTANCE_H_INCLUDED
+#ifndef FOLDING_READER_H_INCLUDED
+#define FOLDING_READER_H_INCLUDED
 
-#include "sample.H"
-#include <vector>
 #include <string>
-#include <map>
 #include <set>
+#include "object-selection.H"
+#include "instance.H"
 
 using namespace std;
 
-class Instance
+class FoldingReader
 {
-	private:
-	const string RegionName;
-	const unsigned ptask;
-	const unsigned task;
-	const unsigned thread;
-	const unsigned long long startTime;
-	const unsigned long long duration;
-	unsigned long long prvValue;
-	unsigned group;
-	vector<Sample*> Samples;
-	set<string> Counters;
-	map<string, unsigned long long> TotalCounterValues;
-
 	public:
-	Instance (unsigned ptask, unsigned task, unsigned thread, string region,
-	  unsigned long long startTime, unsigned long long duration,
-	  set<string> &counters, map<string, unsigned long long> totalcountervalues);
-	~Instance(void);
-
-	void Show(void);
-	
-	bool hasCounter (string c) const;
-	void addSample (Sample *s)
-	  { Samples.push_back (s); }
-	vector<Sample*> getSamples(void)
-	  { return Samples; }
-	unsigned getNumSamples(void) const
-	  { return Samples.size(); }
-	void setGroup (unsigned g)
-	  { this->group = g; }
-	unsigned getGroup (void) const
-	  { return group; }
-	unsigned long long getPRVvalue (void) const
-	  { return prvValue; }
-	void setPRVvalue (unsigned long long v)
-	  { this->prvValue = v; }
-	unsigned long long getDuration (void) const
-	  { return duration; }
-	unsigned long long getStartTime (void) const
-	  { return startTime; }
-	unsigned getptask (void) const
-	  { return ptask; }
-	unsigned gettask (void) const
-	  { return task; }
-	unsigned getthread (void) const
-	  { return thread; }
-	unsigned long long getTotalCounterValue (string ctr);
-	map<string, unsigned long long> & getTotalCounterValues (void)
-	  { return TotalCounterValues; }
-	string getRegionName(void) const
-	  { return RegionName; }
+	static void Read (string filename, ObjectSelection *os,
+		set<string> &allcounters, set<string> &allregions,
+		vector<Instance*> &Instances, ObjectSelection *osfeed, 
+		vector<Instance*> &feedInstances);
 };
 
-#endif
-
+#endif /* FOLDING_READER_H_INCLUDED */
 

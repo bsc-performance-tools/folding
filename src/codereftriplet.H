@@ -57,14 +57,6 @@ class CodeRefTriplet
 
 	unsigned getCallerLineAST(void) const
 	  { return CallerLineAST; }
-
-#if 0
-	bool operator!=(const CodeRefTriplet &other) const 
-	  { return !(*this == other); } 
-
-	bool operator< (const CodeRefTriplet &other) const
-	  { return Caller < other.Caller; }
-#endif
 };
 
 #endif /* CODEREFTRIPLET_H_INCLUDED */
