@@ -79,8 +79,10 @@ void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 	unsigned long long start, unsigned long long duration,
 	vector<Sample*> &Samples)
 {
+#if 0
 	if (common::DEBUG())
 		cout << "Process:dumpSamples (Samples.size() = " << Samples.size() << ")" << endl;
+#endif
 
 	/* At least, have a sample at the begin & end, and someone else */
 	if (Samples.size() < 2)
