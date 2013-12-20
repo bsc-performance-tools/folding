@@ -49,6 +49,10 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <set>
 #include <exception>
 
+#include "sample.H"
+
+#include "folding-writer.H"
+
 #include "interpolate.H"
 
 unsigned long long RegionSeparator = 0;
@@ -69,15 +73,6 @@ double DenormalizeValue (double normalized, double min, double max)
 
 namespace libparaver {
 
-class Sample
-{
-	public:
-	map<unsigned, unsigned long long> CounterValues; /* Map to ID of counter to its value */
-	map<unsigned, unsigned long long> Caller;        /* Map depth of caller */
-	map<unsigned, unsigned long long> CallerLine;    /* Map depth of caller line */
-	map<unsigned, unsigned long long> CallerLineAST; /* Map depth of caller line AST */
-	unsigned long long Timestamp;
-};
 
 class ThreadInformation
 {
@@ -85,7 +80,7 @@ class ThreadInformation
 	bool seen;
 
 	public:
-	vector<Sample> Samples;
+	vector<Sample*> Samples;
 
 	unsigned long long CurrentRegion;
 	unsigned long long StartRegion;
@@ -232,13 +227,10 @@ class Process : public ParaverTrace
 	unsigned long long TimeOffset; // Specific to CSV support
 	vector<string> SemanticIndex; // Specific to CSV support
 
-	bool checkSamples (vector<Sample> &Samples);
-	void dumpSamples (unsigned ptask, unsigned task, unsigned thread,
-	  unsigned long long region, unsigned long long start,
-	  unsigned long long duration, vector<Sample> &Samples);
-	bool equalTypes (map<unsigned, unsigned long long> &m1, map<unsigned, unsigned long long> &m2);
-	void processCaller (struct event_t &evt, unsigned base, Sample &s);
-	void processCounter (struct event_t &rvt, Sample &s);
+	void processCaller (const struct event_t &evt, unsigned base,
+	  map<unsigned, unsigned long long> &C);
+	void processCounter (const struct event_t &rvt,
+	  map<string, unsigned long long> &m);
 
 	void dumpSeenObjects (string fnameprefix);
 	void dumpSeenCounters (string fnameprefix);
@@ -376,19 +368,15 @@ void Process::processState (struct state_t &s)
 	UNREFERENCED(s);
 }
 
-void Process::processCaller (struct event_t &evt, unsigned base, Sample &s)
+void Process::processCaller (const struct event_t &evt, unsigned base,
+	map<unsigned, unsigned long long> &C)
 {
 	unsigned depth = evt.Type - base;
-
-	if (base == EXTRAE_SAMPLE_CALLER_MIN)
-		s.Caller[depth] = evt.Value;
-	else if (base == EXTRAE_SAMPLE_CALLERLINE_MIN)
-		s.CallerLine[depth] = evt.Value;
-	else if (base == EXTRAE_SAMPLE_CALLERLINE_AST_MIN)
-		s.CallerLineAST[depth] = evt.Value;
+	C[depth] = evt.Value;
 }
 
-void Process::processCounter (struct event_t &evt, Sample &s)
+void Process::processCounter (const struct event_t &evt,
+	map<string, unsigned long long> &m)
 {
 	bool found;
 	unsigned long long value;
@@ -396,6 +384,8 @@ void Process::processCounter (struct event_t &evt, Sample &s)
     
 	if (found) 
 	{
+		IH.addCounter (CounterIDNames[index]);
+
 		if (HackCounter[index])
 		{
 			value = evt.Value;
@@ -410,159 +400,8 @@ void Process::processCounter (struct event_t &evt, Sample &s)
 		else    
 			value = evt.Value;
 
-		s.CounterValues[evt.Type] = value;
+		m[CounterIDNames[index]] = value;
 	}
-}
-
-bool Process::equalTypes (map<unsigned, unsigned long long> &m1,
-	map<unsigned, unsigned long long> &m2)
-{
-	map<unsigned, unsigned long long>::iterator i1 = m1.begin();
-	map<unsigned, unsigned long long>::iterator i2 = m2.begin();
-
-	if (m1.size() != m2.size())
-		return false;
-
-	/* Check all types in M1 are in M2 in the same order */
-	for (; i1 != m1.end(); i1++, i2++)
-		if ((*i1).first != (*i2).first)
-			return false;
-
-	/* If we are here, then types(M1) = types(M2) */
-	return true;
-}
-
-bool Process::checkSamples (vector<Sample> &Samples)
-{
-	/* Triplets are not valid at the edges (first and last) */
-	if (Samples.size() > 2)
-	{
-		map<unsigned, unsigned long long> refCounterValues = Samples[1].CounterValues;
-
-		for (unsigned u = 2; u < Samples.size()-1; u++)
-		{
-			/* Just check for counter types, that are the same across the instance.
-			   We don't need to check for the callers because they may vary from
-			   execution to execution (i.e. one sample may get 10 callers but the
-			   following can take less). */
-			if (!equalTypes (refCounterValues, Samples[u].CounterValues))
-			{
-				nCounterChanges++;
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-void Process::dumpSamples (unsigned ptask, unsigned task, unsigned thread,
-	unsigned long long region, unsigned long long start,
-	unsigned long long duration, vector<Sample> &Samples)
-{
-	if (common::DEBUG())
-		cout << "Process:dumpSamples (Samples.size() = " << Samples.size() << ")" << endl;
-
-	/* At least, have a sample at the begin & end, and someone else */
-	if (Samples.size() < 2)
-		return;
-
-	if (!checkSamples (Samples))
-		return;
-
-	/* Write the total time spent in this region */
-	string RegionName;
-	if (Semantics == NULL)
-	{
-		bool RegionFound;
-		RegionName = getTypeValue (RegionSeparator, region, RegionFound);
-		if (!RegionFound)
-		{
-			stringstream ss;
-			ss << region;
-			RegionName = "Value_" + ss.str();
-			IH.addMissingRegion (region);
-		}
-		RegionName = common::removeSpaces (RegionName);
-		IH.addRegion (RegionName);
-	}
-	else
-		RegionName = SemanticIndex[region-1];
-
-	/* Calculate totals */
-	map<unsigned, unsigned long long> totals;
-	map<unsigned, unsigned long long>::iterator it = Samples[0].CounterValues.begin();
-	for (; it != Samples[0].CounterValues.end(); it++)
-		totals[(*it).first] = (*it).second;
-
-	/* Generate header for this instance */
-	IH.outputfile << "I " << ptask+1 << " " << task+1 << " " << thread+1 
-	  << " " << RegionName << " " << start << " " << duration;
-	for (unsigned u = 1; u < Samples.size(); u++)
-	{
-		it = Samples[u].CounterValues.begin();
-		for (; it != Samples[u].CounterValues.end(); it++)
-			totals[(*it).first] = totals[(*it).first] + (*it).second;
-	}
-	IH.outputfile << " " << totals.size();
-	map<unsigned, unsigned long long>::iterator it_totals = totals.begin();
-	for (; it_totals != totals.end(); it_totals++)
-	{
-		bool found;
-		unsigned index = LookupCounter ((*it_totals).first, found);
-		if (!found)
-			cout << "Error! Cannot find counter " << (*it_totals).first << endl;
-		IH.outputfile << " " << CounterIDNames[index] << " " << (*it_totals).second;
-		IH.addCounter (CounterIDNames[index]);
-	}
-	IH.outputfile << endl;
-
-	/* Do not emit samples if we only have a sample at the end */
-	if (Samples[0].Timestamp == start + duration)
-		return;
-
-	/* Prepare partial accum hash */
-	map<unsigned, unsigned long long> partials;
-	for (it = Samples[0].CounterValues.begin();
-	     it != Samples[0].CounterValues.end();
-	     it++)
-		partials[(*it).first] = 0;
-
-	/* Dump all the samples for this instance except the last one, which can be extrapolated
-       from the instance header data */
-	for (unsigned u = 0; u < Samples.size() - 1; u++)
-	{
-		IH.outputfile << "S " << Samples[u].Timestamp << " " << Samples[u].Timestamp - start;
-
-		IH.outputfile << " " << Samples[u].CounterValues.size();
-		it = Samples[u].CounterValues.begin();
-		for (; it != Samples[u].CounterValues.end(); it++)
-		{
-			bool found;
-			unsigned index = LookupCounter ((*it).first, found);
-			if (!found)
-				cout << "Error! Cannot find counter " << (*it).first << endl;
-
-			unsigned long long tmp = partials[(*it).first] + (*it).second;
-			IH.outputfile << " " << CounterIDNames[index] << " " << tmp;
-			partials[(*it).first] = tmp;
-		}
-
-		/* Dump callers, callerlines and caller line ASTs triplets */
-		IH.outputfile << " " << Samples[u].Caller.size();
-
-		map<unsigned, unsigned long long>::iterator it1 = Samples[u].Caller.begin();
-		map<unsigned, unsigned long long>::iterator it2 = Samples[u].CallerLine.begin();
-		map<unsigned, unsigned long long>::iterator it3 = Samples[u].CallerLineAST.begin();
-		for (; it1 != Samples[u].Caller.end(); it1++, it2++, it3++)
-			IH.outputfile << " " << (*it1).first << " " << 
-			  (*it1).second << " " << (*it2).second << " " <<
-			  (*it3).second;
-
-		IH.outputfile << endl;
-	}
-
-	Samples.clear();
 }
 
 void Process::processMultiEvent (struct multievent_t &e)
@@ -587,8 +426,11 @@ void Process::processMultiEvent (struct multievent_t &e)
 	ThreadInformation *thi = ti[task].getThreadsInformation();
 
 	bool storeSample = false;
-	Sample s;
-	s.Timestamp = e.Timestamp;
+
+	map<string, unsigned long long> CV;            /* Map of Counters and their Values */
+	map<unsigned, unsigned long long> Caller;        /* Map depth of caller */
+	map<unsigned, unsigned long long> CallerLine;    /* Map depth of caller line */
+	map<unsigned, unsigned long long> CallerLineAST; /* Map depth of caller line AST */
 
 	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 	{
@@ -599,7 +441,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 				if (common::DEBUG())
 					cout << "Processing counter " << (*it).Type << " at timestamp " << e.Timestamp << endl;
 
-				processCounter (*it, s);
+				processCounter (*it, CV);
 				storeSample = true;
 			}
 			if ((*it).Type >= EXTRAE_SAMPLE_CALLER_MIN && (*it).Type <= EXTRAE_SAMPLE_CALLER_MAX)
@@ -607,7 +449,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 				if (common::DEBUG())
 					cout << "Processing C " << (*it).Type << " at timestamp " << e.Timestamp << endl;
 
-				processCaller (*it, EXTRAE_SAMPLE_CALLER_MIN, s);
+				processCaller (*it, EXTRAE_SAMPLE_CALLER_MIN, Caller);
 				storeSample = true;
 			}
 			if ((*it).Type >= EXTRAE_SAMPLE_CALLERLINE_MIN && (*it).Type <= EXTRAE_SAMPLE_CALLERLINE_MAX)
@@ -615,7 +457,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 				if (common::DEBUG())
 					cout << "Processing CL " << (*it).Type << " at timestamp " << e.Timestamp << endl;
 
-				processCaller (*it, EXTRAE_SAMPLE_CALLERLINE_MIN, s);
+				processCaller (*it, EXTRAE_SAMPLE_CALLERLINE_MIN, CallerLine);
 				storeSample = true;
 			}
 			if ((*it).Type >= EXTRAE_SAMPLE_CALLERLINE_AST_MIN && (*it).Type <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX)
@@ -623,7 +465,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 				if (common::DEBUG())
 					cout << "Processing CL-AST " << (*it).Type << " at timestamp " << e.Timestamp << endl;
 
-				processCaller (*it, EXTRAE_SAMPLE_CALLERLINE_AST_MIN, s);
+				processCaller (*it, EXTRAE_SAMPLE_CALLERLINE_AST_MIN, CallerLineAST);
 				storeSample = true;
 			}
 		}
@@ -644,36 +486,36 @@ void Process::processMultiEvent (struct multievent_t &e)
 	if (Semantics != NULL)
 	{
 		vector<PRVSemanticValue *> vs = Semantics->getSemantics (e.ObjectID.ptask, e.ObjectID.task, e.ObjectID.thread);
-		for (unsigned s = 0; s < vs.size(); s++)
+		for (unsigned sem = 0; sem < vs.size(); sem++)
 		{
-			//if (vs[s]->getFrom() == e.Timestamp + TimeOffset || vs[s]->getTo() == e.Timestamp + TimeOffset)
-			if (vs[s]->getFrom() == e.Timestamp + TimeOffset)
+			//if (vs[sem]->getFrom() == e.Timestamp + TimeOffset || vs[sem]->getTo() == e.Timestamp + TimeOffset)
+			if (vs[sem]->getFrom() == e.Timestamp + TimeOffset)
 			{
 				FoundSeparator = true;
-				string tmp = vs[s]->getValue().substr (0, vs[s]->getValue().find("."));
+				string tmp = vs[sem]->getValue().substr (0, vs[sem]->getValue().find("."));
 				ValueSeparator = atoi (tmp.c_str());
-				if (vs[s]->getValue() != "End")
+				if (vs[sem]->getValue() != "End")
 				{
 					ValueSeparator = 0;
 					for (unsigned i = 0; i < SemanticIndex.size(); i++)
-						if (SemanticIndex[i] == vs[s]->getValue())
+						if (SemanticIndex[i] == vs[sem]->getValue())
 						{
 							ValueSeparator = i+1;
 							break;
 						}
 					if (ValueSeparator == 0)
 					{
-						SemanticIndex.push_back (vs[s]->getValue());
+						SemanticIndex.push_back (vs[sem]->getValue());
 						ValueSeparator = SemanticIndex.size();
 					}
 				}
 				else
 					ValueSeparator = 0;
 
-
 				if (common::DEBUG())
-					cout << "Found semantic separator value " << vs[s]->getValue() << " [" << ValueSeparator << "] at timestamp " << e.Timestamp << endl;
-
+					cout << "Found semantic separator value " << vs[sem]->getValue()
+					  << " [" << ValueSeparator << "] at timestamp " << e.Timestamp
+					  << endl;
 				break;
 			}
 		}
@@ -684,10 +526,27 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 	if (storeSample && !(FoundSeparator && ValueSeparator > 0))
 	{
+		map<unsigned, unsigned long long>::iterator cit;
+		map<unsigned, CodeRefTriplet> CodeRefs;
+		for (cit = Caller.begin(); cit != Caller.end(); ++cit)
+		{
+			unsigned d = (*cit).first;
+
+			assert (Caller.count(d) == 1);
+			assert (CallerLine.count(d) == 1);
+			assert (CallerLineAST.count(d) == 1);
+
+			CodeRefTriplet t (Caller[d], CallerLine[d],
+			  CallerLineAST[d]);
+			CodeRefs[d] = t;
+		}
+
+		Sample *s = new Sample (e.Timestamp, e.Timestamp - thi[thread].StartRegion, CV, CodeRefs);
+
 		if (common::DEBUG())
 		{
-			map<unsigned, unsigned long long>::iterator it = s.CounterValues.begin();
-			for (; it != s.CounterValues.end(); it++)
+			map<string, unsigned long long>::iterator it;
+			for (it = CV.begin(); it != CV.end(); it++)
 				cout << " " << (*it).first << " " << (*it).second;
 			cout << endl;
 		}
@@ -702,11 +561,40 @@ void Process::processMultiEvent (struct multievent_t &e)
 	/* If we found a region separator, increase current region and reset the phase */
 	if (FoundSeparator)
 	{
-		if (thi[thread].CurrentRegion > 0)
+		unsigned long long Region = thi[thread].CurrentRegion;
+		if (Region > 0)
 		{
-			dumpSamples (ptask, task, thread, thi[thread].CurrentRegion,
-			  thi[thread].StartRegion, e.Timestamp - thi[thread].StartRegion,
+			/* Look for the region name */
+			string RegionName;
+			if (Semantics == NULL)
+			{
+				bool RegionFound;
+				RegionName = getTypeValue (RegionSeparator, Region, RegionFound);
+				if (!RegionFound)
+				{
+					stringstream ss;
+					ss << Region;
+					RegionName = "Value_" + ss.str();
+					IH.addMissingRegion (Region);
+				}
+				RegionName = common::removeSpaces (RegionName);
+				IH.addRegion (RegionName);
+			}
+			else
+				RegionName = SemanticIndex[Region-1];
+
+			/* Write the information */
+
+			FoldingWriter::Write (IH.outputfile, RegionName, ptask, task,
+			  thread, thi[thread].StartRegion,
+			  e.Timestamp - thi[thread].StartRegion,
 			  thi[thread].Samples);
+
+			/* Clean */
+
+			for (unsigned s = 0; s < thi[thread].Samples.size(); ++s)
+				delete thi[thread].Samples[s];
+
 			thi[thread].Samples.clear();
 			thi[thread].setSeen (true);
 		}

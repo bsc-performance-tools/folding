@@ -21,24 +21,24 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/read-extracted-data.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-10-29 12:09:15 +0100 (Tue, 29 Oct 2013) $
+ | @version:     $Revision: 2257 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id$";
+static char __attribute__ ((unused)) rcsid[] = "$Id: read-extracted-data.C 2257 2013-10-29 11:09:15Z harald $";
 
 #include "common.H"
 
-#include "read-extracted-data.H"
+#include "folding-reader.H"
 #include <iostream>
 #include <fstream>
 #include <assert.h>
 
-void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
+void FoldingReader::Read (string filename, ObjectSelection *os,
 	set<string> &allcounters, set<string> &allregions,
 	vector<Instance*> &Instances, ObjectSelection *osfeed,
 	vector<Instance*> &feedInstances)
@@ -140,14 +140,11 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 			assert (i != NULL);
 
 			unsigned long long sTime, iTime;
-			double nTime;
 
 			file >> sTime;
 			file >> iTime;
-			nTime = ((double) iTime) / ((double) i->getDuration());
 
 			map<string, unsigned long long> icv;
-			map<string, double> ncv;
 			unsigned ncounters;
 			file >> ncounters;
 			while (ncounters > 0)
@@ -157,8 +154,6 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 				file >> countername;
 				file >> countervalue;
 				icv[countername] = countervalue;
-				ncv[countername] =
-				  ((double) countervalue / (double) i->getTotalCounterValue (countername));
 				ncounters--;
 			}
 
@@ -180,12 +175,13 @@ void ReadExtractData::ReadDataFromFile (string filename, ObjectSelection *os,
 				ncrt--;
 			}
 
-			Sample *s = new Sample (sTime, iTime, nTime, icv, ncv, ct);
+			Sample *s = new Sample (sTime, iTime, icv, ct);
 			if (i == NULL)
 			{
 				cerr << "Fatal error! Cannot allocate memory for a new sample!" << endl;
 				exit (-1);
 			}
+			s->normalizeData (i->getDuration(), i->getTotalCounterValues());
 
 			if (ncodereftriplets > 0)
 				s->processCodeTriplets ();

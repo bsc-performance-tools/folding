@@ -21,80 +21,48 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/read-extracted-data.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-10-29 12:09:15 +0100 (Tue, 29 Oct 2013) $
+ | @version:     $Revision: 2257 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INSTANCE_H_INCLUDED
-#define INSTANCE_H_INCLUDED
+#ifndef EXTRACTED_SAMPLE_H_INCLUDED
+#define EXTRACTED_SAMPLE_H_INCLUDED
 
-#include "sample.H"
-#include <vector>
-#include <string>
 #include <map>
 #include <set>
+#include <string>
 
 using namespace std;
 
-class Instance
+class extractedSample
 {
 	private:
-	const string RegionName;
-	const unsigned ptask;
-	const unsigned task;
-	const unsigned thread;
-	const unsigned long long startTime;
-	const unsigned long long duration;
-	unsigned long long prvValue;
-	unsigned group;
-	vector<Sample*> Samples;
-	set<string> Counters;
-	map<string, unsigned long long> TotalCounterValues;
+	const unsigned long long Timestamp;
+	map<string, unsigned long long> CounterValues; /* Map to ID of counter to its value */
+	map<unsigned, unsigned long long> Caller;        /* Map depth of caller */
+	map<unsigned, unsigned long long> CallerLine;    /* Map depth of caller line */
+	map<unsigned, unsigned long long> CallerLineAST; /* Map depth of caller line AST */
 
 	public:
-	Instance (unsigned ptask, unsigned task, unsigned thread, string region,
-	  unsigned long long startTime, unsigned long long duration,
-	  set<string> &counters, map<string, unsigned long long> totalcountervalues);
-	~Instance(void);
-
-	void Show(void);
-	
-	bool hasCounter (string c) const;
-	void addSample (Sample *s)
-	  { Samples.push_back (s); }
-	vector<Sample*> getSamples(void)
-	  { return Samples; }
-	unsigned getNumSamples(void) const
-	  { return Samples.size(); }
-	void setGroup (unsigned g)
-	  { this->group = g; }
-	unsigned getGroup (void) const
-	  { return group; }
-	unsigned long long getPRVvalue (void) const
-	  { return prvValue; }
-	void setPRVvalue (unsigned long long v)
-	  { this->prvValue = v; }
-	unsigned long long getDuration (void) const
-	  { return duration; }
-	unsigned long long getStartTime (void) const
-	  { return startTime; }
-	unsigned getptask (void) const
-	  { return ptask; }
-	unsigned gettask (void) const
-	  { return task; }
-	unsigned getthread (void) const
-	  { return thread; }
-	unsigned long long getTotalCounterValue (string ctr);
-	map<string, unsigned long long> & getTotalCounterValues (void)
-	  { return TotalCounterValues; }
-	string getRegionName(void) const
-	  { return RegionName; }
+	extractedSample (unsigned long long Timestamp,
+	  const map<string, unsigned long long> &CV,
+	  const map<unsigned, unsigned long long> &C,
+	  const map<unsigned, unsigned long long> &CL,
+	  const map<unsigned, unsigned long long> &CLA);
+	set<string> getCounters (void);
+	unsigned long long getCounterValue (string C);
+	unsigned long long getTimestamp (void) const
+	  { return Timestamp; }
+	map<unsigned, unsigned long long> getCaller(void) const
+	  { return Caller; }
+	map<unsigned, unsigned long long> getCallerLine(void) const
+	  { return CallerLine; }
+	map<unsigned, unsigned long long> getCallerLineAST(void) const
+	  { return CallerLineAST; }
 };
 
-#endif
-
-
+#endif /* EXTRACTED_SAMPLE_H_INCLUDED */

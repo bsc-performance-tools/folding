@@ -21,15 +21,15 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/sample.C $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-10-25 17:11:45 +0200 (Fri, 25 Oct 2013) $
+ | @version:     $Revision: 2250 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id$";
+static char __attribute__ ((unused)) rcsid[] = "$Id: sample.C 2250 2013-10-25 15:11:45Z harald $";
 
 #include "common.H"
 
@@ -38,19 +38,33 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <iostream>
 #include <assert.h>
 
-Sample::Sample (unsigned long long sTime, unsigned long long iTime, double nTime,
+Sample::Sample (unsigned long long sTime, unsigned long long iTime,
       map<string, unsigned long long> & icountervalue,
-      map<string, double> & ncountervalue,
       map<unsigned, CodeRefTriplet> & codetriplet)
-	: sTime (sTime), iTime(iTime), nTime (nTime)
+	: sTime (sTime), iTime(iTime)
 {
-	this->nCounterValue = ncountervalue;
 	this->iCounterValue = icountervalue;
 	this->CodeTriplet = codetriplet;
 }
 
 Sample::~Sample (void)
 {
+}
+
+void Sample::normalizeData (unsigned long long instanceDuration,
+	map<string, unsigned long long> & instanceCounterValue)
+{
+	nTime = ((double) iTime / (double) instanceDuration);
+
+	map<string,unsigned long long>::iterator i;
+	for (i = iCounterValue.begin(); i != iCounterValue.end(); ++i)
+	{
+		string counter = (*i).first;
+		assert (instanceCounterValue.count(counter) == 1);
+
+		nCounterValue[counter] =
+		  ((double) (iCounterValue[counter])) / ((double) instanceCounterValue[counter]);
+	}
 }
 
 void Sample::show (void)
@@ -104,13 +118,19 @@ void Sample::processCodeTriplets (void)
 
 bool Sample::hasCounter (string ctr) const
 {
-	return nCounterValue.count (ctr) > 0;
+	return iCounterValue.count (ctr) > 0;
 }
 
 double Sample::getNCounterValue (string ctr)
 {
 	assert (hasCounter(ctr));
 	return nCounterValue[ctr];
+}
+
+unsigned long long Sample::getCounterValue (string ctr)
+{
+	assert (hasCounter(ctr));
+	return iCounterValue[ctr];
 }
 
 bool Sample::hasCaller (unsigned caller)
@@ -121,3 +141,17 @@ bool Sample::hasCaller (unsigned caller)
 			return true;
 	return false;
 }
+
+set<string> Sample::getCounters (void)
+{
+	set<string> res;
+	map<string, unsigned long long>::iterator it;
+	//cout << "getCounters map.size()=" << iCounterValue.size() << endl;
+	for (it = iCounterValue.begin(); it != iCounterValue.end(); it++)
+	{
+	//	cout << "Adding " << (*it).first << endl;
+		res.insert ((*it).first);
+	}
+	return res;
+}
+

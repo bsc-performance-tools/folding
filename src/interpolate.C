@@ -35,7 +35,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "interpolate.H"
 
-#include "read-extracted-data.H"
+#include "folding-reader.H"
 #include "instance-container.H"
 #include "prv-writer.H"
 
@@ -795,8 +795,8 @@ int main (int argc, char *argv[])
 
 	int res = ProcessParameters (argc, argv);
 
-	ReadExtractData::ReadDataFromFile (argv[res], objectsSelected,
-	  presentCounters, presentRegions, vInstances, objectToFeed, feedInstances);
+	FoldingReader::Read (argv[res], objectsSelected, presentCounters,
+	  presentRegions, vInstances, objectToFeed, feedInstances);
 
 	// Accumulate in wantedRegions the regions to be folded, ignoring the rest
 	if (wantedRegions.find (string("all")) != wantedRegions.end())

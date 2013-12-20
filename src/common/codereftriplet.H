@@ -21,32 +21,42 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/codereftriplet.H $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-10-25 17:11:45 +0200 (Fri, 25 Oct 2013) $
+ | @version:     $Revision: 2250 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef READEXTRACTEDDATA_H_INCLUDED
-#define READEXTRACTEDDATA_H_INCLUDED
+#ifndef CODEREFTRIPLET_H_INCLUDED
+#define CODEREFTRIPLET_H_INCLUDED
 
-#include <string>
-#include <set>
-#include "object-selection.H"
-#include "instance.H"
-
-using namespace std;
-
-class ReadExtractData
+class CodeRefTriplet
 {
+	private:
+	unsigned Caller;
+	unsigned CallerLine;
+	unsigned CallerLineAST;
+
 	public:
-	static void ReadDataFromFile (string filename, ObjectSelection *os,
-		set<string> &allcounters, set<string> &allregions,
-		vector<Instance*> &Instances, ObjectSelection *osfeed, 
-		vector<Instance*> &feedInstances);
+	CodeRefTriplet (void);
+	CodeRefTriplet (unsigned Caller, unsigned CallerLine, 
+	  unsigned CallerLineAST);
+
+	bool operator==(const CodeRefTriplet &other) const 
+	  { return Caller == other.Caller && 
+	         CallerLine == other.CallerLine &&
+	         CallerLineAST == other.CallerLineAST; }
+
+	unsigned getCaller(void) const
+	  { return Caller; }
+
+	unsigned getCallerLine(void) const
+	  { return CallerLine; }
+
+	unsigned getCallerLineAST(void) const
+	  { return CallerLineAST; }
 };
 
-#endif /* READEXTRACTEDDATA_H_INCLUDED */
-
+#endif /* CODEREFTRIPLET_H_INCLUDED */

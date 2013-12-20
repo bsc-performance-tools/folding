@@ -21,54 +21,36 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/read-extracted-data.H $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-10-25 17:11:45 +0200 (Fri, 25 Oct 2013) $
+ | @version:     $Revision: 2250 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef SAMPLE_H_INCLUDED
-#define SAMPLE_H_INCLUDED
+#ifndef FOLDING_WRITER_H_INCLUDED
+#define FOLDING_WRITER_H_INCLUDED
 
-#include "map"
-
-#include "codereftriplet.H"
+#include <string>
+#include <set>
+#include <fstream>
+#include "sample.H"
 
 using namespace std;
 
-class Sample
+class FoldingWriter
 {
 	private:
-	const unsigned long long sTime; /* integral time of the sample */
-	const unsigned long long iTime; /* integral time since start of instance */
-	const double nTime; /* normalized time since start of instance */
-	map<string, unsigned long long> iCounterValue; /* integral counter value */
-	map<string, double> nCounterValue; /* normalized counter value */
-	map<unsigned, CodeRefTriplet> CodeTriplet; /* Code reference triplets (caller, callerline, callerlineAST) */
+	static bool equalTypes (set<string> &m1, set<string> m2);
+	static bool checkSamples (vector<Sample*> &Samples);
 
 	public:
-	Sample (unsigned long long sTime, unsigned long long iTime, double nTime,
-	  map<string, unsigned long long> & icountervalue,
-	  map<string, double> & ncountervalue,
-	  map<unsigned, CodeRefTriplet> & codetriplet);
-	~Sample (void);
-
-	void processCodeTriplets (void);
-	void show (void);
-	double getNTime (void) const
-	  { return nTime; }
-	bool hasCounter (string ctr) const;
-	double getNCounterValue (string ctr);
-	map<string, double> getNCounterValue(void)
-	  { return nCounterValue; }
-	map<unsigned, CodeRefTriplet> getCodeTriplets(void)
-	  { return CodeTriplet; }
-	bool hasCaller (unsigned caller);
-	unsigned getCodeRefTripletSize(void) const
-	  { return CodeTriplet.size(); }
+	static void Write (ofstream & ofile, const string & RegionName,
+	  unsigned ptask, unsigned task, unsigned thread,
+	  unsigned long long start, unsigned long long duration,
+	  vector<Sample*> &Samples);
 };
 
-#endif
+#endif /* FOLDING_WRITER_H_INCLUDED */
 

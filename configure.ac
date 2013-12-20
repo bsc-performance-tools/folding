@@ -21,7 +21,7 @@ AC_CANONICAL_SYSTEM
 # Initialize automake
 AM_INIT_AUTOMAKE
 AM_SILENT_RULES([yes])
-AM_PROG_MKDIR_P
+AC_PROG_MKDIR_P
 
 # Write defines in the output header file for the architecture and operating system
 case "${target_cpu}" in
@@ -317,5 +317,13 @@ AC_CHECK_HEADERS(
 	[AC_MSG_ERROR([Cannot find required header])])
 AC_LANG_POP([C++])
 
-AC_CONFIG_FILES([Makefile src/Makefile src/common/Makefile src/service-kriger/Makefile src/service-R/Makefile])
+AC_CONFIG_FILES([
+ Makefile
+ src/Makefile
+ src/common/Makefile
+ src/io/Makefile
+ src/service-kriger/Makefile
+ src/service-R/Makefile
+])
+
 AC_OUTPUT
