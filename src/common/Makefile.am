@@ -1,10 +1,22 @@
-noinst_LTLIBRARIES = libcommon.la
+lib_LTLIBRARIES = libcommon.la
+noinst_LTLIBRARIES = libpcf-common.la
+include_HEADERS = sample.H codereftriplet.H object-selection.H common.H
 
 libcommon_la_SOURCES = \
  common.H common.C \
- object-selection.H object-selection.C
+ object-selection.H object-selection.C \
+ codereftriplet.H codereftriplet.C \
+ sample.H sample.C
+
+libpcf_common_la_SOURCES = \
+ pcf-common.H pcf-common.C
 
 libcommon_la_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
 if NEED_BOOST_HOME
 libcommon_la_CXXFLAGS += -I$(BOOST_HOME)/include
+endif
+
+libpcf_common_la_CXXFLAGS = -I. -I$(LIBTOOLS_DIR)/include -g -O
+if NEED_BOOST_HOME
+libpcf_common_la_CXXFLAGS += -I$(BOOST_HOME)/include
 endif

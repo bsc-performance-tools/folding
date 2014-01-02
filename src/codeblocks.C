@@ -32,6 +32,7 @@
 static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
+#include "pcf-common.H"
 
 #include "ParaverTrace.h"
 #include "ParaverTraceThread.h"
@@ -200,7 +201,7 @@ void Process::prepare (void)
 		if (SampleLocations[i] <= 2)
 			continue;
 
-		common::lookForCallerLineInfo (pcf, SampleLocations[i], file, line);
+		pcfcommon::lookForCallerLineInfo (pcf, SampleLocations[i], file, line);
 		if (testedFiles.count (file) == 0 && common::existsFile (sourceDir+"/"+file))
 		{
 			cout << "Calculating AST code blocks for file " << sourceDir+"/"+file << endl;
@@ -275,7 +276,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 			string file;
 			unsigned line;
 
-			common::lookForCallerLineInfo (pcf, (*it).Value, file, line);
+			pcfcommon::lookForCallerLineInfo (pcf, (*it).Value, file, line);
 
 			if (common::DEBUG())
 				cout << "Looking for CallerLine info for value " << (*it).Value << " file = "

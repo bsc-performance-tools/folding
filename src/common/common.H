@@ -29,8 +29,8 @@
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef UTILS_H_INCLUDED
-#define UTILS_H_INCLUDED
+#ifndef COMMON_H_INCLUDED
+#define COMMON_H_INCLUDED
 
 #include "folding-config.h"
 #include <string>
@@ -57,20 +57,8 @@ class common
 	static string removeSpaces (const string &in);
 	static string removeUnwantedChars (const string &in);
 
-	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
-
 	static bool existsFile (string file);
 	static bool existsDir (string dir);
-
-	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
-	  unsigned id, string &file, unsigned &line);
-	static void lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller,
-	  unsigned callerlineast, string &routine, string &file, unsigned &bline, unsigned &eline);
-	static void lookForCallerFullInfo (UIParaverTraceConfig *pcf, unsigned caller,
-	  unsigned callerline, unsigned callerlineast, string &routine, string &file,
-	  unsigned &line, unsigned &bline, unsigned &eline);
-	static unsigned lookForValueString (UIParaverTraceConfig *pcf, unsigned type,
-	  string str, bool &found);
 
 	static void CleanMetricsDirectory (string &directory);
 	static void CleanMetricsDirectory_r (char *directory);

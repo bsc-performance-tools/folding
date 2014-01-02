@@ -73,10 +73,10 @@ interpolate_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
 fuse_LDADD = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
-codeblocks_LDADD = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
+codeblocks_LDADD = -Lcommon -lcommon -lpcf-common -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
 foldingtypes_LDADD = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig
-extract_LDADD = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser io/libfolding-io-writer.la io/libfolding-io-common.la
-interpolate_LDADD = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm -Lservice-R -lR -lrt $(XML_LIBS) io/libfolding-io-reader.la io/libfolding-io-common.la
+extract_LDADD = -Lcommon -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser io/libfolding-io-writer.la
+interpolate_LDADD = -Lcommon -lcommon -lpcf-common -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm -Lservice-R -lR -lrt $(XML_LIBS) io/libfolding-io-reader.la
 if HAVE_CLUSTERING_SUITE
 interpolate_LDADD += -L$(CLUSTERING_HOME)/lib -lClustering -lBasicClasses
 endif

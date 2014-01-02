@@ -32,6 +32,7 @@
 static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
+#include "pcf-common.H"
 
 #include "interpolate.H"
 
@@ -352,7 +353,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 	for ( ; it != wantedCounters.end(); it++ )
 	{
 		string cname = *it;
-		unsigned long long tmp = common::lookForCounter (cname, pcf);
+		unsigned long long tmp = pcfcommon::lookForCounter (cname, pcf);
 		if (tmp != 0)
 			PCFfile << "0 " << FOLDED_BASE + tmp << " Folded " << *it << endl;
 	}
@@ -1065,7 +1066,7 @@ int main (int argc, char *argv[])
 		for (c = counters.begin(); c != counters.end(); c++)
 		{
 			string cname = *c;
-			counterCodes[cname] = common::lookForCounter (cname, pcf);
+			counterCodes[cname] = pcfcommon::lookForCounter (cname, pcf);
 		}
 	
 		vector<Instance*> whichInstancesToFeed;
@@ -1077,7 +1078,7 @@ int main (int argc, char *argv[])
 				if (i->getStartTime() >= feedTraceTimes_Begin && i->getStartTime() <= feedTraceTimes_End)
 				{
 					bool found;
-					unsigned long long pv = common::lookForValueString (pcf,
+					unsigned long long pv = pcfcommon::lookForValueString (pcf,
  						feedTraceFoldType, i->getRegionName(), found);
 					if (!found)
 						cerr << "Can't find value for '" << i->getRegionName() <<"' in type " << feedTraceFoldType << endl;
@@ -1098,7 +1099,7 @@ int main (int argc, char *argv[])
 				{
 #if 0 /* FIX Due to Semantic CSV passed? */
 					bool found;
-					unsigned long long pv= common::lookForValueString (pcf,
+					unsigned long long pv = pcfcommon::lookForValueString (pcf,
  						feedTraceFoldType, i->getRegionName(), found);
 					if (!found)
 						cerr << "Can't find value for '" << i->getRegionName() <<"' in type " << feedTraceFoldType << endl;
@@ -1159,14 +1160,14 @@ int main (int argc, char *argv[])
 
 		 /* __libc_start_main & generic_start_main are routines seen as main in
 		    BG/Q machines using IBM XLF compilers */
-		unsigned mainid = common::lookForValueString (pcf,
+		unsigned mainid = pcfcommon::lookForValueString (pcf,
 			  EXTRAE_SAMPLE_CALLER_MIN, "__libc_start_main", found);
 		if (!found)
-			mainid = common::lookForValueString (pcf,
+			mainid = pcfcommon::lookForValueString (pcf,
 			  EXTRAE_SAMPLE_CALLER_MIN, "generic_start_main", found);
 		/* Default to regular main symbol */
 		if (!found)
-			mainid = common::lookForValueString (pcf,
+			mainid = pcfcommon::lookForValueString (pcf,
 			  EXTRAE_SAMPLE_CALLER_MIN, "main", found);
 		if (!found)
 			mainid = 0;
