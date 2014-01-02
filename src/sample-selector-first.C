@@ -43,7 +43,7 @@ SampleSelectorFirst::SampleSelectorFirst (unsigned limit) : limitset(true), limi
 {
 }
 
-void SampleSelectorFirst::Select (InstanceGroup *ig, set<string> &counters)
+void SampleSelectorFirst::Select (InstanceGroup *ig, const set<string> &counters)
 {
 	map<string, vector<Sample*> > used_res, unused_res;
 

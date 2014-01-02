@@ -21,27 +21,38 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common/common.H $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2013-10-29 13:39:46 +0100 (mar, 29 oct 2013) $
+ | @version:     $Revision: 2259 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-static char __attribute__ ((unused)) rcsid[] = "$Id$";
+#ifndef PCFCOMMON_H_INCLUDED
+#define PCFCOMMON_H_INCLUDED
 
-#include "common.H"
+#include "folding-config.h"
+#include <string>
+#include "UIParaverTraceConfig.h"
 
-#include "codereftriplet-accounting.H"
+using namespace std;
+using namespace libparaver;
 
-CodeRefTriplet::CodeRefTriplet (void) : Caller(0), CallerLine(0), CallerLineAST(0)
+class pcfcommon
 {
-}
+	public:
+	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
 
-CodeRefTriplet::CodeRefTriplet (unsigned Caller, unsigned CallerLine, 
-	unsigned CallerLineAST) : Caller(Caller), CallerLine(CallerLine),
-	CallerLineAST(CallerLineAST)
-{
-}
+	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
+	  unsigned id, string &file, unsigned &line);
+	static void lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller,
+	  unsigned callerlineast, string &routine, string &file, unsigned &bline, unsigned &eline);
+	static void lookForCallerFullInfo (UIParaverTraceConfig *pcf, unsigned caller,
+	  unsigned callerline, unsigned callerlineast, string &routine, string &file,
+	  unsigned &line, unsigned &bline, unsigned &eline);
+	static unsigned lookForValueString (UIParaverTraceConfig *pcf, unsigned type,
+	  string str, bool &found);
+};
 
+#endif

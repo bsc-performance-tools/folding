@@ -40,15 +40,16 @@ class InterpolationKriger : public Interpolation
 	const double nuget;
 
 	unsigned do_interpolate (unsigned inpoints,
-		double *ix, double *iy, InterpolationResults *ir, string counter,
-		string region, unsigned group);
+		double *ix, double *iy, InterpolationResults *ir, const string & counter,
+		const string & region, unsigned group);
 
 	double Distance_Point_To_Interpolate (double inpoint_x, double inpoint_y,
-	  int outcount, double *outpoints);
+	  int outcount, const double *outpoints);
 
 	public:
 	InterpolationKriger (unsigned steps, double nuget, bool prefilter);
-	void pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters);
+	void pre_interpolate (double sigmaTimes, InstanceGroup *ig, 
+	  const set<string> & counters);
 	string details (void) const;
 };
 

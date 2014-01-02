@@ -74,7 +74,7 @@ class ObjectSelection
 	bool anyany (void) const
 	  { return this->anyptask || this->anytask || this->anythread; }
 
-	string toString (bool prefix = false, string anytext = "*") const;
+	string toString (bool prefix = false, const string & anytext = "*") const;
 
 	unsigned getptask (void) const
 	  { return ptask; }

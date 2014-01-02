@@ -37,7 +37,7 @@
 class SampleSelector
 {
 	public:
-	virtual void Select (InstanceGroup *, set<string> &counters) = 0;
+	virtual void Select (InstanceGroup *, const set<string> &counters) = 0;
 };
 
 #endif /* SAMPLESELECTOR_H_INCLUDED */

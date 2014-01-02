@@ -79,9 +79,9 @@ class InstanceGroup
 #endif
 
 	void gnuplot_single (const ObjectSelection *os, const string & prefix, 
-		const string & counter, InterpolationResults *ir);
+		const string & counter, InterpolationResults *ir, const string &TimeUnit);
 	string gnuplot_slopes (const ObjectSelection *os, const string & prefix,
-		bool per_instruction);
+		bool per_instruction, const string &TimeUnit);
 	string gnuplot_model (const ObjectSelection *os, const string & prefix,
 		const Model *m);
 
@@ -103,7 +103,7 @@ class InstanceGroup
 	map<string, vector<Sample*> > getSamples (void)
 		{ return this->used; }
 
-	vector<Instance*> getInstances(void)
+	vector<Instance*> getInstances(void) const
 	  { return Instances; };
 	void add (Instance *i);
 	unsigned numInstances (void) const;
@@ -116,38 +116,39 @@ class InstanceGroup
 	unsigned numExcludedSamples (string counter) const;
 	unsigned numExcludedSamples (void) const;
 
-	unsigned long long mean (void) const;
+	unsigned long long mean (const string &counter) const; // Return the mean of counter within instances
+	unsigned long long mean (void) const;  // Return the mean duration in time
 	unsigned long long median (void) const;
 	double stdev (void) const;
 	unsigned long long MAD (void) const;
 
 	void setInterpolated (map<string, InterpolationResults*> i)
 	  { interpolated = i; }
-	map<string, InterpolationResults*> getInterpolated (void)
+	map<string, InterpolationResults*> getInterpolated (void) const
 	  { return interpolated; }
 
 	void removePreviousData (ObjectSelection *os, const string & prefix);
-	void dumpData (ObjectSelection *os, string prefix);
+	void dumpData (ObjectSelection *os, const string & prefix);
 	void dumpInterpolatedData (ObjectSelection *os, const string & prefix,
 	  const vector<Model*> &models);
 	void gnuplot (const ObjectSelection *os, const string & prefix,
-	  const vector<Model*> &models);
+	  const vector<Model*> &models, const string & TimeUnit);
 	string python (void);
 
 	void setInterpolationBreakpoints (vector <double> breakpoints)
 	  { Breakpoints = breakpoints; }
-	vector<double> getInterpolationBreakpoints (void)
+	vector<double> getInterpolationBreakpoints (void) const
 	  { return Breakpoints; }
 
 	void setCallstackTrees (vector<CallstackTree*> vtrees)
 	  { trees = vtrees; }
-	vector<CallstackTree*> getCallstackTrees (void)
+	vector<CallstackTree*> getCallstackTrees (void) const
 	  { return trees; }
 
 #if defined(HAVE_CUBE)
 	void setGeneralCubeTree (Cnode *cn)
 	  { cubeTree = cn; }
-	Cnode* getGeneralCubeTree (void)
+	Cnode* getGeneralCubeTree (void) const
 	  { return cubeTree; }
 #endif
 

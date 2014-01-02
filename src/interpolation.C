@@ -43,14 +43,15 @@ Interpolation::Interpolation (unsigned steps, bool prefilter) : steps(steps),
 {
 }
 
-void Interpolation::pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters)
+void Interpolation::pre_interpolate (double sigmaTimes, InstanceGroup *ig, 
+	const set<string> &counters)
 {
 	/* By default, do nothing */
 	return;
 }
 
 InterpolationResults * Interpolation::interpolate_kernel (vector<Sample*> vs,
-	string counter, string region, unsigned group)
+	const string & counter, const string & region, unsigned group)
 {
 	InterpolationResults *res = new InterpolationResults(steps);
 	res->setInterpolationDetails (details());
@@ -108,8 +109,8 @@ InterpolationResults * Interpolation::interpolate_kernel (vector<Sample*> vs,
 	return res;
 }
 
-
-void Interpolation::interpolate (InstanceGroup *ig, set<string> &counters)
+void Interpolation::interpolate (InstanceGroup *ig, const set<string> &counters,
+	const string & TimeUnit)
 {
 	map<string, InterpolationResults*> res;
 	vector<Instance *> i = ig->getInstances();
@@ -129,16 +130,20 @@ void Interpolation::interpolate (InstanceGroup *ig, set<string> &counters)
 			for (unsigned u = 0; u < i.size(); u++)
 				if (i[u]->hasCounter (*it))
 				{
-					totDuration += i[u]->getDuration();
+					/* If we have any instance, calculate its slope factor by
+					   calculating totalDuration. For time, divide by 1000 as
+					   time is ns so everything gets in Mevents */
+					if (TimeUnit == common::DefaultTimeUnit)
+						totDuration += i[u]->getDuration() / 1000;
+					else
+						totDuration += i[u]->getTotalCounterValue (TimeUnit);
 					totCounter += i[u]->getTotalCounterValue(*it);
 					count++;
 				}
 
-			/* If we have any instance, calculate its slope factor 
-			   (in Mevents, div 1000, as time is in ns) */
 			if (count > 0)
 			{
-				SlopeFactors[*it] = ((double) totCounter) / ( ((double) totDuration / 1000) );
+				SlopeFactors[*it] = ((double) totCounter) / ((double) totDuration);
 				AvgCounters[*it] = ((double) totCounter) / ((double) count);
 			}
 		}

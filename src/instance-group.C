@@ -111,13 +111,35 @@ unsigned InstanceGroup::numExcludedSamples (void) const
 	return tmp;
 }
 
+unsigned long long InstanceGroup::mean (const string &counter) const
+{
+	if (Instances.size() == 0)
+		return 0;
+
+	if (counter == common::DefaultTimeUnit)
+		return mean();
+
+	unsigned long long tmp = 0;
+	unsigned long long count = 0;
+	for (unsigned u = 0; u < Instances.size(); u++)
+		if (Instances[u]->hasCounter (counter))
+		{
+			tmp += Instances[u]->getTotalCounterValue (counter);
+			count++;
+		}
+
+	if (count > 0)
+		return tmp / count;
+	else
+		return 0;
+}
+
 unsigned long long InstanceGroup::mean (void) const
 {
-	unsigned long long tmp = 0;
-
 	if (Instances.size() == 0)
-		return tmp;
+		return 0;
 
+	unsigned long long tmp = 0;
 	for (unsigned u = 0; u < Instances.size(); u++)
 		tmp += Instances[u]->getDuration();
 
@@ -126,11 +148,10 @@ unsigned long long InstanceGroup::mean (void) const
 
 unsigned long long InstanceGroup::median (void) const
 {
-	vector<unsigned long long> durations;
-
 	if (Instances.size() == 0)
 		return 0;
 
+	vector<unsigned long long> durations;
 	for (unsigned u = 0; u < Instances.size(); u++)
 		durations.push_back (Instances[u]->getDuration());
 
@@ -141,11 +162,11 @@ unsigned long long InstanceGroup::median (void) const
 
 double InstanceGroup::stdev (void) const
 {
+	if (Instances.size() <= 1)
+		return 0;
+
 	double tmp = 0;
 	double _mean;
-
-	if (Instances.size() <= 1)
-		return tmp;
 
 	_mean = this->mean();
 	for (unsigned u = 0; u < Instances.size(); u++)
@@ -159,11 +180,11 @@ double InstanceGroup::stdev (void) const
 
 unsigned long long InstanceGroup::MAD (void) const
 {
-	vector<unsigned long long> absmediandiff;
-	unsigned long long _median;
-
 	if (Instances.size() == 0)
 		return 0;
+
+	vector<unsigned long long> absmediandiff;
+	unsigned long long _median;
 
 	_median = this->median();
 	for (unsigned u = 0; u < Instances.size(); u++)
@@ -174,8 +195,7 @@ unsigned long long InstanceGroup::MAD (void) const
 	return absmediandiff[Instances.size() / 2];
 }
 
-void InstanceGroup::removePreviousData (ObjectSelection *os,
-	const string & prefix)
+void InstanceGroup::removePreviousData (ObjectSelection *os, const string &prefix)
 {
 	string fname = prefix + "." + os->toString(false, "any") +
 	  ".dump.csv";
@@ -304,7 +324,7 @@ void InstanceGroup::dumpInterpolatedData (ObjectSelection *os,
 	}
 }
 
-void InstanceGroup::dumpData (ObjectSelection *os, string prefix)
+void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 {
 	string fname = prefix + "." + os->toString(false, "any") +
 	  ".dump.csv";
@@ -363,9 +383,8 @@ void InstanceGroup::dumpData (ObjectSelection *os, string prefix)
 	odata.close ();
 }
 
-void InstanceGroup::gnuplot_single (const ObjectSelection *os,
-	const string &prefix, const string & counter,
-	InterpolationResults *idata)
+void InstanceGroup::gnuplot_single (const ObjectSelection *os, const string &prefix,
+	const string &counter, InterpolationResults *idata, const string & TimeUnit)
 {
 	string fintname = prefix + "." + os->toString(false, "any") 
 	  + ".interpolate.csv";
@@ -385,7 +404,7 @@ void InstanceGroup::gnuplot_single (const ObjectSelection *os,
 		return;
 	}
 
-	double m = mean();
+	double m = mean(TimeUnit);
 
 	if (used.count(counter) == 0 || unused.count(counter) == 0)
 	{
@@ -403,37 +422,52 @@ void InstanceGroup::gnuplot_single (const ObjectSelection *os,
 	  "# set term png size 800,600" << endl <<
 	  "set datafile separator \";\"" << endl <<
 	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
-	  "set x2range [0:1];" << endl <<
-	  "set yrange [0:1];" << endl <<
-	  "set y2range [0:*];" << endl <<
-	  "set ytics nomirror;" << endl <<
-	  "set y2tics nomirror;" << endl <<
-	  "set xtics nomirror format \"%.2f\";" << endl <<
+	  "set x2range [0:1]" << endl <<
+	  "set yrange [0:1]" << endl <<
+	  "set y2range [0:*]" << endl <<
+	  "set ytics nomirror" << endl <<
+	  "set y2tics nomirror" << endl <<
 	  "set x2tics nomirror format \"%.2f\";" << endl <<
-	  "set xrange [0:" << m << "];" << endl <<
-	  "set xlabel 'Time (in ms)'" << endl <<
-	  "set ylabel 'Normalized " << counter << "';" << endl;
-	if (common::isMIPS(counter))
-	  gplot << "set y2label 'MIPS';" << endl;
-	else	
-	  gplot << "set y2label '" << counter << " rate (in Mevents/s)';" << endl;
+	  "set ylabel 'Normalized " << counter << "'" << endl;
 
-	gplot << "set title \"" << os->toString (true) << " - " << groupName
-	  << " - " << regionName << "\\nDuration = " << (m/1000000) << " ms, Counter = " 
-	  << (idata->getAvgCounterValue() / 1000) << " Kevents\"" << endl;
+	if (TimeUnit == common::DefaultTimeUnit)
+		gplot << "set xlabel 'Time (in ms)'" << endl;
+	else
+		gplot << "set xlabel '" << TimeUnit << " (in Mevents)'" << endl;
 
-	gplot << "set xtics ( 0.0 ";
+  	gplot << "set xtics nomirror format \"%.2f\"" << endl
+	  << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
 		gplot << ", " << i*(m/1000000)/5;
 	gplot << ");" << endl
 	  << "set xrange [0:" << (m / 1000000) << "]" << endl;
 
+	if (common::isMIPS(counter))
+	  gplot << "set y2label 'MIPS';" << endl;
+	else	
+	  gplot << "set y2label '" << counter << " rate (in Mevents/s)';" << endl;
+
+	if (TimeUnit == common::DefaultTimeUnit)
+		gplot << "set title \"" << os->toString (true) << " - " << groupName
+		  << " - " << regionName << "\\nDuration = " << (m/1000000) << " ms, Counter = " 
+		  << (idata->getAvgCounterValue() / 1000000) << " Mevents\"" << endl;
+	else
+		gplot << "set title \"" << os->toString (true) << " - " << groupName
+		  << " - " << regionName << "\\nDuration = " << (m/1000000) << " Mevents, Counter = " 
+		  << (idata->getAvgCounterValue() / 1000000) << " Mevents\"" << endl;
+
 	/* Mark the mean rate in the plot */
 	gplot << "# Mean rate" << endl;
-	gplot << endl 
-	  << "set label \"\" at first " << (m/1000000)
-	  << ", second " << (idata->getAvgCounterValue() / 1000)/(m/1000000)
-	  << " point pt 3 ps 2 lc rgbcolor \"#707070\"" << endl;
+	if (TimeUnit == common::DefaultTimeUnit)
+		gplot << endl 
+		  << "set label \"\" at first " << (m/1000000)
+		  << ", second " << (idata->getAvgCounterValue() / 1000)/(m/1000000)
+		  << " point pt 3 ps 2 lc rgbcolor \"#707070\"" << endl;
+	else
+		gplot << endl 
+		  << "set label \"\" at first " << (m/1000000)
+		  << ", second " << (idata->getAvgCounterValue()/m)
+		  << " point pt 3 ps 2 lc rgbcolor \"#707070\"" << endl;
 
 	/* If the instance-group has more than the regular 0..1 breakpoints,
 	   add this into the plot */
@@ -512,8 +546,8 @@ void InstanceGroup::gnuplot_single (const ObjectSelection *os,
 	gplot.close();
 }
 
-string InstanceGroup::gnuplot_slopes (const ObjectSelection *os,
-	const string & prefix, bool per_instruction)
+string InstanceGroup::gnuplot_slopes (const ObjectSelection *os, const string &prefix,
+	bool per_instruction, const string & TimeUnit)
 {
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
 	string gname = prefix + "." + os->toString (false, "any") + "." +
@@ -542,10 +576,25 @@ string InstanceGroup::gnuplot_slopes (const ObjectSelection *os,
 	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
 	  "set x2range [0:1]" << endl <<
 	  "set yrange [0:*]" << endl <<
-	  "set xtics nomirror format \"%.2f\"" << endl <<
-	  "set x2tics nomirror format \"%.2f\"" << endl <<
-	  "set xrange [0:" << m << "]" << endl <<
-	  "set xlabel 'Time (in ms)'" << endl;
+	  "set x2tics nomirror format \"%.2f\"" << endl;
+
+	if (TimeUnit == common::DefaultTimeUnit)
+	{
+		gplot << "set xlabel 'Time (in ms)'" << endl
+	  	  << "set xtics nomirror format \"%.2f\"" << endl
+		  << "set xtics ( 0.0 ";
+		for (int i = 1; i <= 5; i++)
+			gplot << ", " << i*(m/1000000)/5;
+		gplot << ");" << endl
+		  << "set xrange [0:" << (m / 1000000) << "]" << endl;
+	}
+	else
+	{
+		gplot << "set xlabel 'Normalized " << TimeUnit << "'" << endl
+		  << "set xrange [0:1]" << endl 
+	  	  << "set xtics nomirror format \"%.2f\"" << endl;
+	}
+
 	if (per_instruction)
 	{
 		gplot << "set ylabel 'Counter ratio per instruction'" << endl <<
@@ -560,12 +609,6 @@ string InstanceGroup::gnuplot_slopes (const ObjectSelection *os,
 	gplot << "set title \"" << os->toString (true) << " - " << groupName 
 	  <<  " - " << regionName << "\\nDuration = " << (m/1000000) << " ms\"" 
 	  << endl;
-
-	gplot << "set xtics ( 0.0 ";
-	for (int i = 1; i <= 5; i++)
-		gplot << ", " << i*(m/1000000)/5;
-	gplot << ");" << endl
-	  << "set xrange [0:" << (m / 1000000) << "]" << endl;
 
 	/* If the instance-group has more than the regular 0..1 breakpoints,
 	   add this into the plot */
@@ -782,7 +825,7 @@ string InstanceGroup::gnuplot_model (const ObjectSelection *os,
 }
 
 void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
-	const vector<Model*> & models)
+	const vector<Model*> & models, const string &TimeUnit)
 {
 	bool has_instruction_counter = false;
 	map<string, InterpolationResults*>::iterator it;
@@ -791,14 +834,14 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	for (it = interpolated.begin(); it != interpolated.end(); it++)
 	{
 		has_instruction_counter |= common::isMIPS((*it).first);
-		gnuplot_single (os, prefix, (*it).first, (*it).second);
+		gnuplot_single (os, prefix, (*it).first, (*it).second, TimeUnit);
 	}
 
 	/* If has instruction counter, generate this in addition to .slopes */
 	string name_slopes, name_inst_ctr;
 	if (has_instruction_counter)
-		name_inst_ctr = gnuplot_slopes (os, prefix, true);
-	name_slopes = gnuplot_slopes (os, prefix, false);
+		name_inst_ctr = gnuplot_slopes (os, prefix, true, TimeUnit);
+	name_slopes = gnuplot_slopes (os, prefix, false, TimeUnit);
 
 	/* If has instruction counter, let the new plot be the summary, otherwise
 	   let the .slopes be the summary */

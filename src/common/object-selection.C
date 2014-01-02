@@ -54,7 +54,7 @@ ObjectSelection::ObjectSelection (unsigned ptask, unsigned task, unsigned thread
 {
 }
 
-string ObjectSelection::toString (bool prefix, string anytext) const
+string ObjectSelection::toString (bool prefix, const string & anytext) const
 {
 	stringstream ss;
 

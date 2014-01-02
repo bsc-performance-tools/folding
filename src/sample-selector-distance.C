@@ -46,7 +46,7 @@ SampleSelectorDistance::SampleSelectorDistance (unsigned limit) : limitset(true)
 {
 }
 
-void SampleSelectorDistance::Select (InstanceGroup *ig, set<string> &counters)
+void SampleSelectorDistance::Select (InstanceGroup *ig, const set<string> &counters)
 {
 	map<string, vector<Sample*> > used_res, unused_res;
 

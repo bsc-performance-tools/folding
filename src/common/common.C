@@ -37,8 +37,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <iomanip>
 #include <iostream>
 #include <fstream>
-#include <sys/stat.h>
 #include <algorithm>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdio.h>
@@ -47,6 +47,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+
+const string common::DefaultTimeUnit = "Time";
 
 string common::convertDouble (double d, int i)
 {
@@ -94,7 +96,7 @@ string common::removeUnwantedChars (const string &in)
 	return tmp;
 }
 
-bool common::existsFile (string file)
+bool common::existsFile (const string & file)
 {
 #if defined(HAVE_ACCESS)
 	return access (file.c_str(), F_OK) == 0;
@@ -118,14 +120,14 @@ bool common::existsFile (string file)
 #endif
 }
 
-bool common::existsDir (string dir)
+bool common::existsDir (const string & dir)
 {
 	struct stat buffer;
 	stat(dir.c_str(), &buffer);
 	return (buffer.st_mode & S_IFMT) == S_IFDIR;
 }
 
-void common::CleanMetricsDirectory_r (char *dir)
+void common::CleanMetricsDirectory_r (const char *dir)
 {
 	struct dirent *de = NULL;
 	DIR *d = NULL;
@@ -184,7 +186,7 @@ void common::CleanMetricsDirectory_r (char *dir)
 	closedir(d);
 }
 
-void common::CleanMetricsDirectory (string &directory)
+void common::CleanMetricsDirectory (const string & directory)
 {
 	char current[PATH_MAX];
 	char *res = getcwd (current, PATH_MAX);
@@ -197,7 +199,7 @@ void common::CleanMetricsDirectory (string &directory)
 	}
 }
 
-bool common::isMIPS (string s)
+bool common::isMIPS (const string & s)
 {
 	return s == "PAPI_TOT_INS" ||
 	  s == "PM_INST_CMPL" || /* PPC */
@@ -220,7 +222,7 @@ bool common::DEBUG (void)
 	return debug;
 }
 
-bool common::decomposePtaskTaskThread (string &s, unsigned &ptask,
+bool common::decomposePtaskTaskThread (const string &s, unsigned &ptask,
 	unsigned &task, unsigned &thread)
 {
 	size_t n = count (s.begin(), s.end(), '.');
@@ -241,7 +243,7 @@ bool common::decomposePtaskTaskThread (string &s, unsigned &ptask,
 	return true;
 }
 
-bool common::decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
+bool common::decomposePtaskTaskThreadWithAny (const string & s, unsigned &ptask,
 	bool &anyptask, unsigned &task, bool &anytask, unsigned &thread,
 	bool &anythread)
 {
@@ -276,7 +278,7 @@ bool common::decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
 	return true;
 }
 
-string common::basename (string s)
+string common::basename (const string & s)
 {
 	string r;
 
@@ -289,7 +291,7 @@ string common::basename (string s)
 	return r;
 }
 
-unsigned common::getNumCores (bool &found)
+unsigned common::getNumCores (bool & found)
 {
 	unsigned ncores = 0;
 	found = false;
@@ -313,7 +315,7 @@ unsigned common::getNumCores (bool &found)
 	return ncores;
 }
 
-unsigned common::getNumProcessors (bool &found)
+unsigned common::getNumProcessors (bool & found)
 {
 	found = false;
 	unsigned nprocessors = 0;

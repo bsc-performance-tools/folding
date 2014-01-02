@@ -44,7 +44,7 @@ class SampleSelectorDistance : public SampleSelector
 	SampleSelectorDistance (void);
 	SampleSelectorDistance (unsigned limit);
 
-	virtual void Select (InstanceGroup *, set<string> &counters);
+	virtual void Select (InstanceGroup *, const set<string> &counters);
 };
 
 #endif /* SAMPLESELECTOR_DISTANCE_H_INCLUDED */

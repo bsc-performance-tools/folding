@@ -37,7 +37,7 @@
 class SampleSelectorDefault : public SampleSelector
 {
 	public:
-	virtual void Select (InstanceGroup *, set<string> &counters);
+	virtual void Select (InstanceGroup *, const set<string> &counters);
 };
 
 #endif /* SAMPLESELECTORDEFAULT_H_INCLUDED */

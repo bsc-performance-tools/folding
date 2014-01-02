@@ -57,7 +57,7 @@ string InterpolationKriger::details (void) const
 }
 
 double InterpolationKriger::Distance_Point_To_Interpolate (double inpoint_x,
-	double inpoint_y, int outcount, double *outpoints)
+	double inpoint_y, int outcount, const double *outpoints)
 {
 	double min_distance = 1.0f;
 	for (int i = 0; i < outcount; i++)
@@ -73,12 +73,10 @@ double InterpolationKriger::Distance_Point_To_Interpolate (double inpoint_x,
 }
 
 unsigned InterpolationKriger::do_interpolate (unsigned inpoints, double *ix,
-	double *iy, InterpolationResults *ir, string counter, string region,
-	unsigned group)
+	double *iy, InterpolationResults *ir, const string & counter, 
+	const string & region, unsigned group)
 {
 	UNREFERENCED(group);
-	UNREFERENCED(counter);
-	UNREFERENCED(region);
 
 	unsigned o_count = ir->getCount();
 	double *o_ptr = ir->getInterpolationResultsPtr();
@@ -94,7 +92,7 @@ unsigned InterpolationKriger::do_interpolate (unsigned inpoints, double *ix,
 }
 
 void InterpolationKriger::pre_interpolate (double sigmaTimes, InstanceGroup *ig,
-	set<string> &counters)
+	const set<string> & counters)
 {
 	SampleSelectorDistance ssd(1000);
 	ssd.Select (ig, counters);

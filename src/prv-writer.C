@@ -80,9 +80,9 @@ void FoldedParaverTrace::DumpStartingParaverLine (void)
 	traceout << "# Folding done by " << getenv("USER") << " at " << ctime(&now);
 }
 
-void FoldedParaverTrace::DumpParaverLines (vector<unsigned long long> &type,
-	vector<unsigned long long > &value, unsigned long long time,
-	ObjectSelection *o)
+void FoldedParaverTrace::DumpParaverLines (const vector<unsigned long long> &type,
+	const vector<unsigned long long > &value, unsigned long long time,
+	const ObjectSelection *o)
 {
 	assert (type.size() == value.size());
 
@@ -102,7 +102,7 @@ void FoldedParaverTrace::DumpParaverLines (vector<unsigned long long> &type,
 }
 
 void FoldedParaverTrace::DumpParaverLine (unsigned long long type,
-	unsigned long long value, unsigned long long time, ObjectSelection *o)
+	unsigned long long value, unsigned long long time, const ObjectSelection *o)
 {
 	unsigned ptask = o->getptask();
 	unsigned task  = o->gettask();
@@ -113,8 +113,8 @@ void FoldedParaverTrace::DumpParaverLine (unsigned long long type,
 	  << ":" << time << ":" << type << ":" << value << endl;
 }
 
-void FoldedParaverTrace::DumpCallersInInstance (ObjectSelection *o, Instance *in,
-	InstanceGroup *ig)
+void FoldedParaverTrace::DumpCallersInInstance (const ObjectSelection *o,
+	const Instance *in, const InstanceGroup *ig)
 {
 	assert (!o->anyany());
 
@@ -164,8 +164,8 @@ void FoldedParaverTrace::DumpCallersInInstance (ObjectSelection *o, Instance *in
 	  in->getStartTime() + in->getDuration(), o);
 }
 
-void FoldedParaverTrace::DumpInterpolationData (ObjectSelection *o, Instance *in,
-	InstanceGroup *ig, map<string,unsigned> counterCodes)
+void FoldedParaverTrace::DumpInterpolationData (const ObjectSelection *o,
+	const Instance *in, const InstanceGroup *ig, map<string,unsigned> counterCodes)
 {
 	vector<unsigned long long> types, values;
 	vector<unsigned long long> zero_types, zero_values;
@@ -206,7 +206,8 @@ void FoldedParaverTrace::DumpInterpolationData (ObjectSelection *o, Instance *in
 }
 
 
-void FoldedParaverTrace::DumpGroupInfo (ObjectSelection *o, Instance *in)
+void FoldedParaverTrace::DumpGroupInfo (const ObjectSelection *o,
+	const Instance *in)
 {
 	assert (!o->anyany());
 
@@ -222,7 +223,8 @@ void FoldedParaverTrace::DumpGroupInfo (ObjectSelection *o, Instance *in)
 	DumpParaverLines (types, zero_values, in->getStartTime() + in->getDuration(), o);
 }
 
-void FoldedParaverTrace::DumpBreakpoints (ObjectSelection *o, Instance *in, InstanceGroup *ig)
+void FoldedParaverTrace::DumpBreakpoints (const ObjectSelection *o,
+	const Instance *in, const InstanceGroup *ig)
 {
 	assert (!o->anyany());
 

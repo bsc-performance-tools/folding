@@ -63,7 +63,7 @@ class Instance
 
 	void Show(void);
 	
-	bool hasCounter (string c) const;
+	bool hasCounter (const string & c) const;
 	void addSample (Sample *s)
 	  { Samples.push_back (s); }
 	vector<Sample*> getSamples(void)
@@ -88,7 +88,7 @@ class Instance
 	  { return task; }
 	unsigned getthread (void) const
 	  { return thread; }
-	unsigned long long getTotalCounterValue (string ctr);
+	unsigned long long getTotalCounterValue (const string & ctr);
 	map<string, unsigned long long> & getTotalCounterValues (void)
 	  { return TotalCounterValues; }
 	string getRegionName(void) const

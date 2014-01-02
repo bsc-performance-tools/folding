@@ -38,7 +38,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: read-extracted-data.C 2257 
 #include <fstream>
 #include <assert.h>
 
-void FoldingReader::Read (string filename, ObjectSelection *os,
+void FoldingReader::Read (const string & filename,
+	const ObjectSelection *os, const string & TimeUnit,
 	set<string> &allcounters, set<string> &allregions,
 	vector<Instance*> &Instances, ObjectSelection *osfeed,
 	vector<Instance*> &feedInstances)
@@ -181,7 +182,7 @@ void FoldingReader::Read (string filename, ObjectSelection *os,
 				cerr << "Fatal error! Cannot allocate memory for a new sample!" << endl;
 				exit (-1);
 			}
-			s->normalizeData (i->getDuration(), i->getTotalCounterValues());
+			s->normalizeData (i->getDuration(), i->getTotalCounterValues(), TimeUnit);
 
 			if (ncodereftriplets > 0)
 				s->processCodeTriplets ();

@@ -69,12 +69,12 @@ void Instance::Show (void)
 	cout << endl;
 }
 
-bool Instance::hasCounter (string ctr) const
+bool Instance::hasCounter (const string &ctr) const
 {
 	return TotalCounterValues.count(ctr) > 0;
 }
 
-unsigned long long Instance::getTotalCounterValue (string ctr)
+unsigned long long Instance::getTotalCounterValue (const string &ctr)
 {
 	assert (hasCounter(ctr));
 	return TotalCounterValues[ctr];
