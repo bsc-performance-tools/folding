@@ -68,6 +68,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include <assert.h>
 
+static string TimeUnit;
+
 static ObjectSelection *objectsSelected;
 
 static vector<Model*> models;
@@ -367,6 +369,10 @@ int ProcessParameters (int argc, char *argv[])
 #define CHECK_ENOUGH_ARGS(N, argc, i) \
 	(((argc) - 1 - (i)) > (N))
 
+	/* Set the default time unit here, if in BSS - outside the app segfaults in
+	   __static_initialization_and_destruction_0 */
+	TimeUnit = common::DefaultTimeUnit;
+
 	if (argc < 2)
 	{
 		cerr << "Insufficient number of parameters" << endl
@@ -393,6 +399,7 @@ int ProcessParameters (int argc, char *argv[])
 		     << "          R-strucchange STEPS H" << endl
 			 << " [DEFAULT kriger 1000 0.0001 no]" << endl
 		     << "-source D                [location of the source code]" << endl
+			 << "-time-unit CTR           [specify alternate time measurement / CTR]" << endl
 		     << endl;
 		exit (-1);
 	}
@@ -647,6 +654,18 @@ int ProcessParameters (int argc, char *argv[])
 			}
 			objectToFeed = new ObjectSelection (ptask, task, thread);
 		}
+		else if (strcmp ("-time-unit", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -time-unit parameter" << endl;
+				exit (-1);
+			}
+
+			i++;
+			TimeUnit = string (argv[i]);
+			continue;
+		}
 		else if (strcmp ("-feed-first-occurrence", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
@@ -796,7 +815,7 @@ int main (int argc, char *argv[])
 
 	int res = ProcessParameters (argc, argv);
 
-	FoldingReader::Read (argv[res], objectsSelected, presentCounters,
+	FoldingReader::Read (argv[res], objectsSelected, TimeUnit, presentCounters,
 	  presentRegions, vInstances, objectToFeed, feedInstances);
 
 	// Accumulate in wantedRegions the regions to be folded, ignoring the rest
@@ -984,10 +1003,10 @@ int main (int argc, char *argv[])
 			cout << " Processing " << instanceseparator->nameGroup (u)
 			  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
 			ss->Select (ig, counters);
-			interpolation->interpolate (ig, counters);
+			interpolation->interpolate (ig, counters, TimeUnit);
 			ig->dumpInterpolatedData (objectsSelected, cFilePrefix, models);
 			ig->dumpData (objectsSelected, cFilePrefix);
-			ig->gnuplot (objectsSelected, cFilePrefix, models);
+			ig->gnuplot (objectsSelected, cFilePrefix, models, TimeUnit);
 		}
 
 		ic.dumpGroupData (objectsSelected, cFilePrefix);

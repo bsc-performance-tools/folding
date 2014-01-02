@@ -39,7 +39,8 @@ using namespace std;
 class PRVSemanticValue
 {
 	public:
-	PRVSemanticValue (unsigned long long Time, unsigned long long Duration, string Value)
+	PRVSemanticValue (unsigned long long Time, unsigned long long Duration,
+	  const string & Value)
 	  : Time(Time), Duration(Duration), To(Time+Duration), Value(Value)
 	{ };
 

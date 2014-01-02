@@ -46,6 +46,8 @@ using namespace libparaver;
 class common
 {
 	public:
+	static const string DefaultTimeUnit;
+
 	static unsigned getNumCores (bool &found);
 	static unsigned getNumProcessors (bool &found);
 
@@ -57,21 +59,21 @@ class common
 	static string removeSpaces (const string &in);
 	static string removeUnwantedChars (const string &in);
 
-	static bool existsFile (string file);
-	static bool existsDir (string dir);
+	static bool existsFile (const string & file);
+	static bool existsDir (const string & dir);
 
-	static void CleanMetricsDirectory (string &directory);
-	static void CleanMetricsDirectory_r (char *directory);
+	static void CleanMetricsDirectory (const string & directory);
+	static void CleanMetricsDirectory_r (const char *directory);
 
-	static bool isMIPS (string s);
+	static bool isMIPS (const string & s);
 
 	static bool DEBUG();
 
-	static bool decomposePtaskTaskThread (string &s, unsigned &ptask,
+	static bool decomposePtaskTaskThread (const string &s, unsigned &ptask,
 	  unsigned &task, unsigned &thread);
-	static bool decomposePtaskTaskThreadWithAny (string &s, unsigned &ptask,
+	static bool decomposePtaskTaskThreadWithAny (const string &s, unsigned &ptask,
 	  bool &ptaskany, unsigned &task, bool &taskany, unsigned &thread, bool &threadany);
-	static string basename (string s);
+	static string basename (const string & s);
 };
 
 #endif

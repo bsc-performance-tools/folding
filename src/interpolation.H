@@ -44,16 +44,18 @@ class Interpolation
 	const bool prefilter;
 
 	InterpolationResults * interpolate_kernel (vector<Sample*> vs,
-	  string counter, string region, unsigned group);
+	  const string & counter, const string & region, unsigned group);
 
 	virtual unsigned do_interpolate (unsigned inpoints, double *ix,
-	  double *iy, InterpolationResults *ir, string counter,
-	  string region, unsigned group) = 0;
+	  double *iy, InterpolationResults *ir, const string & counter,
+	  const string & region, unsigned group) = 0;
 
 	public:
 	Interpolation (unsigned steps, bool prefilter);
-	void interpolate (InstanceGroup *ig, set<string> &counters);
-	virtual void pre_interpolate (double sigmaTimes, InstanceGroup *ig, set<string> &counters);
+	void interpolate (InstanceGroup *ig, const set<string> & counters,
+	  const string & TimeUnit);
+	virtual void pre_interpolate (double sigmaTimes, InstanceGroup *ig,
+		const set<string> & counters);
 	bool preFilter (void) const
 	  { return prefilter; }
 	unsigned getSteps (void) const

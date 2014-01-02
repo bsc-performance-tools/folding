@@ -19,7 +19,7 @@ extract_SOURCES = \
  interpolate.H
 
 interpolate_SOURCES = \
- codereftriplet.H codereftriplet.C codereftriplet-accounting.H codereftriplet-accounting.C \
+ codereftriplet-accounting.H codereftriplet-accounting.C \
  sample-selector.H \
  sample-selector-first.H sample-selector-first.C sample-selector-distance.H sample-selector-distance.C sample-selector-default.H sample-selector-default.C \
  instance-separator.H instance-separator.C \

@@ -35,7 +35,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "sample-selector-default.H"
 
-void SampleSelectorDefault::Select (InstanceGroup *ig, set<string> &counters)
+void SampleSelectorDefault::Select (InstanceGroup *ig, const set<string> &counters)
 {
 	map<string, vector<Sample*> > used_res, unused_res;
 	set<string>::iterator c;

@@ -44,7 +44,7 @@ class SampleSelectorFirst : public SampleSelector
 	SampleSelectorFirst (void);
 	SampleSelectorFirst (unsigned limit);
 
-	virtual void Select (InstanceGroup *, set<string> &counters);
+	virtual void Select (InstanceGroup *, const set<string> &counters);
 };
 
 #endif /* SAMPLESELECTOR_H_INCLUDED */

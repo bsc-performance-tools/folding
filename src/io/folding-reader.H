@@ -42,10 +42,11 @@ using namespace std;
 class FoldingReader
 {
 	public:
-	static void Read (string filename, ObjectSelection *os,
-		set<string> &allcounters, set<string> &allregions,
-		vector<Instance*> &Instances, ObjectSelection *osfeed, 
-		vector<Instance*> &feedInstances);
+	static void Read (const string & filename,
+	  const ObjectSelection *os, const string & TimeUnit,
+	  set<string> &allcounters, set<string> &allregions,
+	  vector<Instance*> &Instances, ObjectSelection *osfeed, 
+	  vector<Instance*> &feedInstances);
 };
 
 #endif /* FOLDING_READER_H_INCLUDED */

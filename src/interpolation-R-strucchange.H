@@ -42,7 +42,7 @@ class InterpolationRstrucchange : public Interpolation
 
 	unsigned do_interpolate (unsigned inpoints,
 	  double *ix, double *iy, InterpolationResults *ir,
-	  string counter, string region, unsigned group);
+	  const string & counter, const string & region, unsigned group);
 
 	public:
 	InterpolationRstrucchange (unsigned steps, double H);

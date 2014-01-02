@@ -69,8 +69,8 @@ string InterpolationRstrucchange::details (void) const
 
 
 unsigned InterpolationRstrucchange::do_interpolate (unsigned inpoints,
-	double *ix, double *iy, InterpolationResults *ir, string counter,
-	string region, unsigned group)
+	double *ix, double *iy, InterpolationResults *ir, const string & counter,
+	const string & region, unsigned group)
 {
 	vector<double> breakpoints, slopes;
 	ofstream file;

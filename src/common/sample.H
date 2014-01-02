@@ -60,7 +60,8 @@ class Sample
 	~Sample (void);
 
 	void normalizeData (unsigned long long instaceDuration,
-		map<string, unsigned long long> & instanceCounterValue);
+	  map<string, unsigned long long> & instanceCounterValue,
+	  const string & TimeUnit);
 	void processCodeTriplets (void);
 	void show (void);
 	unsigned long long getTime (void) const

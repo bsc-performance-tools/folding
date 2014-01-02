@@ -52,9 +52,9 @@ Sample::~Sample (void)
 }
 
 void Sample::normalizeData (unsigned long long instanceDuration,
-	map<string, unsigned long long> & instanceCounterValue)
+	map<string, unsigned long long> & instanceCounterValue,
+	const string & TimeUnit)
 {
-	nTime = ((double) iTime / (double) instanceDuration);
 
 	map<string,unsigned long long>::iterator i;
 	for (i = iCounterValue.begin(); i != iCounterValue.end(); ++i)
@@ -65,6 +65,16 @@ void Sample::normalizeData (unsigned long long instanceDuration,
 		nCounterValue[counter] =
 		  ((double) (iCounterValue[counter])) / ((double) instanceCounterValue[counter]);
 	}
+
+	if (common::DefaultTimeUnit != TimeUnit)
+	{
+		if (nCounterValue.count(TimeUnit) == 0)
+			cerr << "You have provided an alternative time unit but not all samples have counter " << TimeUnit << endl;
+		assert (nCounterValue.count(TimeUnit) > 0);
+		nTime = nCounterValue[TimeUnit];
+	}
+	else
+		nTime = ((double) iTime) / ((double) instanceDuration);
 }
 
 void Sample::show (void)
