@@ -93,7 +93,7 @@ void FoldedParaverTrace::DumpParaverLines (const vector<unsigned long long> &typ
 	if (type.size() > 0)
 	{
 		/* 2:14:1:14:1:69916704358:40000003:0 */
-		traceout << "2:" << task << ":" << ptask << " :" << task << ":" << thread <<
+		traceout << "2:" << task << ":" << ptask << ":" << task << ":" << thread <<
 		  ":" << time;
 		for (unsigned i = 0; i < type.size(); i++)
 			traceout << ":" << type[i] << ":" << value[i];
