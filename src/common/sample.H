@@ -49,13 +49,22 @@ class Sample
 	map<string, unsigned long long> iCounterValue; /* integral counter value */
 	map<string, double> nCounterValue; /* normalized counter value */
 	map<unsigned, CodeRefTriplet> CodeTriplet; /* Code reference triplets (caller, callerline, callerlineAST) */
-
+	const bool bhasAddressReference;           /* Does this sample point to a data address? */
+	const unsigned long long AddressReference; /* which address? */
+	const unsigned AddressReference_Mem_Level; /* where was it found in mem hierarchy ? */
+	const unsigned AddressReference_TLB_Level; /* where was it found in tlb hierarchy ? */
 	public:
 
 	/* sTime = sample time within the full exec, iTime time since instance */
 	Sample (unsigned long long sTime, unsigned long long iTime,
 	  map<string, unsigned long long> & icountervalue,
 	  map<unsigned, CodeRefTriplet> & codetriplet);
+
+	Sample (unsigned long long sTime, unsigned long long iTime,
+	  map<string, unsigned long long> & icountervalue,
+	  map<unsigned, CodeRefTriplet> & codetriplet,
+	  unsigned long long address, unsigned ar_mem_level,
+	  unsigned ar_tlb_level);
 
 	~Sample (void);
 
@@ -71,6 +80,8 @@ class Sample
 	double getNTime (void) const
 	  { return nTime; }
 	bool hasCounter (string ctr) const;
+	bool hasCounters (void) const
+	  { return iCounterValue.size() > 0; }
 	double getNCounterValue (string ctr);
 	unsigned long long getCounterValue (string ctr);
 	map<string, double> getNCounterValue(void)
@@ -81,6 +92,15 @@ class Sample
 	unsigned getCodeRefTripletSize(void) const
 	  { return CodeTriplet.size(); }
 	set<string> getCounters (void);
+
+	bool hasAddressReference(void) const
+	  { return bhasAddressReference; }
+	unsigned long long getAddressReference(void) const
+	  { return AddressReference; }
+	unsigned getAddressReference_Mem_Level(void) const
+	  { return AddressReference_Mem_Level; }
+	unsigned getAddressReference_TLB_Level(void) const
+	  { return AddressReference_TLB_Level; }
 };
 
 #endif

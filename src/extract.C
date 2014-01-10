@@ -207,6 +207,35 @@ void InformationHolder::AllocatePTasks (int numPTasks)
 	PTasksInfo = new PTaskInformation[this->numPTasks];
 }
 
+class AddressReference
+{
+	private:
+	unsigned long long address;
+	bool has_address;
+	unsigned reference_mem_level;
+	bool has_reference_mem_level;
+	unsigned reference_tlb_level;
+	bool has_reference_tlb_level;
+
+	public:
+	AddressReference ()
+	  { has_address = has_reference_mem_level = has_reference_tlb_level = false; }
+	void setAddress (unsigned long long Address)
+	  { address = Address; has_address = true; }
+	void setReferenceMemLevel (unsigned MemLevel)
+	  { reference_mem_level = MemLevel; has_reference_mem_level = true; }
+	void setReferenceTLBLevel (unsigned TLBLevel)
+	  { reference_tlb_level = TLBLevel; has_reference_tlb_level = true; }
+	bool isCompleted (void) const
+	  { return has_address && has_reference_mem_level && has_reference_tlb_level; }
+	unsigned long long getAddress (void) const
+	  { return address; }
+	unsigned getReferenceMemLevel (void) const
+	  { return reference_mem_level; }
+	unsigned getReferenceTLBLevel (void) const
+	  { return reference_tlb_level; }
+};
+
 class Process : public ParaverTrace
 {
 	private:
@@ -229,8 +258,10 @@ class Process : public ParaverTrace
 
 	void processCaller (const struct event_t &evt, unsigned base,
 	  map<unsigned, unsigned long long> &C);
-	void processCounter (const struct event_t &rvt,
+	void processCounter (const struct event_t &evt,
 	  map<string, unsigned long long> &m);
+	void processAddressReference (const struct event_t &evt,
+	  AddressReference &ar);
 
 	void dumpSeenObjects (string fnameprefix);
 	void dumpSeenCounters (string fnameprefix);
@@ -368,6 +399,17 @@ void Process::processState (struct state_t &s)
 	UNREFERENCED(s);
 }
 
+void Process::processAddressReference (const struct event_t &evt,
+	  AddressReference &ar)
+{
+	if (evt.Type == EXTRAE_SAMPLE_ADDRESS)
+		ar.setAddress (evt.Value);
+	else if (evt.Type == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL)
+		ar.setReferenceMemLevel (evt.Value);
+	else if (evt.Type == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL)
+		ar.setReferenceTLBLevel (evt.Value);
+}
+
 void Process::processCaller (const struct event_t &evt, unsigned base,
 	map<unsigned, unsigned long long> &C)
 {
@@ -427,7 +469,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 	bool storeSample = false;
 
-	map<string, unsigned long long> CV;            /* Map of Counters and their Values */
+	AddressReference AR;                             /* Address reference info */
+	map<string, unsigned long long> CV;              /* Map of Counters and their Values */
 	map<unsigned, unsigned long long> Caller;        /* Map depth of caller */
 	map<unsigned, unsigned long long> CallerLine;    /* Map depth of caller line */
 	map<unsigned, unsigned long long> CallerLineAST; /* Map depth of caller line AST */
@@ -468,6 +511,13 @@ void Process::processMultiEvent (struct multievent_t &e)
 				processCaller (*it, EXTRAE_SAMPLE_CALLERLINE_AST_MIN, CallerLineAST);
 				storeSample = true;
 			}
+			if ((*it).Type == EXTRAE_SAMPLE_ADDRESS || 
+			    (*it).Type == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL || 
+			    (*it).Type == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL )
+			{
+				processAddressReference (*it, AR);
+				storeSample = true;
+			}
 		}
 
 		if (Semantics == NULL)
@@ -488,7 +538,6 @@ void Process::processMultiEvent (struct multievent_t &e)
 		vector<PRVSemanticValue *> vs = Semantics->getSemantics (e.ObjectID.ptask, e.ObjectID.task, e.ObjectID.thread);
 		for (unsigned sem = 0; sem < vs.size(); sem++)
 		{
-			//if (vs[sem]->getFrom() == e.Timestamp + TimeOffset || vs[sem]->getTo() == e.Timestamp + TimeOffset)
 			if (vs[sem]->getFrom() == e.Timestamp + TimeOffset)
 			{
 				FoundSeparator = true;
@@ -541,7 +590,13 @@ void Process::processMultiEvent (struct multievent_t &e)
 			CodeRefs[d] = t;
 		}
 
-		Sample *s = new Sample (e.Timestamp, e.Timestamp - thi[thread].StartRegion, CV, CodeRefs);
+		Sample *s;
+		if (AR.isCompleted())
+			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].StartRegion, CV, CodeRefs,
+			  AR.getAddress(), AR.getReferenceMemLevel(), AR.getReferenceTLBLevel());
+		else
+			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].StartRegion, CV, CodeRefs);
+		assert (s != NULL);
 
 		if (common::DEBUG())
 		{

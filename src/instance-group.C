@@ -334,6 +334,7 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 
 	if (Instances.size() > 0)
 	{
+		/* Emit hwc for both used & unused sets */
 		map<string, vector<Sample*> >::iterator it;
 		for (it = used.begin(); it != used.end(); it++)
 		{
@@ -360,6 +361,16 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 					  << s->getNTime() << ";" << counter << ";"
 					  << s->getNCounterValue(counter) << endl;
 			}
+		}
+		/* Emit addresses for those samples that have them */
+		set<Sample *>::iterator sit;
+		for (sit = allsamples.begin(); sit != allsamples.end(); sit++)
+		{
+			Sample *s = *sit;
+			if (s->hasAddressReference())
+				odata << "a" << ";" << regionName << ";" << numGroup << ";"
+				  << s->getNTime() << ";" << s->getAddressReference() << ";"
+				  << s->getAddressReference_Mem_Level() << endl;
 		}
 	}
 
@@ -417,30 +428,30 @@ void InstanceGroup::gnuplot_single (const ObjectSelection *os, const string &pre
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
-	  "# set term postscript eps solid color" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\"" << endl <<
-	  "# set term png size 800,600" << endl <<
-	  "set datafile separator \";\"" << endl <<
-	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
-	  "set x2range [0:1]" << endl <<
-	  "set yrange [0:1]" << endl <<
-	  "set y2range [0:*]" << endl <<
-	  "set ytics nomirror" << endl <<
-	  "set y2tics nomirror" << endl <<
+	  "# set term postscript eps solid color;" << endl <<
+	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term png size 800,600;" << endl <<
+	  "set datafile separator \";\";" << endl <<
+	  "set key bottom outside center horizontal samplen 1 font \",9\";" << endl <<
+	  "set x2range [0:1];" << endl <<
+	  "set yrange [0:1];" << endl <<
+	  "set y2range [0:*];" << endl <<
+	  "set ytics nomirror;" << endl <<
+	  "set y2tics nomirror;" << endl <<
 	  "set x2tics nomirror format \"%.2f\";" << endl <<
-	  "set ylabel 'Normalized " << counter << "'" << endl;
+	  "set ylabel 'Normalized " << counter << "';" << endl;
 
 	if (TimeUnit == common::DefaultTimeUnit)
-		gplot << "set xlabel 'Time (in ms)'" << endl;
+		gplot << "set xlabel 'Time (in ms)';" << endl;
 	else
-		gplot << "set xlabel '" << TimeUnit << " (in Mevents)'" << endl;
+		gplot << "set xlabel '" << TimeUnit << " (in Mevents)';" << endl;
 
-  	gplot << "set xtics nomirror format \"%.2f\"" << endl
+  	gplot << "set xtics nomirror format \"%.2f\";" << endl
 	  << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
 		gplot << ", " << i*(m/1000000)/5;
 	gplot << ");" << endl
-	  << "set xrange [0:" << (m / 1000000) << "]" << endl;
+	  << "set xrange [0:" << (m / 1000000) << "];" << endl;
 
 	if (common::isMIPS(counter))
 	  gplot << "set y2label 'MIPS';" << endl;
@@ -450,11 +461,11 @@ void InstanceGroup::gnuplot_single (const ObjectSelection *os, const string &pre
 	if (TimeUnit == common::DefaultTimeUnit)
 		gplot << "set title \"" << os->toString (true) << " - " << groupName
 		  << " - " << regionName << "\\nDuration = " << (m/1000000) << " ms, Counter = " 
-		  << (idata->getAvgCounterValue() / 1000000) << " Mevents\"" << endl;
+		  << (idata->getAvgCounterValue() / 1000000) << " Mevents\";" << endl;
 	else
 		gplot << "set title \"" << os->toString (true) << " - " << groupName
 		  << " - " << regionName << "\\nDuration = " << (m/1000000) << " Mevents, Counter = " 
-		  << (idata->getAvgCounterValue() / 1000000) << " Mevents\"" << endl;
+		  << (idata->getAvgCounterValue() / 1000000) << " Mevents\";" << endl;
 
 	/* Mark the mean rate in the plot */
 	gplot << "# Mean rate" << endl;
@@ -462,12 +473,12 @@ void InstanceGroup::gnuplot_single (const ObjectSelection *os, const string &pre
 		gplot << endl 
 		  << "set label \"\" at first " << (m/1000000)
 		  << ", second " << (idata->getAvgCounterValue() / 1000)/(m/1000000)
-		  << " point pt 3 ps 2 lc rgbcolor \"#707070\"" << endl;
+		  << " point pt 3 ps 2 lc rgbcolor \"#707070\";" << endl;
 	else
 		gplot << endl 
 		  << "set label \"\" at first " << (m/1000000)
 		  << ", second " << (idata->getAvgCounterValue()/m)
-		  << " point pt 3 ps 2 lc rgbcolor \"#707070\"" << endl;
+		  << " point pt 3 ps 2 lc rgbcolor \"#707070\";" << endl;
 
 	/* If the instance-group has more than the regular 0..1 breakpoints,
 	   add this into the plot */
@@ -480,13 +491,13 @@ void InstanceGroup::gnuplot_single (const ObjectSelection *os, const string &pre
 		for (unsigned u = 1; u < brks.size()-1; u++) /* Skip 0 and 1 */
 			gplot << "set arrow from graph "
 			  << brks[u] << ",0 to graph " << brks[u]
-			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front" << endl;
+			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front;" << endl;
 
 		for (unsigned u = 1; u < brks.size(); u++)
 		{
 			double half = brks[u-1] + (brks[u]-brks[u-1])/2;
 			gplot << "set label \"Phase " << u << "\" at graph " << half 
-			  << ",0.95 rotate by -90 front textcolor rgb '#808080'" << endl;
+			  << ",0.95 rotate by -90 front textcolor rgb '#808080';" << endl;
 		}
 		gplot << fixed << setprecision(2);
 	}
@@ -495,20 +506,20 @@ void InstanceGroup::gnuplot_single (const ObjectSelection *os, const string &pre
 
 	/* Generate functions to filter the .csv */
 	gplot << "# Data accessors to CSV" << endl;
-	gplot << endl << "sampleexcluded(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << "  && t eq 'e') ? ret : NaN" << endl
-	  << "sampleunused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g ==  " << numGroup << " && t eq 'un') ? ret : NaN" << endl
-	  << "sampleused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " && t eq 'u') ? ret : NaN" << endl
-	  << "interpolation(ret,c,r,g) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl
-	  << "slope(ret,c,r,g) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl << endl;
+	gplot << endl << "sampleexcluded(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << "  && t eq 'e') ? ret : NaN;" << endl
+	  << "sampleunused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g ==  " << numGroup << " && t eq 'un') ? ret : NaN;" << endl
+	  << "sampleused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " && t eq 'u') ? ret : NaN;" << endl
+	  << "interpolation(ret,c,r,g) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl
+	  << "slope(ret,c,r,g) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl << endl;
 
 	bool coma = false;
 	/* Generate the plot command */
 	gplot << "# Plot command" << endl;
 	gplot << "plot \\" << endl << 
-	  "NaN w points pt 3 lc rgbcolor \"#707070\" ti 'Mean " << counter << " rate',\\" << endl;
+	  "NaN ti 'Mean " << counter << " rate' w points pt 3 lc rgbcolor \"#707070\" ,\\" << endl;
 	if (numExcludedSamples (counter) > 0)
 	{
-		gplot << "'" << fdname << "' u 4:(sampleexcluded($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Excluded samples (" << numExcludedSamples(counter) << ")' axes x2y1 w points lc rgbcolor '#A0A0A0'";
+		gplot << "'" << fdname << "' u 4:(sampleexcluded($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Excluded samples (" << numExcludedSamples(counter) << ")' axes x2y1 w points pt 3 lc rgbcolor '#A0A0A0'";
 		coma = true;
 	}
 	if (Instances.size() > 0)
@@ -517,7 +528,7 @@ void InstanceGroup::gnuplot_single (const ObjectSelection *os, const string &pre
 			gplot << ",\\" << endl;
 		if (unusedSamples.size() > 0)
 		{
-			gplot << "'" << fdname << "' u 4:(sampleunused($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Unused samples (" << unusedSamples.size() << ")' axes x2y1 w points lc rgbcolor '#FFA0A0'";
+			gplot << "'" << fdname << "' u 4:(sampleunused($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Unused samples (" << unusedSamples.size() << ")' axes x2y1 w points pt 3 lc rgbcolor '#FFA0A0'";
 			coma = true;
 		}
 		else
@@ -526,7 +537,7 @@ void InstanceGroup::gnuplot_single (const ObjectSelection *os, const string &pre
 		{
 			if (coma)
 				gplot << ",\\" << endl;
-			gplot << "'" << fdname << "' u 4:(sampleused($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Used samples (" << usedSamples.size() << ")' axes x2y1 w points lc rgbcolor '#FF0000'";
+			gplot << "'" << fdname << "' u 4:(sampleused($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Used samples (" << usedSamples.size() << ")' axes x2y1 w points pt 3 lc rgbcolor '#FF0000'";
 			coma = true;
 		}
 
@@ -569,45 +580,45 @@ string InstanceGroup::gnuplot_slopes (const ObjectSelection *os, const string &p
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
-	  "# set term postscript eps solid color" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\"" << endl <<
-	  "# set term png size 800,600" << endl <<
-	  "set datafile separator \";\"" << endl <<
-	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
-	  "set x2range [0:1]" << endl <<
-	  "set yrange [0:*]" << endl <<
-	  "set x2tics nomirror format \"%.2f\"" << endl;
+	  "# set term postscript eps solid color;" << endl <<
+	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term png size 800,600;" << endl <<
+	  "set datafile separator \";\";" << endl <<
+	  "set key bottom outside center horizontal samplen 1 font \",9\";" << endl <<
+	  "set x2range [0:1];" << endl <<
+	  "set yrange [0:*];" << endl <<
+	  "set x2tics nomirror format \"%.2f\";" << endl;
 
 	if (TimeUnit == common::DefaultTimeUnit)
 	{
-		gplot << "set xlabel 'Time (in ms)'" << endl
-	  	  << "set xtics nomirror format \"%.2f\"" << endl
+		gplot << "set xlabel 'Time (in ms)';" << endl
+	  	  << "set xtics nomirror format \"%.2f\";" << endl
 		  << "set xtics ( 0.0 ";
 		for (int i = 1; i <= 5; i++)
 			gplot << ", " << i*(m/1000000)/5;
 		gplot << ");" << endl
-		  << "set xrange [0:" << (m / 1000000) << "]" << endl;
+		  << "set xrange [0:" << (m / 1000000) << "];" << endl;
 	}
 	else
 	{
-		gplot << "set xlabel 'Normalized " << TimeUnit << "'" << endl
-		  << "set xrange [0:1]" << endl 
-	  	  << "set xtics nomirror format \"%.2f\"" << endl;
+		gplot << "set xlabel 'Normalized " << TimeUnit << "';" << endl
+		  << "set xrange [0:1];" << endl 
+	  	  << "set xtics nomirror format \"%.2f\";" << endl;
 	}
 
 	if (per_instruction)
 	{
-		gplot << "set ylabel 'Counter ratio per instruction'" << endl <<
-		  "set y2label 'MIPS'" << endl <<
-		  "set ytics nomirror" << endl <<
-		  "set y2tics nomirror" << endl;
+		gplot << "set ylabel 'Counter ratio per instruction';" << endl <<
+		  "set y2label 'MIPS';" << endl <<
+		  "set ytics nomirror;" << endl <<
+		  "set y2tics nomirror;" << endl;
 	}
 	else
-		gplot << "set ylabel 'Performance counter rate (in Mevents/s)'" << endl <<
-	  "set ytics mirror" << endl;
+		gplot << "set ylabel 'Performance counter rate (in Mevents/s)';" << endl <<
+	  "set ytics mirror;" << endl;
 
 	gplot << "set title \"" << os->toString (true) << " - " << groupName 
-	  <<  " - " << regionName << "\\nDuration = " << (m/1000000) << " ms\"" 
+	  <<  " - " << regionName << "\\nDuration = " << (m/1000000) << " ms\";" 
 	  << endl;
 
 	/* If the instance-group has more than the regular 0..1 breakpoints,
@@ -619,13 +630,13 @@ string InstanceGroup::gnuplot_slopes (const ObjectSelection *os, const string &p
 		for (unsigned u = 1; u < Breakpoints.size()-1; u++) /* Skip 0 and 1 */
 			gplot << "set arrow from graph "
 			  << Breakpoints[u] << ",0 to graph " << Breakpoints[u]
-			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front" << endl;
+			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front;" << endl;
 
 		for (unsigned u = 1; u < Breakpoints.size(); u++)
 		{
 			double half = Breakpoints[u-1] + (Breakpoints[u]-Breakpoints[u-1])/2;
 			gplot << "set label \"Phase " << u << "\" at graph " << half 
-			  << ",0.95 rotate by -90 front textcolor rgb '#808080'" << endl;
+			  << ",0.95 rotate by -90 front textcolor rgb '#808080';" << endl;
 		}
 		gplot << fixed << setprecision(2);
 	}
@@ -643,10 +654,10 @@ string InstanceGroup::gnuplot_slopes (const ObjectSelection *os, const string &p
 					counter_gnuplot[u] = '_';
 
 			gplot << "slope_" << counter_gnuplot << "(ret,c,r,g) = (c eq '" << (*it).first
-			  << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl;
+			  << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl;
 			if (!common::isMIPS((*it).first))
 				gplot << "ratio_" << counter_gnuplot << "(ret,c,r,g) = (c eq '" << (*it).first
-				  << "_per_ins' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl;
+				  << "_per_ins' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl;
 		}
 	gplot << endl;
 
@@ -697,7 +708,7 @@ string InstanceGroup::gnuplot_slopes (const ObjectSelection *os, const string &p
 }
 
 string InstanceGroup::gnuplot_model (const ObjectSelection *os,
-	const string & prefix, const Model *m)
+	const string & prefix, const Model *m, const string & TimeUnit)
 {
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
 	string gname = prefix + "." + os->toString (false, "any") + "." +
@@ -716,46 +727,46 @@ string InstanceGroup::gnuplot_model (const ObjectSelection *os,
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
-	  "# set term postscript eps solid color" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\"" << endl <<
-	  "# set term png size 800,600" << endl;
+	  "# set term postscript eps solid color;" << endl <<
+	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term png size 800,600;" << endl;
 
 	if (m->isY1Stacked())
 	{
 		gplot << endl <<
-		  "set style histogram rowstacked" << endl <<
-		  "set style data histogram" << endl <<
-		  "set style fill solid 1 noborder" << endl;
+		  "set style histogram rowstacked;" << endl <<
+		  "set style data histogram;" << endl <<
+		  "set style fill solid 1 noborder;" << endl;
 	}
 
 	gplot << endl <<
-	  "set datafile separator \";\"" << endl <<
-	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
-	  "set x2range [0:1]" << endl;
+	  "set datafile separator \";\";" << endl <<
+	  "set key bottom outside center horizontal samplen 1 font \",9\";" << endl <<
+	  "set x2range [0:1];" << endl;
 	if (m->isY1Stacked())
-		gplot << "set yrange [0:1]" << endl;
+		gplot << "set yrange [0:1];" << endl;
 	else
-		gplot << "set yrange [0:*]" << endl;
+		gplot << "set yrange [0:*];" << endl;
 	gplot <<
-	  "set xtics nomirror format \"%.2f\"" << endl <<
-	  "set x2tics nomirror format \"%.2f\"" << endl <<
-	  "set xrange [0:" << m << "]" << endl <<
-	  "set xlabel 'Time (in ms)'" << endl <<
-	  "set ylabel '" << m->getY1AxisName() <<  "'" << endl <<
-	  "set y2label '" << m->getY2AxisName() << "'" << endl <<
-	  "set ytics nomirror" << endl <<
-	  "set y2tics nomirror" << endl;
+	  "set xtics nomirror format \"%.2f\";" << endl <<
+	  "set x2tics nomirror format \"%.2f\";" << endl <<
+	  "set xrange [0:" << m << "];" << endl <<
+	  "set xlabel 'Time (in ms)';" << endl <<
+	  "set ylabel '" << m->getY1AxisName() <<  "';" << endl <<
+	  "set y2label '" << m->getY2AxisName() << "';" << endl <<
+	  "set ytics nomirror;" << endl <<
+	  "set y2tics nomirror;" << endl;
 
 	gplot << "set title \"Evolution for " << m->getTitleName() << " model\\n"
 	  << os->toString (true) << " - " << groupName 
-	  <<  " - " << regionName << "\\nDuration = " << (me/1000000) << " ms\"" 
+	  <<  " - " << regionName << "\\nDuration = " << (me/1000000) << " ms\";" 
 	  << endl;
 
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
 		gplot << ", " << i*(me/1000000)/5;
 	gplot << ");" << endl
-	  << "set xrange [0:" << (me / 1000000) << "]" << endl;
+	  << "set xrange [0:" << (me / 1000000) << "];" << endl;
 
 	/* If the instance-group has more than the regular 0..1 breakpoints,
 	   add this into the plot */
@@ -766,13 +777,13 @@ string InstanceGroup::gnuplot_model (const ObjectSelection *os,
 		for (unsigned u = 1; u < Breakpoints.size()-1; u++) /* Skip 0 and 1 */
 			gplot << "set arrow from graph "
 			  << Breakpoints[u] << ",0 to graph " << Breakpoints[u]
-			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front" << endl;
+			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front;" << endl;
 
 		for (unsigned u = 1; u < Breakpoints.size(); u++)
 		{
 			double half = Breakpoints[u-1] + (Breakpoints[u]-Breakpoints[u-1])/2;
 			gplot << "set label \"Phase " << u << "\" at graph " << half 
-			  << ",0.95 rotate by -90 front textcolor rgb '#808080'" << endl;
+			  << ",0.95 rotate by -90 front textcolor rgb '#808080';" << endl;
 		}
 		gplot << fixed << setprecision(2);
 	}
@@ -787,7 +798,7 @@ string InstanceGroup::gnuplot_model (const ObjectSelection *os,
 		const ComponentNode * cn = vcm[cm]->getComponentNode();
 		gplot << "slope_" << m->getName() << "_" << vcm[cm]->getName() << 
 		  "(ret,c,r,g) = (c eq '" << m->getName() << "_" << vcm[cm]->getName() <<
-		  "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl;
+		  "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl;
 	}
 	gplot << endl;
 
@@ -824,6 +835,156 @@ string InstanceGroup::gnuplot_model (const ObjectSelection *os,
 	return gname;
 }
 
+string InstanceGroup::gnuplot_addresses (const ObjectSelection *os,
+	const string & prefix, const string & TimeUnit,
+	unsigned long long minaddress, unsigned long long maxaddress)
+{
+	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
+	string fdname = prefix + "." + os->toString(false, "any") 
+	  + ".dump.csv";
+	string gname = prefix + "." + os->toString (false, "any") + "." +
+	  common::removeUnwantedChars(regionName) + "." + 
+	  common::removeSpaces (groupName);
+	gname += ".addresses.gnuplot";
+
+	ofstream gplot (gname.c_str());
+
+	if (!gplot.is_open())
+	{
+		cerr << "Failed to create " << gname << endl;
+		return "";
+	}
+
+	double m = mean();
+
+	unsigned numhexdigits_maxaddress =
+	  common::numHexadecimalDigits(maxaddress);
+
+	/* Generate the header, constant part of the plot */
+	gplot << fixed << setprecision(2) <<
+	  "# set term postscript eps solid color;" << endl <<
+	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term png size 800,600;" << endl <<
+	  "set datafile separator \";\";" << endl <<
+	  "set key bottom outside center horizontal samplen 1 font \",9\";" << endl <<
+	  "set x2range [0:1];" << endl <<
+	  "set yrange [0:*];" << endl <<
+	  "set xtics nomirror format \"%.2f\";" << endl <<
+	  "set x2tics nomirror format \"%.2f\";" << endl <<
+	  "set xrange [0:" << m << "];" << endl <<
+	  "set xlabel 'Time (in ms)';" << endl <<
+	  "set ylabel 'Performance counter rate (in Mevents/s)';" << endl <<
+	  "set ytics nomirror;" << endl <<
+	  "set y2label 'Addresses referenced';" << endl;
+
+
+	gplot << "set title \"" << os->toString (true) << " - " << groupName 
+	  <<  " - " << regionName << "\\nDuration = " << (m/1000000) << " ms\";" 
+	  << endl;
+
+	gplot << "set xtics ( 0.0 ";
+	for (int i = 1; i <= 5; i++)
+		gplot << ", " << i*(m/1000000)/5;
+	gplot << ");" << endl
+	  << "set xrange [0:" << (m / 1000000) << "];" << endl;
+
+	gplot << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' (" << minaddress;
+	for (int i = 1; i <= 5; i++)
+		gplot << ", " << minaddress+i*((maxaddress-minaddress)/5);
+	gplot << ");" << endl
+	  << "set y2range [" << minaddress << ":" << maxaddress << "];" << endl;
+
+	/* If the instance-group has more than the regular 0..1 breakpoints,
+	   add this into the plot */
+	if (Breakpoints.size () > 2)
+	{
+		gplot << endl;
+		gplot << fixed << setprecision(8);
+		for (unsigned u = 1; u < Breakpoints.size()-1; u++) /* Skip 0 and 1 */
+			gplot << "set arrow from graph "
+			  << Breakpoints[u] << ",0 to graph " << Breakpoints[u]
+			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front;" << endl;
+
+		for (unsigned u = 1; u < Breakpoints.size(); u++)
+		{
+			double half = Breakpoints[u-1] + (Breakpoints[u]-Breakpoints[u-1])/2;
+			gplot << "set label \"Phase " << u << "\" at graph " << half 
+			  << ",0.95 rotate by -90 front textcolor rgb '#808080';" << endl;
+		}
+		gplot << fixed << setprecision(2);
+	}
+	else
+		gplot << endl << "# Unneeded phases separators, nb. breakpoints = " << Breakpoints.size() << endl;
+
+	/* Generate functions to filter the .csv */
+	map<string, InterpolationResults*>::iterator it;
+	for (it = interpolated.begin(); it != interpolated.end(); it++)
+		if ((*it).second->isSlopeCalculated())
+		{
+			string counter_gnuplot = (*it).first;
+			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
+				if (counter_gnuplot[u] == ':')
+					counter_gnuplot[u] = '_';
+
+			gplot << "slope_" << counter_gnuplot << "(ret,c,r,g) = (c eq '" << (*it).first
+			  << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl;
+		}
+	gplot << "address_L1(ret,w,r,g) = (w == 1 && r eq '" << regionName <<
+	  "' && g == 0) ? ret : NaN;" << endl;
+	gplot << "address_LFB(ret,w,r,g) = (w == 2 && r eq '" << regionName <<
+	  "' && g == 0) ? ret : NaN;" << endl;
+	gplot << "address_L2(ret,w,r,g) = (w == 3 && r eq '" << regionName <<
+	  "' && g == 0) ? ret : NaN;" << endl;
+	gplot << "address_L3(ret,w,r,g) = (w == 4 && r eq '" << regionName <<
+	  "' && g == 0) ? ret : NaN;" << endl;
+	gplot << "address_RCACHE(ret,w,r,g) = (w == 5 && r eq '" << regionName <<
+	  "' && g == 0) ? ret : NaN;" << endl;
+	gplot << "address_DRAM(ret,w,r,g) = (w == 6 && r eq '" << regionName <<
+	  "' && g == 0) ? ret : NaN;" << endl;
+	gplot << "address_OTHER(ret,w,r,g) = (w == 0 && r eq '" << regionName <<
+	  "' && g == 0) ? ret : NaN;" << endl;
+
+	/* Generate the plot command */
+	unsigned count = 0;
+	for (it = interpolated.begin(); it != interpolated.end(); it++)
+	{
+		if ((*it).second->isSlopeCalculated())
+		{
+			if (count == 0)
+				gplot << "plot \\" << endl;
+			else
+				gplot << ",\\" << endl;
+
+			string counter_gnuplot = (*it).first;
+			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
+				if (counter_gnuplot[u] == ':')
+					counter_gnuplot[u] = '_';
+
+			if (common::isMIPS((*it).first))
+				gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y1 w lines lw 3";
+			else
+				gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
+				      << "' axes x2y1 w lines lw 3";
+
+			count++;
+		}
+	}
+	gplot << ",\\" << endl << 
+	  "'" << fdname <<"' u 4:(address_L1($5, $6, strcol(2), $3)) ti 'L1 reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u 4:(address_LFB($5, $6, strcol(2), $3)) ti 'LFB reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u 4:(address_L2($5, $6, strcol(2), $3)) ti 'L2 reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u 4:(address_L3($5, $6, strcol(2), $3)) ti 'L3 reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u 4:(address_RCACHE($5, $6, strcol(2), $3)) ti 'RCache reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u 4:(address_DRAM($5, $6, strcol(2), $3)) ti 'DRAM reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u 4:(address_OTHER($5, $6, strcol(2), $3)) ti 'Other reference' axes x2y2 w points pt 3;" << endl;
+
+	gplot.close();
+
+	return gname;
+}
+
 void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	const vector<Model*> & models, const string &TimeUnit)
 {
@@ -852,9 +1013,42 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 		cout << "Summary plot for region " << regionName << " ("
 		  << name_slopes << ")"  << endl;
 
+	/* Check if address sampling should be emitted */
+	bool anyaddress = false;
+	unsigned long long minaddress, maxaddress;
+	set<Sample*>::iterator s;
+	for (s = allsamples.begin(); s != allsamples.end(); s++)
+	{
+		if (!anyaddress)
+		{
+			if ((*s)->hasAddressReference())
+			{
+				minaddress = maxaddress = (*s)->getAddressReference();
+				anyaddress = true;
+			}
+		}
+		else
+		{
+			if ((*s)->hasAddressReference())
+			{
+				minaddress = MIN(minaddress, (*s)->getAddressReference());
+				maxaddress = MAX(maxaddress, (*s)->getAddressReference());
+			}
+		}
+	}
+
+	if (anyaddress)
+	{
+		string name_addresses = gnuplot_addresses (os, prefix, TimeUnit,
+		  minaddress, maxaddress);
+		if (name_addresses.length() > 0)
+			cout << "Summary plot for region " << regionName << " ("
+			  << name_addresses << ")" << endl;
+	}
+
 	for (unsigned m = 0; m < models.size(); m++)
 	{
-		string tmp = gnuplot_model (os, prefix, models[m]);
+		string tmp = gnuplot_model (os, prefix, models[m], TimeUnit);
 		cout << "Plot model " << models[m]->getTitleName() << " for region "
 		  << regionName << " (" << tmp << ")" << endl;
 	}
@@ -880,3 +1074,27 @@ string InstanceGroup::python (void)
 	  "-" + common::convertInt (Instances.size()) +
 	  "-" + common::convertInt (Breakpoints.size() > 0 ? Breakpoints.size()-1 : 0);
 }
+
+void InstanceGroup::setSamples (map<string, vector<Sample*> > &used,
+	map<string, vector<Sample*> > &unused)
+{
+	this->used = used;
+	this->unused = unused;
+
+	allsamples.clear();
+
+	map<string, vector<Sample*> >::iterator i;
+	for (i = used.begin(); i != used.end(); i++)
+	{
+		vector<Sample*> vs = (*i).second;
+		for (unsigned s = 0; s < vs.size(); s++)
+			allsamples.insert (vs[s]);
+	}
+	for (i = unused.begin(); i != unused.end(); i++)
+	{
+		vector<Sample*> vs = (*i).second;
+		for (unsigned s = 0; s < vs.size(); s++)
+			allsamples.insert (vs[s]);
+	}
+}
+
