@@ -69,6 +69,7 @@ class InstanceGroup
 
 	map<string, vector<Sample*> > used;
 	map<string, vector<Sample*> > unused;
+	set<Sample*> allsamples;
 
 	vector<double> Breakpoints; /* nb (breakpoints) = nphases+1 */
 	vector<CallstackTree *> trees; /* one per phase */
@@ -81,34 +82,32 @@ class InstanceGroup
 	void gnuplot_single (const ObjectSelection *os, const string & prefix, 
 		const string & counter, InterpolationResults *ir, const string &TimeUnit);
 	string gnuplot_slopes (const ObjectSelection *os, const string & prefix,
-		bool per_instruction, const string &TimeUnit);
+	  bool per_instruction, const string & TimeUnit);
 	string gnuplot_model (const ObjectSelection *os, const string & prefix,
-		const Model *m);
+	  const Model *m, const string & TimeUnit);
+	string gnuplot_addresses (const ObjectSelection *os, const string & prefix,
+	  const string & TimeUnit, unsigned long long minaddress,
+	  unsigned long long maxaddress); 
 
 	public:
 	InstanceGroup (string, unsigned, string);
-
-	void setSamples (map<string, vector<Sample*> > used, map<string, vector<Sample*> > unused)
-		{ this->used = used; this->unused = unused; }
-
+	void setSamples (map<string, vector<Sample*> > & used,
+	  map<string, vector<Sample*> > & unused);
 	unsigned getNumGroup (void) const
 	  { return numGroup; }
-
 	string getGroupName (void) const
 	  { return groupName; }
-
 	string getRegion (void) const
 	  { return regionName; }
-
 	map<string, vector<Sample*> > getSamples (void)
-		{ return this->used; }
-
+	  { return used; }
+	set<Sample*> getAllSamples (void)
+	  { return allsamples; }
 	vector<Instance*> getInstances(void) const
 	  { return Instances; };
 	void add (Instance *i);
 	unsigned numInstances (void) const;
 	unsigned numSamples (void) const;
-
 	vector<Instance*> getExcludedInstances(void)
 	  { return excludedInstances; };
 	void moveToExcluded (Instance *i);

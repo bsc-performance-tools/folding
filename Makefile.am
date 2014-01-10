@@ -3,8 +3,7 @@ SUBDIRS = src
 EXTRA_DIST = others examples cfgs
 
 install-data-hook:
-	cp -v others/fold.sh others/folding.sh $(prefix)/bin
-	$(SED) -i "s|FOLDING_HOME=|FOLDING_HOME=$(prefix)|g" $(prefix)/bin/fold.sh
+	cp -v others/folding.sh $(prefix)/bin
 	$(SED) -i "s|FOLDING_HOME=|FOLDING_HOME=$(prefix)|g" $(prefix)/bin/folding.sh
 	cd $(prefix)/bin; $(LN_S) -f folding.sh folding; cd -
 	cp others/folding-cube-call-paraver.sh $(prefix)/bin

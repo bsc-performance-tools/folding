@@ -45,8 +45,14 @@ using namespace libparaver;
 
 class common
 {
+	private:
+	static unsigned numDigits (unsigned long long v, unsigned base);
+
 	public:
 	static const string DefaultTimeUnit;
+
+	static unsigned numDecimalDigits (unsigned long long v);
+	static unsigned numHexadecimalDigits (unsigned long long v);
 
 	static unsigned getNumCores (bool &found);
 	static unsigned getNumProcessors (bool &found);

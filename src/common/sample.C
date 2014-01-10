@@ -41,7 +41,22 @@ static char __attribute__ ((unused)) rcsid[] = "$Id: sample.C 2250 2013-10-25 15
 Sample::Sample (unsigned long long sTime, unsigned long long iTime,
       map<string, unsigned long long> & icountervalue,
       map<unsigned, CodeRefTriplet> & codetriplet)
-	: sTime (sTime), iTime(iTime)
+	: sTime (sTime), iTime(iTime), bhasAddressReference(false),
+	  AddressReference(0), AddressReference_Mem_Level(0),
+	  AddressReference_TLB_Level(0)
+{
+	this->iCounterValue = icountervalue;
+	this->CodeTriplet = codetriplet;
+}
+
+Sample::Sample (unsigned long long sTime, unsigned long long iTime,
+	  map<string, unsigned long long> & icountervalue,
+	  map<unsigned, CodeRefTriplet> & codetriplet,
+	  unsigned long long address, unsigned ar_mem_level, unsigned ar_tlb_level)
+	: sTime (sTime), iTime(iTime), bhasAddressReference(true),
+	  AddressReference(address),
+      AddressReference_Mem_Level(ar_mem_level),
+	  AddressReference_TLB_Level(ar_tlb_level)
 {
 	this->iCounterValue = icountervalue;
 	this->CodeTriplet = codetriplet;
@@ -156,12 +171,8 @@ set<string> Sample::getCounters (void)
 {
 	set<string> res;
 	map<string, unsigned long long>::iterator it;
-	//cout << "getCounters map.size()=" << iCounterValue.size() << endl;
 	for (it = iCounterValue.begin(); it != iCounterValue.end(); it++)
-	{
-	//	cout << "Adding " << (*it).first << endl;
 		res.insert ((*it).first);
-	}
 	return res;
 }
 

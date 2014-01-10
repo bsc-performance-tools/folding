@@ -46,6 +46,7 @@ class FoldingWriter
 	private:
 	static bool equalTypes (set<string> &m1, set<string> m2);
 	static bool checkSamples (vector<Sample*> &Samples);
+	static unsigned getReferenceSample (const vector<Sample*> &Samples);
 
 	public:
 	static void Write (ofstream & ofile, const string & RegionName,

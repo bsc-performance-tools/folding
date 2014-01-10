@@ -134,11 +134,16 @@ void FoldingReader::Read (const string & filename,
 		}
 		else if (type == 'S')
 		{
-			/* Example of Sample */
-			/* S 36145340222 36433223 5 UNHALTED_CORE_CYCLES 94368325 INSTRUCTION_RETIRED 66006147 RESOURCE_STALLS:FCSW 0 2 0 3 9 9 1 4 3 3 */
-			/* S time #counters <counter name, counter value> #code triplets <depth, caller, caller line, caller line AST */
+			/* Example of Sample without address*/
+			/* S 36145340222 36433223 5 UNHALTED_CORE_CYCLES 94368325 INSTRUCTION_RETIRED 66006147 RESOURCE_STALLS:FCSW 0 2 0 3 9 9 1 4 3 3 0 */
+			/* S time #counters <counter name, counter value> #code triplets <depth, caller, caller line, caller line AST 0*/
+			/* Example of Sample with address*/
+			/* S 36145340222 36433223 5 UNHALTED_CORE_CYCLES 94368325 INSTRUCTION_RETIRED 66006147 RESOURCE_STALLS:FCSW 0 2 0 3 9 9 1 4 3 3 1 1000 2 1*/
+			/* S time #counters <counter name, counter value> #code triplets <depth, caller, caller line, caller line AST 0 address mem-level tlb-level*/
 
 			assert (i != NULL);
+
+			Sample *s;
 
 			unsigned long long sTime, iTime;
 
@@ -176,7 +181,23 @@ void FoldingReader::Read (const string & filename,
 				ncrt--;
 			}
 
-			Sample *s = new Sample (sTime, iTime, icv, ct);
+			unsigned hasaddress;
+			unsigned long long ar;
+			unsigned ar_mem_level;
+			unsigned ar_tlb_level;
+			file >> hasaddress;
+			if (hasaddress)
+			{
+				file >> ar;
+				file >> ar_mem_level;
+				file >> ar_tlb_level;
+			}
+
+			if (hasaddress)
+				s = new Sample (sTime, iTime, icv, ct, ar, ar_mem_level, ar_tlb_level);
+			else
+				s = new Sample (sTime, iTime, icv, ct);
+
 			if (i == NULL)
 			{
 				cerr << "Fatal error! Cannot allocate memory for a new sample!" << endl;

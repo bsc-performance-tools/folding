@@ -50,7 +50,10 @@ void SampleSelectorDefault::Select (InstanceGroup *ig, const set<string> &counte
 			{
 				vector<Sample*> vs = vi[i]->getSamples();
 				for (unsigned s = 0; s < vs.size(); s++)
-					used.push_back (vs[s]);
+					if (vs[s]->hasCounter(*c))
+						used.push_back (vs[s]);
+					else
+						unused.push_back (vs[s]);
 			}
 
 		used_res[*c] = used;

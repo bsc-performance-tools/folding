@@ -331,3 +331,30 @@ unsigned common::getNumProcessors (bool & found)
 	}
 	return nprocessors;
 }
+
+unsigned common::numDigits (unsigned long long v, unsigned base)
+{
+	if (v > 0)
+	{
+		unsigned res = 0;
+		do
+		{
+			v = v / base;
+			res++;
+		} while (v > 0);
+
+		return res;
+	}
+	else
+		return 1;
+}
+
+unsigned common::numDecimalDigits (unsigned long long v)
+{
+	return numDigits (v, 10);
+}
+
+unsigned common::numHexadecimalDigits (unsigned long long v)
+{
+	return numDigits (v, 16);
+}
