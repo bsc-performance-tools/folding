@@ -73,18 +73,18 @@ static xmlChar * xmlChar_strip (xmlChar *str)
   int initial = 0;
   int sublen = 0;
   int length = xmlStrlen (str);
-  int final = length;
+  int end = length;
 
   /* First get rid of the leading and trailing white spaces */
   for (i = 0; i < length; i++)
     if (!is_Whitespace (str[i]))
       break;
   initial = i;
-  for (; final-1 >= i; final--)
-    if (!is_Whitespace (str[final-1]))
+  for (; end-1 >= i; end--)
+    if (!is_Whitespace (str[end-1]))
       break;
 
-  sublen = final - initial;
+  sublen = end - initial;
 
   tmp = xmlStrsub (str, initial, sublen);
 

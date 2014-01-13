@@ -322,8 +322,13 @@ AC_CONFIG_FILES([
  src/Makefile
  src/common/Makefile
  src/io/Makefile
- src/service-kriger/Makefile
- src/service-R/Makefile
+ src/codeblocks/Makefile
+ src/fuse/Makefile
+ src/extract/Makefile
+ src/interpolate/Makefile
+ src/interpolate/service-kriger/Makefile
+ src/interpolate/service-R/Makefile
+ src/others/Makefile
 ])
 
 AC_OUTPUT

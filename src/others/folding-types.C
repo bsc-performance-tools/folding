@@ -65,7 +65,10 @@ int main (int argc, char *argv[])
 		  ( vtypes[u] >= PAPI_MIN_COUNTER && vtypes[u] <= PAPI_MAX_COUNTER ) ||
 		  ( vtypes[u] == PAPI_CHANGE_COUNTER_SET ) ||
 		  ( vtypes[u] >= FOLDED_BASE ) ||
-		  ( vtypes[u] >= EXTRAE_SAMPLE_CALLER_MIN && vtypes[u] <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX);
+		  ( vtypes[u] >= EXTRAE_SAMPLE_CALLER_MIN && vtypes[u] <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX) ||
+		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS ) ||
+		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL ) ||
+		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL );
 
 		if (!unusable)
 		{
