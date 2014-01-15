@@ -21,53 +21,24 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-#include "common.H"
+#ifndef PRV_TYPES_H_INCLUDED
+#define PRV_TYPES_H_INCLUDED
 
-#include "cube-tree.H"
-#include "cube-holder.H"
+#define FOLDED_BASE                       600000000
+#define FOLDED_INSTANCE_GROUP             600000001
+#define FOLDED_PHASE                      600000002
+#define FOLDED_TYPE                       600000003
+#define PAPI_CHANGE_COUNTER_SET            41999999
+#define PAPI_MIN_COUNTER                   42000000
+#define PAPI_MAX_COUNTER                   42999999
+#define EXTRAE_SAMPLE_CALLER_MIN           30000000
+#define EXTRAE_SAMPLE_CALLER_MAX           30000099
+#define EXTRAE_SAMPLE_CALLERLINE_MIN       30000100
+#define EXTRAE_SAMPLE_CALLERLINE_MAX       30000199
+#define EXTRAE_SAMPLE_CALLERLINE_AST_MIN   30000200
+#define EXTRAE_SAMPLE_CALLERLINE_AST_MAX   30000299
+#define EXTRAE_SAMPLE_ADDRESS              32000000
+#define EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL    32000001
+#define EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL    32000003
 
-#include <iostream>
-#include <sstream>
-
-void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree, 
-	UIParaverTraceConfig *pcf, string &sourceDir, unsigned depth)
-{
-	CodeRefTriplet crt = ctree->getCodeRefTriplet();
-
-	string routine, file;
-	unsigned bline, eline;
-
-	/* If this is the top of the tree and the node is a fake main,
-	   rename the routine into "main*" */
-	if (depth == 0 && crt.getCaller() == 0)
-	{
-		routine = "main*";
-		file = "";
-		bline = eline = 0;
-	}
-	else
-		common::lookForCallerASTInfo (pcf, crt.getCaller(), crt.getCallerLineAST(),
-			routine, file, bline, eline);
-
-	/* Create a node for this routine */
-	cube_region = c.def_region (routine, 0, 0, "", "", file);
-	cube_node = c.def_cnode (cube_region, sourceDir + "/" + file, 0, parent);
-	tree_node = ctree;
-
-	/* Store # occurrences */
-	Metric *m = c.get_met (NO_OCCURRENCES);
-	Thread *t = (c.get_thrdv())[0];
-	c.set_sev (m, cube_node, t, ctree->getOccurrences());
-
-	vector<CallstackTree*> vctree = ctree->getChildren();
-	if (vctree.size() > 0)
-	{
-		for (unsigned u = 0; u < vctree.size(); u++)
-		{
-			CubeTree *tmp = new CubeTree;
-			tmp->generate (c, cube_node, vctree[u], pcf, sourceDir, depth+1);
-			children.push_back (tmp);
-		}
-	}
-}
-
+#endif /* PRV_TYPES_H_INCLUDED */

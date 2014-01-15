@@ -20,16 +20,6 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
- | 
- | @last_commit: $Date$
- | @version:     $Revision$
- | 
- | History:
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
 
@@ -42,7 +32,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <string.h>
 #include <iostream>
 #include <vector>
-#include "interpolate.H"
+
+#include "prv-types.H"
 
 using namespace::libparaver;
 using namespace::std;

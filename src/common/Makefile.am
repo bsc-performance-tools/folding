@@ -6,7 +6,8 @@ libcommon_la_SOURCES = \
  common.H common.C \
  object-selection.H object-selection.C \
  codereftriplet.H codereftriplet.C \
- sample.H sample.C
+ sample.H sample.C \
+ prv-types.H
 
 libpcf_common_la_SOURCES = \
  pcf-common.H pcf-common.C

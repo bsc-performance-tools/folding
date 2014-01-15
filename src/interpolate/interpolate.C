@@ -20,16 +20,6 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
- | 
- | @last_commit: $Date$
- | @version:     $Revision$
- | 
- | History:
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
 #include "pcf-common.H"
@@ -39,6 +29,7 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include "folding-reader.H"
 #include "instance-container.H"
 #include "prv-writer.H"
+#include "prv-types.H"
 
 #include "sample-selector-first.H"
 #include "sample-selector-distance.H"
@@ -798,6 +789,8 @@ int main (int argc, char *argv[])
 	vector<Instance*> vInstances;
 	vector<Instance*> feedInstances;
 	char CWD[1024], *cwd;
+
+	cout << "Folding (interpolate) based on branch " FOLDING_SVN_BRANCH " revision " << FOLDING_SVN_REVISION << endl;
 
 	if ((cwd = getcwd (CWD, sizeof(CWD))) == NULL)
 	{

@@ -20,19 +20,8 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/instance-group.C $
- | 
- | @last_commit: $Date: 2013-11-04 15:24:07 +0100 (Mon, 04 Nov 2013) $
- | @version:     $Revision: 2284 $
- | 
- | History:
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-static char __attribute__ ((unused)) rcsid[] = "$Id: instance-group.C 2284 2013-11-04 14:24:07Z harald $";
 
 #include "common.H"
-
 #include "componentnode_constant.H"
 
 #include <iostream>
