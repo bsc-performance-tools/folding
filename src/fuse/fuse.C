@@ -20,16 +20,6 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
- | 
- | @last_commit: $Date$
- | @version:     $Revision$
- | 
- | History:
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
 
@@ -260,6 +250,8 @@ using namespace::std;
 
 int main (int argc, char *argv[])
 {
+	cout << "Folding (fuse) based on branch " FOLDING_SVN_BRANCH " revision " << FOLDING_SVN_REVISION << endl;
+
 	string tracename;
 
 	if (argc != 2)

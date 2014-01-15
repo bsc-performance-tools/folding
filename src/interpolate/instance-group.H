@@ -79,10 +79,6 @@ class InstanceGroup
 	Cnode *cubeTree;
 #endif
 
-	void gnuplot_single (const ObjectSelection *os, const string & prefix, 
-		const string & counter, InterpolationResults *ir, const string &TimeUnit);
-	string gnuplot_slopes (const ObjectSelection *os, const string & prefix,
-	  bool per_instruction, const string & TimeUnit);
 	string gnuplot_model (const ObjectSelection *os, const string & prefix,
 	  const Model *m, const string & TimeUnit);
 	string gnuplot_addresses (const ObjectSelection *os, const string & prefix,
@@ -101,12 +97,15 @@ class InstanceGroup
 	  { return regionName; }
 	map<string, vector<Sample*> > getSamples (void)
 	  { return used; }
+	map<string, vector<Sample*> > getUnusedSamples (void)
+	  { return unused; }
 	set<Sample*> getAllSamples (void)
 	  { return allsamples; }
 	vector<Instance*> getInstances(void) const
 	  { return Instances; };
 	void add (Instance *i);
-	unsigned numInstances (void) const;
+	unsigned numInstances (void) const
+	  { return Instances.size(); };
 	unsigned numSamples (void) const;
 	vector<Instance*> getExcludedInstances(void)
 	  { return excludedInstances; };
@@ -155,6 +154,10 @@ class InstanceGroup
 	  { accountsPerLine = axline; }
 	vector< map<unsigned, CodeRefTripletAccounting*> > getAccountingPerLine (void)
 	  { return accountsPerLine; }
+	
+	bool hasAddresses (void) const;
+	unsigned long long getMaximumAddress (void) const;
+	unsigned long long getMinimumAddress (void) const;
 };
 
 #endif

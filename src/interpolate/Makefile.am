@@ -19,13 +19,14 @@ interpolate_SOURCES = \
  interpolation-results.C interpolation-results.H \
  interpolation-kriger.C interpolation-kriger.H \
  interpolation-R-strucchange.C interpolation-R-strucchange.H \
- interpolate.C interpolate.H \
  model/componentnode.H model/componentnode.C \
  model/componentnode_constant.C model/componentnode_constant.H \
  model/componentnode_data.C model/componentnode_data.H \
  model/componentnode_derived.C model/componentnode_derived.H \
  model/componentmodel.C model/componentmodel.H \
- model/model.C model/model.H
+ model/model.C model/model.H \
+ generate-gnuplot.C generate-gnuplot.H \
+ interpolate.C interpolate.H
 
 if HAVE_CLUSTERING_SUITE
 interpolate_SOURCES += \

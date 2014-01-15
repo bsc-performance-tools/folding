@@ -20,16 +20,6 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
- | 
- | @last_commit: $Date$
- | @version:     $Revision$
- | 
- | History:
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
-static char __attribute__ ((unused)) rcsid[] = "$Id$";
 
 #include "common.H"
 
@@ -50,10 +40,8 @@ static char __attribute__ ((unused)) rcsid[] = "$Id$";
 #include <exception>
 
 #include "sample.H"
-
 #include "folding-writer.H"
-
-#include "interpolate.H"
+#include "prv-types.H"
 
 unsigned long long RegionSeparator = 0;
 string RegionSeparatorName;
@@ -861,6 +849,8 @@ int ProcessParameters (int argc, char *argv[])
 
 int main (int argc, char *argv[])
 {
+	cout << "Folding (extract) based on branch " FOLDING_SVN_BRANCH " revision " << FOLDING_SVN_REVISION << endl;
+
 	int res = ProcessParameters (argc, argv);
 
 	if (RegionSeparator == 0 && PRVSemanticCSVName.length() == 0)
