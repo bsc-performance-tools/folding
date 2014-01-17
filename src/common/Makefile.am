@@ -4,6 +4,7 @@ include_HEADERS = sample.H codereftriplet.H object-selection.H common.H
 
 libcommon_la_SOURCES = \
  common.H common.C \
+ variable-info.H variable-info.C \
  object-selection.H object-selection.C \
  codereftriplet.H codereftriplet.C \
  sample.H sample.C \

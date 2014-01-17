@@ -2,6 +2,7 @@
 #define GNUPLOTGENERATOR_H_INCLUDED
 
 #include "instance-group.H"
+#include "variable-info.H"
 
 using namespace std;
 
@@ -33,7 +34,8 @@ class gnuplotGenerator
 	  const string & prefix,
 	  const string & TimeUnit,
 	  unsigned long long minaddress,
-	  unsigned long long maxaddress);
+	  unsigned long long maxaddress,
+	  vector<VariableInfo*> & variables);
 };
 
 #endif /* GNUPLOTGENERATOR_H_INCLUDED */

@@ -45,6 +45,7 @@
 #endif
 
 #include "model.H"
+#include "variable-info.H"
 
 using namespace std;
 #if defined(HAVE_CUBE)
@@ -97,9 +98,9 @@ class InstanceGroup
 	  { return regionName; }
 	map<string, vector<Sample*> > getSamples (void)
 	  { return used; }
-	map<string, vector<Sample*> > getUnusedSamples (void)
+	map<string, vector<Sample*> > getUnusedSamples (void) 
 	  { return unused; }
-	set<Sample*> getAllSamples (void)
+	set<Sample*> getAllSamples (void) const
 	  { return allsamples; }
 	vector<Instance*> getInstances(void) const
 	  { return Instances; };
@@ -107,7 +108,7 @@ class InstanceGroup
 	unsigned numInstances (void) const
 	  { return Instances.size(); };
 	unsigned numSamples (void) const;
-	vector<Instance*> getExcludedInstances(void)
+	vector<Instance*> getExcludedInstances(void) const
 	  { return excludedInstances; };
 	void moveToExcluded (Instance *i);
 	unsigned numExcludedInstances (void) const;
@@ -130,7 +131,8 @@ class InstanceGroup
 	void dumpInterpolatedData (ObjectSelection *os, const string & prefix,
 	  const vector<Model*> &models);
 	void gnuplot (const ObjectSelection *os, const string & prefix,
-	  const vector<Model*> &models, const string & TimeUnit);
+	  const vector<Model*> &models, const string & TimeUnit,
+	  vector<VariableInfo*> & vars);
 	string python (void);
 
 	void setInterpolationBreakpoints (vector <double> breakpoints)

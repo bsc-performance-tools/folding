@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FOLDING_HOME=/home/harald/aplic/folding/trunk-address
+FOLDING_HOME=
 
 if [[ $# -ne 2 ]] ; then
 	echo "Usage: ${0} Trace InstanceSeparator/SemanticSeparator"

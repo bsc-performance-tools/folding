@@ -59,7 +59,8 @@ int main (int argc, char *argv[])
 		  ( vtypes[u] >= EXTRAE_SAMPLE_CALLER_MIN && vtypes[u] <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX) ||
 		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS ) ||
 		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL ) ||
-		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL );
+		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL ) ||
+		  ( vtypes[u] == ADDRESS_VARIABLE_ADDRESSES );
 
 		if (!unusable)
 		{

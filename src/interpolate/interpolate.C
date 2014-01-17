@@ -49,6 +49,8 @@
 #endif
 #include "model.H"
 
+#include "variable-info.H"
+
 #include <string.h>
 #include <iostream>
 #include <fstream>
@@ -808,8 +810,14 @@ int main (int argc, char *argv[])
 
 	int res = ProcessParameters (argc, argv);
 
-	FoldingReader::Read (argv[res], objectsSelected, TimeUnit, presentCounters,
-	  presentRegions, vInstances, objectToFeed, feedInstances);
+
+	// Read samples information	
+	FoldingReader::ReadSamples (argv[res], objectsSelected, TimeUnit,
+	  presentCounters, presentRegions, vInstances, objectToFeed, feedInstances);
+
+	// Read variables info
+	vector<VariableInfo*> variables;
+	FoldingReader::ReadVariables (argv[res], variables);
 
 	// Accumulate in wantedRegions the regions to be folded, ignoring the rest
 	if (wantedRegions.find (string("all")) != wantedRegions.end())
@@ -955,6 +963,7 @@ int main (int argc, char *argv[])
 	GroupFilterAndDumpStatistics (regions, vInstances, Instances,
 	  excludedInstances, feedInstances);
 
+
 	string cFile = argv[res];
 	string cFilePrefix = cFile.substr (0, cFile.rfind (".extract"));
 
@@ -999,7 +1008,8 @@ int main (int argc, char *argv[])
 			interpolation->interpolate (ig, counters, TimeUnit);
 			ig->dumpInterpolatedData (objectsSelected, cFilePrefix, models);
 			ig->dumpData (objectsSelected, cFilePrefix);
-			ig->gnuplot (objectsSelected, cFilePrefix, models, TimeUnit);
+			ig->gnuplot (objectsSelected, cFilePrefix, models, TimeUnit,
+			  variables);
 		}
 
 		ic.dumpGroupData (objectsSelected, cFilePrefix);

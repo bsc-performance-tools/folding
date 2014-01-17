@@ -66,18 +66,33 @@ class ThreadInformation
 {
 	private:
 	bool seen;
-
-	public:
 	vector<Sample*> Samples;
-
 	unsigned long long CurrentRegion;
 	unsigned long long StartRegion;
 
+	public:
+	unsigned long long getCurrentRegion(void) const
+	  { return CurrentRegion; }
+	void setCurrentRegion (unsigned long long v)
+	  { CurrentRegion = v; }
+	unsigned long long getStartRegion(void) const
+	  { return StartRegion; }
+	void setStartRegion (unsigned long long v)
+	  { StartRegion = v; }
 	bool getSeen (void) const
 	  { return seen; }
 	void setSeen (bool b)
 	  { seen = b; }
-
+	void addSample (Sample *s)
+	  { Samples.push_back (s); }
+	vector<Sample*> & getSamples (void)
+	  { return Samples; }
+	void clearSamples (void)
+	  { 
+		for (unsigned s = 0; s < Samples.size(); ++s)
+			delete Samples[s];
+		Samples.clear();
+	  }
 	ThreadInformation ();
 	~ThreadInformation ();
 };
@@ -99,13 +114,13 @@ class TaskInformation
 	ThreadInformation *ThreadsInfo;
 
 	public:
-	int getNumThreads (void)
+	int getNumThreads (void) const
 	{ return numThreads; };
 
 	ThreadInformation* getThreadsInformation (void)
 	{ return ThreadsInfo; };
 
-	void AllocateThreads (int numThreads);
+	void AllocateThreads (int nThreads);
 	~TaskInformation();
 };
 
@@ -114,10 +129,10 @@ TaskInformation::~TaskInformation()
 	delete [] ThreadsInfo;
 }
 
-void TaskInformation::AllocateThreads (int numThreads)
+void TaskInformation::AllocateThreads (int nThreads)
 {
-	this->numThreads = numThreads;
-	ThreadsInfo = new ThreadInformation[this->numThreads];
+	numThreads = nThreads;
+	ThreadsInfo = new ThreadInformation[nThreads];
 }
 
 class PTaskInformation
@@ -127,13 +142,13 @@ class PTaskInformation
 	TaskInformation *TasksInfo;
 
 	public:
-	int getNumTasks (void)
+	int getNumTasks (void) const
 	{ return numTasks; };
 
 	TaskInformation* getTasksInformation (void)
 	{ return TasksInfo; };
 
-	void AllocateTasks (int numTakss);
+	void AllocateTasks (int nTakss);
 	~PTaskInformation();
 };
 
@@ -142,10 +157,10 @@ PTaskInformation::~PTaskInformation()
 	delete [] TasksInfo;
 }
 
-void PTaskInformation::AllocateTasks (int numTasks)
+void PTaskInformation::AllocateTasks (int nTasks)
 {
-	this->numTasks = numTasks;
-	TasksInfo = new TaskInformation[this->numTasks];
+	numTasks = nTasks;
+	TasksInfo = new TaskInformation[nTasks];
 }
 
 
@@ -174,11 +189,11 @@ class InformationHolder
 	  { seenRegions.insert (r); }
 	void addMissingRegion (unsigned r)
 	  { missingRegions.insert (r); }
-	set<string> getCounters (void)
+	set<string> getCounters (void) const
 	  { return seenCounters; }
-	set<string> getRegions (void)
+	set<string> getRegions (void) const
 	  { return seenRegions; }
-	set<unsigned> getMissingRegions (void)
+	set<unsigned> getMissingRegions (void) const
 	  { return missingRegions; }
 
 	ofstream outputfile;
@@ -254,6 +269,7 @@ class Process : public ParaverTrace
 	void dumpSeenObjects (string fnameprefix);
 	void dumpSeenCounters (string fnameprefix);
 	void dumpSeenRegions (string fnameprefix);
+	void dumpSeenAddressRegions (string filename);
 
 	public:
 	Process (string prvFile, bool multievents);
@@ -465,7 +481,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 	{
-		if (thi[thread].CurrentRegion > 0)
+		if (thi[thread].getCurrentRegion() > 0)
 		{
 			if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER )
 			{
@@ -580,10 +596,12 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 		Sample *s;
 		if (AR.isCompleted())
-			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].StartRegion, CV, CodeRefs,
-			  AR.getAddress(), AR.getReferenceMemLevel(), AR.getReferenceTLBLevel());
+			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].getStartRegion(),
+			  CV, CodeRefs, AR.getAddress(), AR.getReferenceMemLevel(),
+			  AR.getReferenceTLBLevel());
 		else
-			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].StartRegion, CV, CodeRefs);
+			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].getStartRegion(),
+			  CV, CodeRefs);
 		assert (s != NULL);
 
 		if (common::DEBUG())
@@ -593,7 +611,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 				cout << " " << (*it).first << " " << (*it).second;
 			cout << endl;
 		}
-		thi[thread].Samples.push_back (s);
+		thi[thread].addSample (s);
 	}
 	else
 	{
@@ -604,7 +622,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 	/* If we found a region separator, increase current region and reset the phase */
 	if (FoundSeparator)
 	{
-		unsigned long long Region = thi[thread].CurrentRegion;
+		unsigned long long Region = thi[thread].getCurrentRegion();
 		if (Region > 0)
 		{
 			/* Look for the region name */
@@ -627,23 +645,18 @@ void Process::processMultiEvent (struct multievent_t &e)
 				RegionName = SemanticIndex[Region-1];
 
 			/* Write the information */
-
 			FoldingWriter::Write (IH.outputfile, RegionName, ptask, task,
-			  thread, thi[thread].StartRegion,
-			  e.Timestamp - thi[thread].StartRegion,
-			  thi[thread].Samples);
+			  thread, thi[thread].getStartRegion(),
+			  e.Timestamp - thi[thread].getStartRegion(),
+			  thi[thread].getSamples());
 
 			/* Clean */
-
-			for (unsigned s = 0; s < thi[thread].Samples.size(); ++s)
-				delete thi[thread].Samples[s];
-
-			thi[thread].Samples.clear();
+			thi[thread].clearSamples();
 			thi[thread].setSeen (true);
 		}
 
-		thi[thread].CurrentRegion = ValueSeparator;
-		thi[thread].StartRegion = e.Timestamp;
+		thi[thread].setCurrentRegion (ValueSeparator);
+		thi[thread].setStartRegion (e.Timestamp);
 	}
 }
 
@@ -768,11 +781,37 @@ void Process::dumpSeenRegions (string filename)
 	f.close();
 }
 
+void Process::dumpSeenAddressRegions (string filename)
+{
+	ofstream f (filename.c_str());
+	if (f.is_open())
+	{
+		/* As of today, this just dumps addresses for one task (1.1) */
+		vector<unsigned> v = pcf->getEventValues (ADDRESS_VARIABLE_ADDRESSES);
+		for (unsigned i = 0; i < v.size(); i++)
+		{
+			string value = pcf->getEventValue (ADDRESS_VARIABLE_ADDRESSES, v[i]);
+
+			/* Parsing string like: a [0x13730100-0x1cfc68ff] */
+			string variable =
+			  value.substr (0, value.find ("[") - 1);
+			string startaddress =
+			  value.substr (value.find ("[") + 1, value.find("-") - value.find("[") - 1);
+			string endaddress =
+			  value.substr (value.find ("-") + 1, value.find("]") - value.find ("-") - 1);
+
+			f << variable << " " << startaddress << " " << endaddress << endl;
+		}
+	}
+	f.close();
+}
+
 void Process::dumpSeen (string fnameprefix)
 {
 	dumpSeenObjects (fnameprefix+".objects");
 	dumpSeenCounters (fnameprefix+".counters");
 	dumpSeenRegions (fnameprefix+".regions");
+	dumpSeenAddressRegions (fnameprefix+".address_regions");
 }
 
 void Process::dumpMissingValuesIntoPCF (void)
