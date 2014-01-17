@@ -87,7 +87,7 @@ bool FoldingWriter::checkSamples (vector<Sample*> &Samples)
 void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 	unsigned ptask, unsigned task, unsigned thread,
 	unsigned long long start, unsigned long long duration,
-	vector<Sample*> &Samples)
+	vector<Sample*> & Samples)
 {
 	/* At least, have a sample at the begin & end, and someone else */
 	if (Samples.size() < 2)

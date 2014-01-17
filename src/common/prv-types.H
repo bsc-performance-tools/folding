@@ -28,6 +28,7 @@
 #define FOLDED_INSTANCE_GROUP             600000001
 #define FOLDED_PHASE                      600000002
 #define FOLDED_TYPE                       600000003
+#define ADDRESS_VARIABLE_ADDRESSES         41000000
 #define PAPI_CHANGE_COUNTER_SET            41999999
 #define PAPI_MIN_COUNTER                   42000000
 #define PAPI_MAX_COUNTER                   42999999

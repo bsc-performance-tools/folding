@@ -21,10 +21,12 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-#include <iostream>
-#include <iomanip>
 #include "common.H"
 #include "generate-gnuplot.H"
+
+#include <iostream>
+#include <iomanip>
+
 
 void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 	const ObjectSelection *os,
@@ -499,7 +501,8 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	const string & prefix,
 	const string & TimeUnit,
 	unsigned long long minaddress,
-	unsigned long long maxaddress)
+	unsigned long long maxaddress,
+	vector<VariableInfo*> & variables)
 {
 	string regionName = ig->getRegion();
 	string groupName = ig->getGroupName();
@@ -521,6 +524,14 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	}
 
 	double m = ig->mean();
+
+	/* Consider variables for min & max addresses in the plot */
+	vector<VariableInfo*>::iterator v;
+	for (v = variables.begin(); v != variables.end(); v++)
+	{
+		minaddress = MIN(minaddress, (*v)->getStartAddress());
+		maxaddress = MAX(maxaddress, (*v)->getEndAddress());
+	}
 
 	unsigned numhexdigits_maxaddress =
 	  common::numHexadecimalDigits(maxaddress);
@@ -608,7 +619,28 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	gplot << "address_DRAM(ret,w,r,g) = (w == 6 && r eq '" << regionName <<
 	  "' && g == 0) ? ret : NaN;" << endl;
 	gplot << "address_OTHER(ret,w,r,g) = (w == 0 && r eq '" << regionName <<
-	  "' && g == 0) ? ret : NaN;" << endl;
+	  "' && g == 0) ? ret : NaN;" << endl << endl;
+
+	vector<string> colors;
+	colors.push_back ("#c00000");
+	colors.push_back ("#00c000");
+	colors.push_back ("#0000c0");
+	colors.push_back ("#c0c000");
+	colors.push_back ("#c000c0");
+	colors.push_back ("#00c0c0");
+	colors.push_back ("#c0c0c0");
+	colors.push_back ("#000000");
+	unsigned vv;
+	for (vv = 0, v = variables.begin(); v != variables.end(); v++, vv++)
+	{
+		gplot << 
+		  "set object rect from second 0, second " << (*v)->getStartAddress() <<
+		  " to second 1, second " << (*v)->getEndAddress() << " fc rgb '" <<
+		  colors[vv%(colors.size())] << "' fs solid 0.25;" << endl <<
+		  "set label at second 0.975, second " <<
+		  (*v)->getStartAddress() + (*v)->getSize()/2 << " '" << (*v)->getName() <<
+		  "' front center;" << endl << endl;
+	}
 
 	/* Generate the plot command */
 	unsigned count = 0;
@@ -637,6 +669,7 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 			count++;
 		}
 	}
+
 	gplot << ",\\" << endl << 
 	  "'" << fdname <<"' u 4:(address_L1($5, $6, strcol(2), $3)) ti 'L1 reference' axes x2y2 w points pt 3,\\" << endl <<
 	  "'" << fdname << "' u 4:(address_LFB($5, $6, strcol(2), $3)) ti 'LFB reference' axes x2y2 w points pt 3,\\" << endl <<

@@ -381,7 +381,8 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 }
 
 void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
-	const vector<Model*> & models, const string &TimeUnit)
+	const vector<Model*> & models, const string &TimeUnit,
+	vector<VariableInfo*> & variables)
 {
 	bool has_instruction_counter = false;
 	map<string, InterpolationResults*>::iterator it;
@@ -414,7 +415,7 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	if (hasAddresses())
 	{
 		string name_addresses = gnuplotGenerator::gnuplot_addresses (this, os,
-		  prefix, TimeUnit, getMinimumAddress(), getMaximumAddress());
+		  prefix, TimeUnit, getMinimumAddress(), getMaximumAddress(), variables);
 		if (name_addresses.length() > 0)
 			cout << "Summary plot for region " << regionName << " ("
 			  << name_addresses << ")" << endl;

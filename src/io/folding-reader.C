@@ -26,9 +26,10 @@
 #include "folding-reader.H"
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <assert.h>
 
-void FoldingReader::Read (const string & filename,
+void FoldingReader::ReadSamples (const string & filenameextract,
 	const ObjectSelection *os, const string & TimeUnit,
 	set<string> &allcounters, set<string> &allregions,
 	vector<Instance*> &Instances, ObjectSelection *osfeed,
@@ -39,12 +40,12 @@ void FoldingReader::Read (const string & filename,
 	char type;
 
 	cout << "Reading data belonging to Paraver Object " << os->toString()
-	  << " from file '" << filename << "'" << endl;
+	  << " from file '" << filenameextract << "'" << endl;
 
-	ifstream file (filename.c_str());
+	ifstream file (filenameextract.c_str());
 	if (!file.is_open())
 	{
-		cerr << "Unable to open file named " << filename << endl;
+		cerr << "Unable to open file named " << filenameextract << endl;
 		exit (-1);
 	}
 
@@ -227,3 +228,49 @@ void FoldingReader::Read (const string & filename,
 }
 
 
+void FoldingReader::ReadVariables (const string & filenameextract,
+	vector<VariableInfo*> &vi)
+{
+	Instance *i = NULL;
+	int line = 0;
+
+	string filename = filenameextract.substr (0, filenameextract.rfind (".extract"))
+	  + ".address_regions";
+
+	cout << "Reading variable info from file '" << filename << "'" << endl;
+
+	ifstream file (filename.c_str());
+	if (!file.is_open())
+	{
+		cerr << "Unable to open file named " << filename << endl;
+		exit (-1);
+	}
+
+	while (true)
+	{
+		string name, s_start, s_end;
+
+		file >> name;
+		line++;
+
+		if (file.eof())
+			break;
+
+		file >> s_start;
+		file >> s_end;
+
+		unsigned long long ull_start, ull_end;
+		stringstream ss_start, ss_end;
+		ss_start << hex << s_start;
+		ss_start >> ull_start;
+		ss_end << hex << s_end;
+		ss_end >> ull_end;
+
+		/* Discard variables that are smaller than 1Mbyte */
+		if ((ull_end + 1) - ull_start >= 1024*1024)
+		{
+			VariableInfo *v = new VariableInfo (name, ull_start, ull_end);
+			vi.push_back (v);
+		}
+	}
+}

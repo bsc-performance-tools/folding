@@ -36,17 +36,20 @@
 #include <set>
 #include "object-selection.H"
 #include "instance.H"
+#include "variable-info.H"
 
 using namespace std;
 
 class FoldingReader
 {
 	public:
-	static void Read (const string & filename,
+	static void ReadSamples (const string & filenameextract,
 	  const ObjectSelection *os, const string & TimeUnit,
 	  set<string> &allcounters, set<string> &allregions,
 	  vector<Instance*> &Instances, ObjectSelection *osfeed, 
 	  vector<Instance*> &feedInstances);
+	static void ReadVariables (const string & filenameextract,
+	  vector<VariableInfo*> &vi);
 };
 
 #endif /* FOLDING_READER_H_INCLUDED */

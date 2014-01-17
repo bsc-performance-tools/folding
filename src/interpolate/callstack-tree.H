@@ -52,7 +52,7 @@ class CallstackTree
 
 	CodeRefTriplet getCodeRefTriplet (void) const
 	  { return nodeTriplet; }
-	vector<CallstackTree*> getChildren (void)
+	vector<CallstackTree*> getChildren (void) const
 	  { return children; }
 
 	void insert (CallstackTree *other);
