@@ -320,7 +320,7 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 
 	if (Instances.size() > 0)
 	{
-		/* Emit hwc for both used & unused sets */
+		/* Emit hwc and addresses for both used & unused sets */
 		map<string, vector<Sample*> >::iterator it;
 		for (it = used.begin(); it != used.end(); it++)
 		{
@@ -333,6 +333,10 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 					odata << "u" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << counter << ";"
 					  << s->getNCounterValue(counter) << endl;
+				if (s->hasAddressReference())
+					odata << "a" << ";" << regionName << ";" << numGroup << ";"
+					  << s->getNTime() << ";" << s->getAddressReference() << ";"
+					  << s->getAddressReference_Mem_Level() << endl;
 			}
 		}
 		for (it = unused.begin(); it != unused.end(); it++)
@@ -346,17 +350,11 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 					odata << "un" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << counter << ";"
 					  << s->getNCounterValue(counter) << endl;
+				if (s->hasAddressReference())
+					odata << "a" << ";" << regionName << ";" << numGroup << ";"
+					  << s->getNTime() << ";" << s->getAddressReference() << ";"
+					  << s->getAddressReference_Mem_Level() << endl;
 			}
-		}
-		/* Emit addresses for those samples that have them */
-		set<Sample *>::iterator sit;
-		for (sit = allsamples.begin(); sit != allsamples.end(); sit++)
-		{
-			Sample *s = *sit;
-			if (s->hasAddressReference())
-				odata << "a" << ";" << regionName << ";" << numGroup << ";"
-				  << s->getNTime() << ";" << s->getAddressReference() << ";"
-				  << s->getAddressReference_Mem_Level() << endl;
 		}
 	}
 
