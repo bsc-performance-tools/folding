@@ -96,8 +96,8 @@ void InterpolationKriger::pre_interpolate (double sigmaTimes, InstanceGroup *ig,
 		for (it = counters.begin(); it != counters.end(); it++)
 		{
 			vector<Sample*> vs = mvs[*it];
-			InterpolationResults *ir = interpolate_kernel (vs, *it, ig->getRegion(),
-			  ig->getNumGroup());
+			InterpolationResults *ir = interpolate_kernel (vs, *it,
+			  ig->getRegionName(), ig->getNumGroup());
 
 			vector<double> distances;
 			vector<Instance *> instances;
