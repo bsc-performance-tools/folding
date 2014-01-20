@@ -1,6 +1,8 @@
 #ifndef GNUPLOTGENERATOR_H_INCLUDED
 #define GNUPLOTGENERATOR_H_INCLUDED
 
+#include "interpolate.H"
+#include "instance-container.H"
 #include "instance-group.H"
 #include "variable-info.H"
 
@@ -36,6 +38,11 @@ class gnuplotGenerator
 	  unsigned long long minaddress,
 	  unsigned long long maxaddress,
 	  vector<VariableInfo*> & variables);
+	static void gnuplot_groups (
+	  InstanceContainer *ic,
+	  const ObjectSelection *os,
+	  const string & prefix,
+	  StatisticType_t type);
 };
 
 #endif /* GNUPLOTGENERATOR_H_INCLUDED */

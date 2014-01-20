@@ -35,7 +35,7 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 	InterpolationResults *idata,
 	const string & TimeUnit)
 {
-	string regionName = ig->getRegion();
+	string regionName = ig->getRegionName();
 	string groupName = ig->getGroupName();
 	unsigned numGroup = ig->getNumGroup();
 	string fintname = prefix + "." + os->toString(false, "any") 
@@ -208,7 +208,7 @@ string gnuplotGenerator::gnuplot_slopes (InstanceGroup *ig,
 	bool per_instruction,
 	const string & TimeUnit)
 {
-	string regionName = ig->getRegion();
+	string regionName = ig->getRegionName();
 	string groupName = ig->getGroupName();
 	unsigned numGroup = ig->getNumGroup();
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
@@ -367,7 +367,7 @@ string gnuplotGenerator::gnuplot_model (InstanceGroup *ig,
 	const Model *m,
 	const string & TimeUnit)
 {
-	string regionName = ig->getRegion();
+	string regionName = ig->getRegionName();
 	string groupName = ig->getGroupName();
 	unsigned numGroup = ig->getNumGroup();
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
@@ -504,7 +504,7 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	unsigned long long maxaddress,
 	vector<VariableInfo*> & variables)
 {
-	string regionName = ig->getRegion();
+	string regionName = ig->getRegionName();
 	string groupName = ig->getGroupName();
 	unsigned numGroup = ig->getNumGroup();
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
@@ -683,4 +683,94 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 
 	return gname;
 }
+
+void gnuplotGenerator::gnuplot_groups (InstanceContainer *ic,
+	const ObjectSelection *os, const string & prefix, StatisticType_t type)
+{
+	string regionName = ic->getRegionName();
+	InstanceSeparator *is = ic->getInstanceSeparator();
+	string fname = prefix + "." + os->toString (false, "any") + ".groups.csv";
+	string gname = prefix + "." + os->toString (false, "any") + "." + 
+	  common::removeUnwantedChars(regionName) + ".groups.gnuplot";
+
+	vector<string> lightcolors, darkcolors;
+	lightcolors.push_back ("#FF0000"); darkcolors.push_back ("#FF8080");
+	lightcolors.push_back ("#00B000"); darkcolors.push_back ("#80B080");
+	lightcolors.push_back ("#0000FF"); darkcolors.push_back ("#8080FF");
+	lightcolors.push_back ("#FF8000"); darkcolors.push_back ("#FF8080");
+	lightcolors.push_back ("#FF0080"); darkcolors.push_back ("#FF8080");
+	lightcolors.push_back ("#00A0A0"); darkcolors.push_back ("#80A0A0");
+
+	ofstream gplot (gname.c_str());
+
+	if (!gplot.is_open())
+	{
+		cerr << "Failed to create " << gname << endl;
+		return;
+	}
+
+	gplot << fixed <<
+	  "# set term postscript eps enhaced solid color" << endl <<
+	  "# set term png size 800,600" << endl <<
+	  "set datafile separator \";\"" << endl <<
+	  "set key bottom outside center horizontal samplen 1 font \",9\"" << endl <<
+	  "set yrange [-1:1];" << endl <<
+	  "set noytics; " << endl <<
+	  "set xtics nomirror rotate by -90; " << endl <<
+	  "set border 1" << endl <<
+	  "set xlabel \"Time (ms)\";" << endl <<
+	  "set title \"Instance groups for " << os->toString(true) << " - Region " << 
+	  regionName << "\\n" << ic->numInstances() << " Instances - " << is->details() <<
+	  endl;
+
+#define MAXLINECOLOR 6
+	gplot << endl
+	  << "set style line 1 pt 1 lc rgb \"" << lightcolors[0] << "\"" << endl
+	  << "set style line 2 pt 2 lc rgb \"" << lightcolors[1] << "\"" << endl
+	  << "set style line 3 pt 3 lc rgb \"" << lightcolors[2] << "\"" << endl
+	  << "set style line 4 pt 4 lc rgb \"" << lightcolors[3] << "\"" << endl
+	  << "set style line 5 pt 5 lc rgb \"" << lightcolors[4] << "\"" << endl
+	  << "set style line 6 pt 6 lc rgb \"" << lightcolors[5] <<  "\"" << endl
+	  << endl 
+	  << "set style line 7 pt 1 lc rgb \"" << darkcolors[0] << "\"" << endl
+	  << "set style line 8 pt 2 lc rgb \"" << darkcolors[1] <<  "\"" << endl
+	  << "set style line 9 pt 3 lc rgb \"" << darkcolors[2] << "\"" << endl
+	  << "set style line 10 pt 4 lc rgb \"" << darkcolors[3] << "\"" << endl
+	  << "set style line 11 pt 5 lc rgb \"" << darkcolors[4] << "\"" << endl
+	  << "set style line 12 pt 6 lc rgb \"" << darkcolors[5] << "\"" << endl
+	  << endl;
+
+	for (unsigned u = 0; u < ic->numGroups(); u++)
+	{
+		unsigned lstyle = (u % MAXLINECOLOR)+1;
+		InstanceGroup *ig = ic->getInstanceGroup (u);
+		unsigned long long s = (type == STATISTIC_MEAN) ? ig->mean() : ig->median();
+		gplot << "set label \"\" at " << s << ".0/1000000.0,0 point lt " << lstyle << " ps 2 lc rgb \"" << lightcolors[lstyle-1] << "\";" << endl;
+	}
+	gplot << endl;
+
+	gplot << "plot \\" << endl;
+	for (unsigned u = 0; u < ic->numGroups(); u++)
+	{
+		unsigned lstyle = (u % MAXLINECOLOR)+1;
+		InstanceGroup *ig = ic->getInstanceGroup (u);
+
+		if (u != 0)
+			gplot << ",\\" << endl;
+
+		gplot << "'" << fname << "' using (strcol(1) eq 'u' && (strcol(2) eq '" 
+		  << regionName << "' && $3 == " << u+1
+		  << ") ? $4 / 1000000.0: NaN) : $0 ti '" << is->nameGroup (u)
+		  << " (" << ig->numInstances() << "/" << ig->numExcludedInstances() 
+		  << ")' w points ls " << lstyle << ",\\" << endl;
+		gplot << "'" << fname << "' using ((strcol(1) eq 'e') && (strcol(2) eq '" 
+		  << regionName 
+		  << "' && $3 == " << u+1 << ") ? $4 / 1000000.0: NaN) : $0 notitle w points ls " 
+		  << lstyle+MAXLINECOLOR;
+	}
+	gplot << ";" << endl;
+
+	gplot.close();
+}
+
 

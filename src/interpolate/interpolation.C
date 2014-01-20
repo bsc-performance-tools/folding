@@ -144,8 +144,8 @@ void Interpolation::interpolate (InstanceGroup *ig, const set<string> &counters,
 			if (mvs.count(*it) > 0)
 			{
 				vector<Sample*> vs = mvs[*it];
-				InterpolationResults *ir = interpolate_kernel (vs, *it, ig->getRegion(),
-				  ig->getNumGroup());
+				InterpolationResults *ir = interpolate_kernel (vs, *it,
+				  ig->getRegionName(), ig->getNumGroup());
 				if (common::isMIPS (*it))
 					ig->setInterpolationBreakpoints (ir->getBreakpoints());
 				ir->setAvgCounterValue (AvgCounters[*it]);

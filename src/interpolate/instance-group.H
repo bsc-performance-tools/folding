@@ -94,7 +94,7 @@ class InstanceGroup
 	  { return numGroup; }
 	string getGroupName (void) const
 	  { return groupName; }
-	string getRegion (void) const
+	string getRegionName (void) const
 	  { return regionName; }
 	map<string, vector<Sample*> > getSamples (void)
 	  { return used; }

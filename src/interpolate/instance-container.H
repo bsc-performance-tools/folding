@@ -56,7 +56,8 @@ class InstanceContainer
 	void add (Instance *i);
 	const vector<Instance *> getInstances (void) const
 	  { return Instances; }
-	unsigned numInstances (void) const;
+	unsigned numInstances (void) const
+	  { return Instances.size(); }
 	unsigned numSamples (void);
 	void splitInGroups (void);
 	unsigned numGroups (void) const
@@ -64,11 +65,17 @@ class InstanceContainer
 	string getRegionName (void) const
 	  { return regionName; }
 	InstanceGroup* getInstanceGroup (unsigned g);
+	InstanceSeparator* getInstanceSeparator(void) const
+	  { return is; }
 
-	void removePreviousDataFiles (ObjectSelection *os, string fileprefix);
-	void dumpGroupData (ObjectSelection *os, string fileprefix);
-	void gnuplot (ObjectSelection *os, string fileprefix, StatisticType_t type);
-	void python (ObjectSelection *os, string prefix, set<string> counters);
+	void removePreviousDataFiles (const ObjectSelection *os,
+	  const string & fileprefix);
+	void dumpGroupData (const ObjectSelection *os,
+	  const string & fileprefix);
+	void gnuplot (const ObjectSelection *os, const string & fileprefix,
+	  StatisticType_t type);
+	void python (const ObjectSelection *os, const string & prefix, 
+	  const set<string> & counters);
 };
 
 #endif
