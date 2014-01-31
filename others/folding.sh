@@ -12,7 +12,7 @@ fi
 
 EXTENSION_PRV="${1##*.}"
 if [[ "${EXTENSION_PRV}" != "prv" ]] ; then
-	echo "Invalid extension for a Paraver tracefile"
+	echo "Invalid extension for a Paraver tracefile (file was ${1})"
 	exit
 fi
 NUMERICAL_RE='^[0-9]+$'
@@ -20,6 +20,9 @@ NUMERICAL_RE='^[0-9]+$'
 if [[ ${2} =~ ${NUMERICAL_RE} ]]; then
 	echo "Using event type ${2} as instance delimiter"
 	BASENAME_CSV=""
+	if [[ ${2} = 90000001 ]] ; then
+		EXTRA_INTERPOLATE_FLAGS+=" -region-start-with Cluster_"
+	fi
 else
 	EXTENSION_CSV="${2##*.}"
 	if [[ "${EXTENSION_CSV}" = "csv" ]] ; then
@@ -46,7 +49,7 @@ if [[ x${BASENAME_CSV} = x ]] ; then
 else
 	${FOLDING_HOME}/bin/extract -semantic "${BASENAME_CSV}.csv" "${BASENAME_PRV}.codeblocks.fused.prv"
 fi
-${FOLDING_HOME}/bin/interpolate -max-samples-distance 2000 -sigma-times 1.5 -feed-first-occurrence 1.1.1 "${BASENAME_PRV}.codeblocks.fused.extract"
+${FOLDING_HOME}/bin/interpolate -max-samples-distance 2000 -sigma-times 1.5 -feed-first-occurrence 1.1.1 ${EXTRA_INTERPOLATE_FLAGS} "${BASENAME_PRV}.codeblocks.fused.extract"
 
 cd ..
 
