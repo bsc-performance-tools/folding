@@ -45,6 +45,7 @@ class FoldingWriter
 {
 	private:
 	static bool equalTypes (set<string> &m1, set<string> m2);
+	static bool containTypes (set<string> &m1, set<string> m2);
 	static bool checkSamples (vector<Sample*> &Samples);
 	static unsigned getReferenceSample (const vector<Sample*> &Samples);
 

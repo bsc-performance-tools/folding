@@ -45,6 +45,22 @@ bool FoldingWriter::equalTypes (set<string> &m1, set<string> m2)
 	return true;
 }
 
+bool FoldingWriter::containTypes (set<string> &m1, set<string> m2)
+{
+	if (m1.size() > m2.size())
+		return false;
+
+	set<string>::iterator i1 = m1.begin();
+
+	/* Check all types in M1 are in M2 */
+	for (i1 = m1.begin(); i1 != m1.end(); i1++)
+		if (m2.find (*i1) == m2.end())
+			return false;
+
+	/* If we are here, then types(M1) = types(M2) */
+	return true;
+}
+
 unsigned FoldingWriter::getReferenceSample (const vector<Sample*> &Samples)
 {
 	unsigned reference = 0;
@@ -76,7 +92,8 @@ bool FoldingWriter::checkSamples (vector<Sample*> &Samples)
 				continue;
 
 			/* Compare counters */
-			if (!equalTypes (reference_counters, counters))
+			//if (!equalTypes (reference_counters, counters))
+			if (!containTypes (reference_counters, counters))
 				return false;
 		}
 	}

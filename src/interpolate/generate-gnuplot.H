@@ -38,6 +38,11 @@ class gnuplotGenerator
 	  unsigned long long minaddress,
 	  unsigned long long maxaddress,
 	  vector<VariableInfo*> & variables);
+	static string gnuplot_callers (
+	  InstanceGroup *ig,
+	  const ObjectSelection *os,
+	  const string & prefix,
+	  const string & TimeUnit);
 	static void gnuplot_groups (
 	  InstanceContainer *ic,
 	  const ObjectSelection *os,

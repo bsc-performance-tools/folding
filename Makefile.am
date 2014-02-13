@@ -1,6 +1,6 @@
 SUBDIRS = src
 
-EXTRA_DIST = others examples cfgs
+EXTRA_DIST = others examples cfgs SVN-branch SVN-revision
 
 install-data-hook:
 	cp -v others/folding.sh $(prefix)/bin

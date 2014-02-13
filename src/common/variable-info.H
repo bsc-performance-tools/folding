@@ -20,64 +20,35 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
- | 
- | @last_commit: $Date$
- | @version:     $Revision$
- | 
- | History:
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef INSTANCECONTAINER_H_INCLUDED
-#define INSTANCECONTAINER_H_INCLUDED
+#ifndef VARIABLE_INFO_H_INCLUDED
+#define VARIABLE_INFO_H_INCLUDED
 
-#include "instance-group.H"
-#include "interpolate.H"
-#include "instance-separator.H"
-#include <vector>
+#include "common.H"
+
 #include <string>
-#include <map>
 
 using namespace std;
 
-class InstanceContainer
+class VariableInfo
 {
 	private:
-	unsigned ngroups;
-	InstanceSeparator *is;
-	string regionName;
-	vector<Instance*> Instances;
-	vector<InstanceGroup*> InstanceGroups;
+	const string name;
+	const unsigned long long startaddress;
+	const unsigned long long endaddress;
 
 	public:
-	InstanceContainer (string, InstanceSeparator *is);
-
-	void add (Instance *i);
-	const vector<Instance *> getInstances (void) const
-	  { return Instances; }
-	unsigned numInstances (void) const
-	  { return Instances.size(); }
-	unsigned numSamples (void);
-	void splitInGroups (void);
-	unsigned numGroups (void) const
-	  { return ngroups; }
-	string getRegionName (void) const
-	  { return regionName; }
-	InstanceGroup* getInstanceGroup (unsigned g);
-	InstanceSeparator* getInstanceSeparator(void) const
-	  { return is; }
-
-	void removePreviousDataFiles (const ObjectSelection *os,
-	  const string & fileprefix);
-	void dumpGroupData (const ObjectSelection *os,
-	  const string & fileprefix, const string & TimeUnit);
-	void gnuplot (const ObjectSelection *os, const string & fileprefix,
-	  StatisticType_t type);
-	void python (const ObjectSelection *os, const string & prefix, 
-	  const set<string> & counters);
+	VariableInfo (const string &n, unsigned long long start,
+	  unsigned long long end);
+	~VariableInfo();
+	unsigned long long getStartAddress (void) const
+	  { return startaddress; }
+	unsigned long long getEndAddress (void) const
+	  { return endaddress; }
+	unsigned long long getSize (void) const
+	  { return (endaddress + 1) - startaddress; }
+	string getName(void) const
+	  { return name; }
 };
 
-#endif
-
-
+#endif /* VARIABLE_INFO_H_INCLUDED */

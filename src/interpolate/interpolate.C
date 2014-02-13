@@ -384,6 +384,7 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-feed-first-occurrence PTASK.TASK.THREAD" << endl
 		     << "-max-samples NUM" << endl
 		     << "-max-samples-distance NUM" << endl
+			 << "-model XMLfile" << endl
 		     << "-region R                [where R = all by default]" << endl
 		     << "-region-start-with R     [nothing by default]" << endl
 		     << "-counter C               [where C = all by default]" << endl
@@ -766,6 +767,7 @@ int ProcessParameters (int argc, char *argv[])
 
 			Model *m = new Model;
 			m->loadXML (argv[i]);
+			cout << "Loaded definition for model " << m->getName() << endl;
 			models.push_back (m);
 		}
 		else
@@ -775,7 +777,7 @@ int ProcessParameters (int argc, char *argv[])
 	if (wantedCounters.size() == 0 && models.size() == 0)
 		wantedCounters.insert (string("all"));
 
-	if (wantedRegions.size() == 0)
+	if (wantedRegions.size() == 0 && wantedRegionsStartWith.size() == 0)
 		wantedRegions.insert (string("all"));
 
 	return argc-1;
@@ -963,7 +965,6 @@ int main (int argc, char *argv[])
 	GroupFilterAndDumpStatistics (regions, vInstances, Instances,
 	  excludedInstances, feedInstances);
 
-
 	string cFile = argv[res];
 	string cFilePrefix = cFile.substr (0, cFile.rfind (".extract"));
 
@@ -1012,7 +1013,7 @@ int main (int argc, char *argv[])
 			  variables);
 		}
 
-		ic.dumpGroupData (objectsSelected, cFilePrefix);
+		ic.dumpGroupData (objectsSelected, cFilePrefix, TimeUnit);
 		ic.gnuplot (objectsSelected, cFilePrefix, StatisticType);
 		ic.python (objectsSelected, cFilePrefix, counters);
 
@@ -1083,6 +1084,24 @@ int main (int argc, char *argv[])
 		pcf = new UIParaverTraceConfig;
 		pcf->parse (pcfFile);
 
+		bool mainid_found = false;
+
+		 /* __libc_start_main & generic_start_main are routines seen as main in
+		    BG/Q machines using IBM XLF compilers */
+		unsigned mainid = pcfcommon::lookForValueString (pcf,
+			  EXTRAE_SAMPLE_CALLER_MIN, "__libc_start_main",
+			  mainid_found);
+		if (!mainid_found)
+			mainid = pcfcommon::lookForValueString (pcf,
+			  EXTRAE_SAMPLE_CALLER_MIN, "generic_start_main",
+			  mainid_found);
+		/* Default to regular main symbol */
+		if (!mainid_found)
+			mainid = pcfcommon::lookForValueString (pcf,
+			  EXTRAE_SAMPLE_CALLER_MIN, "main", mainid_found);
+		if (!mainid_found)
+			mainid = 0;
+
 		map<string, unsigned> counterCodes;
 		set<string>::iterator c;
 		for (c = counters.begin(); c != counters.end(); c++)
@@ -1148,6 +1167,9 @@ int main (int argc, char *argv[])
 				ftrace->DumpGroupInfo (objectToFeed, i);
 				ftrace->DumpInterpolationData (objectToFeed, i, ig, counterCodes);
 				ftrace->DumpCallersInInstance (objectToFeed, i, ig);
+				if (mainid_found)
+					ftrace->DumpReverseMainCallersInInstance (
+					  objectToFeed, i, ig, mainid);
 				ftrace->DumpBreakpoints (objectToFeed, i, ig);
 			}
 		}
@@ -1178,21 +1200,6 @@ int main (int argc, char *argv[])
 		/* Generate a callstack tree for the CUBE program */
 		string oFileCUBE = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.cube";
 		cout << "Generating callstack tree for CUBE (" << cwd << "/" << common::basename (oFileCUBE.c_str()) << ")" << endl;
-		bool found;
-
-		 /* __libc_start_main & generic_start_main are routines seen as main in
-		    BG/Q machines using IBM XLF compilers */
-		unsigned mainid = pcfcommon::lookForValueString (pcf,
-			  EXTRAE_SAMPLE_CALLER_MIN, "__libc_start_main", found);
-		if (!found)
-			mainid = pcfcommon::lookForValueString (pcf,
-			  EXTRAE_SAMPLE_CALLER_MIN, "generic_start_main", found);
-		/* Default to regular main symbol */
-		if (!found)
-			mainid = pcfcommon::lookForValueString (pcf,
-			  EXTRAE_SAMPLE_CALLER_MIN, "main", found);
-		if (!found)
-			mainid = 0;
 		
 		CubeHolder ch (pcf, counters);
 

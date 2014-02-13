@@ -786,21 +786,27 @@ void Process::dumpSeenAddressRegions (string filename)
 	ofstream f (filename.c_str());
 	if (f.is_open())
 	{
-		/* As of today, this just dumps addresses for one task (1.1) */
-		vector<unsigned> v = pcf->getEventValues (ADDRESS_VARIABLE_ADDRESSES);
-		for (unsigned i = 0; i < v.size(); i++)
+		bool has_addresses;
+		string r = getType (ADDRESS_VARIABLE_ADDRESSES, has_addresses);
+
+		if (has_addresses)
 		{
-			string value = pcf->getEventValue (ADDRESS_VARIABLE_ADDRESSES, v[i]);
+			/* As of today, this just dumps addresses for one task (1.1) */
+			vector<unsigned> v = pcf->getEventValues (ADDRESS_VARIABLE_ADDRESSES);
+			for (unsigned i = 0; i < v.size(); i++)
+			{
+				string value = pcf->getEventValue (ADDRESS_VARIABLE_ADDRESSES, v[i]);
 
-			/* Parsing string like: a [0x13730100-0x1cfc68ff] */
-			string variable =
-			  value.substr (0, value.find ("[") - 1);
-			string startaddress =
-			  value.substr (value.find ("[") + 1, value.find("-") - value.find("[") - 1);
-			string endaddress =
-			  value.substr (value.find ("-") + 1, value.find("]") - value.find ("-") - 1);
+				/* Parsing string like: a [0x13730100-0x1cfc68ff] */
+				string variable =
+				  value.substr (0, value.find ("[") - 1);
+				string startaddress =
+				  value.substr (value.find ("[") + 1, value.find("-") - value.find("[") - 1);
+				string endaddress =
+				  value.substr (value.find ("-") + 1, value.find("]") - value.find ("-") - 1);
 
-			f << variable << " " << startaddress << " " << endaddress << endl;
+				f << variable << " " << startaddress << " " << endaddress << endl;
+			}
 		}
 	}
 	f.close();

@@ -34,6 +34,8 @@
 #include "interpolation-results.H"
 #include "generate-gnuplot.H"
 
+#include <list>
+
 using namespace std;
 
 InstanceGroup::InstanceGroup (string name, unsigned id, string groupname) :
@@ -310,6 +312,18 @@ void InstanceGroup::dumpInterpolatedData (ObjectSelection *os,
 	}
 }
 
+class TimingCaller
+{
+	public:
+	double time;
+	unsigned caller;
+};
+
+bool compare_timing_info (const TimingCaller &first, const TimingCaller &second)
+{
+	return first.time < second.time;
+}
+
 void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 {
 	string fname = prefix + "." + os->toString(false, "any") +
@@ -320,6 +334,8 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 
 	if (Instances.size() > 0)
 	{
+		list<TimingCaller> timingsandcallers;
+
 		/* Emit hwc and addresses for both used & unused sets */
 		map<string, vector<Sample*> >::iterator it;
 		for (it = used.begin(); it != used.end(); it++)
@@ -337,6 +353,14 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 					odata << "a" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << s->getAddressReference() << ";"
 					  << s->getAddressReference_Mem_Level() << endl;
+				if (s->hasCodeRefTripletSize())
+				{
+					map<unsigned, CodeRefTriplet> callers = s->getCodeTriplets();
+					TimingCaller tc;
+					tc.time = s->getNTime();
+					tc.caller = (*(callers.begin())).second.getCaller();
+					timingsandcallers.push_back (tc);
+				}
 			}
 		}
 		for (it = unused.begin(); it != unused.end(); it++)
@@ -354,8 +378,22 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 					odata << "a" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << s->getAddressReference() << ";"
 					  << s->getAddressReference_Mem_Level() << endl;
+				if (s->hasCodeRefTripletSize())
+				{
+					map<unsigned, CodeRefTriplet> callers = s->getCodeTriplets();
+					TimingCaller tc;
+					tc.time = s->getNTime();
+					tc.caller = (*(callers.begin())).second.getCaller();
+					timingsandcallers.push_back (tc);
+				}
 			}
 		}
+
+		timingsandcallers.sort (::compare_timing_info);
+		list<TimingCaller>::iterator tci;
+		for (tci = timingsandcallers.begin(); tci != timingsandcallers.end(); tci++)
+			odata << "c" << ";" << regionName << ";" << numGroup << ";"
+				  << (*tci).time << ";" << (*tci).caller << endl;
 	}
 
 	if (excludedInstances.size() > 0)
@@ -418,6 +456,11 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 			cout << "Summary plot for region " << regionName << " ("
 			  << name_addresses << ")" << endl;
 	}
+	string name_callers = gnuplotGenerator::gnuplot_callers (this, os,
+	  prefix, TimeUnit);
+	if (name_callers.length() > 0)
+		cout << "Summary plot for region " << regionName << " ("
+		  << name_callers << ")" << endl;
 
 	for (unsigned m = 0; m < models.size(); m++)
 	{

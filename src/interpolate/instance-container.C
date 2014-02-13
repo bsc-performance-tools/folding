@@ -80,7 +80,7 @@ void InstanceContainer::splitInGroups (void)
 }
 
 void InstanceContainer::dumpGroupData (const ObjectSelection *os,
-	const string & prefix)
+	const string & prefix, const string & TimeUnit)
 {
 	string fname = prefix + "." + os->toString(false, "any") + ".groups.csv";
 

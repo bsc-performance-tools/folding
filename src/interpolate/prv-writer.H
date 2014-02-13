@@ -77,6 +77,8 @@ class FoldedParaverTrace : public ParaverTrace
 	  const InstanceGroup *ig);
 	void DumpInterpolationData (const ObjectSelection *o, const Instance *in,
 	  const InstanceGroup *ig, map<string, unsigned> counterCodes);
+	void DumpReverseMainCallersInInstance (const ObjectSelection *o,
+	  const Instance *in, const InstanceGroup *ig, unsigned mainid);
 };
 
 } /* namespace libparaver */
