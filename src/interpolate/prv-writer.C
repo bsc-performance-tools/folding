@@ -155,6 +155,72 @@ void FoldedParaverTrace::DumpCallersInInstance (const ObjectSelection *o,
 	  in->getStartTime() + in->getDuration(), o);
 }
 
+
+void FoldedParaverTrace::DumpReverseMainCallersInInstance (
+	const ObjectSelection *o, const Instance *in, const InstanceGroup *ig,
+	unsigned mainid)
+{
+	assert (!o->anyany());
+
+	vector<Instance*> vInstances = ig->getInstances();
+	unsigned numInstances = vInstances.size();
+
+	set<unsigned long long> set_zero_types;
+	vector<unsigned long long> vec_zero_types, vec_zero_values;
+
+	for (unsigned u = 0; u < numInstances; u++)
+	{
+		Instance *i = vInstances[u];
+
+		vector<Sample *> vs = i->getSamples();
+		for (unsigned v = 0; v < vs.size(); v++)
+		{
+			unsigned long long ts = in->getStartTime() + 
+				(unsigned long long) (vs[v]->getNTime() * (double)(in->getDuration()));
+
+			map<unsigned, CodeRefTriplet> ct = vs[v]->getCodeTriplets();
+
+			/* If top of the callstack is main, process, otherwise ignore */
+			if (ct.size() > 0)
+			{
+				map<unsigned, CodeRefTriplet>::reverse_iterator it = ct.rbegin();
+				if (((*it).second).getCaller() == mainid)
+				{
+					vector<unsigned long long> types;
+					vector<unsigned long long> values;
+					unsigned depth = 0;
+					while (it != ct.rend())
+					{
+						types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLER_MIN + depth); /* caller + depth */
+						types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLERLINE_MIN + depth); /* caller line + depth */
+						types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLERLINE_AST_MIN + depth); /* caller line AST + depth */
+
+						values.push_back ((*it).second.getCaller());
+						values.push_back ((*it).second.getCallerLine());
+						values.push_back ((*it).second.getCallerLineAST());
+
+						it++;
+						depth++;
+					}
+					DumpParaverLines (types, values, ts, o);
+
+					/* Annotate these types, to emit the corresponding 0s */
+					set_zero_types.insert (types.begin(), types.end());
+				}
+			}
+		}
+	}
+
+	/* Move types into vec_zero_types */
+	vec_zero_types.insert (vec_zero_types.begin(), set_zero_types.begin(),
+	  set_zero_types.end());
+	vec_zero_values.assign (vec_zero_types.size(), 0);
+
+	DumpParaverLines (vec_zero_types, vec_zero_values,
+	  in->getStartTime() + in->getDuration(), o);
+}
+
+
 void FoldedParaverTrace::DumpInterpolationData (const ObjectSelection *o,
 	const Instance *in, const InstanceGroup *ig, map<string,unsigned> counterCodes)
 {

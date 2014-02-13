@@ -91,6 +91,8 @@ class Sample
 	bool hasCaller (unsigned caller);
 	unsigned getCodeRefTripletSize(void) const
 	  { return CodeTriplet.size(); }
+	unsigned hasCodeRefTripletSize(void) const
+	  { return CodeTriplet.size() > 0; }
 	set<string> getCounters (void);
 
 	bool hasAddressReference(void) const

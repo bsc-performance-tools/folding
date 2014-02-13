@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import wx
 import os
@@ -156,7 +156,7 @@ class wxFoldingViewerDialog(wx.Dialog):
 	def FeedGroupAndCounter (self, region):
 		fr = self.FoldingResults[region]
 		self.gc_lccounters.DeleteAllItems()
-		self.gc_lccounters.InsertStringItem (0, str("All (slope/ins)"))
+		self.gc_lccounters.InsertStringItem (0, str("All (slope/instruction)"))
 		self.gc_lccounters.InsertStringItem (1, str("All (slopes)"))
 		for line in fr.counters:
 			num_items = self.gc_lccounters.GetItemCount()
@@ -188,7 +188,7 @@ class wxFoldingViewerDialog(wx.Dialog):
 	def OnViewCounter(self, e):
 		index = self.gc_lccounters.GetFocusedItem()
 		if index == 0:
-			counter = "ratio_per_ins"
+			counter = "ratio_per_instruction"
 		elif index == 1:
 			counter = "slopes"
 		else:
