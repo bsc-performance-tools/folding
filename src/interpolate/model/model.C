@@ -58,25 +58,25 @@ static const xmlChar *xmlTEXT = (xmlChar*) "text";
 
 static xmlChar * xmlChar_strip (xmlChar *str)
 {
-  xmlChar *tmp;
-  int i;
-  int initial = 0;
-  int sublen = 0;
-  int length = xmlStrlen (str);
-  int end = length;
+	xmlChar *tmp;
+	int i;
+	int initial = 0;
+	int sublen = 0;
+	int length = xmlStrlen (str);
+	int end = length;
 
-  /* First get rid of the leading and trailing white spaces */
-  for (i = 0; i < length; i++)
-    if (!is_Whitespace (str[i]))
-      break;
-  initial = i;
-  for (; end-1 >= i; end--)
-    if (!is_Whitespace (str[end-1]))
-      break;
+	/* First get rid of the leading and trailing white spaces */
+	for (i = 0; i < length; i++)
+		if (!is_Whitespace (str[i]))
+			break;
+	initial = i;
+	for (; end-1 >= i; end--)
+		if (!is_Whitespace (str[end-1]))
+			break;
 
-  sublen = end - initial;
+	sublen = end - initial;
 
-  tmp = xmlStrsub (str, initial, sublen);
+	tmp = xmlStrsub (str, initial, sublen);
 
 	return tmp;
 }

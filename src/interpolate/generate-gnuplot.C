@@ -56,7 +56,7 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 		return;
 	}
 
-	double m = ig->mean(TimeUnit);
+	double m = ig->mean (TimeUnit);
 
 	map<string, vector<Sample*> > used, unused;
 	used = ig->getSamples();
@@ -70,6 +70,11 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 
 	vector<Sample*> usedSamples = used[counter];
 	vector<Sample*> unusedSamples = unused[counter];
+
+	/* Generate the pre-info */
+	gplot << fixed << setprecision(2) <<
+	  "X_LIMIT=" << m / 1000000 << " # Do not touch this" << endl <<
+	  "FACTOR=1" << " # Do not touch this" << endl << endl;
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
@@ -94,9 +99,9 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
   	gplot << "set xtics nomirror format \"%.02f\";" << endl
 	  << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
-		gplot << ", " << i*(m/1000000)/5;
+		gplot << ", " << i << "./5.*X_LIMIT";
 	gplot << ");" << endl
-	  << "set xrange [0:" << (m / 1000000) << "];" << endl;
+	  << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
 
 	if (common::isMIPS(counter))
 	  gplot << "set y2label 'MIPS';" << endl;
@@ -116,12 +121,12 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 	gplot << "# Mean rate" << endl;
 	if (TimeUnit == common::DefaultTimeUnit)
 		gplot << endl 
-		  << "set label \"\" at first " << (m/1000000)
+		  << "set label \"\" at first X_LIMIT*1./FACTOR"
 		  << ", second " << (idata->getAvgCounterValue() / 1000)/(m/1000000)
 		  << " point pt 3 ps 2 lc rgbcolor \"#707070\";" << endl;
 	else
 		gplot << endl 
-		  << "set label \"\" at first " << (m/1000000)
+		  << "set label \"\" at first X_LIMIT*1./FACTOR"
 		  << ", second " << (idata->getAvgCounterValue()/m)
 		  << " point pt 3 ps 2 lc rgbcolor \"#707070\";" << endl;
 
@@ -164,7 +169,7 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 	  "NaN ti 'Mean " << counter << " rate' w points pt 3 lc rgbcolor \"#707070\" ,\\" << endl;
 	if (ig->numExcludedSamples (counter) > 0)
 	{
-		gplot << "'" << fdname << "' u 4:(sampleexcluded($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Excluded samples (" << ig->numExcludedSamples(counter) << ")' axes x2y1 w points pt 3 lc rgbcolor '#A0A0A0'";
+		gplot << "'" << fdname << "' u ($4*FACTOR):(sampleexcluded($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Excluded samples (" << ig->numExcludedSamples(counter) << ")' axes x2y1 w points pt 3 lc rgbcolor '#A0A0A0'";
 		coma = true;
 	}
 	if (ig->numInstances())
@@ -173,7 +178,7 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 			gplot << ",\\" << endl;
 		if (unusedSamples.size() > 0)
 		{
-			gplot << "'" << fdname << "' u 4:(sampleunused($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Unused samples (" << unusedSamples.size() << ")' axes x2y1 w points pt 3 lc rgbcolor '#FFA0A0'";
+			gplot << "'" << fdname << "' u ($4*FACTOR):(sampleunused($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Unused samples (" << unusedSamples.size() << ")' axes x2y1 w points pt 3 lc rgbcolor '#FFA0A0'";
 			coma = true;
 		}
 		else
@@ -182,22 +187,22 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 		{
 			if (coma)
 				gplot << ",\\" << endl;
-			gplot << "'" << fdname << "' u 4:(sampleused($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Used samples (" << usedSamples.size() << ")' axes x2y1 w points pt 3 lc rgbcolor '#FF0000'";
+			gplot << "'" << fdname << "' u ($4*FACTOR):(sampleused($6, strcol(5), strcol(2), $3, strcol(1))) ti 'Used samples (" << usedSamples.size() << ")' axes x2y1 w points pt 3 lc rgbcolor '#FF0000'";
 			coma = true;
 		}
 
 		if (coma)
 			gplot << ",\\" << endl;
 
-		gplot << "'" << fintname << "' u 4:(interpolation($5, strcol(3), strcol(1), $2)) ti 'Fitting [" << idata->getInterpolationDetails() << "]' axes x2y1 w lines lw 3 lc rgbcolor '#00FF00'";
+		gplot << "'" << fintname << "' u ($4*FACTOR):(interpolation($5, strcol(3), strcol(1), $2)) ti 'Fitting [" << idata->getInterpolationDetails() << "]' axes x2y1 w lines lw 3 lc rgbcolor '#00FF00'";
 
 		if (idata->isSlopeCalculated())
-		{
-			gplot << ",\\" << endl << "'" << fslname << "' u 4:(slope($5, strcol(3), strcol(1), $2)) ti 'Counter rate' axes x2y2 w lines lw 3 lc rgbcolor '#0000FF'";
-		}
+			gplot << ",\\" << endl << "'" << fslname << "' u ($4*FACTOR):(slope($5, strcol(3), strcol(1), $2)) ti 'Counter rate' axes x2y2 w lines lw 3 lc rgbcolor '#0000FF'";
 
 	}
-	gplot << ";" << endl;
+	gplot << ";" << endl << endl
+	  << "unset label;" << endl
+	  << "unset arrow;" << endl;
 
 	gplot.close();
 }
@@ -229,6 +234,11 @@ string gnuplotGenerator::gnuplot_slopes (InstanceGroup *ig,
 
 	double m = ig->mean();
 
+	/* Generate the pre-info */
+	gplot << fixed << setprecision(2) <<
+	  "X_LIMIT=" << m / 1000000 << " # Do not touch this" << endl <<
+	  "FACTOR=1" << " # Do not touch this" << endl << endl;
+
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
 	  "# set term postscript eps solid color;" << endl <<
@@ -246,14 +256,14 @@ string gnuplotGenerator::gnuplot_slopes (InstanceGroup *ig,
 	  	  << "set xtics nomirror format \"%.02f\";" << endl
 		  << "set xtics ( 0.0 ";
 		for (int i = 1; i <= 5; i++)
-			gplot << ", " << i*(m/1000000)/5;
+			gplot << ", " << i << "./5.*X_LIMIT";
 		gplot << ");" << endl
-		  << "set xrange [0:" << (m / 1000000) << "];" << endl;
+		  << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
 	}
 	else
 	{
 		gplot << "set xlabel 'Normalized " << TimeUnit << "';" << endl
-		  << "set xrange [0:1];" << endl 
+		  << "set xrange [0:1*1./FACTOR];" << endl 
 	  	  << "set xtics nomirror format \"%.02f\";" << endl;
 	}
 
@@ -333,27 +343,29 @@ string gnuplotGenerator::gnuplot_slopes (InstanceGroup *ig,
 			if (common::isMIPS((*it).first))
 	  		{
 				if (per_instruction)
-					gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+					gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
 					  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y2 w lines lw 3";
 				else
-					gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+					gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
 					  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y1 w lines lw 3";
 			}
 			else
 			{
 				if (per_instruction)
-					gplot << "'" << fslname << "' u 4:(ratio_" << counter_gnuplot
+					gplot << "'" << fslname << "' u ($4*FACTOR):(ratio_" << counter_gnuplot
 					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
 					  << "/ins' axes x2y1 w lines lw 3";
 				else
-					gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+					gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
 					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
 					  << "' axes x2y1 w lines lw 3";
 			}
 			count++;
 		}
 	}
-	gplot << ";" << endl;
+	gplot << ";" << endl << endl
+	  << "unset label;" << endl
+	  << "unset arrow;" << endl;
 
 	gplot.close();
 
@@ -382,7 +394,16 @@ string gnuplotGenerator::gnuplot_model (InstanceGroup *ig,
 		return "";
 	}
 
+	map<string, InterpolationResults*> m_ctr_ir = ig->getInterpolated ();
+	map<string, InterpolationResults*>::iterator m_ctr_ir_itr = m_ctr_ir.begin();
+	unsigned nsteps = (*m_ctr_ir_itr).second->getCount();
+
 	double me = ig->mean();
+
+	/* Generate the pre-info */
+	gplot << fixed << setprecision(2) <<
+	  "X_LIMIT=" << me / 1000000 << " # Do not touch this" << endl <<
+	  "FACTOR=1" << " # Do not touch this" << endl << endl;
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
@@ -401,12 +422,14 @@ string gnuplotGenerator::gnuplot_model (InstanceGroup *ig,
 	gplot << endl <<
 	  "set datafile separator \";\";" << endl <<
 	  "set key bottom outside center horizontal samplen 1;" << endl <<
-	  "set x2range [0:*];" << endl <<
 	  "set y2range [0:*];" << endl;
 	if (m->isY1Stacked())
-		gplot << "set yrange [0:1];" << endl;
+		gplot << "set yrange [0:1];" << endl <<
+		  "set x2range [0:" << nsteps << "*1./FACTOR];" << endl;
 	else
-		gplot << "set yrange [0:*];" << endl;
+		gplot << "set yrange [0:*];" << endl <<
+		  "set x2range [0:*];" << endl;
+
 	gplot <<
 	  "set xtics nomirror format \"%.02f\";" << endl <<
 	  "unset x2tics" << endl <<
@@ -422,9 +445,9 @@ string gnuplotGenerator::gnuplot_model (InstanceGroup *ig,
 
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
-		gplot << ", " << i*(me/1000000)/5;
+		gplot << ", " << i << "./5.*X_LIMIT";
 	gplot << ");" << endl;
-	gplot << "set xrange [0:" << (me / 1000000) << "];" << endl;
+	gplot << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
 
 	/* If the instance-group has more than the regular 0..1 breakpoints,
 	   add this into the plot */
@@ -480,14 +503,16 @@ string gnuplotGenerator::gnuplot_model (InstanceGroup *ig,
 			  "_" << vcm[cm]->getName() << "($5, strcol(3), strcol(1), $2)) ti '" << 
 			  vcm[cm]->getTitleName() << "' axes x2" << Yaxis;
 		else
-			gplot << "'" << fslname << "' u ($4 * " << me/1000000 << "):(slope_" << m->getName() << "_" <<
+			gplot << "'" << fslname << "' u ($4 * X_LIMIT):(slope_" << m->getName() << "_" <<
 			  vcm[cm]->getName() << "($5, strcol(3), strcol(1), $2)) ti '" << 
 			  vcm[cm]->getTitleName() << "' axes x1" << Yaxis  << " w lines lw 3";
 
 		if (vcm[cm]->hasColor())
 			gplot << " lc rgbcolor '" << vcm[cm]->getColor() << "'";
 	}
-	gplot << ";" << endl;
+	gplot << ";" << endl << endl
+	  << "unset label;" << endl
+	  << "unset arrow;" << endl;
 
 	gplot.close();
 
@@ -534,6 +559,11 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	unsigned numhexdigits_maxaddress =
 	  common::numHexadecimalDigits(maxaddress);
 
+	/* Generate the pre-info */
+	gplot << fixed << setprecision(2) <<
+	  "X_LIMIT=" << m / 1000000 << " # Do not touch this" << endl <<
+	  "FACTOR=1" << " # Do not touch this" << endl << endl;
+
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
 	  "# set term postscript eps solid color;" << endl <<
@@ -545,7 +575,6 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	  "set yrange [0:*];" << endl <<
 	  "set xtics nomirror format \"%.02f\";" << endl <<
 	  "set x2tics nomirror format \"%.02f\";" << endl <<
-	  "set xrange [0:" << m << "];" << endl <<
 	  "set xlabel 'Time (in ms)';" << endl <<
 	  "set ylabel 'Performance counter rate (in Mevents/s)';" << endl <<
 	  "set ytics nomirror;" << endl <<
@@ -556,9 +585,9 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
-		gplot << ", " << i*(m/1000000)/5;
+		gplot << ", " << i << "./5.*X_LIMIT";
 	gplot << ");" << endl
-	  << "set xrange [0:" << (m / 1000000) << "];" << endl;
+	  << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
 
 	gplot << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' (" << minaddress;
 	for (int i = 1; i <= 5; i++)
@@ -657,10 +686,10 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 					counter_gnuplot[u] = '_';
 
 			if (common::isMIPS((*it).first))
-				gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
 					  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y1 w lines lw 3";
 			else
-				gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
 					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
 				      << "' axes x2y1 w lines lw 3";
 
@@ -669,13 +698,17 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	}
 
 	gplot << ",\\" << endl << 
-	  "'" << fdname <<"' u 4:(address_L1($5, $6, strcol(2), $3, strcol(1))) ti 'L1 reference' axes x2y2 w points pt 3,\\" << endl <<
-	  "'" << fdname << "' u 4:(address_LFB($5, $6, strcol(2), $3, strcol(1))) ti 'LFB reference' axes x2y2 w points pt 3,\\" << endl <<
-	  "'" << fdname << "' u 4:(address_L2($5, $6, strcol(2), $3, strcol(1))) ti 'L2 reference' axes x2y2 w points pt 3,\\" << endl <<
-	  "'" << fdname << "' u 4:(address_L3($5, $6, strcol(2), $3, strcol(1))) ti 'L3 reference' axes x2y2 w points pt 3,\\" << endl <<
-	  "'" << fdname << "' u 4:(address_RCACHE($5, $6, strcol(2), $3, strcol(1))) ti 'RCache reference' axes x2y2 w points pt 3,\\" << endl <<
-	  "'" << fdname << "' u 4:(address_DRAM($5, $6, strcol(2), $3, strcol(1))) ti 'DRAM reference' axes x2y2 w points pt 3,\\" << endl <<
-	  "'" << fdname << "' u 4:(address_OTHER($5, $6, strcol(2), $3, strcol(1))) ti 'Other reference' axes x2y2 w points pt 3;" << endl;
+	  "'" << fdname <<"' u ($4*FACTOR):(address_L1($5, $6, strcol(2), $3, strcol(1))) ti 'L1 reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_LFB($5, $6, strcol(2), $3, strcol(1))) ti 'LFB reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_L2($5, $6, strcol(2), $3, strcol(1))) ti 'L2 reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_L3($5, $6, strcol(2), $3, strcol(1))) ti 'L3 reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_RCACHE($5, $6, strcol(2), $3, strcol(1))) ti 'RCache reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_DRAM($5, $6, strcol(2), $3, strcol(1))) ti 'DRAM reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_OTHER($5, $6, strcol(2), $3, strcol(1))) ti 'Other reference' axes x2y2 w points pt 3;" << endl;
+
+	gplot << endl << endl
+	  << "unset label;" << endl
+	  << "unset arrow;" << endl;
 
 	gplot.close();
 
@@ -708,6 +741,11 @@ string gnuplotGenerator::gnuplot_callers (InstanceGroup *ig,
 
 	double m = ig->mean(TimeUnit);
 
+	/* Generate the pre-info */
+	gplot << fixed << setprecision(2) <<
+	  "X_LIMIT=" << m / 1000000 << " # Do not touch this" << endl <<
+	  "FACTOR=1" << " # Do not touch this" << endl << endl;
+
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
 	  "# set term postscript eps solid color;" << endl <<
@@ -719,7 +757,6 @@ string gnuplotGenerator::gnuplot_callers (InstanceGroup *ig,
 	  "set yrange [0:*];" << endl <<
 	  "set xtics nomirror format \"%.02f\";" << endl <<
 	  "set x2tics nomirror format \"%.02f\";" << endl <<
-	  "set xrange [0:" << m << "];" << endl <<
 	  "set ylabel 'Performance counter rate (in Mevents/s)';" << endl <<
 	  "set ytics nomirror;" << endl <<
 	  "set y2label 'Addresses referenced';" << endl;
@@ -738,9 +775,9 @@ string gnuplotGenerator::gnuplot_callers (InstanceGroup *ig,
 
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
-		gplot << ", " << i*(m/1000000)/5;
+		gplot << ", " << i << "./5.*X_LIMIT";
 	gplot << ");" << endl
-	  << "set xrange [0:" << (m / 1000000) << "];" << endl;
+	  << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
 
 	gplot << "set y2tics nomirror;" << endl;
 
@@ -802,10 +839,10 @@ string gnuplotGenerator::gnuplot_callers (InstanceGroup *ig,
 					counter_gnuplot[u] = '_';
 
 			if (common::isMIPS((*it).first))
-				gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
 					  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y1 w lines lw 3";
 			else
-				gplot << "'" << fslname << "' u 4:(slope_" << counter_gnuplot
+				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
 					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
 				      << "' axes x2y1 w lines lw 3";
 
@@ -814,8 +851,12 @@ string gnuplotGenerator::gnuplot_callers (InstanceGroup *ig,
 	}
 
 	gplot << ",\\" << endl << "'" << fdname <<
-	  "' u 4:(caller($5, strcol(2), $3, strcol(1))) ti 'Caller' axes x2y2 w lines lw 2;" <<
+	  "' u ($4*FACTOR):(caller($5, strcol(2), $3, strcol(1))) ti 'Caller' axes x2y2 w lines lw 2;" <<
 	  endl;
+
+	gplot << endl << endl
+	  << "unset label;" << endl
+	  << "unset arrow;" << endl;
 
 	gplot.close();
 
@@ -906,7 +947,9 @@ void gnuplotGenerator::gnuplot_groups (InstanceContainer *ic,
 		  << "' && $3 == " << u+1 << ") ? $4 / 1000000.0: NaN) : $0 notitle w points ls " 
 		  << lstyle+MAXLINECOLOR;
 	}
-	gplot << ";" << endl;
+	gplot << ";" << endl << endl
+	  << "unset label;" << endl
+	  << "unset arrow;" << endl;
 
 	gplot.close();
 }
