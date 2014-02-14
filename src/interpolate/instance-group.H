@@ -66,7 +66,7 @@ class InstanceGroup
 	vector<Instance*> Instances;
 	vector<Instance*> excludedInstances;
 
-	map<string, InterpolationResults*> interpolated; /* counter to InterpolationResults* */
+	map<string, InterpolationResults*> interpolated; /* map of InterpolationResults* indexed by counter */
 
 	map<string, vector<Sample*> > used;
 	map<string, vector<Sample*> > unused;
