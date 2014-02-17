@@ -7,6 +7,7 @@ install-data-hook:
 	$(SED) -i "s|FOLDING_HOME=|FOLDING_HOME=$(prefix)|g" $(prefix)/bin/folding.sh
 	cd $(prefix)/bin; $(LN_S) -f folding.sh folding; cd -
 	cp others/folding-cube-call-paraver.sh $(prefix)/bin
+	cp others/folding-gnuplot-compare.py $(prefix)/bin
 if WANT_GUI_FRONTEND
 	cp others/wxfolding others/wxfolding.py others/wxfolding-viewer others/wxfolding_viewer.py $(prefix)/bin
 endif
