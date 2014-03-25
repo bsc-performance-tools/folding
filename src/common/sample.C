@@ -28,24 +28,26 @@
 #include <assert.h>
 
 Sample::Sample (unsigned long long sTime, unsigned long long iTime,
-      map<string, unsigned long long> & icountervalue,
-      map<unsigned, CodeRefTriplet> & codetriplet)
+    map<string, unsigned long long> & icountervalue,
+    map<unsigned, CodeRefTriplet> & codetriplet)
 	: sTime (sTime), iTime(iTime), bhasAddressReference(false),
 	  AddressReference(0), AddressReference_Mem_Level(0),
-	  AddressReference_TLB_Level(0)
+	  AddressReference_TLB_Level(0), AddressReference_Cycles_Cost(0)
 {
 	this->iCounterValue = icountervalue;
 	this->CodeTriplet = codetriplet;
 }
 
 Sample::Sample (unsigned long long sTime, unsigned long long iTime,
-	  map<string, unsigned long long> & icountervalue,
-	  map<unsigned, CodeRefTriplet> & codetriplet,
-	  unsigned long long address, unsigned ar_mem_level, unsigned ar_tlb_level)
+	map<string, unsigned long long> & icountervalue,
+	map<unsigned, CodeRefTriplet> & codetriplet,
+	unsigned long long address, unsigned ar_mem_level, unsigned ar_tlb_level,
+	unsigned cycles_cost)
 	: sTime (sTime), iTime(iTime), bhasAddressReference(true),
 	  AddressReference(address),
       AddressReference_Mem_Level(ar_mem_level),
-	  AddressReference_TLB_Level(ar_tlb_level)
+	  AddressReference_TLB_Level(ar_tlb_level),
+	  AddressReference_Cycles_Cost(cycles_cost)
 {
 	this->iCounterValue = icountervalue;
 	this->CodeTriplet = codetriplet;

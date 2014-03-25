@@ -60,7 +60,8 @@ int main (int argc, char *argv[])
 		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS ) ||
 		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL ) ||
 		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL ) ||
-		  ( vtypes[u] == ADDRESS_VARIABLE_ADDRESSES );
+		  ( vtypes[u] == ADDRESS_VARIABLE_ADDRESSES ) ||
+		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES );
 
 		if (!unusable)
 		{

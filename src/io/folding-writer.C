@@ -188,7 +188,8 @@ void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 		{
 			ofile << " 1 " << Samples[u]->getAddressReference() << " "
 			  << Samples[u]->getAddressReference_Mem_Level() << " "
-			  << Samples[u]->getAddressReference_TLB_Level();
+			  << Samples[u]->getAddressReference_TLB_Level() << " "
+			  << Samples[u]->getAddressReference_Cycles_Cost();
 		}
 		else
 			ofile << " 0";

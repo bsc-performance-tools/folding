@@ -78,6 +78,8 @@ class InterpolationResults
 
 	double getSlopeAt (double pos) const;
 	double getSlopeAt (unsigned pos) const;
+	double getInterpolationAt (double pos) const;
+	double getInterpolationAt (unsigned pos) const;
 };
 
 #endif /* INTERPOLATION_RESULTS_H_INCLUDED */

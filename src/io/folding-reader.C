@@ -176,6 +176,7 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 			unsigned long long ar;
 			unsigned ar_mem_level;
 			unsigned ar_tlb_level;
+			unsigned cycles_cost;
 			file >> hasaddress;
 
 			if (hasaddress)
@@ -183,10 +184,13 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 				file >> ar;
 				file >> ar_mem_level;
 				file >> ar_tlb_level;
+				file >> cycles_cost;
 			}
 
-			if (hasaddress)
-				s = new Sample (sTime, iTime, icv, ct, ar, ar_mem_level, ar_tlb_level);
+			/* Ignore addresses from the high part of the address space (48 bit out of 64) */
+			if (hasaddress && !(ar & 0xFFFF800000000000))
+				s = new Sample (sTime, iTime, icv, ct, ar, ar_mem_level, ar_tlb_level,
+				  cycles_cost);
 			else
 				s = new Sample (sTime, iTime, icv, ct);
 

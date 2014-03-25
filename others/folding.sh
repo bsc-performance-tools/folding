@@ -2,6 +2,31 @@
 
 FOLDING_HOME=
 
+#
+# Process optional parameters first
+#
+
+for param in "$@"
+do
+	if [[ "${1}" == "-model" ]] ; then
+		echo Given model directory: $2
+		MODELS_SUFFIX+="-model $2 "
+		shift
+		shift
+	elif  [[ "${1}" == "-source" ]] ; then
+		echo Given source directory: `readlink -fn $2`
+		SOURCE_DIRECTORY_SUFFIX="-source `readlink -fn $2`"
+		shift
+		shift
+	else
+		break
+	fi
+done
+
+#
+# Check for mandatory parameters
+#
+
 if [[ $# -ne 2 ]] ; then
 	echo "Usage: ${0} Trace InstanceSeparator/SemanticSeparator"
 	echo "            Trace            : Paraver trace-file"
@@ -42,14 +67,21 @@ BASENAME_PRV="${1%.*}"
 mkdir -p ${BASENAME_PRV}
 cd ${BASENAME_PRV}
 
-${FOLDING_HOME}/bin/codeblocks "../${BASENAME_PRV}.prv"
+${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} "../${BASENAME_PRV}.prv"
 ${FOLDING_HOME}/bin/fuse "${BASENAME_PRV}.codeblocks.prv"
 if [[ x${BASENAME_CSV} = x ]] ; then
 	${FOLDING_HOME}/bin/extract -separator ${2} "${BASENAME_PRV}.codeblocks.fused.prv"
 else
 	${FOLDING_HOME}/bin/extract -semantic "${BASENAME_CSV}.csv" "${BASENAME_PRV}.codeblocks.fused.prv"
 fi
-${FOLDING_HOME}/bin/interpolate -max-samples-distance 2000 -sigma-times 1.5 -feed-first-occurrence 1.1.1 ${EXTRA_INTERPOLATE_FLAGS} "${BASENAME_PRV}.codeblocks.fused.extract"
+${FOLDING_HOME}/bin/interpolate \
+ -max-samples-distance 2000 \
+ -sigma-times 1.5 \
+ -feed-first-occurrence any \
+ ${EXTRA_INTERPOLATE_FLAGS} \
+ ${MODELS_SUFFIX} \
+ ${SOURCE_DIRECTORY_SUFFIX} \
+ "${BASENAME_PRV}.codeblocks.fused.extract"
 
 cd ..
 

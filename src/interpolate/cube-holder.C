@@ -22,6 +22,7 @@
 \*****************************************************************************/
 
 #include "common.H"
+#include "pcf-common.H"
 
 #include "cube-holder.H"
 #include "interpolation-results.H"
@@ -188,8 +189,8 @@ void CubeHolder::dumpLaunch (InstanceContainer &ic, ObjectSelection *os,
 			/* Get the general tree for this group */
 			Cnode *tree = ig->getGeneralCubeTree();
 
-			string gname = prefix + "." + common::removeUnwantedChars(RegionName) + "." + 
-			  os->toString (false, "any") + "." + common::removeSpaces (groupName);
+			string gname = prefix + "." + os->toString (false, "any") + "." +
+			  common::removeUnwantedChars(RegionName) + "." + common::removeSpaces (groupName);
 
 			unsigned cnodeid = c.get_cnode_id (tree);
 
@@ -262,7 +263,7 @@ void CubeHolder::EmitMetricFileLine (string &dir, string &file, string &region,
 void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 	set<string> counters)
 {
-	string region = ig->getRegion();
+	string region = ig->getRegionName();
 	map<string, InterpolationResults*> iresults = ig->getInterpolated();
 	vector< map< unsigned, CodeRefTripletAccounting* > > aXline = ig->getAccountingPerLine();
 	vector<double> bpts = ig->getInterpolationBreakpoints();
@@ -318,7 +319,7 @@ void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 			string filename;
 			string routine;
 			unsigned fline, bline, eline;
-			common::lookForCallerFullInfo (pcf, crt.getCaller(), crt.getCallerLine(),
+			pcfcommon::lookForCallerFullInfo (pcf, crt.getCaller(), crt.getCallerLine(),
 			  crt.getCallerLineAST(), routine, filename, fline, bline, eline);
 
 			map<unsigned, unsigned> CountsPerPhase = totalCountsPerPhase[crt.getCallerLineAST()];

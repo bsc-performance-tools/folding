@@ -243,19 +243,17 @@ void InstanceGroup::dumpInterpolatedData (ObjectSelection *os,
 			assert (ir->getCount() == nsteps);
 
 			string counter = (*it).first;
-			double *data_i = ir->getInterpolationResultsPtr();
-			double *data_s = ir->getSlopeResultsPtr();
 			for (unsigned u = 0; u < nsteps; u++)
 			{
 				double d_j = (double) u;
 				int_data << regionName << ";" << numGroup << ";" << counter << 
-				  ";" << d_j / d_steps << ";" << data_i[u] << endl;
+				  ";" << d_j / d_steps << ";" << ir->getInterpolationAt(u) << endl;
 			}
 			for (unsigned u = 1; u < nsteps; u++)
 			{
 				double d_j = (double) u;
 				sl_data << regionName << ";" << numGroup << ";" << counter <<
-				  ";" << d_j / d_steps << ";" << data_s[u] << endl;
+				  ";" << d_j / d_steps << ";" << ir->getSlopeAt(u) << endl;
 			}
 		}
 
@@ -350,9 +348,12 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 					  << s->getNTime() << ";" << counter << ";"
 					  << s->getNCounterValue(counter) << endl;
 				if (s->hasAddressReference())
+				{
 					odata << "a" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << s->getAddressReference() << ";"
-					  << s->getAddressReference_Mem_Level() << endl;
+					  << s->getAddressReference_Mem_Level() << ";"
+					  << s->getAddressReference_Cycles_Cost() << endl;
+				}
 				if (s->hasCodeRefTripletSize())
 				{
 					map<unsigned, CodeRefTriplet> callers = s->getCodeTriplets();
@@ -375,9 +376,12 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 					  << s->getNTime() << ";" << counter << ";"
 					  << s->getNCounterValue(counter) << endl;
 				if (s->hasAddressReference())
+				{
 					odata << "a" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << s->getAddressReference() << ";"
-					  << s->getAddressReference_Mem_Level() << endl;
+					  << s->getAddressReference_Mem_Level() << ";"
+					  << s->getAddressReference_Cycles_Cost() << endl;
+				}
 				if (s->hasCodeRefTripletSize())
 				{
 					map<unsigned, CodeRefTriplet> callers = s->getCodeTriplets();
@@ -451,7 +455,12 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	if (hasAddresses())
 	{
 		string name_addresses = gnuplotGenerator::gnuplot_addresses (this, os,
-		  prefix, TimeUnit, getMinimumAddress(), getMaximumAddress(), variables);
+		  prefix, TimeUnit, variables);
+		if (name_addresses.length() > 0)
+			cout << "Summary plot for region " << regionName << " ("
+			  << name_addresses << ")" << endl;
+		name_addresses = gnuplotGenerator::gnuplot_addresses_cost (this, os,
+		  prefix, TimeUnit, variables);
 		if (name_addresses.length() > 0)
 			cout << "Summary plot for region " << regionName << " ("
 			  << name_addresses << ")" << endl;
@@ -522,52 +531,4 @@ bool InstanceGroup::hasAddresses (void) const
 		if ((*s)->hasAddressReference())
 			return true;
 	return false;
-}
-
-unsigned long long InstanceGroup::getMinimumAddress (void) const
-{
-	bool anyaddress = false;
-	unsigned long long minaddress;
-	set<Sample*>::iterator s;
-	for (s = allsamples.begin(); s != allsamples.end(); s++)
-	{
-		if (!anyaddress)
-		{
-			if ((*s)->hasAddressReference())
-			{
-				minaddress = (*s)->getAddressReference();
-				anyaddress = true;
-			}
-		}
-		else
-		{
-			if ((*s)->hasAddressReference())
-				minaddress = MIN(minaddress, (*s)->getAddressReference());
-		}
-	}
-	return minaddress;
-}
-
-unsigned long long InstanceGroup::getMaximumAddress (void) const
-{
-	bool anyaddress = false;
-	unsigned long long maxaddress;
-	set<Sample*>::iterator s;
-	for (s = allsamples.begin(); s != allsamples.end(); s++)
-	{
-		if (!anyaddress)
-		{
-			if ((*s)->hasAddressReference())
-			{
-				maxaddress = (*s)->getAddressReference();
-				anyaddress = true;
-			}
-		}
-		else
-		{
-			if ((*s)->hasAddressReference())
-				maxaddress = MAX(maxaddress, (*s)->getAddressReference());
-		}
-	}
-	return maxaddress;
 }

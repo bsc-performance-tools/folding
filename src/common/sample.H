@@ -53,6 +53,7 @@ class Sample
 	const unsigned long long AddressReference; /* which address? */
 	const unsigned AddressReference_Mem_Level; /* where was it found in mem hierarchy ? */
 	const unsigned AddressReference_TLB_Level; /* where was it found in tlb hierarchy ? */
+	const unsigned AddressReference_Cycles_Cost; /* how many cycles to resolve this reference */
 	public:
 
 	/* sTime = sample time within the full exec, iTime time since instance */
@@ -64,7 +65,7 @@ class Sample
 	  map<string, unsigned long long> & icountervalue,
 	  map<unsigned, CodeRefTriplet> & codetriplet,
 	  unsigned long long address, unsigned ar_mem_level,
-	  unsigned ar_tlb_level);
+	  unsigned ar_tlb_level, unsigned cycles_cost);
 
 	~Sample (void);
 
@@ -97,12 +98,16 @@ class Sample
 
 	bool hasAddressReference(void) const
 	  { return bhasAddressReference; }
+	bool hasAddressReferenceInStack(void) const
+	  { return AddressReference >= 0x80000000; }
 	unsigned long long getAddressReference(void) const
 	  { return AddressReference; }
 	unsigned getAddressReference_Mem_Level(void) const
 	  { return AddressReference_Mem_Level; }
 	unsigned getAddressReference_TLB_Level(void) const
 	  { return AddressReference_TLB_Level; }
+	unsigned getAddressReference_Cycles_Cost(void) const
+	  { return AddressReference_Cycles_Cost; }
 };
 
 #endif

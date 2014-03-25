@@ -252,7 +252,7 @@ void FoldedParaverTrace::DumpInterpolationData (const ObjectSelection *o,
 		for (it = ir.begin(); it != ir.end(); it++)
 		{
 			InterpolationResults *irr = (*it).second;
-			double *hwc_values = irr->getSlopeResultsPtr();
+			double *hwc_values = irr->getInterpolationResultsPtr();
 			values.push_back (hwc_values[u]);
 			types.push_back (FOLDED_BASE + counterCodes[(*it).first]);
 		}
