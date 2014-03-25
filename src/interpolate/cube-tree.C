@@ -22,6 +22,7 @@
 \*****************************************************************************/
 
 #include "common.H"
+#include "pcf-common.H"
 
 #include "cube-tree.H"
 #include "cube-holder.H"
@@ -46,7 +47,7 @@ void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree,
 		bline = eline = 0;
 	}
 	else
-		common::lookForCallerASTInfo (pcf, crt.getCaller(), crt.getCallerLineAST(),
+		pcfcommon::lookForCallerASTInfo (pcf, crt.getCaller(), crt.getCallerLineAST(),
 			routine, file, bline, eline);
 
 	/* Create a node for this routine */

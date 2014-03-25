@@ -158,8 +158,6 @@ class InstanceGroup
 	  { return accountsPerLine; }
 	
 	bool hasAddresses (void) const;
-	unsigned long long getMaximumAddress (void) const;
-	unsigned long long getMinimumAddress (void) const;
 };
 
 #endif

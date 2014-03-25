@@ -35,8 +35,12 @@ class gnuplotGenerator
 	  const ObjectSelection *os,
 	  const string & prefix,
 	  const string & TimeUnit,
-	  unsigned long long minaddress,
-	  unsigned long long maxaddress,
+	  vector<VariableInfo*> & variables);
+	static string gnuplot_addresses_cost (
+	  InstanceGroup *ig,
+	  const ObjectSelection *os,
+	  const string & prefix,
+	  const string & TimeUnit,
 	  vector<VariableInfo*> & variables);
 	static string gnuplot_callers (
 	  InstanceGroup *ig,

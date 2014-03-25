@@ -219,6 +219,8 @@ class AddressReference
 	bool has_reference_mem_level;
 	unsigned reference_tlb_level;
 	bool has_reference_tlb_level;
+	unsigned core_cycles;
+	bool has_core_cycles;
 
 	public:
 	AddressReference ()
@@ -229,6 +231,8 @@ class AddressReference
 	  { reference_mem_level = MemLevel; has_reference_mem_level = true; }
 	void setReferenceTLBLevel (unsigned TLBLevel)
 	  { reference_tlb_level = TLBLevel; has_reference_tlb_level = true; }
+	void setReferenceCoreCycles (unsigned cycles)
+	  { core_cycles = cycles; has_core_cycles = true; }
 	bool isCompleted (void) const
 	  { return has_address && has_reference_mem_level && has_reference_tlb_level; }
 	unsigned long long getAddress (void) const
@@ -237,6 +241,8 @@ class AddressReference
 	  { return reference_mem_level; }
 	unsigned getReferenceTLBLevel (void) const
 	  { return reference_tlb_level; }
+	unsigned setReferenceCoreCycles (void) const
+	  { return core_cycles; }
 };
 
 class Process : public ParaverTrace
@@ -412,6 +418,8 @@ void Process::processAddressReference (const struct event_t &evt,
 		ar.setReferenceMemLevel (evt.Value);
 	else if (evt.Type == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL)
 		ar.setReferenceTLBLevel (evt.Value);
+	else if (evt.Type == EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES)
+		ar.setReferenceCoreCycles (evt.Value);
 }
 
 void Process::processCaller (const struct event_t &evt, unsigned base,
@@ -517,7 +525,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 			}
 			if ((*it).Type == EXTRAE_SAMPLE_ADDRESS || 
 			    (*it).Type == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL || 
-			    (*it).Type == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL )
+			    (*it).Type == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL ||
+			    (*it).Type == EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES )
 			{
 				processAddressReference (*it, AR);
 				storeSample = true;
@@ -598,7 +607,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 		if (AR.isCompleted())
 			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].getStartRegion(),
 			  CV, CodeRefs, AR.getAddress(), AR.getReferenceMemLevel(),
-			  AR.getReferenceTLBLevel());
+			  AR.getReferenceTLBLevel(), AR.setReferenceCoreCycles());
 		else
 			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].getStartRegion(),
 			  CV, CodeRefs);

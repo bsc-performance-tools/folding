@@ -139,14 +139,14 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 		gplot << endl;
 		gplot << fixed << setprecision(8);
 		for (unsigned u = 1; u < brks.size()-1; u++) /* Skip 0 and 1 */
-			gplot << "set arrow from graph "
+			gplot << "set arrow from graph FACTOR*"
 			  << brks[u] << ",0 to graph " << brks[u]
 			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front;" << endl;
 
 		for (unsigned u = 1; u < brks.size(); u++)
 		{
 			double half = brks[u-1] + (brks[u]-brks[u-1])/2;
-			gplot << "set label \"Phase " << u << "\" at graph " << half 
+			gplot << "set label \"Phase " << u << "\" at graph FACTOR*" << half 
 			  << ",0.95 rotate by -90 front textcolor rgb '#808080';" << endl;
 		}
 		gplot << fixed << setprecision(2);
@@ -279,7 +279,7 @@ string gnuplotGenerator::gnuplot_slopes (InstanceGroup *ig,
 	  "set ytics mirror;" << endl;
 
 	gplot << "set title \"" << os->toString (true) << " - " << groupName 
-	  <<  " - " << regionName << endl;
+	  <<  " - " << regionName << "\"" << endl;
 
 	/* If the instance-group has more than the regular 0..1 breakpoints,
 	   add this into the plot */
@@ -290,14 +290,14 @@ string gnuplotGenerator::gnuplot_slopes (InstanceGroup *ig,
 		gplot << endl;
 		gplot << fixed << setprecision(8);
 		for (unsigned u = 1; u < brks.size()-1; u++) /* Skip 0 and 1 */
-			gplot << "set arrow from graph "
+			gplot << "set arrow from graph FACTOR*"
 			  << brks[u] << ",0 to graph " << brks[u]
 			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front;" << endl;
 
 		for (unsigned u = 1; u < brks.size(); u++)
 		{
 			double half = brks[u-1] + (brks[u]-brks[u-1])/2;
-			gplot << "set label \"Phase " << u << "\" at graph " << half 
+			gplot << "set label \"Phase " << u << "\" at graph FACTOR*" << half 
 			  << ",0.95 rotate by -90 front textcolor rgb '#808080';" << endl;
 		}
 		gplot << fixed << setprecision(2);
@@ -441,7 +441,7 @@ string gnuplotGenerator::gnuplot_model (InstanceGroup *ig,
 
 	gplot << "set title \"Evolution for " << m->getTitleName() << " model\\n"
 	  << os->toString (true) << " - " << groupName <<  " - " << regionName
-	  << endl;
+	  << "\"" << endl;
 
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
@@ -457,14 +457,14 @@ string gnuplotGenerator::gnuplot_model (InstanceGroup *ig,
 		gplot << endl;
 		gplot << fixed << setprecision(8);
 		for (unsigned u = 1; u < brks.size()-1; u++) /* Skip 0 and 1 */
-			gplot << "set arrow from graph "
+			gplot << "set arrow from graph FACTOR*"
 			  << brks[u] << ",0 to graph " << brks[u]
 			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front;" << endl;
 
 		for (unsigned u = 1; u < brks.size(); u++)
 		{
 			double half = brks[u-1] + (brks[u]-brks[u-1])/2;
-			gplot << "set label \"Phase " << u << "\" at graph " << half 
+			gplot << "set label \"Phase " << u << "\" at graph FACTOR*" << half 
 			  << ",0.95 rotate by -90 front textcolor rgb '#808080';" << endl;
 		}
 		gplot << fixed << setprecision(2);
@@ -519,12 +519,271 @@ string gnuplotGenerator::gnuplot_model (InstanceGroup *ig,
 	return gname;
 }
 
+string gnuplotGenerator::gnuplot_addresses_cost (InstanceGroup *ig,
+	const ObjectSelection *os,
+	const string & prefix,
+	const string & TimeUnit,
+	vector<VariableInfo*> & variables)
+{
+	string regionName = ig->getRegionName();
+	string groupName = ig->getGroupName();
+	unsigned numGroup = ig->getNumGroup();
+	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
+	string fdname = prefix + "." + os->toString(false, "any") 
+	  + ".dump.csv";
+	string gname = prefix + "." + os->toString (false, "any") + "." +
+	  common::removeUnwantedChars(regionName) + "." + 
+	  common::removeSpaces (groupName);
+	gname += ".addresses_cost.gnuplot";
+
+	ofstream gplot (gname.c_str());
+
+	if (!gplot.is_open())
+	{
+		cerr << "Failed to create " << gname << endl;
+		return "";
+	}
+
+	double m = ig->mean();
+
+	/** FIRST PROCESS REFERENCES IN STACK! **/
+
+	/* Consider variables for min & max addresses in the plot */
+	unsigned long long minaddress = 0, maxaddress = 0, maxcycles = 0;
+	bool hassomeaddress = false;
+	set<Sample*> samples = ig->getAllSamples();
+	set<Sample*>::iterator s;
+	for (s = samples.begin(); s != samples.end(); s++)
+		if ((*s)->hasAddressReference() && (*s)->hasAddressReferenceInStack())
+		{
+			if (hassomeaddress)
+			{
+				minaddress = MIN(minaddress, (*s)->getAddressReference());
+				maxaddress = MAX(maxaddress, (*s)->getAddressReference());
+				maxcycles  = MAX(maxcycles,  (*s)->getAddressReference_Cycles_Cost());
+			}
+			else
+			{
+				maxaddress = minaddress = (*s)->getAddressReference();
+				hassomeaddress = true;
+			}
+		}
+
+	unsigned numhexdigits_maxaddress =
+	  common::numHexadecimalDigits(maxaddress);
+
+	/* Generate the pre-info */
+	gplot << fixed << setprecision(2) <<
+	  "X_LIMIT=" << m / 1000000 << " # Do not touch this" << endl <<
+	  "FACTOR=1" << " # Do not touch this" << endl << endl;
+
+	/* Generate the header, constant part of the plot */
+	gplot << fixed << setprecision(2) <<
+	  "# set term postscript eps solid color;" << endl <<
+	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term png size 800,600;" << endl <<
+	  "# set term x11 size 800,600;" << endl <<
+	  endl <<
+	  "set multiplot layout 2,1" << endl << 
+	  "set datafile separator \";\";" << endl <<
+	  "set key bottom outside center horizontal samplen 1;" << endl <<
+	  "set x2range [0:1];" << endl <<
+	  "set yrange [0:*];" << endl <<
+	  "set xtics nomirror format \"%.02f\";" << endl <<
+	  "set x2tics nomirror format \"%.02f\";" << endl <<
+	  "set xlabel 'Time (in ms)';" << endl <<
+	  "set ylabel 'Performance counter rate (in Mevents/s)';" << endl <<
+	  "set ytics nomirror;" << endl <<
+	  "set y2label 'Addresses referenced';" << endl;
+
+	gplot << "set title \"" << os->toString (true) << " - " << groupName 
+	  <<  " - " << regionName << "\"" <<endl;
+
+	gplot << "set xtics ( 0.0 ";
+	for (int i = 1; i <= 5; i++)
+		gplot << ", " << i << "./5.*X_LIMIT";
+	gplot << ");" << endl
+	  << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
+
+	gplot << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' (" << minaddress;
+	for (int i = 1; i <= 5; i++)
+		gplot << ", " << minaddress+i*((maxaddress-minaddress)/5);
+	gplot << ");" << endl
+	  << "set y2range [" << minaddress << ":" << maxaddress << "];" << endl;
+
+	/* If the instance-group has more than the regular 0..1 breakpoints,
+	   add this into the plot */
+	vector<double> brks = ig->getInterpolationBreakpoints ();
+	if (brks.size () > 2)
+	{
+		gplot << endl;
+		gplot << fixed << setprecision(8);
+		for (unsigned u = 1; u < brks.size()-1; u++) /* Skip 0 and 1 */
+			gplot << "set arrow from graph FACTOR*"
+			  << brks[u] << ",0 to graph " << brks[u]
+			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front;" << endl;
+
+		for (unsigned u = 1; u < brks.size(); u++)
+		{
+			double half = brks[u-1] + (brks[u]-brks[u-1])/2;
+			gplot << "set label \"Phase " << u << "\" at graph FACTOR*" << half 
+			  << ",0.95 rotate by -90 front textcolor rgb '#808080';" << endl;
+		}
+		gplot << fixed << setprecision(2);
+	}
+	else
+		gplot << endl << "# Unneeded phases separators, nb. breakpoints = " << brks.size() << endl;
+
+	/* Generate functions to filter the .csv */
+	map<string, InterpolationResults*>::iterator it;
+	map<string, InterpolationResults*> interpolated = ig->getInterpolated ();
+	for (it = interpolated.begin(); it != interpolated.end(); it++)
+		if ((*it).second->isSlopeCalculated())
+		{
+			string counter_gnuplot = (*it).first;
+			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
+				if (counter_gnuplot[u] == ':')
+					counter_gnuplot[u] = '_';
+
+			gplot << "slope_" << counter_gnuplot << "(ret,c,r,g) = (c eq '" << (*it).first
+			  << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl;
+		}
+
+	gplot << endl << "MAX_COST_GRADIENT = " << maxcycles << ";" << endl <<
+	  "address_COST_GRADIENT(x) = (int(((MAX_COST_GRADIENT-x)/MAX_COST_GRADIENT)*65535)&0xff00) + (x/MAX_COST_GRADIENT)*255;" << endl;
+	gplot << "address_COST_CYCLES(ret,r,g,t) = (r eq '" << regionName <<
+	  "' && g == " << numGroup << " && t eq 'a') ? ret : NaN;" << endl << endl;
+
+	/* Generate the plot command */
+	unsigned count = 0;
+	for (it = interpolated.begin(); it != interpolated.end(); it++)
+	{
+		if ((*it).second->isSlopeCalculated())
+		{
+			if (count == 0)
+				gplot << "plot \\" << endl;
+			else
+				gplot << ",\\" << endl;
+
+			string counter_gnuplot = (*it).first;
+			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
+				if (counter_gnuplot[u] == ':')
+					counter_gnuplot[u] = '_';
+
+			if (common::isMIPS((*it).first))
+				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y1 w lines lw 3";
+			else
+				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
+				      << "' axes x2y1 w lines lw 3";
+
+			count++;
+		}
+	}
+	gplot << ",\\" << endl << 
+	  "'" << fdname << "' u ($4*FACTOR):(address_COST_CYCLES($5, strcol(2), $3, strcol(1))):(address_COST_GRADIENT($7)) ti 'Reference cost (max="
+	  << maxcycles << "cycles)' axes x2y2 lc rgb variable;" << endl;
+
+	/** SECOND PROCESS REFERENCES OUT OF STACK! **/
+
+	hassomeaddress = false;
+	for (s = samples.begin(); s != samples.end(); s++)
+		if ((*s)->hasAddressReference() && !(*s)->hasAddressReferenceInStack())
+		{
+			if (hassomeaddress)
+			{
+				minaddress = MIN(minaddress, (*s)->getAddressReference());
+				maxaddress = MAX(maxaddress, (*s)->getAddressReference());
+				maxcycles  = MAX(maxcycles,  (*s)->getAddressReference_Cycles_Cost());
+			}
+			else
+			{
+				maxaddress = minaddress = (*s)->getAddressReference();
+				hassomeaddress = true;
+			}
+		}
+	vector<VariableInfo*>::iterator v;
+	for (v = variables.begin(); v != variables.end(); v++)
+	{
+		minaddress = MIN(minaddress, (*v)->getStartAddress());
+		maxaddress = MAX(maxaddress, (*v)->getEndAddress());
+	}
+
+	gplot << endl << endl
+	  << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' (" << minaddress;
+	for (int i = 1; i <= 5; i++)
+		gplot << ", " << minaddress+i*((maxaddress-minaddress)/5);
+	gplot << ");" << endl
+	  << "set y2range [" << minaddress << ":" << maxaddress << "];" << endl << endl;
+
+	vector<string> colors;
+	colors.push_back ("#c00000");
+	colors.push_back ("#00c000");
+	colors.push_back ("#0000c0");
+	colors.push_back ("#c0c000");
+	colors.push_back ("#c000c0");
+	colors.push_back ("#00c0c0");
+	colors.push_back ("#c0c0c0");
+	colors.push_back ("#000000");
+	unsigned vv;
+	for (vv = 0, v = variables.begin(); v != variables.end(); v++, vv++)
+	{
+		gplot << 
+		  "set object rect from second 0, second " << (*v)->getStartAddress() <<
+		  " to second 1, second " << (*v)->getEndAddress() << " fc rgb '" <<
+		  colors[vv%(colors.size())] << "' fs solid 0.25;" << endl <<
+		  "set label at second 0.975, second " <<
+		  (*v)->getStartAddress() + (*v)->getSize()/2 << " '" << (*v)->getName() <<
+		  "' front center;" << endl;
+	}
+	gplot << endl;
+
+	/* Generate the plot command */
+	count = 0;
+	for (it = interpolated.begin(); it != interpolated.end(); it++)
+	{
+		if ((*it).second->isSlopeCalculated())
+		{
+			if (count == 0)
+				gplot << "plot \\" << endl;
+			else
+				gplot << ",\\" << endl;
+
+			string counter_gnuplot = (*it).first;
+			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
+				if (counter_gnuplot[u] == ':')
+					counter_gnuplot[u] = '_';
+
+			if (common::isMIPS((*it).first))
+				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y1 w lines lw 3";
+			else
+				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
+				      << "' axes x2y1 w lines lw 3";
+
+			count++;
+		}
+	}
+	gplot << ",\\" << endl << 
+	  "'" << fdname << "' u ($4*FACTOR):(address_COST_CYCLES($5, strcol(2), $3, strcol(1))):(address_COST_GRADIENT($7)) ti 'Reference cost (max="
+	  << maxcycles << "cycles)' axes x2y2 lc rgb variable;" << endl;
+
+	gplot << endl
+	  << "unset label;" << endl
+	  << "unset arrow;" << endl
+	  << "unset multiplot;" << endl;
+
+	gplot.close();
+
+	return gname;
+}
+
 string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	const ObjectSelection *os,
 	const string & prefix,
 	const string & TimeUnit,
-	unsigned long long minaddress,
-	unsigned long long maxaddress,
 	vector<VariableInfo*> & variables)
 {
 	string regionName = ig->getRegionName();
@@ -548,13 +807,27 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 
 	double m = ig->mean();
 
-	/* Consider variables for min & max addresses in the plot */
-	vector<VariableInfo*>::iterator v;
-	for (v = variables.begin(); v != variables.end(); v++)
-	{
-		minaddress = MIN(minaddress, (*v)->getStartAddress());
-		maxaddress = MAX(maxaddress, (*v)->getEndAddress());
-	}
+	/* PROCESS FIRST REFERENCES TO THE STACK */
+
+	unsigned long long minaddress = 0, maxaddress = 0, maxcycles = 0;
+	bool hassomeaddress = false;
+	set<Sample*> samples = ig->getAllSamples();
+	set<Sample*>::iterator s;
+	for (s = samples.begin(); s != samples.end(); s++)
+		if ((*s)->hasAddressReference() && (*s)->hasAddressReferenceInStack())
+		{
+			if (hassomeaddress)
+			{
+				minaddress = MIN(minaddress, (*s)->getAddressReference());
+				maxaddress = MAX(maxaddress, (*s)->getAddressReference());
+				maxcycles  = MAX(maxcycles,  (*s)->getAddressReference_Cycles_Cost());
+			}
+			else
+			{
+				maxaddress = minaddress = (*s)->getAddressReference();
+				hassomeaddress = true;
+			}
+		}
 
 	unsigned numhexdigits_maxaddress =
 	  common::numHexadecimalDigits(maxaddress);
@@ -569,6 +842,9 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	  "# set term postscript eps solid color;" << endl <<
 	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
 	  "# set term png size 800,600;" << endl <<
+	  "# set term x11 size 800,600;" << endl <<
+	  endl <<
+	  "set multiplot layout 2,1" << endl << 
 	  "set datafile separator \";\";" << endl <<
 	  "set key bottom outside center horizontal samplen 1;" << endl <<
 	  "set x2range [0:1];" << endl <<
@@ -581,7 +857,7 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	  "set y2label 'Addresses referenced';" << endl;
 
 	gplot << "set title \"" << os->toString (true) << " - " << groupName 
-	  <<  " - " << regionName << endl;
+	  <<  " - " << regionName << "\"" << endl;
 
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
@@ -603,14 +879,14 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 		gplot << endl;
 		gplot << fixed << setprecision(8);
 		for (unsigned u = 1; u < brks.size()-1; u++) /* Skip 0 and 1 */
-			gplot << "set arrow from graph "
+			gplot << "set arrow from graph FACTOR*"
 			  << brks[u] << ",0 to graph " << brks[u]
 			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front;" << endl;
 
 		for (unsigned u = 1; u < brks.size(); u++)
 		{
 			double half = brks[u-1] + (brks[u]-brks[u-1])/2;
-			gplot << "set label \"Phase " << u << "\" at graph " << half 
+			gplot << "set label \"Phase " << u << "\" at graph FACTOR*" << half 
 			  << ",0.95 rotate by -90 front textcolor rgb '#808080';" << endl;
 		}
 		gplot << fixed << setprecision(2);
@@ -634,40 +910,19 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 		}
 
 	gplot << "address_L1(ret,w,r,g,t) = (w == 1 && r eq '" << regionName <<
-	  "' && g == 0 && t eq 'a') ? ret : NaN;" << endl;
+	  "' && g == " << numGroup << " && t eq 'a') ? ret : NaN;" << endl;
 	gplot << "address_LFB(ret,w,r,g,t) = (w == 2 && r eq '" << regionName <<
-	  "' && g == 0 && t eq 'a') ? ret : NaN;" << endl;
+	  "' && g == " << numGroup << " && t eq 'a') ? ret : NaN;" << endl;
 	gplot << "address_L2(ret,w,r,g,t) = (w == 3 && r eq '" << regionName <<
-	  "' && g == 0 && t eq 'a') ? ret : NaN;" << endl;
+	  "' && g == " << numGroup << " && t eq 'a') ? ret : NaN;" << endl;
 	gplot << "address_L3(ret,w,r,g,t) = (w == 4 && r eq '" << regionName <<
-	  "' && g == 0 && t eq 'a') ? ret : NaN;" << endl;
+	  "' && g == " << numGroup << " && t eq 'a') ? ret : NaN;" << endl;
 	gplot << "address_RCACHE(ret,w,r,g,t) = (w == 5 && r eq '" << regionName <<
-	  "' && g == 0 && t eq 'a') ? ret : NaN;" << endl;
+	  "' && g == " << numGroup << " && t eq 'a') ? ret : NaN;" << endl;
 	gplot << "address_DRAM(ret,w,r,g,t) = (w == 6 && r eq '" << regionName <<
-	  "' && g == 0 && t eq 'a') ? ret : NaN;" << endl;
+	  "' && g == " << numGroup << " && t eq 'a') ? ret : NaN;" << endl;
 	gplot << "address_OTHER(ret,w,r,g,t) = (w == 0 && r eq '" << regionName <<
-	  "' && g == 0 && t eq 'a') ? ret : NaN;" << endl << endl;
-
-	vector<string> colors;
-	colors.push_back ("#c00000");
-	colors.push_back ("#00c000");
-	colors.push_back ("#0000c0");
-	colors.push_back ("#c0c000");
-	colors.push_back ("#c000c0");
-	colors.push_back ("#00c0c0");
-	colors.push_back ("#c0c0c0");
-	colors.push_back ("#000000");
-	unsigned vv;
-	for (vv = 0, v = variables.begin(); v != variables.end(); v++, vv++)
-	{
-		gplot << 
-		  "set object rect from second 0, second " << (*v)->getStartAddress() <<
-		  " to second 1, second " << (*v)->getEndAddress() << " fc rgb '" <<
-		  colors[vv%(colors.size())] << "' fs solid 0.25;" << endl <<
-		  "set label at second 0.975, second " <<
-		  (*v)->getStartAddress() + (*v)->getSize()/2 << " '" << (*v)->getName() <<
-		  "' front center;" << endl << endl;
-	}
+	  "' && g == " << numGroup << " && t eq 'a') ? ret : NaN;" << endl << endl;
 
 	/* Generate the plot command */
 	unsigned count = 0;
@@ -706,9 +961,100 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	  "'" << fdname << "' u ($4*FACTOR):(address_DRAM($5, $6, strcol(2), $3, strcol(1))) ti 'DRAM reference' axes x2y2 w points pt 3,\\" << endl <<
 	  "'" << fdname << "' u ($4*FACTOR):(address_OTHER($5, $6, strcol(2), $3, strcol(1))) ti 'Other reference' axes x2y2 w points pt 3;" << endl;
 
+	gplot << endl << endl;
+
+	/* PROCESS SECOND REFERENCES OUT OF THE STACK */
+
+	hassomeaddress = false;
+	for (s = samples.begin(); s != samples.end(); s++)
+		if ((*s)->hasAddressReference() && !(*s)->hasAddressReferenceInStack())
+		{
+			if (hassomeaddress)
+			{
+				minaddress = MIN(minaddress, (*s)->getAddressReference());
+				maxaddress = MAX(maxaddress, (*s)->getAddressReference());
+				maxcycles  = MAX(maxcycles,  (*s)->getAddressReference_Cycles_Cost());
+			}
+			else
+			{
+				maxaddress = minaddress = (*s)->getAddressReference();
+				hassomeaddress = true;
+			}
+		}
+	vector<VariableInfo*>::iterator v;
+	for (v = variables.begin(); v != variables.end(); v++)
+	{
+		minaddress = MIN(minaddress, (*v)->getStartAddress());
+		maxaddress = MAX(maxaddress, (*v)->getEndAddress());
+	}
+
+	gplot << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' (" << minaddress;
+	for (int i = 1; i <= 5; i++)
+		gplot << ", " << minaddress+i*((maxaddress-minaddress)/5);
+	gplot << ");" << endl
+	  << "set y2range [" << minaddress << ":" << maxaddress << "];" << endl;
+
+	vector<string> colors;
+	colors.push_back ("#c00000");
+	colors.push_back ("#00c000");
+	colors.push_back ("#0000c0");
+	colors.push_back ("#c0c000");
+	colors.push_back ("#c000c0");
+	colors.push_back ("#00c0c0");
+	colors.push_back ("#c0c0c0");
+	colors.push_back ("#000000");
+	unsigned vv;
+	for (vv = 0, v = variables.begin(); v != variables.end(); v++, vv++)
+	{
+		gplot << 
+		  "set object rect from second 0, second " << (*v)->getStartAddress() <<
+		  " to second 1, second " << (*v)->getEndAddress() << " fc rgb '" <<
+		  colors[vv%(colors.size())] << "' fs solid 0.25;" << endl <<
+		  "set label at second 0.975, second " <<
+		  (*v)->getStartAddress() + (*v)->getSize()/2 << " '" << (*v)->getName() <<
+		  "' front center;" << endl << endl;
+	}
+
+	count = 0;
+	for (it = interpolated.begin(); it != interpolated.end(); it++)
+	{
+		if ((*it).second->isSlopeCalculated())
+		{
+			if (count == 0)
+				gplot << "plot \\" << endl;
+			else
+				gplot << ",\\" << endl;
+
+			string counter_gnuplot = (*it).first;
+			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
+				if (counter_gnuplot[u] == ':')
+					counter_gnuplot[u] = '_';
+
+			if (common::isMIPS((*it).first))
+				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y1 w lines lw 3";
+			else
+				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
+					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
+				      << "' axes x2y1 w lines lw 3";
+
+			count++;
+		}
+	}
+
+	gplot << ",\\" << endl << 
+	  "'" << fdname <<"' u ($4*FACTOR):(address_L1($5, $6, strcol(2), $3, strcol(1))) ti 'L1 reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_LFB($5, $6, strcol(2), $3, strcol(1))) ti 'LFB reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_L2($5, $6, strcol(2), $3, strcol(1))) ti 'L2 reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_L3($5, $6, strcol(2), $3, strcol(1))) ti 'L3 reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_RCACHE($5, $6, strcol(2), $3, strcol(1))) ti 'RCache reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_DRAM($5, $6, strcol(2), $3, strcol(1))) ti 'DRAM reference' axes x2y2 w points pt 3,\\" << endl <<
+	  "'" << fdname << "' u ($4*FACTOR):(address_OTHER($5, $6, strcol(2), $3, strcol(1))) ti 'Other reference' axes x2y2 w points pt 3;" << endl;
+
 	gplot << endl << endl
 	  << "unset label;" << endl
-	  << "unset arrow;" << endl;
+	  << "unset arrow;" << endl
+	  << "unset multiplot;" << endl;
 
 	gplot.close();
 
@@ -759,7 +1105,7 @@ string gnuplotGenerator::gnuplot_callers (InstanceGroup *ig,
 	  "set x2tics nomirror format \"%.02f\";" << endl <<
 	  "set ylabel 'Performance counter rate (in Mevents/s)';" << endl <<
 	  "set ytics nomirror;" << endl <<
-	  "set y2label 'Addresses referenced';" << endl;
+	  "set y2label 'Callers referenced';" << endl;
 
 	if (TimeUnit == common::DefaultTimeUnit)
 		gplot << "set xlabel 'Time (in ms)';" << endl;
@@ -768,10 +1114,10 @@ string gnuplotGenerator::gnuplot_callers (InstanceGroup *ig,
 
 	if (TimeUnit == common::DefaultTimeUnit)
 		gplot << "set title \"" << os->toString (true) << " - " << groupName
-		  << " - " << regionName << "\\nDuration = " << (m/1000000) << "\";" << endl;
+		  << " - " << regionName << "\\nDuration = " << (m/1000000) << "\";" << "\"" << endl;
 	else
 		gplot << "set title \"" << os->toString (true) << " - " << groupName
-		  << " - " << regionName << "\\nDuration = " << (m/1000000) << " Mevents\";" << endl;
+		  << " - " << regionName << "\\nDuration = " << (m/1000000) << " Mevents\";" << "\"" << endl;
 
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
@@ -789,14 +1135,14 @@ string gnuplotGenerator::gnuplot_callers (InstanceGroup *ig,
 		gplot << endl;
 		gplot << fixed << setprecision(8);
 		for (unsigned u = 1; u < brks.size()-1; u++) /* Skip 0 and 1 */
-			gplot << "set arrow from graph "
+			gplot << "set arrow from graph FACTOR*"
 			  << brks[u] << ",0 to graph " << brks[u]
 			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front;" << endl;
 
 		for (unsigned u = 1; u < brks.size(); u++)
 		{
 			double half = brks[u-1] + (brks[u]-brks[u-1])/2;
-			gplot << "set label \"Phase " << u << "\" at graph " << half 
+			gplot << "set label \"Phase " << u << "\" at graph FACTOR*" << half 
 			  << ",0.95 rotate by -90 front textcolor rgb '#808080';" << endl;
 		}
 		gplot << fixed << setprecision(2);
@@ -820,7 +1166,7 @@ string gnuplotGenerator::gnuplot_callers (InstanceGroup *ig,
 		}
 
 	gplot << "caller(ret,r,g,t) = (r eq '" << regionName <<
-	  "' && g == 0 && t eq 'c') ? ret : NaN;" << endl;
+	  "' && g == " << numGroup << " && t eq 'c') ? ret : NaN;" << endl;
 
 	/* Generate the plot command */
 	unsigned count = 0;
@@ -900,7 +1246,7 @@ void gnuplotGenerator::gnuplot_groups (InstanceContainer *ic,
 	  "set xlabel \"Time (ms)\";" << endl <<
 	  "set title \"Instance groups for " << os->toString(true) << " - Region " << 
 	  regionName << "\\n" << ic->numInstances() << " Instances - " << is->details() <<
-	  endl;
+	   "\"" << endl;
 
 #define MAXLINECOLOR 6
 	gplot << endl
@@ -953,5 +1299,4 @@ void gnuplotGenerator::gnuplot_groups (InstanceContainer *ic,
 
 	gplot.close();
 }
-
 

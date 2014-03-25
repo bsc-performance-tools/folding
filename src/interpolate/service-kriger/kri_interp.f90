@@ -130,7 +130,7 @@ do i=1,nkrig_kri
 
 	!Reorder rhsii about order vector
 	do k=1,naugm
-		rhsio(k,1)=rhsii(order_kri(k,1),1)
+		rhsio(k,1)=rhsii(int(order_kri(k,1)),1)
 	end do 
 
 

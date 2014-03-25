@@ -74,3 +74,16 @@ double InterpolationResults::getSlopeAt (double pos) const
 	return getSlopeAt (index);
 }
 
+double InterpolationResults::getInterpolationAt (unsigned pos) const
+{
+	assert (pos >= 0 && pos < count);
+	return interpolation[pos];
+}
+
+double InterpolationResults::getInterpolationAt (double pos) const
+{
+	assert (pos >= 0 && pos <= 1.0f);
+	unsigned index = ((unsigned) (pos * count));
+	return getInterpolationAt (index);
+}
+

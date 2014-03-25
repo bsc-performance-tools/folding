@@ -209,13 +209,14 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 				unsigned total = ig->numInstances();
 				if (total > 0)
 				{
-					/* Count & Remove while traversing */
+					/* Count & Remove excluded instances while traversing them */
 					unsigned within = 0;
 					vector<Instance*> vinstances = ig->getInstances();
 					vector<Instance*>::iterator iter = vinstances.begin();
 					while (iter != vinstances.end())
 					{
-						if ((*iter)->getDuration() >= lolimit && (*iter)->getDuration() <= uplimit )
+						if ((*iter)->getDuration() >= lolimit &&
+						    (*iter)->getDuration() <= uplimit )
 						{
 							within++;
 							iter++;
@@ -380,8 +381,8 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-use-median" << endl
 		     << "-use-mean" << endl
 		     << "-sigma-times X           [where X = 2.0 by default]" << endl
-		     << "-feed-time TIME1 TIME2 PTASK.TASK.THREAD" << endl
-		     << "-feed-first-occurrence PTASK.TASK.THREAD" << endl
+		     << "-feed-time TIME1 TIME2 PTASK.TASK.THREAD/any" << endl
+		     << "-feed-first-occurrence PTASK.TASK.THREAD/any" << endl
 		     << "-max-samples NUM" << endl
 		     << "-max-samples-distance NUM" << endl
 			 << "-model XMLfile" << endl
@@ -640,25 +641,21 @@ int ProcessParameters (int argc, char *argv[])
 
 			i++;
 			string o = argv[i];
-			unsigned ptask, task, thread;
-			if (!common::decomposePtaskTaskThread (o, ptask, task, thread))
+			if (o != "any")
 			{
-				cerr << "Cannot translate " << o << " into Paraver object triplet application.task.thread for -feed-time" << endl;
-				exit (-1);
+				unsigned ptask, task, thread;
+				if (!common::decomposePtaskTaskThread (o, ptask, task, thread))
+				{
+					cerr << "Cannot translate " << o << " into Paraver object triplet application.task.thread for -feed-time" << endl;
+					exit (-1);
+				}
+				objectToFeed = new ObjectSelection (ptask, task, thread);
 			}
-			objectToFeed = new ObjectSelection (ptask, task, thread);
-		}
-		else if (strcmp ("-time-unit", argv[i]) == 0)
-		{
-			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			else
 			{
-				cerr << "Insufficient arguments for -time-unit parameter" << endl;
-				exit (-1);
+				// if "any", create a filter for any ptask/task/thread
+				objectToFeed = new ObjectSelection ();
 			}
-
-			i++;
-			TimeUnit = string (argv[i]);
-			continue;
 		}
 		else if (strcmp ("-feed-first-occurrence", argv[i]) == 0)
 		{
@@ -672,13 +669,33 @@ int ProcessParameters (int argc, char *argv[])
 
 			i++;
 			string o = argv[i];
-			unsigned ptask, task, thread;
-			if (!common::decomposePtaskTaskThread (o, ptask, task, thread))
+			if (o != "any")
 			{
-				cerr << "Cannot translate " << o << " into Paraver object triplet application.task.thread for -feed-time" << endl;
+				unsigned ptask, task, thread;
+				if (!common::decomposePtaskTaskThread (o, ptask, task, thread))
+				{
+					cerr << "Cannot translate " << o << " into Paraver object triplet application.task.thread for -feed-time" << endl;
+					exit (-1);
+				}
+				objectToFeed = new ObjectSelection (ptask, task, thread);
+			}
+			else
+			{
+				// if "any", create a filter for any ptask/task/thread
+				objectToFeed = new ObjectSelection ();
+			}
+		}
+		else if (strcmp ("-time-unit", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -time-unit parameter" << endl;
 				exit (-1);
 			}
-			objectToFeed = new ObjectSelection (ptask, task, thread);
+
+			i++;
+			TimeUnit = string (argv[i]);
+			continue;
 		}
 		else if (strcmp ("-interpolation", argv[i]) == 0)
 		{
@@ -1212,6 +1229,7 @@ int main (int argc, char *argv[])
 			InstanceContainer ic = Instances.at(*it);
 			for (unsigned u = 0; u < ic.numGroups(); u++)
 			{
+				bool found;
 				Callstack *ct = new Callstack;
 				ct->generate (ic.getInstanceGroup(u), found, mainid);
 			}
