@@ -1,6 +1,7 @@
 #!/bin/bash
 
 FOLDING_HOME=
+LD_LIBRARY_PATH=${FOLDING_HOME}/lib
 
 #
 # Process optional parameters first
