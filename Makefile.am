@@ -19,4 +19,9 @@ endif
 	$(MKDIR_P) $(prefix)/cfg
 	cp cfgs/win_folded_caller_types.cfg cfgs/win_folded_types.cfg $(prefix)/cfg
 	cp -fr examples $(prefix)
+if LIBTOOLS_HAS_SHARED_LIBRARIES
+	cp $(LIBTOOLS_LIB_DIR)/libparavertraceconfig.so.0 $(LIBTOOLS_LIB_DIR)/libparavertraceparser.so.0 $(libdir)
+	$(LN_S) -f $(libdir)/libparavertraceconfig.so.0 $(libdir)/libparavertraceconfig.so
+	$(LN_S) -f $(libdir)/libparavertraceparser.so.0 $(libdir)/libparavertraceparser.so
+endif
 
