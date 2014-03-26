@@ -73,13 +73,13 @@ void FoldedParaverTrace::DumpStartingParaverLine (void)
 
 void FoldedParaverTrace::DumpParaverLines (const vector<unsigned long long> &type,
 	const vector<unsigned long long > &value, unsigned long long time,
-	const ObjectSelection *o)
+	const Instance *in)
 {
 	assert (type.size() == value.size());
 
-	unsigned ptask = o->getptask();
-	unsigned task  = o->gettask();
-	unsigned thread = o->getthread();
+	unsigned ptask = in->getptask();
+	unsigned task  = in->gettask();
+	unsigned thread = in->getthread();
 
 	if (type.size() > 0)
 	{
@@ -93,22 +93,20 @@ void FoldedParaverTrace::DumpParaverLines (const vector<unsigned long long> &typ
 }
 
 void FoldedParaverTrace::DumpParaverLine (unsigned long long type,
-	unsigned long long value, unsigned long long time, const ObjectSelection *o)
+	unsigned long long value, unsigned long long time, const Instance *in)
 {
-	unsigned ptask = o->getptask();
-	unsigned task  = o->gettask();
-	unsigned thread = o->getthread();
+	unsigned ptask = in->getptask();
+	unsigned task  = in->gettask();
+	unsigned thread = in->getthread();
 
 	/* 2:14:1:14:1:69916704358:40000003:0 */
 	traceout << "2:" << task << ":" << ptask << ":" << task << ":" << thread
 	  << ":" << time << ":" << type << ":" << value << endl;
 }
 
-void FoldedParaverTrace::DumpCallersInInstance (const ObjectSelection *o,
-	const Instance *in, const InstanceGroup *ig)
+void FoldedParaverTrace::DumpCallersInInstance (const Instance *in,
+	const InstanceGroup *ig)
 {
-	assert (!o->anyany());
-
 	vector<Instance*> vInstances = ig->getInstances();
 	unsigned numInstances = vInstances.size();
 
@@ -139,7 +137,7 @@ void FoldedParaverTrace::DumpCallersInInstance (const ObjectSelection *o,
 				values.push_back ((*it).second.getCallerLine());
 				values.push_back ((*it).second.getCallerLineAST());
 			}
-			DumpParaverLines (types, values, ts, o);
+			DumpParaverLines (types, values, ts, in);
 
 			/* Annotate these types, to emit the corresponding 0s */
 			set_zero_types.insert (types.begin(), types.end());
@@ -152,16 +150,13 @@ void FoldedParaverTrace::DumpCallersInInstance (const ObjectSelection *o,
 	vec_zero_values.assign (vec_zero_types.size(), 0);
 
 	DumpParaverLines (vec_zero_types, vec_zero_values,
-	  in->getStartTime() + in->getDuration(), o);
+	  in->getStartTime() + in->getDuration(), in);
 }
 
 
 void FoldedParaverTrace::DumpReverseMainCallersInInstance (
-	const ObjectSelection *o, const Instance *in, const InstanceGroup *ig,
-	unsigned mainid)
+	const Instance *in, const InstanceGroup *ig, unsigned mainid)
 {
-	assert (!o->anyany());
-
 	vector<Instance*> vInstances = ig->getInstances();
 	unsigned numInstances = vInstances.size();
 
@@ -202,7 +197,7 @@ void FoldedParaverTrace::DumpReverseMainCallersInInstance (
 						it++;
 						depth++;
 					}
-					DumpParaverLines (types, values, ts, o);
+					DumpParaverLines (types, values, ts, in);
 
 					/* Annotate these types, to emit the corresponding 0s */
 					set_zero_types.insert (types.begin(), types.end());
@@ -217,18 +212,16 @@ void FoldedParaverTrace::DumpReverseMainCallersInInstance (
 	vec_zero_values.assign (vec_zero_types.size(), 0);
 
 	DumpParaverLines (vec_zero_types, vec_zero_values,
-	  in->getStartTime() + in->getDuration(), o);
+	  in->getStartTime() + in->getDuration(), in);
 }
 
 
-void FoldedParaverTrace::DumpInterpolationData (const ObjectSelection *o,
-	const Instance *in, const InstanceGroup *ig, map<string,unsigned> counterCodes)
+void FoldedParaverTrace::DumpInterpolationData (const Instance *in,
+	const InstanceGroup *ig, map<string,unsigned> counterCodes)
 {
 	vector<unsigned long long> types, values;
 	vector<unsigned long long> zero_types, zero_values;
 	unsigned steps = 0;
-
-	assert (!o->anyany());
 
 	map<string,InterpolationResults*> ir = ig->getInterpolated();
 	map<string,InterpolationResults*>::iterator it;
@@ -239,7 +232,7 @@ void FoldedParaverTrace::DumpInterpolationData (const ObjectSelection *o,
 	}
 	zero_values.assign (zero_types.size(), 0);
 
-	DumpParaverLines (zero_types, zero_values, in->getStartTime(), o);
+	DumpParaverLines (zero_types, zero_values, in->getStartTime(), in);
 
 	for (unsigned u = 0; u < steps; u++)
 	{
@@ -252,22 +245,21 @@ void FoldedParaverTrace::DumpInterpolationData (const ObjectSelection *o,
 		for (it = ir.begin(); it != ir.end(); it++)
 		{
 			InterpolationResults *irr = (*it).second;
-			double *hwc_values = irr->getInterpolationResultsPtr();
-			values.push_back (hwc_values[u]);
+			double hwc_values = irr->getInterpolationAt(u) * irr->getAvgCounterValue(); 
+			if (u > 0)
+				hwc_values -= irr->getInterpolationAt(u-1) * irr->getAvgCounterValue();
+			values.push_back ((unsigned long long) hwc_values);
 			types.push_back (FOLDED_BASE + counterCodes[(*it).first]);
 		}
-		DumpParaverLines (types, values, ts, o);
+		DumpParaverLines (types, values, ts, in);
 	}
 
-	DumpParaverLines (zero_types, zero_values, in->getStartTime() + in->getDuration(), o);
+	DumpParaverLines (zero_types, zero_values, in->getStartTime() + in->getDuration(), in);
 }
 
 
-void FoldedParaverTrace::DumpGroupInfo (const ObjectSelection *o,
-	const Instance *in)
+void FoldedParaverTrace::DumpGroupInfo (const Instance *in)
 {
-	assert (!o->anyany());
-
 	vector<unsigned long long> types, values, zero_values;
 
 	types.push_back (FOLDED_INSTANCE_GROUP);
@@ -276,16 +268,14 @@ void FoldedParaverTrace::DumpGroupInfo (const ObjectSelection *o,
 	values.push_back (in->getPRVvalue());
 	zero_values.assign (types.size(), 0);
 
-	DumpParaverLines (types, values, in->getStartTime(), o);
-	DumpParaverLines (types, zero_values, in->getStartTime() + in->getDuration(), o);
+	DumpParaverLines (types, values, in->getStartTime(), in);
+	DumpParaverLines (types, zero_values, in->getStartTime() + in->getDuration(), in);
 }
 
-void FoldedParaverTrace::DumpBreakpoints (const ObjectSelection *o,
-	const Instance *in, const InstanceGroup *ig)
+void FoldedParaverTrace::DumpBreakpoints (const Instance *in,
+	const InstanceGroup *ig)
 {
-	assert (!o->anyany());
-
-	DumpParaverLine (FOLDED_PHASE, 1, in->getStartTime(), o);
+	DumpParaverLine (FOLDED_PHASE, 1, in->getStartTime(), in);
 
 	vector<double> breaks = ig->getInterpolationBreakpoints();
 	if (breaks.size() >= 2)
@@ -296,11 +286,11 @@ void FoldedParaverTrace::DumpBreakpoints (const ObjectSelection *o,
 		for (unsigned p = 1; p < breaks.size()-1; p++)
 		{
 			unsigned long long delta = (((double) in->getDuration()) * breaks[p]);
-			DumpParaverLine (FOLDED_PHASE, p+1, in->getStartTime() + delta, o);
+			DumpParaverLine (FOLDED_PHASE, p+1, in->getStartTime() + delta, in);
 		}
 	}
 
-	DumpParaverLine (FOLDED_PHASE, 0, in->getStartTime() + in->getDuration(), o);
+	DumpParaverLine (FOLDED_PHASE, 0, in->getStartTime() + in->getDuration(), in);
 }
 
 } /* namespace libparaver */

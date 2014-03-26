@@ -64,21 +64,21 @@ class FoldedParaverTrace : public ParaverTrace
 	void DumpStartingParaverLine (void);
 	void DumpParaverLines (const vector<unsigned long long> &type,
 		const vector<unsigned long long > &value, unsigned long long time,
-		const ObjectSelection *o);
+		const Instance *in);
 
 	void DumpParaverLine (unsigned long long type,
 		unsigned long long value, unsigned long long time,
-	    const ObjectSelection *o);
+	    const Instance *in);
 
-	void DumpGroupInfo (const ObjectSelection *o, const Instance *in);
-	void DumpCallersInInstance (const ObjectSelection *o, const Instance *in,
+	void DumpGroupInfo (const Instance *in);
+	void DumpCallersInInstance (const Instance *in,
 	  const InstanceGroup *ig);
-	void DumpBreakpoints (const ObjectSelection *o, const Instance *in,
+	void DumpBreakpoints (const Instance *in,
 	  const InstanceGroup *ig);
-	void DumpInterpolationData (const ObjectSelection *o, const Instance *in,
+	void DumpInterpolationData (const Instance *in,
 	  const InstanceGroup *ig, map<string, unsigned> counterCodes);
-	void DumpReverseMainCallersInInstance (const ObjectSelection *o,
-	  const Instance *in, const InstanceGroup *ig, unsigned mainid);
+	void DumpReverseMainCallersInInstance (const Instance *in,
+	  const InstanceGroup *ig, unsigned mainid);
 };
 
 } /* namespace libparaver */

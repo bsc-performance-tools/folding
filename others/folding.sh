@@ -46,19 +46,23 @@ if [[ ${2} =~ ${NUMERICAL_RE} ]]; then
 	echo "Using event type ${2} as instance delimiter"
 	BASENAME_CSV=""
 	if [[ ${2} = 90000001 ]] ; then
-		EXTRA_INTERPOLATE_FLAGS+=" -region-start-with Cluster_"
+		 EXTRA_INTERPOLATE_FLAGS+=" -region-start-with Cluster_"
 	fi
 else
+	BASENAME_CSV=""
 	EXTENSION_CSV="${2##*.}"
 	if [[ "${EXTENSION_CSV}" = "csv" ]] ; then
 		if [[ -r ${2} ]]; then
 			BASENAME_CSV="${2%.*}"
 			echo "Using semantic file ${2} as instance delimiter"
-		else
-			echo "File ${2} does not exist"
 		fi
-	else
-		echo "Invalid extension for a Paraver semantic file"
+	fi
+
+	if [[ "${BASENAME_CSV}" = "" ]] ; then
+		echo "Using event type with name '${2}' as instance delimiter"
+		if [[ "${2}" = "Cluster ID" ]] ; then
+			 EXTRA_INTERPOLATE_FLAGS+=" -region-start-with Cluster_"
+		fi
 	fi
 fi
 
@@ -69,8 +73,8 @@ cd ${BASENAME_PRV}
 
 ${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} "../${BASENAME_PRV}.prv"
 ${FOLDING_HOME}/bin/fuse "${BASENAME_PRV}.codeblocks.prv"
-if [[ x${BASENAME_CSV} = x ]] ; then
-	${FOLDING_HOME}/bin/extract -separator ${2} "${BASENAME_PRV}.codeblocks.fused.prv"
+if [[ "${BASENAME_CSV}" = "" ]] ; then
+	${FOLDING_HOME}/bin/extract -separator "${2}" "${BASENAME_PRV}.codeblocks.fused.prv"
 else
 	${FOLDING_HOME}/bin/extract -semantic "${BASENAME_CSV}.csv" "${BASENAME_PRV}.codeblocks.fused.prv"
 fi
