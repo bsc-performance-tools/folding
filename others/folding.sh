@@ -36,6 +36,11 @@ if [[ $# -ne 2 ]] ; then
 	exit
 fi
 
+if [[ ! -f ${1} ]] ; then
+	echo "Cannot access tracefile ${1}"
+	exit
+fi
+
 EXTENSION_PRV="${1##*.}"
 if [[ "${EXTENSION_PRV}" != "prv" ]] ; then
 	echo "Invalid extension for a Paraver tracefile (file was ${1})"
