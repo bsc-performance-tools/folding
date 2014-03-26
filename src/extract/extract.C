@@ -43,7 +43,8 @@
 #include "folding-writer.H"
 #include "prv-types.H"
 
-unsigned long long RegionSeparator = 0;
+string RegionSeparator;
+unsigned long long RegionSeparatorID = 0;
 string RegionSeparatorName;
 string PRVSemanticCSVName;
 
@@ -280,6 +281,7 @@ class Process : public ParaverTrace
 	public:
 	Process (string prvFile, bool multievents);
 
+	unsigned lookupType (const string &type);
 	string getType (unsigned type, bool &found);
 	string getTypeValue (unsigned type, unsigned value, bool &found);
 	void allocateBuffers (void);
@@ -371,6 +373,20 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 void Process::closeFile (void)
 {
 	IH.outputfile.close();
+}
+
+unsigned Process::lookupType (const string &type)
+{
+	vector<unsigned> vtypes = pcf->getEventTypes();
+	for (unsigned u = 0; u < vtypes.size(); u++)
+	{
+		bool found;
+		string s = getType (vtypes[u], found);
+		if (found)
+			if (type == s)
+				return vtypes[u];
+	}
+	return 0;
 }
 
 unsigned Process::LookupCounter (unsigned long long Counter, bool &found)
@@ -535,10 +551,10 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 		if (Semantics == NULL)
 		{
-			if ((*it).Type == RegionSeparator)
+			if ((*it).Type == RegionSeparatorID)
 			{
 				if (common::DEBUG())
-					cout << "Found separator (" << RegionSeparator << "," << (*it).Value << ") at timestamp " << e.Timestamp << endl;
+					cout << "Found separator (" << RegionSeparatorID << "," << (*it).Value << ") at timestamp " << e.Timestamp << endl;
 
 				FoundSeparator = true;
 				ValueSeparator = (*it).Value;
@@ -639,7 +655,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 			if (Semantics == NULL)
 			{
 				bool RegionFound;
-				RegionName = getTypeValue (RegionSeparator, Region, RegionFound);
+				RegionName = getTypeValue (RegionSeparatorID, Region, RegionFound);
 				if (!RegionFound)
 				{
 					stringstream ss;
@@ -838,12 +854,12 @@ void Process::dumpMissingValuesIntoPCF (void)
 		if (f.is_open())
 		{
 			f << "EVENT_TYPE" << endl
-			  << "0 " << RegionSeparator << " " << RegionSeparatorName << endl
+			  << "0 " << RegionSeparatorID << " " << RegionSeparatorName << endl
 			  << "VALUES" << endl;
 			set<unsigned>::iterator i;
 			for (i = m.begin(); i != m.end(); i++)
 			{
-				cout << "Warning! Adding missing region label for type " << RegionSeparator
+				cout << "Warning! Adding missing region label for type " << RegionSeparatorID
 				  << " value " << *i << " into " << pcffile << endl;
 				stringstream ss;
 				ss << *i;
@@ -875,10 +891,7 @@ int ProcessParameters (int argc, char *argv[])
 		if (strcmp ("-separator",  argv[i]) == 0)
 		{
 			i++;
-			if (atoi (argv[i]) == 0)
-				cerr << "Invalid number of separator" << endl;
-			else 
-				RegionSeparator = atoi(argv[i]);
+			RegionSeparator = argv[i];
 			continue;
 		}
 		else if (strcmp ("-semantic", argv[i]) == 0)
@@ -907,7 +920,7 @@ int main (int argc, char *argv[])
 
 	int res = ProcessParameters (argc, argv);
 
-	if (RegionSeparator == 0 && PRVSemanticCSVName.length() == 0)
+	if (RegionSeparator.length() == 0 && PRVSemanticCSVName.length() == 0)
 	{
 		cerr << "Error! Please, provide a valid separator for -separator parameter or a semantic CSV file through -semantic" << endl;
 		exit (-1);
@@ -927,6 +940,23 @@ int main (int argc, char *argv[])
 	{
 		cerr << "ERROR! Exception launched when processing the file " << tracename << ". Check that it exists and it is a Paraver tracefile..." << endl; 
 		return -1;
+	}
+
+	int n;
+	if ( ( n = atoi(RegionSeparator.c_str()) ) > 0)
+	{
+		/* If we have been given an id, prepare it */
+		RegionSeparatorID = n;
+	}
+	else
+	{
+		/* If we have been given a label, look for it in the PCF */
+		RegionSeparatorID = p->lookupType (RegionSeparator);
+		if (RegionSeparatorID == 0)
+		{
+			cerr << "Error! Type with name '" << RegionSeparator << "' was not found in the tracefile PCF" << endl;
+			exit (-1);
+		}
 	}
 
 	bool found;
@@ -957,16 +987,16 @@ int main (int argc, char *argv[])
 	if (!p->givenSemanticsCSV())
 	{
 		bool RegionSeparatorFound;
-		RegionSeparatorName = p->getType (RegionSeparator, RegionSeparatorFound);
+		RegionSeparatorName = p->getType (RegionSeparatorID, RegionSeparatorFound);
 		if (!RegionSeparatorFound)
 		{
 			stringstream ss;
-			ss << RegionSeparator;
+			ss << RegionSeparatorID;
 			RegionSeparatorName = "Event_" + ss.str();
 		}
 		RegionSeparatorName = common::removeSpaces (RegionSeparatorName);
 
-		cout << "Extracting data for type " << RegionSeparator << " (" << RegionSeparatorName << ")" << endl;
+		cout << "Extracting data for type " << RegionSeparatorID << " (" << RegionSeparatorName << ")" << endl;
 	}
 	else
 		cout << "Extracting data for semantic values" << endl;
@@ -987,7 +1017,7 @@ int main (int argc, char *argv[])
 	string ControlFile = common::basename (tracename.substr (0, tracename.length()-4) + ".control");
 	ofstream cfile (ControlFile.c_str());
 	cfile << tracename << endl;
-	cfile << RegionSeparator << endl;
+	cfile << RegionSeparatorID << endl;
 	cfile << RegionSeparatorName << endl;
 	cfile.close ();
 

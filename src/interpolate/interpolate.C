@@ -242,8 +242,10 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 	}
 	cout << endl;
 
-	/* Ensure that the feedInstances are not excluded either in from grouping
-	   or being excluded due to user request */
+	/* At this point, we receive feedInstances which are filtered according
+	   to the user request. Now that we have excluded some instances, we
+	   have to make sure that feedInstances contain only instances that are
+	   not excluded */
 	vector<Instance*>::iterator fiterator = feedInstances.begin();
 	while (fiterator != feedInstances.end())
 	{
@@ -1181,13 +1183,13 @@ int main (int argc, char *argv[])
 				InstanceContainer ic = Instances.at (i->getRegionName());
 				InstanceGroup *ig = ic.getInstanceGroup(i->getGroup());
 
-				ftrace->DumpGroupInfo (objectToFeed, i);
-				ftrace->DumpInterpolationData (objectToFeed, i, ig, counterCodes);
-				ftrace->DumpCallersInInstance (objectToFeed, i, ig);
+				ftrace->DumpGroupInfo (i);
+				ftrace->DumpInterpolationData (i, ig, counterCodes);
+				ftrace->DumpCallersInInstance (i, ig);
 				if (mainid_found)
 					ftrace->DumpReverseMainCallersInInstance (
-					  objectToFeed, i, ig, mainid);
-				ftrace->DumpBreakpoints (objectToFeed, i, ig);
+					  i, ig, mainid);
+				ftrace->DumpBreakpoints (i, ig);
 			}
 		}
 
