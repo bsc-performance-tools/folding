@@ -476,9 +476,8 @@ void Process::processCounter (const struct event_t &evt,
 
 void Process::processMultiEvent (struct multievent_t &e)
 {
+	bool FoundSeparator = false;
 	unsigned long long ValueSeparator = 0;
-	bool hasValueSeparator_End = false;     // Allow end & start events in the same timestamp
-	bool hasValueSeparator_Start = false;   // Allow end & start events in the same timestamp
 	int ptask = e.ObjectID.ptask - 1;
 	int task = e.ObjectID.task - 1;
 	int thread = e.ObjectID.thread - 1;
@@ -557,14 +556,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 				if (common::DEBUG())
 					cout << "Found separator (" << RegionSeparatorID << "," << (*it).Value << ") at timestamp " << e.Timestamp << endl;
 
-				if ((*it).Value != 0)
-				{
-					hasValueSeparator_Start = true;
-					ValueSeparator = (*it).Value;
-				}
-				else
-					hasValueSeparator_End = true;
-			
+				FoundSeparator = true;
+				ValueSeparator = (*it).Value;
 			}
 		}
 	}
@@ -576,6 +569,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 		{
 			if (vs[sem]->getFrom() == e.Timestamp + TimeOffset)
 			{
+				FoundSeparator = true;
 				string tmp = vs[sem]->getValue().substr (0, vs[sem]->getValue().find("."));
 				ValueSeparator = atoi (tmp.c_str());
 				if (vs[sem]->getValue() != "End")
@@ -591,11 +585,10 @@ void Process::processMultiEvent (struct multievent_t &e)
 					{
 						SemanticIndex.push_back (vs[sem]->getValue());
 						ValueSeparator = SemanticIndex.size();
-						hasValueSeparator_Start = true;
 					}
 				}
 				else
-					hasValueSeparator_End = true;
+					ValueSeparator = 0;
 
 				if (common::DEBUG())
 					cout << "Found semantic separator value " << vs[sem]->getValue()
@@ -607,11 +600,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 	}
 
 	if (common::DEBUG())
-		cout << "storeSample = " << storeSample << " at timestamp = " << e.Timestamp
-		  << "ValueSeparator = " << ValueSeparator << " begin? "
-		  << hasValueSeparator_Start << " end? " << hasValueSeparator_End << endl;
+		cout << "storeSample = " << storeSample << " at timestamp = " << e.Timestamp << endl;
 
-	if (storeSample)
+	if (storeSample && !(FoundSeparator && ValueSeparator > 0))
 	{
 		map<unsigned, unsigned long long>::iterator cit;
 		map<unsigned, CodeRefTriplet> CodeRefs;
@@ -654,7 +645,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 	}
 
 	/* If we found a region separator, increase current region and reset the phase */
-	if (hasValueSeparator_Start)
+	if (FoundSeparator)
 	{
 		unsigned long long Region = thi[thread].getCurrentRegion();
 		if (Region > 0)
