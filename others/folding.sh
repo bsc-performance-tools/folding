@@ -1,6 +1,14 @@
 #!/bin/bash
 
-FOLDING_HOME=
+SCRIPT_PATH=`readlink -f $0`
+FOLDING_HOME=`dirname ${SCRIPT_PATH}`
+if [[ ! -d ${FOLDING_HOME} ]] ; then
+	echo "Cannot locate FOLDING_HOME (should be ${FOLDING_HOME} ?)"
+	exit
+else
+	FOLDING_HOME=${FOLDING_HOME%/bin}
+fi
+
 LD_LIBRARY_PATH=${FOLDING_HOME}/lib
 
 #
@@ -29,9 +37,12 @@ done
 #
 
 if [[ $# -ne 2 ]] ; then
-	echo "Usage: ${0} Trace InstanceSeparator/SemanticSeparator"
+	echo "Usage: ${0} [-model M] [-source S] Trace InstanceSeparator/SemanticSeparator"
+	echo ""
+	echo "            -model M         : Use performance model M when generating plots (see $FOLDING_HOME/others/models)"
+	echo "            -source S        : Indicate where the source code of the application is located"
 	echo "            Trace            : Paraver trace-file"
-	echo "            InstanceSeparator: Value of the event type to separate instances within tracefile"
+	echo "            InstanceSeparator: Label or value f the event type to separate instances within tracefile"
 	echo "            SemanticSeparator: .csv file generated from Paraver to separate instances within tracefile"
 	exit
 fi
