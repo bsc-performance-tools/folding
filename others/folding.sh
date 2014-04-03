@@ -86,7 +86,8 @@ else
 fi
 ${FOLDING_HOME}/bin/interpolate \
  -max-samples-distance 2000 \
- -sigma-times 1.5 \
+ -sigma-times 2.0 \
+ -use-median \
  -feed-first-occurrence any \
  ${EXTRA_INTERPOLATE_FLAGS} \
  ${MODELS_SUFFIX} \
