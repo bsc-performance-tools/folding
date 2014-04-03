@@ -6,7 +6,7 @@ if [[ ! -d ${FOLDING_HOME} ]] ; then
 	echo "Cannot locate FOLDING_HOME (should be ${FOLDING_HOME} ?)"
 	exit
 else
-	FOLDING_HOME=${FOLDING_HOME%/bin}
+	export FOLDING_HOME=${FOLDING_HOME%/bin}
 fi
 
 LD_LIBRARY_PATH=${FOLDING_HOME}/lib
