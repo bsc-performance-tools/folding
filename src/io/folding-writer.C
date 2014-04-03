@@ -70,7 +70,7 @@ unsigned FoldingWriter::getReferenceSample (const vector<Sample*> &Samples)
 	return (found)?reference:0;
 }
 
-bool FoldingWriter::checkSamples (vector<Sample*> &Samples)
+bool FoldingWriter::checkSamples (const vector<Sample*> &Samples)
 {
 	/* Triplets are not valid at the edges (first and last) */
 	if (Samples.size() > 2)
@@ -104,7 +104,7 @@ bool FoldingWriter::checkSamples (vector<Sample*> &Samples)
 void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 	unsigned ptask, unsigned task, unsigned thread,
 	unsigned long long start, unsigned long long duration,
-	vector<Sample*> & Samples)
+	const vector<Sample*> & Samples)
 {
 	/* At least, have a sample at the begin & end, and someone else */
 	if (Samples.size() < 2)

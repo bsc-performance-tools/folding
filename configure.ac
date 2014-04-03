@@ -122,6 +122,7 @@ AC_PROG_CXX
 if test "${CXX}" = "" ; then
 	AC_MSG_ERROR([Cannot find C++ compiler])
 fi
+CXXFLAGS="${CXXFLAGS} -std=c++11"
 AC_PROG_FC
 if test "${FC}" = "" ; then
 	AC_MSG_ERROR([Cannot find Fortran compiler])
@@ -358,7 +359,7 @@ AC_MSG_NOTICE([Checking for availability of C++ headers])
 AC_LANG_PUSH([C++])
 AC_CHECK_HEADERS(
 	[algorithm exception fstream iomanip iostream iterator list map set \
-	 sstream string vector],
+	 sstream string vector deque],
 	[],
 	[AC_MSG_ERROR([Cannot find required header])])
 AC_LANG_POP([C++])

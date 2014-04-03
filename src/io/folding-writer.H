@@ -46,14 +46,14 @@ class FoldingWriter
 	private:
 	static bool equalTypes (set<string> &m1, set<string> m2);
 	static bool containTypes (set<string> &m1, set<string> m2);
-	static bool checkSamples (vector<Sample*> &Samples);
+	static bool checkSamples (const vector<Sample*> &Samples);
 	static unsigned getReferenceSample (const vector<Sample*> &Samples);
 
 	public:
 	static void Write (ofstream & ofile, const string & RegionName,
 	  unsigned ptask, unsigned task, unsigned thread,
 	  unsigned long long start, unsigned long long duration,
-	  vector<Sample*> &Samples);
+	  const vector<Sample*> & Samples);
 };
 
 #endif /* FOLDING_WRITER_H_INCLUDED */

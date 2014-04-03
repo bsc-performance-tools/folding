@@ -259,17 +259,18 @@ void Process::processMultiEvent (struct multievent_t &e)
            << e.Timestamp;
 
 	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
+	for (const auto & event : e.events)
 	{
-		traceout << ":" << (*it).Type << ":" << (*it).Value;
-		if ((*it).Type >= 30000100 && (*it).Type <= 30000199)
+		traceout << ":" << event.Type << ":" << event.Value;
+		if (event.Type >= 30000100 && event.Type <= 30000199)
 		{
 			string file;
 			unsigned line;
 
-			pcfcommon::lookForCallerLineInfo (pcf, (*it).Value, file, line);
+			pcfcommon::lookForCallerLineInfo (pcf, event.Value, file, line);
 
 			if (common::DEBUG())
-				cout << "Looking for CallerLine info for value " << (*it).Value << " file = "
+				cout << "Looking for CallerLine info for value " << event.Value << " file = "
 				  << file << " at line " << line << " at timestamp " << e.Timestamp << endl;
 
 			int newvalue;
@@ -297,9 +298,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 					newvalue = 0;
 			}
 			else
-				newvalue = (*it).Value;
+				newvalue = event.Value;
 
-			int delta = (*it).Type - 30000100;
+			int delta = event.Type - 30000100;
 			traceout << ":" << 30000200 + delta << ":" << newvalue;
 		}
 	}

@@ -183,8 +183,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 			traceout << "2:" 
 				<< e.ObjectID.cpu << ":" << e.ObjectID.ptask << ":" << e.ObjectID.task << ":" << e.ObjectID.thread << ":"
 				<< thi->LastEvents.Timestamp;
-			for (vector<struct event_t>::iterator it = thi->LastEvents.events.begin(); it != thi->LastEvents.events.end(); it++)
-				traceout << ":" << (*it).Type << ":" << (*it).Value;
+			for (const auto & event : thi->LastEvents.events)
+				traceout << ":" << event.Type << ":" << event.Value;
 			traceout << endl;
 		}
 
@@ -193,8 +193,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 	else if (thi->LastEvents.Timestamp == e.Timestamp)
 	{
 		/* If are the same timestamp, join in a single multievent */
-		for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
-			thi->LastEvents.events.push_back (*it);
+		for (const auto & event : e.events)
+			thi->LastEvents.events.push_back (event);
 	}
 	else if (thi->LastEvents.Timestamp > e.Timestamp)
 	{

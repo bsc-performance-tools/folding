@@ -86,12 +86,12 @@ class ThreadInformation
 	  { seen = b; }
 	void addSample (Sample *s)
 	  { Samples.push_back (s); }
-	vector<Sample*> & getSamples (void)
+	const vector<Sample*> & getSamples (void) const
 	  { return Samples; }
 	void clearSamples (void)
-	  { 
-		for (unsigned s = 0; s < Samples.size(); ++s)
-			delete Samples[s];
+	  {
+		for (auto s : Samples) 
+			delete s;
 		Samples.clear();
 	  }
 	ThreadInformation ();
@@ -190,11 +190,11 @@ class InformationHolder
 	  { seenRegions.insert (r); }
 	void addMissingRegion (unsigned r)
 	  { missingRegions.insert (r); }
-	set<string> getCounters (void) const
+	const set<string> & getCounters (void) const
 	  { return seenCounters; }
-	set<string> getRegions (void) const
+	const set<string> & getRegions (void) const
 	  { return seenRegions; }
-	set<unsigned> getMissingRegions (void) const
+	const set<unsigned> & getMissingRegions (void) const
 	  { return missingRegions; }
 
 	ofstream outputfile;
@@ -337,11 +337,9 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 		exit (-1);
 	}
 
-	vector<unsigned> vtypes = pcf->getEventTypes();
-
 	unsigned ncounters = 0;
-	for (unsigned u = 0; u < vtypes.size(); u++)
-		if ( vtypes[u] >= PAPI_MIN_COUNTER && vtypes[u] <= PAPI_MAX_COUNTER )
+	for (const auto type : pcf->getEventTypes())
+		if ( type >= PAPI_MIN_COUNTER && type <= PAPI_MAX_COUNTER )
 			ncounters++;
 
 	numCounterIDs = ncounters;
@@ -350,16 +348,18 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 	HackCounter = new bool[numCounterIDs];
 	CounterUsed = new bool[numCounterIDs];
 
-	for (unsigned u = 0, j = 0; u < vtypes.size(); u++)
-		if ( vtypes[u] >= PAPI_MIN_COUNTER && vtypes[u] <= PAPI_MAX_COUNTER )
+
+	unsigned j = 0;
+	for (const auto type : pcf->getEventTypes())
+		if ( type >= PAPI_MIN_COUNTER && type <= PAPI_MAX_COUNTER )
 		{
 			bool found;
-			string s = getType (vtypes[u], found);
+			string s = getType (type, found);
 			/* It should always exist because it was returned by getEventTypes... */
 			if (found)
 			{
 				CounterUsed[j] = false;
-				CounterIDs[j] = vtypes[u];
+				CounterIDs[j] = type;
 				CounterIDNames[j] = s.substr (s.find ('(')+1, s.find (')', s.find ('(')+1) - (s.find ('(') + 1));
 				HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?1:0;
 				j++;
@@ -375,16 +375,15 @@ void Process::closeFile (void)
 	IH.outputfile.close();
 }
 
-unsigned Process::lookupType (const string &type)
+unsigned Process::lookupType (const string &type_str)
 {
-	vector<unsigned> vtypes = pcf->getEventTypes();
-	for (unsigned u = 0; u < vtypes.size(); u++)
+	for (const auto type : pcf->getEventTypes())
 	{
 		bool found;
-		string s = getType (vtypes[u], found);
+		string s = getType (type, found);
 		if (found)
-			if (type == s)
-				return vtypes[u];
+			if (type_str == s)
+				return type;
 	}
 	return 0;
 }
@@ -478,6 +477,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 {
 	bool FoundSeparator = false;
 	unsigned long long ValueSeparator = 0;
+	bool hasValueSeparator_Start = false;
+	bool hasValueSeparator_End   = false;
 	int ptask = e.ObjectID.ptask - 1;
 	int task = e.ObjectID.task - 1;
 	int thread = e.ObjectID.thread - 1;
@@ -503,61 +504,67 @@ void Process::processMultiEvent (struct multievent_t &e)
 	map<unsigned, unsigned long long> CallerLine;    /* Map depth of caller line */
 	map<unsigned, unsigned long long> CallerLineAST; /* Map depth of caller line AST */
 
-	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
+	for (const auto & event : e.events)
 	{
 		if (thi[thread].getCurrentRegion() > 0)
 		{
-			if ((*it).Type >= PAPI_MIN_COUNTER && (*it).Type <= PAPI_MAX_COUNTER )
+			if (event.Type >= PAPI_MIN_COUNTER && event.Type <= PAPI_MAX_COUNTER )
 			{
 				if (common::DEBUG())
-					cout << "Processing counter " << (*it).Type << " at timestamp " << e.Timestamp << endl;
+					cout << "Processing counter " << event.Type << " at timestamp " << e.Timestamp << endl;
 
-				processCounter (*it, CV);
+				processCounter (event, CV);
 				storeSample = true;
 			}
-			if ((*it).Type >= EXTRAE_SAMPLE_CALLER_MIN && (*it).Type <= EXTRAE_SAMPLE_CALLER_MAX)
+			if (event.Type >= EXTRAE_SAMPLE_CALLER_MIN && event.Type <= EXTRAE_SAMPLE_CALLER_MAX)
 			{
 				if (common::DEBUG())
-					cout << "Processing C " << (*it).Type << " at timestamp " << e.Timestamp << endl;
+					cout << "Processing C " << event.Type << " at timestamp " << e.Timestamp << endl;
 
-				processCaller (*it, EXTRAE_SAMPLE_CALLER_MIN, Caller);
+				processCaller (event, EXTRAE_SAMPLE_CALLER_MIN, Caller);
 				storeSample = true;
 			}
-			if ((*it).Type >= EXTRAE_SAMPLE_CALLERLINE_MIN && (*it).Type <= EXTRAE_SAMPLE_CALLERLINE_MAX)
+			if (event.Type >= EXTRAE_SAMPLE_CALLERLINE_MIN && event.Type <= EXTRAE_SAMPLE_CALLERLINE_MAX)
 			{
 				if (common::DEBUG())
-					cout << "Processing CL " << (*it).Type << " at timestamp " << e.Timestamp << endl;
+					cout << "Processing CL " << event.Type << " at timestamp " << e.Timestamp << endl;
 
-				processCaller (*it, EXTRAE_SAMPLE_CALLERLINE_MIN, CallerLine);
+				processCaller (event, EXTRAE_SAMPLE_CALLERLINE_MIN, CallerLine);
 				storeSample = true;
 			}
-			if ((*it).Type >= EXTRAE_SAMPLE_CALLERLINE_AST_MIN && (*it).Type <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX)
+			if (event.Type >= EXTRAE_SAMPLE_CALLERLINE_AST_MIN && event.Type <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX)
 			{
 				if (common::DEBUG())
-					cout << "Processing CL-AST " << (*it).Type << " at timestamp " << e.Timestamp << endl;
+					cout << "Processing CL-AST " << event.Type << " at timestamp " << e.Timestamp << endl;
 
-				processCaller (*it, EXTRAE_SAMPLE_CALLERLINE_AST_MIN, CallerLineAST);
+				processCaller (event, EXTRAE_SAMPLE_CALLERLINE_AST_MIN, CallerLineAST);
 				storeSample = true;
 			}
-			if ((*it).Type == EXTRAE_SAMPLE_ADDRESS || 
-			    (*it).Type == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL || 
-			    (*it).Type == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL ||
-			    (*it).Type == EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES )
+			if (event.Type == EXTRAE_SAMPLE_ADDRESS || 
+			    event.Type == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL || 
+			    event.Type == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL ||
+			    event.Type == EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES )
 			{
-				processAddressReference (*it, AR);
+				processAddressReference (event, AR);
 				storeSample = true;
 			}
 		}
 
 		if (Semantics == NULL)
 		{
-			if ((*it).Type == RegionSeparatorID)
+			if (event.Type == RegionSeparatorID)
 			{
 				if (common::DEBUG())
-					cout << "Found separator (" << RegionSeparatorID << "," << (*it).Value << ") at timestamp " << e.Timestamp << endl;
+					cout << "Found separator (" << RegionSeparatorID << "," << event.Value << ") at timestamp " << e.Timestamp << endl;
 
 				FoundSeparator = true;
-				ValueSeparator = (*it).Value;
+				if (event.Value > 0)
+				{
+					hasValueSeparator_Start = true;
+					ValueSeparator = event.Value;
+				}
+				else if (event.Value == 0)
+					hasValueSeparator_End = true;
 			}
 		}
 	}
@@ -565,25 +572,25 @@ void Process::processMultiEvent (struct multievent_t &e)
 	if (Semantics != NULL)
 	{
 		vector<PRVSemanticValue *> vs = Semantics->getSemantics (e.ObjectID.ptask, e.ObjectID.task, e.ObjectID.thread);
-		for (unsigned sem = 0; sem < vs.size(); sem++)
+		for (const auto semval : vs)
 		{
-			if (vs[sem]->getFrom() == e.Timestamp + TimeOffset)
+			if (semval->getFrom() == e.Timestamp + TimeOffset)
 			{
 				FoundSeparator = true;
-				string tmp = vs[sem]->getValue().substr (0, vs[sem]->getValue().find("."));
+				string tmp = semval->getValue().substr (0, semval->getValue().find("."));
 				ValueSeparator = atoi (tmp.c_str());
-				if (vs[sem]->getValue() != "End")
+				if (semval->getValue() != "End")
 				{
 					ValueSeparator = 0;
 					for (unsigned i = 0; i < SemanticIndex.size(); i++)
-						if (SemanticIndex[i] == vs[sem]->getValue())
+						if (SemanticIndex[i] == semval->getValue())
 						{
 							ValueSeparator = i+1;
 							break;
 						}
 					if (ValueSeparator == 0)
 					{
-						SemanticIndex.push_back (vs[sem]->getValue());
+						SemanticIndex.push_back (semval->getValue());
 						ValueSeparator = SemanticIndex.size();
 					}
 				}
@@ -591,7 +598,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 					ValueSeparator = 0;
 
 				if (common::DEBUG())
-					cout << "Found semantic separator value " << vs[sem]->getValue()
+					cout << "Found semantic separator value " << semval->getValue()
 					  << " [" << ValueSeparator << "] at timestamp " << e.Timestamp
 					  << endl;
 				break;
@@ -602,13 +609,17 @@ void Process::processMultiEvent (struct multievent_t &e)
 	if (common::DEBUG())
 		cout << "storeSample = " << storeSample << " at timestamp = " << e.Timestamp << endl;
 
-	if (storeSample && !(FoundSeparator && ValueSeparator > 0))
+	/* Store this event if a sample has found, but discard starts to regions
+	   because accounting starts from 0 on the folded region */
+	if (storeSample && 
+	     (!hasValueSeparator_Start ||
+	     (hasValueSeparator_Start && hasValueSeparator_End)))
 	{
 		map<unsigned, unsigned long long>::iterator cit;
 		map<unsigned, CodeRefTriplet> CodeRefs;
-		for (cit = Caller.begin(); cit != Caller.end(); ++cit)
+		for (const auto & call : Caller)
 		{
-			unsigned d = (*cit).first;
+			unsigned d = call.first;
 
 			assert (Caller.count(d) == 1);
 			assert (CallerLine.count(d) == 1);
@@ -631,9 +642,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 		if (common::DEBUG())
 		{
-			map<string, unsigned long long>::iterator it;
-			for (it = CV.begin(); it != CV.end(); it++)
-				cout << " " << (*it).first << " " << (*it).second;
+			for (const auto countervalue : CV)
+				cout << " " << countervalue.first << " " << countervalue.second;
 			cout << endl;
 		}
 		thi[thread].addSample (s);
@@ -645,35 +655,38 @@ void Process::processMultiEvent (struct multievent_t &e)
 	}
 
 	/* If we found a region separator, increase current region and reset the phase */
-	if (FoundSeparator)
+	if (hasValueSeparator_Start || hasValueSeparator_End)
 	{
-		unsigned long long Region = thi[thread].getCurrentRegion();
-		if (Region > 0)
+		if (hasValueSeparator_End)
 		{
-			/* Look for the region name */
-			string RegionName;
-			if (Semantics == NULL)
+			unsigned long long Region = thi[thread].getCurrentRegion();
+			if (Region > 0)
 			{
-				bool RegionFound;
-				RegionName = getTypeValue (RegionSeparatorID, Region, RegionFound);
-				if (!RegionFound)
+				/* Look for the region name */
+				string RegionName;
+				if (Semantics == NULL)
 				{
-					stringstream ss;
-					ss << Region;
-					RegionName = "Value_" + ss.str();
-					IH.addMissingRegion (Region);
+					bool RegionFound;
+					RegionName = getTypeValue (RegionSeparatorID, Region, RegionFound);
+					if (!RegionFound)
+					{
+						stringstream ss;
+						ss << Region;
+						RegionName = "Value_" + ss.str();
+						IH.addMissingRegion (Region);
+					}
+					RegionName = common::removeSpaces (RegionName);
+					IH.addRegion (RegionName);
 				}
-				RegionName = common::removeSpaces (RegionName);
-				IH.addRegion (RegionName);
+				else
+					RegionName = SemanticIndex[Region-1];
+	
+				/* Write the information */
+				FoldingWriter::Write (IH.outputfile, RegionName, ptask, task,
+				  thread, thi[thread].getStartRegion(),
+				  e.Timestamp - thi[thread].getStartRegion(),
+				  thi[thread].getSamples());
 			}
-			else
-				RegionName = SemanticIndex[Region-1];
-
-			/* Write the information */
-			FoldingWriter::Write (IH.outputfile, RegionName, ptask, task,
-			  thread, thi[thread].getStartRegion(),
-			  e.Timestamp - thi[thread].getStartRegion(),
-			  thi[thread].getSamples());
 
 			/* Clean */
 			thi[thread].clearSamples();
@@ -784,12 +797,8 @@ void Process::dumpSeenCounters (string filename)
 {
 	ofstream f (filename.c_str());
 	if (f.is_open())
-	{
-		set<string>::iterator i;
-		set<string> ctrs = IH.getCounters ();
-		for (i = ctrs.begin(); i != ctrs.end(); i++)
-			f << *i << endl;
-	}
+		for (const auto & counter : IH.getCounters())
+			f << counter << endl;
 	f.close();
 }
 
@@ -797,12 +806,8 @@ void Process::dumpSeenRegions (string filename)
 {
 	ofstream f (filename.c_str());
 	if (f.is_open())
-	{
-		set<string>::iterator i;
-		set<string> regions = IH.getRegions ();
-		for (i = regions.begin(); i != regions.end(); i++)
-			f << *i << endl;
-	}
+		for (const auto & region : IH.getRegions())
+			f << region << endl;
 	f.close();
 }
 
@@ -817,10 +822,9 @@ void Process::dumpSeenAddressRegions (string filename)
 		if (has_addresses)
 		{
 			/* As of today, this just dumps addresses for one task (1.1) */
-			vector<unsigned> v = pcf->getEventValues (ADDRESS_VARIABLE_ADDRESSES);
-			for (unsigned i = 0; i < v.size(); i++)
+			for (const auto eventvalue : pcf->getEventValues (ADDRESS_VARIABLE_ADDRESSES))
 			{
-				string value = pcf->getEventValue (ADDRESS_VARIABLE_ADDRESSES, v[i]);
+				string value = pcf->getEventValue (ADDRESS_VARIABLE_ADDRESSES, eventvalue);
 
 				/* Parsing string like: a [0x13730100-0x1cfc68ff] */
 				string variable =
@@ -847,8 +851,9 @@ void Process::dumpSeen (string fnameprefix)
 
 void Process::dumpMissingValuesIntoPCF (void)
 {
-	set<unsigned> m = IH.getMissingRegions();
-	if (m.size() > 0)
+	const set<unsigned> & missingRegions = IH.getMissingRegions();
+
+	if (missingRegions.size() > 0)
 	{
 		fstream f (pcffile.c_str(), fstream::out | fstream::app);
 		if (f.is_open())
@@ -856,14 +861,14 @@ void Process::dumpMissingValuesIntoPCF (void)
 			f << "EVENT_TYPE" << endl
 			  << "0 " << RegionSeparatorID << " " << RegionSeparatorName << endl
 			  << "VALUES" << endl;
-			set<unsigned>::iterator i;
-			for (i = m.begin(); i != m.end(); i++)
+
+			for (const auto & missingRegion : missingRegions)
 			{
 				cout << "Warning! Adding missing region label for type " << RegionSeparatorID
-				  << " value " << *i << " into " << pcffile << endl;
+				  << " value " << missingRegion << " into " << pcffile << endl;
 				stringstream ss;
-				ss << *i;
-				f << *i << " Value_" << ss.str() << endl;
+				ss << missingRegion;
+				f << missingRegion << " Value_" << ss.str() << endl;
 			}
 		}
 		f.close();
