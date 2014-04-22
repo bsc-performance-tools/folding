@@ -182,16 +182,16 @@ void Process::prepare (void)
 	string folding_home = getenv ("FOLDING_HOME");
 	setenv ("FOLDING_CLANG_BIN", CLANG_BINARY, 1);
 
-	for (unsigned i = 0; i < SampleLocations.size(); i++)
+	for (const auto sl : SampleLocations)
 	{
 		string file;
 		unsigned line;
 
 		/* Skip End, Not Found & Unresolved */
-		if (SampleLocations[i] <= 2)
+		if (sl <= 2)
 			continue;
 
-		pcfcommon::lookForCallerLineInfo (pcf, SampleLocations[i], file, line);
+		pcfcommon::lookForCallerLineInfo (pcf, sl, file, line);
 		if (testedFiles.count (file) == 0 && common::existsFile (sourceDir+"/"+file))
 		{
 			cout << "Calculating AST code blocks for file " << sourceDir+"/"+file << endl;
@@ -258,7 +258,6 @@ void Process::processMultiEvent (struct multievent_t &e)
            << e.ObjectID.cpu << ":" << e.ObjectID.ptask << ":" << e.ObjectID.task << ":" << e.ObjectID.thread << ":"
            << e.Timestamp;
 
-	for (vector<struct event_t>::iterator it = e.events.begin(); it != e.events.end(); it++)
 	for (const auto & event : e.events)
 	{
 		traceout << ":" << event.Type << ":" << event.Value;
