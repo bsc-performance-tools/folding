@@ -1,4 +1,4 @@
-SUBDIRS = src
+SUBDIRS = src doc
 
 EXTRA_DIST = others examples cfgs SVN-branch SVN-revision
 

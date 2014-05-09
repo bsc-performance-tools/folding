@@ -1,0 +1,88 @@
+\documentclass[twoside,a4,english,11pt]{book}
+
+\usepackage{hyperref}
+\usepackage{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{url}
+\usepackage{epsfig} % permet posar figures amb format .eps
+\usepackage{subfigure} % permet fer subfigures
+\usepackage{setspace} % permet canviar l'espai interlinial
+\usepackage{tocbibind} % posa la bibliografia a la TOC
+\usepackage{a4wide}
+\usepackage{fullpage}
+\usepackage{verbatim}
+\usepackage{color,calc}
+\usepackage{pdflscape}
+\usepackage{fancyvrb}
+\usepackage{amsfonts}
+\definecolor{lightgray}{rgb}{0.75,0.75,0.75}
+
+\def\graybox#1{
+  \medskip
+  \colorbox{lightgray}{
+    \begin{minipage}[t]{0.95\textwidth}
+    #1
+    \end{minipage}
+   }
+}
+
+\urlstyle{leostyle}
+
+\makeatletter
+\def\url@leostyle{
+  \@ifundefined{selectfont}{\def\UrlFont{\sf}}{\def\UrlFont{\small\ttfamily}}}
+\usepackage{babel}
+\makeatother
+
+% \setcounter{tocdepth}{0} % Canviar el deepness de la table of contents
+\pagestyle{plain}
+
+% DEFINITIONS!
+% DEFINITIONS!
+% DEFINITIONS!
+
+\newcommand{\TRACE}{{\sf {E}xtrae}\ }
+\newcommand{\PARAVER}{{\sf Paraver}\ }
+\newcommand{\FOLDING}{{\sf {F}olding}\ }
+\input{version}
+
+% DOCUMENT!
+% DOCUMENT!
+% DOCUMENT!
+
+
+\begin{document}
+
+\pagenumbering{roman}
+
+% \onehalfspacing
+% \doublespacing
+
+\title{\FOLDING \\
+       User guide manual\\
+       for version \TRACEVERSION}
+\author{
+tools@bsc.es
+}
+
+\maketitle
+\tableofcontents
+\listoffigures
+\listoftables
+
+\input{common-macros}
+
+\input{quick-guide-section}
+
+\input{introduction}
+
+\input{configure-installation}
+
+\input{examples-section}
+
+\appendix
+
+\input{FAQ-section}
+
+\end{document}
+
