@@ -364,6 +364,16 @@ AC_CHECK_HEADERS(
 	[AC_MSG_ERROR([Cannot find required header])])
 AC_LANG_POP([C++])
 
+# So as to generate documentation
+AC_CHECK_PROGS(latex,[latex elatex lambda],no)
+AC_CHECK_PROGS(dvips,[dvips],no)
+AC_CHECK_PROGS(dvipdf,[dvipdf],no)
+AC_CHECK_PROGS(latex2html,[latex2html],no)
+
+AM_CONDITIONAL(BUILD_DOCS_PS, test "${latex}" != "no" -a "${dvips}" != "no")
+AM_CONDITIONAL(BUILD_DOCS_PDF, test "${latex}" != "no" -a "${dvipdf}" != "no")
+AM_CONDITIONAL(BUILD_HTML_DOCS, test "${latex}" != "no" -a "${latex2html}" != "no")
+
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
@@ -376,6 +386,7 @@ AC_CONFIG_FILES([
  src/interpolate/service-kriger/Makefile
  src/interpolate/service-R/Makefile
  src/others/Makefile
+ doc/Makefile
 ])
 
 AC_OUTPUT
