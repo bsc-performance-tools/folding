@@ -13,7 +13,7 @@ manual_ug = user-guide
 all:
 	@echo Nothing to be done by default. If you want to build the documentation issue make build-documentation.
 
-build-documentation: $(manual_ug).tex
+build-documentation: $(manual_ug).tex quick-guide-section.tex get-a-trace.tex
 	@echo "\newcommand{\TRACEVERSION}{$(PACKAGE_VERSION)}" > version.tex
 if BUILD_DOCS_PS
 	$(latex) $(manual_ug)
@@ -36,8 +36,8 @@ install-exec-hook: $(manual_ug).ps $(manual_ug).pdf
 	cp $(manual_ug).ps $(DESTDIR)$(datadir)/doc
 	cp $(manual_ug).pdf $(DESTDIR)$(datadir)/doc
 	$(MKDIR_P) $(DESTDIR)$(datadir)/doc/html
-	cp user-guide/user-guide.html user-guide/user-guide.css user-guide/*.png $(DESTDIR)$(datadir)/doc/html
-	ln -f $(DESTDIR)$(datadir)/doc/html/user-guide.html $(DESTDIR)$(datadir)/doc/html/index.html
+#	cp user-guide/user-guide.html user-guide/user-guide.css user-guide/*.png $(DESTDIR)$(datadir)/doc/html
+#	ln -f $(DESTDIR)$(datadir)/doc/html/user-guide.html $(DESTDIR)$(datadir)/doc/html/index.html
 
 clean:
 	@echo Nothing to be done by default. If you want to clean the documentation issue make clean-documentation.
