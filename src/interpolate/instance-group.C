@@ -36,6 +36,7 @@
 
 #include <list>
 #include <deque>
+#include <stack>
 
 using namespace std;
 
@@ -372,14 +373,38 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 			}
 		}
 
-		sort (timingsamples.begin(), timingsamples.end(), ::compare_SampleTimings);
-		for (auto s : timingsamples)
+		/* Dump caller lines within processed routines from callerstime_processSamples */
 		{
-			map<unsigned, CodeRefTriplet> callers = s->getCodeTriplets();
-			unsigned caller = (*(callers.cbegin())).second.getCaller();
-			odata << "c" << ";" << regionName << ";" << numGroup << ";"
-				  << s->getNTime() << ";" << caller << endl;
+			unsigned depth = callerstime_first_depth;
+			const vector<pair<unsigned,double>> routines = this->getPreparedCallstacks();
+			double last = 0.;
+			for (auto const & r : routines)
+			{
+				if (r.first > 0)
+					depth--;
+				else if (r.first == 0)
+					depth++;
+
+				vector<Sample*> tmp;
+				for (auto s : callerstime_processSamples)
+					if (s->getNTime() >= last && s->getNTime() < r.second)
+						tmp.push_back (s);
+
+				for (const auto s : tmp)
+				{
+					const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
+					assert (callers.count (depth) > 0);
+					CodeRefTriplet crt = callers.at (depth);
+					odata << "cl" << ";" << regionName << ";" << numGroup << ";"
+					  << s->getNTime() << ";" << crt.getCallerLine() << ";" << crt.getCaller() << endl;
+				}
+
+				tmp.clear();
+
+				last = r.second;
+			}
 		}
+
 	}
 
 	if (excludedInstances.size() > 0)
@@ -410,21 +435,15 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	}
 
 	/* If has instruction counter, generate this in addition to .slopes */
-	string name_slopes, name_inst_ctr;
+	string ofile;
 	if (has_instruction_counter)
-		name_inst_ctr = gnuplotGenerator::gnuplot_slopes (this, os, prefix,
+		ofile = gnuplotGenerator::gnuplot_slopes (this, os, prefix,
 		  true, TimeUnit, hParaverIdRoutine);
-	name_slopes = gnuplotGenerator::gnuplot_slopes (this, os, prefix, false,
-	  TimeUnit, hParaverIdRoutine);
-
-	/* If has instruction counter, let the new plot be the summary, otherwise
-	   let the .slopes be the summary */
-	if (has_instruction_counter && name_inst_ctr.length() > 0)
-		cout << "Summary plot for region " << regionName << " ("
-		  << name_inst_ctr << ")" << endl;
-	if (name_slopes.length() > 0)
-		cout << "Summary plot for region " << regionName << " ("
-		  << name_slopes << ")"  << endl;
+	else
+		ofile = gnuplotGenerator::gnuplot_slopes (this, os, prefix, false,
+		  TimeUnit, hParaverIdRoutine);
+	cout << "Summary plot for region " << regionName << " ("
+	  << ofile << ")"  << endl;
 
 	if (hasAddresses())
 	{
@@ -439,11 +458,6 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 			cout << "Summary plot for region " << regionName << " ("
 			  << name_addresses << ")" << endl;
 	}
-	string name_callers = gnuplotGenerator::gnuplot_callers (this, os,
-	  prefix, TimeUnit, hParaverIdRoutine);
-	if (name_callers.length() > 0)
-		cout << "Summary plot for region " << regionName << " ("
-		  << name_callers << ")" << endl;
 
 	for (unsigned m = 0; m < models.size(); m++)
 	{
@@ -712,10 +726,14 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 	sort (processSamples.begin(), processSamples.end(), ::compare_SampleTimings);
 
 	/* Do process the samples to locate user functions */
-	callerstime = processor->processSamples (processSamples);
+	callerstime = processor->processSamples (processSamples, callerstime_first_depth);
+
+	/* Store a copy to dump it later */
+	callerstime_processSamples = processSamples;
+
 #if defined(DEBUG)
-	cout << "OUTPUT::" << endl;
-	for (const auto e : tmp)
+	cout << "OUTPUT (starting at depth " << callerstime_first_depth << ") ::" << endl;
+	for (const auto e : callerstime)
 		cout << e.first << "," << e.second << " ";
 	cout << endl;
 #endif

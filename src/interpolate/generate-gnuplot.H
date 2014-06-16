@@ -47,12 +47,6 @@ class gnuplotGenerator
 	  const string & TimeUnit,
 	  vector<VariableInfo*> & variables,
 	  const map<unsigned,string> & hParaverIdRoutine);
-	static string gnuplot_callers (
-	  InstanceGroup *ig,
-	  const ObjectSelection *os,
-	  const string & prefix,
-	  const string & TimeUnit,
-	  const map<unsigned,string> & hParaverIdRoutine);
 	static void gnuplot_groups (
 	  InstanceContainer *ic,
 	  const ObjectSelection *os,
@@ -61,6 +55,7 @@ class gnuplotGenerator
 
 	static void gnuplot_routine_plot (
 	  ofstream & gplot,
+	  const string & fileDump,
 	  InstanceGroup *ig,
 	  const map<unsigned,string> & hParaverIdRoutine);
 };
