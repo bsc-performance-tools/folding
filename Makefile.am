@@ -15,6 +15,7 @@ endif
 	cp others/breakpoints.R $(prefix)/etc
 	cp others/basicblocks.C.py others/basicblocks.F90.py $(prefix)/etc
 	cp -r others/models $(prefix)/etc
+	cp -r others/extrae-configurations $(prefix)/etc
 	$(MKDIR_P) $(prefix)/cfg
 	cp cfgs/win_folded_caller_types.cfg cfgs/win_folded_types.cfg $(prefix)/cfg
 	cp -fr examples $(prefix)

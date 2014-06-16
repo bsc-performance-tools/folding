@@ -183,8 +183,22 @@ void Process::processMultiEvent (struct multievent_t &e)
 			traceout << "2:" 
 				<< e.ObjectID.cpu << ":" << e.ObjectID.ptask << ":" << e.ObjectID.task << ":" << e.ObjectID.thread << ":"
 				<< thi->LastEvents.Timestamp;
-			for (const auto & event : thi->LastEvents.events)
-				traceout << ":" << event.Type << ":" << event.Value;
+
+				/* Add events to a multimap that they are not replicated inside the tracefile (applied to clusters?) */
+			multimap<unsigned, unsigned long long> mm_filter;
+			for (const auto &e : thi->LastEvents.events)
+			{
+				bool found = false;
+				multimap<unsigned, unsigned long long>::iterator it;
+				pair<multimap<unsigned, unsigned long long>::iterator,multimap<unsigned, unsigned long long>::iterator> ret = mm_filter.equal_range (e.Type);
+				for (it = ret.first; it != ret.second; ++it)
+					found = found || (*it).second == e.Value;
+
+				if (!found)
+					mm_filter.insert (make_pair (e.Type, e.Value));
+			}
+			for (const auto &e : mm_filter)
+				traceout << ":" << e.first << ":" << e.second;
 			traceout << endl;
 		}
 
@@ -221,8 +235,25 @@ void Process::processLastEvents (void)
 					<< thi->LastEvents.ObjectID.task << ":"
 					<< thi->LastEvents.ObjectID.thread << ":"
 					<< thi->LastEvents.Timestamp;
-				for (vector<struct event_t>::iterator it = thi->LastEvents.events.begin(); it != thi->LastEvents.events.end(); it++)
-					traceout << ":" << (*it).Type << ":" << (*it).Value;
+
+				/* Add events to a multimap that they are not replicated inside the tracefile (applied to clusters?) */
+				multimap<unsigned, unsigned long long> mm_filter;
+				for (const auto &e : thi->LastEvents.events)
+				{
+					bool found = false;
+					multimap<unsigned, unsigned long long>::iterator it;
+					pair<multimap<unsigned, unsigned long long>::iterator,multimap<unsigned, unsigned long long>::iterator> ret = mm_filter.equal_range (e.Type);
+					for (it = ret.first; it != ret.second; ++it)
+					{
+						cout << "e.Type " << e.Type << " :: " << e.Value << endl;
+						found = found || (*it).second == e.Value;
+					}
+
+					if (!found)
+						mm_filter.insert (make_pair (e.Type, e.Value));
+				}
+				for (const auto &e : mm_filter)
+					traceout << ":" << e.first << ":" << e.second;
 				traceout << endl;
 			}
 		}

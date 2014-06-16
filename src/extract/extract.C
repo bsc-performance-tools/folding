@@ -118,7 +118,7 @@ class TaskInformation
 	int getNumThreads (void) const
 	{ return numThreads; };
 
-	ThreadInformation* getThreadsInformation (void)
+	ThreadInformation* getThreadsInformation (void) const
 	{ return ThreadsInfo; };
 
 	void AllocateThreads (int nThreads);
@@ -146,7 +146,7 @@ class PTaskInformation
 	int getNumTasks (void) const
 	{ return numTasks; };
 
-	TaskInformation* getTasksInformation (void)
+	TaskInformation* getTasksInformation (void) const
 	{ return TasksInfo; };
 
 	void AllocateTasks (int nTakss);
@@ -178,7 +178,7 @@ class InformationHolder
 	int getNumPTasks (void) const
 	{ return numPTasks; };
 
-	PTaskInformation* getPTasksInformation (void)
+	PTaskInformation* getPTasksInformation (void) const
 	{ return PTasksInfo; };
 
 	void AllocatePTasks (int numPTasks);
@@ -282,7 +282,7 @@ class Process : public ParaverTrace
 	Process (string prvFile, bool multievents);
 
 	unsigned lookupType (const string &type);
-	string getType (unsigned type, bool &found);
+	string getType (unsigned type, bool &found, bool silent = true);
 	string getTypeValue (unsigned type, unsigned value, bool &found);
 	void allocateBuffers (void);
 	void closeFile (void);
@@ -301,6 +301,7 @@ class Process : public ParaverTrace
 
 	void dumpSeen (string fnameprefix);
 	void dumpMissingValuesIntoPCF (void);
+	bool anySeenObjects (void) const;
 };
 
 Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, multievents)
@@ -511,7 +512,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 			if (event.Type >= PAPI_MIN_COUNTER && event.Type <= PAPI_MAX_COUNTER )
 			{
 				if (common::DEBUG())
-					cout << "Processing counter " << event.Type << " at timestamp " << e.Timestamp << endl;
+					cout << "Processing counter " << event.Type << " with value " << event.Value << " at timestamp " << e.Timestamp << endl;
 
 				processCounter (event, CV);
 				storeSample = true;
@@ -555,7 +556,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 			if (event.Type == RegionSeparatorID)
 			{
 				if (common::DEBUG())
-					cout << "Found separator (" << RegionSeparatorID << "," << event.Value << ") at timestamp " << e.Timestamp << endl;
+					cout << "Task " << task << " Thread " << thread <<
+					  " Found separator (" << RegionSeparatorID <<
+					  "," << event.Value << ") at timestamp " << e.Timestamp << endl;
 
 				FoundSeparator = true;
 				if (event.Value > 0)
@@ -739,7 +742,7 @@ void Process::allocateBuffers (void)
 
 }
 
-string Process::getType (unsigned type, bool &found)
+string Process::getType (unsigned type, bool &found, bool silent)
 {
 	found = true;
 	string s;
@@ -748,7 +751,8 @@ string Process::getType (unsigned type, bool &found)
 	{ s = pcf->getEventType (type); }
 	catch (...)
 	{
-		cerr << "Warning! Did not find the description of type " << type << " in the PCF file... Will add the definition" << endl; 
+		if (!silent)
+			cerr << "Warning! Did not find the description of event type " << type << " in the PCF file... Will add the definition" << endl; 
 		found = false;
 		s = "";
 	}
@@ -770,6 +774,23 @@ string Process::getTypeValue (unsigned type, unsigned value, bool &found)
 	}
 
 	return s;
+}
+
+bool Process::anySeenObjects (void) const
+{
+	PTaskInformation *ptaskinfo = IH.getPTasksInformation();
+	for (int ptask = 0; ptask < IH.getNumPTasks(); ptask++)
+	{
+		TaskInformation *taskinfo = ptaskinfo[ptask].getTasksInformation();
+		for (int task = 0; task < ptaskinfo[ptask].getNumTasks(); task++)
+		{
+			ThreadInformation *threadinfo = taskinfo[task].getThreadsInformation();
+			for (int thread = 0; thread < taskinfo[task].getNumThreads(); thread++)
+				if (threadinfo[thread].getSeen())
+					return true;
+		} 
+	}
+	return false;
 }
 
 void Process::dumpSeenObjects (string filename)
@@ -969,14 +990,14 @@ int main (int argc, char *argv[])
 	string t1 = p->getType (EXTRAE_SAMPLE_CALLER_MIN, found);
 	if (!found)
 	{
-		cerr << endl << "Unable to get caller information (event type " << EXTRAE_SAMPLE_CALLER_MIN << ")" << endl;
+		cerr << endl << "Error! Unable to get caller information (event type " << EXTRAE_SAMPLE_CALLER_MIN << ")" << endl;
 		exit (-1);
 	}
 	cout << ", caller line information" << flush;
 	string t2 = p->getType (EXTRAE_SAMPLE_CALLERLINE_MIN, found);
 	if (!found)
 	{
-		cerr << endl << "Unable to get caller line information (event type " << EXTRAE_SAMPLE_CALLERLINE_MIN << ")" << endl;
+		cerr << endl << "Error! Unable to get caller line information (event type " << EXTRAE_SAMPLE_CALLERLINE_MIN << ")" << endl;
 		exit (-1);
 	}
 	cout << ", caller line AST information" << flush;
@@ -984,7 +1005,7 @@ int main (int argc, char *argv[])
 	cout << " Done" << endl;
 	if (!found)
 	{
-		cerr << endl << "Unable to get caller line AST information (event type " << EXTRAE_SAMPLE_CALLERLINE_AST_MIN << ")" << endl;
+		cerr << endl << "Error! Unable to get caller line AST information (event type " << EXTRAE_SAMPLE_CALLERLINE_AST_MIN << ")" << endl;
 		exit (-1);
 	}
 
@@ -992,16 +1013,16 @@ int main (int argc, char *argv[])
 	if (!p->givenSemanticsCSV())
 	{
 		bool RegionSeparatorFound;
-		RegionSeparatorName = p->getType (RegionSeparatorID, RegionSeparatorFound);
+		RegionSeparatorName = p->getType (RegionSeparatorID, RegionSeparatorFound, false);
 		if (!RegionSeparatorFound)
 		{
 			stringstream ss;
 			ss << RegionSeparatorID;
-			RegionSeparatorName = "Event_" + ss.str();
+			RegionSeparatorName = "EventType_" + ss.str();
 		}
 		RegionSeparatorName = common::removeSpaces (RegionSeparatorName);
 
-		cout << "Extracting data for type " << RegionSeparatorID << " (" << RegionSeparatorName << ")" << endl;
+		cout << "Extracting data for type " << RegionSeparatorID << " (named as " << RegionSeparatorName << ")" << endl;
 	}
 	else
 		cout << "Extracting data for semantic values" << endl;
@@ -1009,6 +1030,13 @@ int main (int argc, char *argv[])
 	p->allocateBuffers ();
 	p->parseBody();
 	p->closeFile();
+
+	if (!p->anySeenObjects())
+	{
+		cout << "Error! Unable to extract any information from the tracefile." << endl
+		     << "Check that event type exists within the tracefile" << endl;
+		exit (-1);
+	}
 
 	p->dumpSeen (common::basename (tracename.substr (0, tracename.length()-4)));
 

@@ -53,7 +53,8 @@ class InstanceContainer
 	public:
 	InstanceContainer (string, InstanceSeparator *is);
 
-	void add (Instance *i);
+	void add (Instance *i)
+	  { Instances.push_back(i); }
 	const vector<Instance *> getInstances (void) const
 	  { return Instances; }
 	unsigned numInstances (void) const

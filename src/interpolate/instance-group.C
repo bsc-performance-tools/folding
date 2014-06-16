@@ -35,12 +35,14 @@
 #include "generate-gnuplot.H"
 
 #include <list>
+#include <deque>
 
 using namespace std;
 
 InstanceGroup::InstanceGroup (string name, unsigned id, string groupname) :
 	regionName (name), numGroup (id), groupName (groupname)
 {
+	preparedCallstacks = false;
 }
 
 void InstanceGroup::add (Instance *i)
@@ -310,16 +312,10 @@ void InstanceGroup::dumpInterpolatedData (ObjectSelection *os,
 	}
 }
 
-class TimingCaller
+static bool compare_SampleTimings (Sample *s1, Sample *s2)
 {
-	public:
-	double time;
-	unsigned caller;
-};
-
-bool compare_timing_info (const TimingCaller &first, const TimingCaller &second)
-{
-	return first.time < second.time;
+	return s1->getNTime() < s2->getNTime();
+	//return s1->getNCounterValue("PAPI_TOT_INS") < s2->getNCounterValue("PAPI_TOT_INS");
 }
 
 void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
@@ -332,17 +328,14 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 
 	if (Instances.size() > 0)
 	{
-		list<TimingCaller> timingsandcallers;
+		vector<Sample*> timingsamples;
 
 		/* Emit hwc and addresses for both used & unused sets */
-		map<string, vector<Sample*> >::iterator it;
-		for (it = used.begin(); it != used.end(); it++)
+		for (auto & instance : used)
 		{
-			string counter = (*it).first;
-			vector<Sample*> usedSamples = (*it).second;
-			for (unsigned u = 0; u < usedSamples.size(); u++)
+			string counter = instance.first;
+			for (auto s : instance.second)
 			{
-				Sample *s = usedSamples[u];
 				if (s->hasCounter(counter))
 					odata << "u" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << counter << ";"
@@ -355,22 +348,14 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 					  << s->getAddressReference_Cycles_Cost() << endl;
 				}
 				if (s->hasCodeRefTripletSize())
-				{
-					map<unsigned, CodeRefTriplet> callers = s->getCodeTriplets();
-					TimingCaller tc;
-					tc.time = s->getNTime();
-					tc.caller = (*(callers.begin())).second.getCaller();
-					timingsandcallers.push_back (tc);
-				}
+					timingsamples.push_back (s);
 			}
 		}
-		for (it = unused.begin(); it != unused.end(); it++)
+		for (auto & instance : unused)
 		{
-			string counter = (*it).first;
-			vector<Sample*> unusedSamples = (*it).second;
-			for (unsigned u = 0; u < unusedSamples.size(); u++)
+			string counter = instance.first;
+			for (auto s : instance.second)
 			{
-				Sample *s = unusedSamples[u];
 				if (s->hasCounter(counter))
 					odata << "un" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << counter << ";"
@@ -383,38 +368,27 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 					  << s->getAddressReference_Cycles_Cost() << endl;
 				}
 				if (s->hasCodeRefTripletSize())
-				{
-					map<unsigned, CodeRefTriplet> callers = s->getCodeTriplets();
-					TimingCaller tc;
-					tc.time = s->getNTime();
-					tc.caller = (*(callers.begin())).second.getCaller();
-					timingsandcallers.push_back (tc);
-				}
+					timingsamples.push_back (s);
 			}
 		}
 
-		timingsandcallers.sort (::compare_timing_info);
-		list<TimingCaller>::iterator tci;
-		for (tci = timingsandcallers.begin(); tci != timingsandcallers.end(); tci++)
+		sort (timingsamples.begin(), timingsamples.end(), ::compare_SampleTimings);
+		for (auto s : timingsamples)
+		{
+			map<unsigned, CodeRefTriplet> callers = s->getCodeTriplets();
+			unsigned caller = (*(callers.cbegin())).second.getCaller();
 			odata << "c" << ";" << regionName << ";" << numGroup << ";"
-				  << (*tci).time << ";" << (*tci).caller << endl;
+				  << s->getNTime() << ";" << caller << endl;
+		}
 	}
 
 	if (excludedInstances.size() > 0)
 	{
-		for (unsigned i = 0; i < excludedInstances.size(); i++)
-		{
-			vector<Sample*> vs = excludedInstances[i]->getSamples();
-			for (unsigned s = 0; s < vs.size(); s++)
-			{
-				double time = vs[s]->getNTime();
-				map<string, double> counters = vs[s]->getNCounterValue();
-				map<string, double>::iterator it;
-				for (it = counters.begin() ; it != counters.end(); it++)
+		for (auto & i : excludedInstances)
+			for (auto & s : i->getSamples())
+				for (auto & c : s->getNCounterValue())
 					odata << "e" << ";" << regionName << ";" << numGroup << ";"
-					  << time << ";" << (*it).first << ";" << (*it).second << endl;
-			}
-		}
+					  << s->getNTime() << ";" << c.first << ";" << c.second << endl;
 	}
 
 	odata.close ();
@@ -422,7 +396,7 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 
 void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	const vector<Model*> & models, const string &TimeUnit,
-	vector<VariableInfo*> & variables)
+	vector<VariableInfo*> & variables, const map<unsigned,string> & hParaverIdRoutine)
 {
 	bool has_instruction_counter = false;
 	map<string, InterpolationResults*>::iterator it;
@@ -432,16 +406,16 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	{
 		has_instruction_counter |= common::isMIPS((*it).first);
 		gnuplotGenerator::gnuplot_single (this, os, prefix, (*it).first,
-		  (*it).second, TimeUnit);
+		  (*it).second, TimeUnit, hParaverIdRoutine);
 	}
 
 	/* If has instruction counter, generate this in addition to .slopes */
 	string name_slopes, name_inst_ctr;
 	if (has_instruction_counter)
 		name_inst_ctr = gnuplotGenerator::gnuplot_slopes (this, os, prefix,
-		  true, TimeUnit);
+		  true, TimeUnit, hParaverIdRoutine);
 	name_slopes = gnuplotGenerator::gnuplot_slopes (this, os, prefix, false,
-	  TimeUnit);
+	  TimeUnit, hParaverIdRoutine);
 
 	/* If has instruction counter, let the new plot be the summary, otherwise
 	   let the .slopes be the summary */
@@ -455,18 +429,18 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	if (hasAddresses())
 	{
 		string name_addresses = gnuplotGenerator::gnuplot_addresses (this, os,
-		  prefix, TimeUnit, variables);
+		  prefix, TimeUnit, variables, hParaverIdRoutine);
 		if (name_addresses.length() > 0)
 			cout << "Summary plot for region " << regionName << " ("
 			  << name_addresses << ")" << endl;
 		name_addresses = gnuplotGenerator::gnuplot_addresses_cost (this, os,
-		  prefix, TimeUnit, variables);
+		  prefix, TimeUnit, variables, hParaverIdRoutine);
 		if (name_addresses.length() > 0)
 			cout << "Summary plot for region " << regionName << " ("
 			  << name_addresses << ")" << endl;
 	}
 	string name_callers = gnuplotGenerator::gnuplot_callers (this, os,
-	  prefix, TimeUnit);
+	  prefix, TimeUnit, hParaverIdRoutine);
 	if (name_callers.length() > 0)
 		cout << "Summary plot for region " << regionName << " ("
 		  << name_callers << ")" << endl;
@@ -474,7 +448,7 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	for (unsigned m = 0; m < models.size(); m++)
 	{
 		string tmp = gnuplotGenerator::gnuplot_model (this, os, prefix,
-		  models[m], TimeUnit);
+		  models[m], TimeUnit, hParaverIdRoutine);
 		cout << "Plot model " << models[m]->getTitleName() << " for region "
 		  << regionName << " (" << tmp << ")" << endl;
 	}
@@ -509,26 +483,287 @@ void InstanceGroup::setSamples (map<string, vector<Sample*> > &used,
 
 	allsamples.clear();
 
-	map<string, vector<Sample*> >::iterator i;
-	for (i = used.begin(); i != used.end(); i++)
-	{
-		vector<Sample*> vs = (*i).second;
-		for (unsigned s = 0; s < vs.size(); s++)
-			allsamples.insert (vs[s]);
-	}
-	for (i = unused.begin(); i != unused.end(); i++)
-	{
-		vector<Sample*> vs = (*i).second;
-		for (unsigned s = 0; s < vs.size(); s++)
-			allsamples.insert (vs[s]);
-	}
+	// Add used samples to all samples
+	for (auto instance : used)
+		for (auto s : instance.second)
+			allsamples.insert (s);
+
+	// Add unused samples to all samples
+	for (auto instance : unused)
+		for (auto s : instance.second)
+			allsamples.insert (s);
 }
 
 bool InstanceGroup::hasAddresses (void) const
 {
-	set<Sample*>::iterator s;
-	for (s = allsamples.begin(); s != allsamples.end(); s++)
-		if ((*s)->hasAddressReference())
+	for (auto s : allsamples)
+		if (s->hasAddressReference())
 			return true;
 	return false;
 }
+
+static bool compare_pair_caller_quantity (
+	const pair<unsigned, unsigned> & first,
+	const pair<unsigned, unsigned> & second)
+{ return first.second > second.second;}
+
+void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
+{
+	/* Keep samples that contain callers within 5 most frequent */
+	/* if we want to cover up to a certain %, we need to modify this 5 */
+
+	if (preparedCallstacks)
+		return;
+
+	vector<Sample*> workSamples, processSamples;
+
+	for (const auto & instance : used)
+		for (auto s : instance.second)
+			if (s->hasCodeRefTripletSize())
+				workSamples.push_back (s);
+	for (const auto & instance : unused)
+		for (auto s : instance.second)
+			if (s->hasCodeRefTripletSize())
+				workSamples.push_back (s);
+
+	sort (workSamples.begin(), workSamples.end(), ::compare_SampleTimings);
+
+	unsigned tenpct = workSamples.size() / 10;
+	unsigned level = 0;
+	while (level < 1 && workSamples.size() > tenpct)
+	{
+		vector<Sample*> selectedSamples;
+
+		/* Compute each caller's frequency */
+		map<unsigned, unsigned> CallerQuantity;
+		map<unsigned, unsigned> CallerMaxDepth;
+		bool hasMaxMinCaller = false;
+		unsigned MaxCaller = 0;
+
+		for (auto s : workSamples)
+		{
+			const Callstack_CodeRefTriplet & current_ct = s->getCallstackCodeRefTriplet();
+			const map<unsigned, CodeRefTriplet> triplets = current_ct.getAsConstReferenceMap();
+
+			for (auto const triplet : triplets)
+			{
+				unsigned caller = triplet.second.getCaller();
+				if (CallerQuantity.count(caller) == 0)
+				{
+					CallerQuantity[caller] = 1;
+					CallerMaxDepth[caller] = triplet.first;
+				}
+				else
+				{
+					CallerQuantity[caller]++;
+					CallerMaxDepth[caller] = MAX(triplet.first, CallerMaxDepth[caller]);
+				}
+
+				if (hasMaxMinCaller)
+				{
+					if (CallerQuantity[caller] > CallerQuantity[MaxCaller])
+						MaxCaller = caller;
+				}
+				else
+					MaxCaller = caller;
+			}
+		}
+
+		/* Sort vector according to their caller frequency */
+		vector < pair < unsigned, unsigned> > vCallerQuantity (
+		  CallerQuantity.begin(), CallerQuantity.end());
+		std:sort (vCallerQuantity.begin(), vCallerQuantity.end(), ::compare_pair_caller_quantity);
+
+		/* select samples directly-related with top level */
+		unsigned caller_at_top = vCallerQuantity[0].first;
+		vector<Sample*>::iterator it = workSamples.begin();
+		while (it != workSamples.end())
+		{
+			if ((*it)->hasCaller (caller_at_top))
+			{
+				(*it)->setUsableCallstack (true);
+				selectedSamples.push_back (*it);
+				processSamples.push_back (*it);
+				it = workSamples.erase (it);
+			}
+			else
+				it++;
+		}
+
+#if defined(DEBUG)
+		cout << "Level " << level << " for caller " << caller_at_top
+		  << " contains " << selectedSamples.size() << " out of " 
+		  << workSamples.size() << " (" << ((double)selectedSamples.size()/(double)workSamples.size()) << ")" << endl;
+		cout << "Caller " << caller_at_top << " max depth = " << CallerMaxDepth[caller_at_top] << endl;
+#endif
+
+		for (auto s: selectedSamples)
+		{
+			s->addCallstackBubbles (CallerMaxDepth[caller_at_top] - s->getCallerLevel (caller_at_top));
+#if defined(DEBUG)
+			s->show();
+#endif
+		}
+
+#if defined(DEBUG)
+		cout << "Matching remaining samples" << endl;
+#endif
+
+		/* try to match remaining samples */
+		it = workSamples.begin();
+		while (it != workSamples.end())
+		{
+			const Callstack_CodeRefTriplet & work_ct = (*it)->getCallstackCodeRefTriplet();
+
+			int distance = 0;
+			bool match = false;
+			for (auto s : selectedSamples)
+			{
+				const Callstack_CodeRefTriplet & s_ct = s->getCallstackCodeRefTriplet();
+
+				distance = work_ct.prefix_match (s_ct, match);
+				if (match)
+				{
+#if defined(DEBUG)
+					cout << "MATCH distance = " << distance << endl;
+					cout << "*"; work_ct.show (false, true);
+					s_ct.show (false, true);
+#endif
+					if (distance > 0)
+					{
+						(*it)->addCallstackBubbles (distance);
+#if defined(DEBUG)
+						(*it)->show();
+#endif
+					}
+					break;
+				}
+
+				distance = s_ct.prefix_match (work_ct, match);
+				if (match)
+				{
+					if (distance <= 0)
+					{
+#if defined(DEBUG)
+						cout << "REV_MATCH_A distance = " << distance << endl;
+						cout << "*"; work_ct.show (false, true);
+						s_ct.show (false, true);
+#endif
+						(*it)->addCallstackBubbles ((unsigned)(-distance));
+#if defined(DEBUG)
+						(*it)->show();
+#endif
+					}
+					else
+					{
+#if defined(DEBUG)
+						cout << "REV_MATCH_B distance = " << distance << endl;
+						cout << "*"; work_ct.show (false, true);
+						s_ct.show (false, true);
+
+						cout << "CORRECTION PHASE! (distance = " << distance << ")" << endl;
+#endif
+						for (auto ss : selectedSamples)
+						{
+#if defined(DEBUG)
+							ss->show();
+#endif
+							ss->addCallstackBubbles (distance);								
+#if defined(DEBUG)
+							ss->show();
+#endif
+						}
+					}
+					break;
+				}
+			}
+			if (match)
+			{
+				(*it)->setUsableCallstack (true);
+				selectedSamples.push_back (*it);
+				processSamples.push_back (*it);
+				it = workSamples.erase (it);
+			}
+			else
+				it++;
+		}
+
+		unsigned max_depth = 0;
+		for (auto s : selectedSamples)
+			max_depth = MAX(max_depth, s->getMaxCallerLevel());
+		for (auto s : selectedSamples)
+			s->setCallstackMaxDepth (max_depth);
+
+#if defined(DEBUG)
+		cout << "postLevel " << level << " for caller " << caller_at_top
+		  << " contains " << selectedSamples.size() << " out of " 
+		  << workSamples.size() << " (" << ((double)selectedSamples.size()/(double)workSamples.size()) << ")" << endl;
+#endif
+
+		/* clear containers for the next round */
+		selectedSamples.clear();
+		CallerQuantity.clear();
+		CallerMaxDepth.clear();
+		level++;
+	}
+
+	preparedCallstacks = true;
+
+	sort (processSamples.begin(), processSamples.end(), ::compare_SampleTimings);
+
+	/* Do process the samples to locate user functions */
+	callerstime = processor->processSamples (processSamples);
+#if defined(DEBUG)
+	cout << "OUTPUT::" << endl;
+	for (const auto e : tmp)
+		cout << e.first << "," << e.second << " ";
+	cout << endl;
+#endif
+}
+
+double InstanceGroup::getInterpolatedNTime (const string &counter, Sample *s) const
+{
+	if (counter != common::DefaultTimeUnit)
+	{
+		assert (interpolated.count(counter) > 0);
+		assert (s->hasCounter(counter));
+
+		double res = 0.;
+
+		map<string,InterpolationResults*>::const_iterator it = interpolated.find (counter);
+		double valuetofind = s->getNCounterValue (counter);
+		if (it != interpolated.end())
+		{
+			unsigned n = it->second->getCount();
+			double *ptr = it->second->getInterpolationResultsPtr();
+			
+			for (unsigned u = 0; u < n; u++)
+			{
+				if (ptr[u] > valuetofind)
+				{
+					/* Approximate between two points */
+					if (u > 0)
+					{
+						double maxctr = ptr[u];
+						double minctr = ptr[u-1];
+						double pos = (maxctr - valuetofind)/(maxctr - minctr);
+						double tstep = ((double)1/(double)n);
+						res = ((double)(u-1)/(double)(n)) + tstep * pos;
+					}
+					else
+						res = 0.;
+					break;
+				}
+				else if (ptr[u] == valuetofind)
+				{
+					res = ((double)(u)/(double)(n));
+					break;
+				}
+			}
+		}
+		return res;
+	}
+	else
+		return s->getNTime();
+}
+

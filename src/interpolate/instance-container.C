@@ -41,11 +41,6 @@ InstanceContainer::InstanceContainer (string s, InstanceSeparator *iseparator)
 	is = iseparator;
 }
 
-void InstanceContainer::add (Instance *i)
-{
-	Instances.push_back (i);
-}
-
 unsigned InstanceContainer::numSamples (void)
 {
 	unsigned tmp = 0;

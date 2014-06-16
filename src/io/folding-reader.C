@@ -49,6 +49,8 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 		exit (-1);
 	}
 
+	vector< map<unsigned, unsigned> > vcallers;
+
 	/* Calculate totals and number of presence of each region */
 	while (true)
 	{
@@ -154,6 +156,7 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 				ncounters--;
 			}
 
+			map<unsigned, unsigned> callers;
 			map<unsigned, CodeRefTriplet> ct;
 			unsigned ncodereftriplets, ncrt;
 			file >> ncodereftriplets;
@@ -169,6 +172,7 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 				file >> clast;
 				CodeRefTriplet triplet (c, cl, clast);
 				ct[depth] = triplet;
+				callers[depth] = c;
 				ncrt--;
 			}
 
@@ -193,6 +197,19 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 				  cycles_cost);
 			else
 				s = new Sample (sTime, iTime, icv, ct);
+
+			bool found = false;
+			for (unsigned v = 0; v < vcallers.size() && !found; v++)
+				if (vcallers[v] == callers)
+				{
+					found = true;
+					s->setCallersId (v);
+				}
+			if (!found)
+			{
+				s->setCallersId (vcallers.size());
+				vcallers.push_back (callers);
+			}
 
 			if (i == NULL)
 			{

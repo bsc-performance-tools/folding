@@ -46,6 +46,7 @@
 
 #include "model.H"
 #include "variable-info.H"
+#include "callstack-processor.H"
 
 using namespace std;
 #if defined(HAVE_CUBE)
@@ -54,7 +55,6 @@ using namespace cube;
 
 class InterpolationResults;
 class CallstackTree;
-class CubeTree;
 
 class InstanceGroup
 {
@@ -62,6 +62,8 @@ class InstanceGroup
 	const string regionName;
 	const unsigned numGroup;
 	const string groupName;
+
+	bool preparedCallstacks;
 
 	vector<Instance*> Instances;
 	vector<Instance*> excludedInstances;
@@ -75,6 +77,8 @@ class InstanceGroup
 	vector<double> Breakpoints; /* nb (breakpoints) = nphases+1 */
 	vector<CallstackTree *> trees; /* one per phase */
 	vector< map<unsigned, CodeRefTripletAccounting*> > accountsPerLine;/* one per phase */
+
+	vector< pair<unsigned, double> > callerstime;
 
 #if defined(HAVE_CUBE)
 	Cnode *cubeTree;
@@ -126,19 +130,21 @@ class InstanceGroup
 	map<string, InterpolationResults*> getInterpolated (void) const
 	  { return interpolated; }
 
+	double getInterpolatedNTime (const string &counter, Sample *s) const;
+
+	void setInterpolationBreakpoints (vector <double> breakpoints)
+	  { Breakpoints = breakpoints; }
+	vector<double> getInterpolationBreakpoints (void) const
+	  { return Breakpoints; }
+
 	void removePreviousData (ObjectSelection *os, const string & prefix);
 	void dumpData (ObjectSelection *os, const string & prefix);
 	void dumpInterpolatedData (ObjectSelection *os, const string & prefix,
 	  const vector<Model*> &models);
 	void gnuplot (const ObjectSelection *os, const string & prefix,
 	  const vector<Model*> &models, const string & TimeUnit,
-	  vector<VariableInfo*> & vars);
+	  vector<VariableInfo*> & vars, const map<unsigned,string> & hParaverIdRoutine);
 	string python (void);
-
-	void setInterpolationBreakpoints (vector <double> breakpoints)
-	  { Breakpoints = breakpoints; }
-	vector<double> getInterpolationBreakpoints (void) const
-	  { return Breakpoints; }
 
 	void setCallstackTrees (vector<CallstackTree*> vtrees)
 	  { trees = vtrees; }
@@ -158,6 +164,10 @@ class InstanceGroup
 	  { return accountsPerLine; }
 	
 	bool hasAddresses (void) const;
+
+	void prepareCallstacks (CallstackProcessor *processor);
+	const vector<pair<unsigned,double>> getPreparedCallstacks (void) const
+	  { return callerstime; }
 };
 
 #endif

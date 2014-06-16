@@ -55,7 +55,8 @@ elif len (sys.argv) >= 2:
 	print "# set term postscript eps solid color size 3,", str (1.5*(len(sys.argv)-1))
 	print "# set term pdfcairo solid color lw 2 font \",9\" size 3,", str (1.5*(len(sys.argv)-1))
 	print "# set term png size 800,",str(300*(len(sys.argv)-1))
-	print "set term x11 size 400,",str(150*(len(sys.argv)-1))
+	print "# set term x11 size 800,",str(300*(len(sys.argv)-1))
+	print "# set term wxt size 800,",str(300*(len(sys.argv)-1))
 	print ""
 	print "set multiplot layout ",str(len(sys.argv)-1), ",1"
 	print ""

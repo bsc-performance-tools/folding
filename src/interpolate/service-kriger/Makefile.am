@@ -3,6 +3,12 @@ noinst_LTLIBRARIES = libkriger.la
 
 noinst_PROGRAMS = kriger_test
 
+def_kinrea.mod: def_kinrea.f90
+	$(FC) -c $(FCFLAGS) def_kinrea.f90
+
+def_kriger.mod: def_kriger.f90
+	$(FC) -c $(FCFLAGS) def_kriger.f90
+
 libkriger_la_SOURCES = \
  def_kinrea.f90 \
  def_kriger.f90 \

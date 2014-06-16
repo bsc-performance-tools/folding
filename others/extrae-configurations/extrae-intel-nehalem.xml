@@ -1,0 +1,53 @@
+<?xml version='1.0'?>
+
+<trace enabled="yes"
+ home="/gpfs/apps/CEPBATOOLS/extrae/2.2.0"
+ initial-mode="detail"
+ type="paraver"
+ xml-parser-id="Id: xml-parse.c 637 2011-05-30 10:47:47Z harald $"
+>
+
+  <mpi enabled="yes">
+    <counters enabled="yes" />
+  </mpi>
+
+  <callers enabled="yes">
+    <mpi enabled="yes">1-3</mpi>
+    <pacx enabled="no">1-3</pacx>
+    <sampling enabled="yes">1-5</sampling>
+  </callers>
+
+  <counters enabled="yes">
+    <cpu enabled="yes" starting-set-distribution="cyclic">
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM,PAPI_L2_DCM,PAPI_L3_TCM
+      </set>
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_BR_MSP,PAPI_BR_UCN,PAPI_BR_CN,RESOURCE_STALLS
+      </set>
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_VEC_DP,PAPI_VEC_SP,PAPI_FP_INS
+      </set>
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_LD_INS,PAPI_SR_INS
+      </set>
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PAPI_TOT_INS,PAPI_TOT_CYC,RESOURCE_STALLS:LOAD,RESOURCE_STALLS:STORE,RESOURCE_STALLS:ROB_FULL,RESOURCE_STALLS:RS_FULL
+      </set>
+    </cpu>
+    <network enabled="no" />
+    <resource-usage enabled="no" />
+    <memory-usage enabled="no" />
+  </counters>
+
+  <buffer enabled="yes">
+    <size enabled="yes">500000</size>
+    <circular enabled="no" />
+  </buffer>
+
+  <sampling enabled="yes" type="default" period="25m" />
+
+  <merge enabled="yes" />
+
+</trace>
+

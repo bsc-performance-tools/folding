@@ -385,6 +385,8 @@ AC_CONFIG_FILES([
  src/interpolate/Makefile
  src/interpolate/service-kriger/Makefile
  src/interpolate/service-R/Makefile
+ src/interpolate/model/Makefile
+ src/interpolate/callstack-processor/Makefile
  src/others/Makefile
  doc/Makefile
 ])

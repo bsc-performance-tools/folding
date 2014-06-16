@@ -41,6 +41,10 @@
 # include "instance-separator-dbscan.H"
 #endif
 
+#include "callstack-processor.H"
+#include "callstack-processor-consecutive-recursive.H"
+#include "callstack-processor-consecutive-recursive.H"
+
 #include "interpolation-kriger.H"
 #include "interpolation-R-strucchange.H"
 #if defined(HAVE_CUBE)
@@ -99,55 +103,72 @@ using namespace std;
 
 
 void GroupFilterAndDumpStatistics (set<string> &regions,
-	vector<Instance*> &vInstances,
+	const vector<Instance*> &vInstances,
 	map<string, InstanceContainer> &Instances,
 	map<string, InstanceContainer> &excludedInstances,
 	vector<Instance*> &feedInstances)
 {
-	set<string>::iterator it;
+	map<string, InstanceContainer*> ptrInstances;
 
-	cout << "Allocating instances into instance container ... " << flush;
+	cout << "Allocating instances into instance container (" << vInstances.size() << ") ... " << flush;
 	for (unsigned u = 0; u < vInstances.size(); u++)
 	{
+		if ((u+1) % 100000 == 0)
+			cout << (u+1)/1000 << "k " << flush;
+
 		string Region = vInstances[u]->getRegionName();
-		if (Instances.count (Region) == 0)
+		if (ptrInstances.count (Region) == 0)
 		{
 			/* If first instance with this name */
+#if 0
 			InstanceContainer ic (Region, instanceseparator);
 			ic.add (vInstances[u]);
 			Instances.insert (pair<string, InstanceContainer> (Region, ic));
+#else
+			InstanceContainer *ic = new InstanceContainer (Region, instanceseparator);
+			ic->add(vInstances[u]);
+			ptrInstances.insert (pair<string, InstanceContainer*> (Region, ic));
+#endif
 
 		}
 		else
 		{
 			/* If not-first instance with this name */
+#if 0
 			InstanceContainer ic = Instances.at(Region);
 			ic.add (vInstances[u]);
 			Instances.at(Region) = ic;
+#else
+			InstanceContainer *ic = ptrInstances.at(Region);
+			ic->add (vInstances[u]);
+#endif
 		}
 	}
 	cout << "Done!" << endl;
 
+	for (const auto & i : ptrInstances)
+		Instances.insert (pair<string, InstanceContainer> (i.first, *i.second));
+
 	cout << "Detecting groups in instances ... " << flush;
-	for (it = regions.begin(); it != regions.end(); it++)
-		if (Instances.count(*it) > 0)
+	for (auto const & region : regions)
+		if (Instances.count(region) > 0)
 		{
-			InstanceContainer ic = Instances.at(*it);
+			InstanceContainer ic = Instances.at(region);
 			ic.splitInGroups ();
-			Instances.at(*it) = ic;
+			Instances.at(region) = ic;
 		}
 	cout << "Done!" << endl;
 
 	cout << fixed << setprecision (3) << endl << "Statistics for the extracted data" << endl << "-----" << endl;
 
-	for (it = regions.begin(); it != regions.end(); it++)
+	for (auto const & region : regions)
 	{
-		if (Instances.count(*it) == 0)
+		if (Instances.count(region) == 0)
 			continue;
 
-		cout << "Analysis for region named : " << (*it) << endl;
+		cout << "Analysis for region named : " << region << endl;
 
-		InstanceContainer ic = Instances.at(*it);
+		InstanceContainer ic = Instances.at(region);
 
 		cout << " No. of Groups for this region : " << ic.numGroups() << endl;
 		for (unsigned u = 0; u < ic.numGroups(); u++)
@@ -250,12 +271,14 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 	while (fiterator != feedInstances.end())
 	{
 		bool found = false;
-		for (it = regions.begin(); it != regions.end() && !found; it++)
-			if (Instances.count(*it) > 0)
+		for (auto const & region : regions)
+			if (Instances.count(region) > 0)
 			{
-				InstanceContainer ic = Instances.at(*it);
+				InstanceContainer ic = Instances.at(region);
 				const vector<Instance*> vi = ic.getInstances();
 				found = find(vi.begin(), vi.end(), (*fiterator)) != vi.end();
+				if (found)
+					break;
 			}
 		if (!found)
 			fiterator = feedInstances.erase (fiterator);
@@ -295,8 +318,12 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 	if (caller.size() > 0)
 	{
 		PCFfile << endl << "EVENT_TYPE" << endl;
-		for (unsigned u = 0; u < caller.size(); u++)
-			PCFfile << "0 " << FOLDED_BASE + caller[u] << " Folded sampling caller level " << caller[u] - EXTRAE_SAMPLE_CALLER_MIN << endl;
+		for (unsigned u = 0; u < 2*caller.size(); u++)
+		{
+			PCFfile << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_CALLER_MIN + u << " Folded sampling caller level " << u << endl;
+			PCFfile << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_CALLER_MIN + EXTRAE_SAMPLE_REVERSE_DELTA + u << " Folded sampling reverse caller level " << u << endl;
+		}
+		PCFfile << "0 " << FOLDED_CALLER << " Folded processed caller " << endl;
 
 		PCFfile << "VALUES" << endl;
 		vector<unsigned> v = pcf->getEventValues(EXTRAE_SAMPLE_CALLER_MIN);
@@ -307,8 +334,11 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 	if (callerline.size() > 0)
 	{
 		PCFfile << endl << "EVENT_TYPE" << endl;
-		for (unsigned u = 0; u < callerline.size(); u++)
-			PCFfile << "0 " << FOLDED_BASE + callerline[u] << " Folded sampling caller line level " << callerline[u] - EXTRAE_SAMPLE_CALLERLINE_MIN << endl;
+		for (unsigned u = 0; u < 2*callerline.size(); u++)
+		{
+			PCFfile << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_MIN + u << " Folded sampling caller line level " << u << endl;
+			PCFfile << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_MIN + EXTRAE_SAMPLE_REVERSE_DELTA + u << " Folded sampling reverse caller line level " << u << endl;
+		}
 
 		PCFfile << "VALUES" << endl;
 		vector<unsigned> v = pcf->getEventValues(EXTRAE_SAMPLE_CALLERLINE_MIN);
@@ -319,8 +349,11 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 	if (callerlineast.size() > 0)
 	{
 		PCFfile << endl << "EVENT_TYPE" << endl;
-		for (unsigned u = 0; u < callerlineast.size(); u++)
-			PCFfile << "0 " << FOLDED_BASE + callerlineast[u] << " Folded sampling caller line AST level " << callerlineast[u] - EXTRAE_SAMPLE_CALLERLINE_AST_MIN << endl;
+		for (unsigned u = 0; u < 2*callerlineast.size(); u++)
+		{
+			PCFfile << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_AST_MIN + u << " Folded sampling caller line AST level " << u << endl;
+			PCFfile << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_AST_MIN + EXTRAE_SAMPLE_REVERSE_DELTA + u << " Folded sampling reverse caller line AST level " << u << endl;
+		}
 
 		PCFfile << "VALUES" << endl;
 		vector<unsigned> v = pcf->getEventValues(EXTRAE_SAMPLE_CALLERLINE_AST_MIN);
@@ -987,6 +1020,30 @@ int main (int argc, char *argv[])
 	string cFile = argv[res];
 	string cFilePrefix = cFile.substr (0, cFile.rfind (".extract"));
 
+	map<unsigned,string> hParaverIdRoutine;
+	{
+		string controlFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".control");
+		string objectsFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".objects");
+		string traceFile;
+
+		ifstream control (controlFile.c_str());
+		if (!control.is_open())
+		{
+			cerr << "Error! Cannot open file " << controlFile << " which is needed to feed the tracefile" << endl;
+			exit (-1);
+		}
+		else
+			control >> traceFile;
+
+		UIParaverTraceConfig *pcf = NULL;
+		string pcfFile = traceFile.substr (0, traceFile.rfind (".prv")) + ".pcf";
+		pcf = new UIParaverTraceConfig;
+		pcf->parse (pcfFile);
+
+		for (auto const v : pcf->getEventValues(EXTRAE_SAMPLE_CALLER_MIN))
+			hParaverIdRoutine.insert (make_pair (v, pcf->getEventValue(EXTRAE_SAMPLE_CALLER_MIN, v)));
+	}
+
 	// Apply the folding to each region
 	set<string>::iterator it;
 	bool first = true;
@@ -1026,10 +1083,14 @@ int main (int argc, char *argv[])
 			  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
 			ss->Select (ig, counters);
 			interpolation->interpolate (ig, counters, TimeUnit);
+			CallstackProcessor *cp = new CallstackProcessor_ConsecutiveRecursive (ig, 3, 0.05);
+			ig->prepareCallstacks (cp);
+			delete cp;
 			ig->dumpInterpolatedData (objectsSelected, cFilePrefix, models);
 			ig->dumpData (objectsSelected, cFilePrefix);
+
 			ig->gnuplot (objectsSelected, cFilePrefix, models, TimeUnit,
-			  variables);
+			  variables, hParaverIdRoutine);
 		}
 
 		ic.dumpGroupData (objectsSelected, cFilePrefix, TimeUnit);
@@ -1089,7 +1150,6 @@ int main (int argc, char *argv[])
 			}
 		}
 
-		UIParaverTraceConfig *pcf = NULL;
 
 		string oFilePRV = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.prv";
 		ftrace = new FoldedParaverTrace (oFilePRV, traceFile, true);
@@ -1098,8 +1158,8 @@ int main (int argc, char *argv[])
 
 		ftrace->DumpStartingParaverLine ();
 
+		UIParaverTraceConfig *pcf = NULL;
 		string pcfFile = traceFile.substr (0, traceFile.rfind (".prv")) + ".pcf";
-
 		pcf = new UIParaverTraceConfig;
 		pcf->parse (pcfFile);
 
@@ -1174,6 +1234,7 @@ int main (int argc, char *argv[])
 
 		/* Emit callstack into the new tracefile */
 		cout << "Generating folded trace for Paraver (" << cwd << "/" << common::basename (oFilePRV.c_str()) << ")" << endl;
+
 		for (unsigned u = 0; u < whichInstancesToFeed.size(); u++)
 		{
 			Instance *i = whichInstancesToFeed[u];
@@ -1182,13 +1243,11 @@ int main (int argc, char *argv[])
 			{
 				InstanceContainer ic = Instances.at (i->getRegionName());
 				InstanceGroup *ig = ic.getInstanceGroup(i->getGroup());
-
 				ftrace->DumpGroupInfo (i);
 				ftrace->DumpInterpolationData (i, ig, counterCodes);
 				ftrace->DumpCallersInInstance (i, ig);
-				if (mainid_found)
-					ftrace->DumpReverseMainCallersInInstance (
-					  i, ig, mainid);
+				ftrace->DumpCallstackProcessed (i, ig);
+				ftrace->DumpReverseCorrectedCallersInInstance (i, ig);
 				ftrace->DumpBreakpoints (i, ig);
 			}
 		}
