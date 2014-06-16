@@ -98,7 +98,7 @@ void gnuplotGenerator::gnuplot_single (
 		  + regionName + "\\nDuration = " + ssDuration.str() + " Mevents, Counter = " 
 		  + ssCounterAvg.str() + " Mevents\";";
 
-	gplot << "set multiplot title " << TITLE << endl;
+	gplot << "set multiplot title " << TITLE << endl << endl;
 
 	gplot << "set size 1,0.25;" << endl
 	      << "set origin 0,0.65;" << endl << endl;
@@ -173,11 +173,11 @@ void gnuplotGenerator::gnuplot_single (
 		gplot << fixed << setprecision(2);
 	}
 	else
-		gplot << endl << "# Unneeded phases separators, nb. breakpoints = " << brks.size() << endl;
+		gplot << "# Unneeded phases separators, nb. breakpoints = " << brks.size() << endl << endl;
 
 	/* Generate functions to filter the .csv */
 	gplot << "# Data accessors to CSV" << endl;
-	gplot << endl << "sampleexcluded(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << "  && t eq 'e') ? ret : NaN;" << endl
+	gplot << "sampleexcluded(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << "  && t eq 'e') ? ret : NaN;" << endl
 	  << "sampleunused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g ==  " << numGroup << " && t eq 'un') ? ret : NaN;" << endl
 	  << "sampleused(ret,c,r,g,t) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " && t eq 'u') ? ret : NaN;" << endl
 	  << "interpolation(ret,c,r,g) = (c eq '" << counter << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl
@@ -262,17 +262,31 @@ string gnuplotGenerator::gnuplot_slopes (
 	/* Generate the pre-info */
 	gplot << fixed << setprecision(2) <<
 	  "X_LIMIT=" << m / 1000000 << " # Do not touch this" << endl <<
-	  "FACTOR=1" << " # Do not touch this" << endl << endl;
+	  "FACTOR=1" << " # Do not touch this" << endl << endl <<
+	  "# set term postscript eps solid color;" << endl <<
+	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term png size 800,600;" << endl << endl;
+
+	string TITLE = string("\"") + os->toString (true) + " - " + groupName + " - " +
+	  regionName + "\"";
+
+	gplot << "set multiplot title " << TITLE << endl << endl;
+
+	gplot << "set size 1,0.25;" << endl
+	      << "set origin 0,0.65;" << endl << endl;
+
+	gnuplot_routine_plot (gplot, ig, hParaverIdRoutine);
+
+	gplot << "set size 1,0.7;" << endl
+	      << "set origin 0,0;" << endl << endl;
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
-	  "# set term postscript eps solid color;" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
-	  "# set term png size 800,600;" << endl <<
 	  "set datafile separator \";\";" << endl <<
 	  "set key bottom outside center horizontal samplen 1;" << endl <<
 	  "set x2range [0:1];" << endl <<
 	  "set yrange [0:*];" << endl <<
+	  "set y2range [0:*];" << endl <<
 	  "set x2tics nomirror format \"%.02f\";" << endl;
 
 	if (TimeUnit == common::DefaultTimeUnit)
@@ -303,9 +317,6 @@ string gnuplotGenerator::gnuplot_slopes (
 		gplot << "set ylabel 'Performance counter rate (in Mevents/s)';" << endl <<
 	  "set ytics mirror;" << endl;
 
-	gplot << "set title \"" << os->toString (true) << " - " << groupName 
-	  <<  " - " << regionName << "\"" << endl;
-
 	/* If the instance-group has more than the regular 0..1 breakpoints,
 	   add this into the plot */
 	gplot << "# Breakpoints" << endl;
@@ -328,7 +339,7 @@ string gnuplotGenerator::gnuplot_slopes (
 		gplot << fixed << setprecision(2);
 	}
 	else
-		gplot << endl << "# Unneeded phases separators, nb. breakpoints = " << brks.size() << endl;
+		gplot << "# Unneeded phases separators, nb. breakpoints = " << brks.size() << endl << endl;
 
 	/* Generate functions to filter the .csv */
 	map<string, InterpolationResults*>::iterator it;
@@ -390,7 +401,8 @@ string gnuplotGenerator::gnuplot_slopes (
 	}
 	gplot << ";" << endl << endl
 	  << "unset label;" << endl
-	  << "unset arrow;" << endl;
+	  << "unset arrow;" << endl << endl
+	  << "unset multiplot;" << endl;
 
 	gplot.close();
 
@@ -431,13 +443,24 @@ string gnuplotGenerator::gnuplot_model (
 	/* Generate the pre-info */
 	gplot << fixed << setprecision(2) <<
 	  "X_LIMIT=" << me / 1000000 << " # Do not touch this" << endl <<
-	  "FACTOR=1" << " # Do not touch this" << endl << endl;
-
-	/* Generate the header, constant part of the plot */
-	gplot << fixed << setprecision(2) <<
+	  "FACTOR=1" << " # Do not touch this" << endl << endl <<
 	  "# set term postscript eps solid color;" << endl <<
 	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
-	  "# set term png size 800,600;" << endl;
+	  "# set term png size 800,600;" << endl << endl;
+
+	string TITLE = string("\"") + "Evolution for " + m->getTitleName()
+	  + " model\\n" + os->toString (true) + " - " + groupName + " - " + regionName
+	  + "\n";
+
+	gplot << "set multiplot title " << TITLE << endl << endl;
+
+	gplot << "set size 1,0.25;" << endl
+	      << "set origin 0,0.65;" << endl << endl;
+
+	gnuplot_routine_plot (gplot, ig, hParaverIdRoutine);
+
+	gplot << "set size 1,0.7;" << endl
+	      << "set origin 0,0;" << endl << endl;
 
 	if (m->isY1Stacked())
 	{
@@ -467,10 +490,6 @@ string gnuplotGenerator::gnuplot_model (
 	  "set ytics nomirror;" << endl <<
 	  "set y2tics nomirror;" << endl;
 
-	gplot << "set title \"Evolution for " << m->getTitleName() << " model\\n"
-	  << os->toString (true) << " - " << groupName <<  " - " << regionName
-	  << "\"" << endl;
-
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
 		gplot << ", " << i << "./5.*X_LIMIT";
@@ -498,7 +517,7 @@ string gnuplotGenerator::gnuplot_model (
 		gplot << fixed << setprecision(2);
 	}
 	else
-		gplot << endl << "# Unneeded phases separators, nb. breakpoints = " << brks.size() << endl;
+		gplot << "# Unneeded phases separators, nb. breakpoints = " << brks.size() << endl << endl;
 
 	/* Generate functions to filter the .csv according to the components of 
 	   the model*/
@@ -540,7 +559,8 @@ string gnuplotGenerator::gnuplot_model (
 	}
 	gplot << ";" << endl << endl
 	  << "unset label;" << endl
-	  << "unset arrow;" << endl;
+	  << "unset arrow;" << endl << endl
+	  << "unset multiplot;" << endl;
 
 	gplot.close();
 
