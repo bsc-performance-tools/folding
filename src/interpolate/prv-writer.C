@@ -125,9 +125,9 @@ void FoldedParaverTrace::DumpCallersInInstance (const Instance *in,
 
 			vector<unsigned long long> types;
 			vector<unsigned long long> values;
-			map<unsigned, CodeRefTriplet> ct = vs[v]->getCodeTriplets();
-			map<unsigned, CodeRefTriplet>::iterator it;
-			for (it = ct.begin(); it != ct.end(); it++)
+			const map<unsigned, CodeRefTriplet> & ct = vs[v]->getCodeTripletsAsConstReference();
+			map<unsigned, CodeRefTriplet>::const_iterator it;
+			for (it = ct.cbegin(); it != ct.cend(); it++)
 			{
 				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLER_MIN + (*it).first); /* caller + depth */
 				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_MIN + (*it).first); /* caller line + depth */
@@ -137,6 +137,10 @@ void FoldedParaverTrace::DumpCallersInInstance (const Instance *in,
 				values.push_back ((*it).second.getCallerLine());
 				values.push_back ((*it).second.getCallerLineAST());
 			}
+
+			types.push_back (1000);
+			values.push_back (vs[v]->getCallersId());
+
 			DumpParaverLines (types, values, ts, in);
 
 			/* Annotate these types, to emit the corresponding 0s */
@@ -153,7 +157,61 @@ void FoldedParaverTrace::DumpCallersInInstance (const Instance *in,
 	  in->getStartTime() + in->getDuration(), in);
 }
 
+void FoldedParaverTrace::DumpReverseCorrectedCallersInInstance (
+	const Instance *in, const InstanceGroup *ig)
+{
+	set<unsigned long long> set_zero_types;
+	vector<unsigned long long> vec_zero_types, vec_zero_values;
 
+	for (auto i : ig->getInstances())
+	{
+		for (auto s : i->getSamples())
+		{
+			if (!s->getUsableCallstack())
+				continue;
+
+			// unsigned long long ts = in->getStartTime() + 
+			//	(unsigned long long) (s->getNTime() * (double)(in->getDuration()));
+
+			string time = common::DefaultTimeUnit;
+			//string time = "PAPI_TOT_INS";
+			unsigned long long ts = in->getStartTime() + 
+			  (unsigned long long) (ig->getInterpolatedNTime (time, s) * (double)(in->getDuration()));
+
+			vector<unsigned long long> types;
+			vector<unsigned long long> values;
+
+			const map<unsigned, CodeRefTriplet> & ct = s->getCodeTripletsAsConstReference();
+
+			map<unsigned, CodeRefTriplet>::const_reverse_iterator it;
+			for (it = ct.crbegin(); it != ct.crend(); it++)
+			{
+				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLER_MIN + (*it).first);
+				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLERLINE_MIN + (*it).first);
+				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLERLINE_AST_MIN + (*it).first);
+
+				values.push_back ((*it).second.getCaller());
+				values.push_back ((*it).second.getCallerLine());
+				values.push_back ((*it).second.getCallerLineAST());
+			}
+
+			DumpParaverLines (types, values, ts, in);
+
+			/* Annotate these types, to emit the corresponding 0s */
+			set_zero_types.insert (types.begin(), types.end());
+		}
+	}
+
+	/* Move types into vec_zero_types */
+	vec_zero_types.insert (vec_zero_types.begin(), set_zero_types.begin(),
+	  set_zero_types.end());
+	vec_zero_values.assign (vec_zero_types.size(), 0);
+
+	DumpParaverLines (vec_zero_types, vec_zero_values,
+	  in->getStartTime() + in->getDuration(), in);
+}
+
+#if 0
 void FoldedParaverTrace::DumpReverseMainCallersInInstance (
 	const Instance *in, const InstanceGroup *ig, unsigned mainid)
 {
@@ -173,18 +231,18 @@ void FoldedParaverTrace::DumpReverseMainCallersInInstance (
 			unsigned long long ts = in->getStartTime() + 
 				(unsigned long long) (vs[v]->getNTime() * (double)(in->getDuration()));
 
-			map<unsigned, CodeRefTriplet> ct = vs[v]->getCodeTriplets();
+			const map<unsigned, CodeRefTriplet> & ct = vs[v]->getCodeTripletsAsConstReference();
 
 			/* If top of the callstack is main, process, otherwise ignore */
 			if (ct.size() > 0)
 			{
-				map<unsigned, CodeRefTriplet>::reverse_iterator it = ct.rbegin();
+				map<unsigned, CodeRefTriplet>::const_reverse_iterator it = ct.crbegin();
 				if (((*it).second).getCaller() == mainid)
 				{
 					vector<unsigned long long> types;
 					vector<unsigned long long> values;
 					unsigned depth = 0;
-					while (it != ct.rend())
+					while (it != ct.crend())
 					{
 						types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLER_MIN + depth); /* caller + depth */
 						types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLERLINE_MIN + depth); /* caller line + depth */
@@ -214,6 +272,7 @@ void FoldedParaverTrace::DumpReverseMainCallersInInstance (
 	DumpParaverLines (vec_zero_types, vec_zero_values,
 	  in->getStartTime() + in->getDuration(), in);
 }
+#endif
 
 
 void FoldedParaverTrace::DumpInterpolationData (const Instance *in,
@@ -291,6 +350,20 @@ void FoldedParaverTrace::DumpBreakpoints (const Instance *in,
 	}
 
 	DumpParaverLine (FOLDED_PHASE, 0, in->getStartTime() + in->getDuration(), in);
+}
+
+void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in, 
+	const InstanceGroup *ig)
+{
+	const vector<pair<unsigned,double>> events = ig->getPreparedCallstacks();
+	assert (events.size() % 2 == 0);
+
+	if (events.size() > 0)
+		for (const auto & e : events)
+		{
+			unsigned long long delta = (((double) in->getDuration()) * e.second);
+			DumpParaverLine (FOLDED_CALLER, e.first, in->getStartTime() + delta, in);
+		}
 }
 
 } /* namespace libparaver */

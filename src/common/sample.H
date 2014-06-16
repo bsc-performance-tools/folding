@@ -36,7 +36,7 @@
 #include <set>
 #include <string>
 
-#include "codereftriplet.H"
+#include "callstack-codereftriplet.H"
 
 using namespace std;
 
@@ -48,12 +48,16 @@ class Sample
 	double nTime; /* normalized time since start of instance */
 	map<string, unsigned long long> iCounterValue; /* integral counter value */
 	map<string, double> nCounterValue; /* normalized counter value */
-	map<unsigned, CodeRefTriplet> CodeTriplet; /* Code reference triplets (caller, callerline, callerlineAST) */
+	bool usableCallstack; /* Is the callstack marked as valid / useful? */
+	Callstack_CodeRefTriplet crt; /* Code reference triplets (caller, callerline, callerlineAST) */
 	const bool bhasAddressReference;           /* Does this sample point to a data address? */
 	const unsigned long long AddressReference; /* which address? */
 	const unsigned AddressReference_Mem_Level; /* where was it found in mem hierarchy ? */
 	const unsigned AddressReference_TLB_Level; /* where was it found in tlb hierarchy ? */
 	const unsigned AddressReference_Cycles_Cost; /* how many cycles to resolve this reference */
+
+	unsigned callersId; /* Calculated from outside, in reference to which callers are within this sample */
+
 	public:
 
 	/* sTime = sample time within the full exec, iTime time since instance */
@@ -69,6 +73,17 @@ class Sample
 
 	~Sample (void);
 
+	const Callstack_CodeRefTriplet & getCallstackCodeRefTriplet (void)
+	  { return crt; }
+	void setUsableCallstack (bool usable)
+	  { usableCallstack = usable; }
+	bool getUsableCallstack (void) const
+	  { return usableCallstack; }
+	void addCallstackBubbles (unsigned nbubbles)
+	  { crt.addBubbles (nbubbles); }
+	void setCallstackMaxDepth (unsigned max)
+	  { crt.setMaxDepth (max); }
+
 	void normalizeData (unsigned long long instaceDuration,
 	  map<string, unsigned long long> & instanceCounterValue,
 	  const string & TimeUnit);
@@ -83,18 +98,22 @@ class Sample
 	bool hasCounter (string ctr) const;
 	bool hasCounters (void) const
 	  { return iCounterValue.size() > 0; }
-	double getNCounterValue (string ctr);
-	unsigned long long getCounterValue (string ctr);
+	double getNCounterValue (string ctr) const;
+	unsigned long long getCounterValue (string ctr) const;
 	map<string, double> getNCounterValue(void)
 	  { return nCounterValue; }
 	map<unsigned, CodeRefTriplet> getCodeTriplets(void)
-	  { return CodeTriplet; }
-	bool hasCaller (unsigned caller);
+	  { return crt.getAsMap(); }
+	const map<unsigned, CodeRefTriplet> & getCodeTripletsAsConstReference (void) const
+	  { return crt.getAsConstReferenceMap(); }
+	bool hasCaller (unsigned caller) const;
+	unsigned getCallerLevel (unsigned caller) const;
+	unsigned getMaxCallerLevel (void) const;
 	unsigned getCodeRefTripletSize(void) const
-	  { return CodeTriplet.size(); }
+	  { return crt.getSize(); }
 	unsigned hasCodeRefTripletSize(void) const
-	  { return CodeTriplet.size() > 0; }
-	set<string> getCounters (void);
+	  { return crt.getSize() > 0; }
+	set<string> getCounters (void) const;
 
 	bool hasAddressReference(void) const
 	  { return bhasAddressReference; }
@@ -108,6 +127,11 @@ class Sample
 	  { return AddressReference_TLB_Level; }
 	unsigned getAddressReference_Cycles_Cost(void) const
 	  { return AddressReference_Cycles_Cost; }
+
+	void setCallersId (unsigned id)
+	  { callersId = id; }
+	unsigned getCallersId (void) const
+	  { return callersId; }
 };
 
 #endif

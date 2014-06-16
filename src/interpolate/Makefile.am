@@ -1,4 +1,4 @@
-SUBDIRS = service-kriger service-R
+SUBDIRS = service-kriger service-R model callstack-processor
 
 bin_PROGRAMS = interpolate
 
@@ -19,12 +19,6 @@ interpolate_SOURCES = \
  interpolation-results.C interpolation-results.H \
  interpolation-kriger.C interpolation-kriger.H \
  interpolation-R-strucchange.C interpolation-R-strucchange.H \
- model/componentnode.H model/componentnode.C \
- model/componentnode_constant.C model/componentnode_constant.H \
- model/componentnode_data.C model/componentnode_data.H \
- model/componentnode_derived.C model/componentnode_derived.H \
- model/componentmodel.C model/componentmodel.H \
- model/model.C model/model.H \
  generate-gnuplot.C generate-gnuplot.H \
  interpolate.C interpolate.H
 
@@ -39,7 +33,7 @@ interpolate_SOURCES += \
  cube-tree.C cube-tree.H 
 endif
 
-interpolate_CXXFLAGS = -I. -I../common -I../io -I$(LIBTOOLS_DIR)/include -Imodel -Iservice-kriger -Iservice-R $(XML_CPPFLAGS) -g -O 
+interpolate_CXXFLAGS = -I. -I../common -I../io -I$(LIBTOOLS_DIR)/include -Iservice-kriger -Iservice-R -Imodel -Icallstack-processor $(XML_CPPFLAGS) -g -O 
 if HAVE_CLUSTERING_SUITE
 interpolate_CXXFLAGS += -I$(CLUSTERING_HOME)/include
 endif
@@ -50,7 +44,12 @@ if NEED_BOOST_HOME
 interpolate_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
-interpolate_LDADD = -L../common -lcommon -lpcf-common -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser -Lservice-kriger -lkriger -lgfortran -lm -Lservice-R -lR -lrt $(XML_LIBS) ../io/libfolding-io-reader.la
+interpolate_LDADD = ../common/libcommon.la -lpcf-common \
+                    -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser \
+                    service-kriger/libkriger.la service-R/libR.la \
+                    model/libmodel.la \
+                    callstack-processor/libcallstack-processor.la ../io/libfolding-io-reader.la \
+                    $(XML_LIBS) -lrt -lgfortran -lm
 if HAVE_CLUSTERING_SUITE
 interpolate_LDADD += -L$(CLUSTERING_HOME)/lib -lClustering -lBasicClasses
 endif

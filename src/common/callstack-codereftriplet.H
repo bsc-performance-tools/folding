@@ -21,70 +21,49 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL$
+ | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common/codereftriplet.H $
  | 
- | @last_commit: $Date$
- | @version:     $Revision$
+ | @last_commit: $Date: 2014-01-02 15:55:10 +0100 (jue, 02 ene 2014) $
+ | @version:     $Revision: 2387 $
  | 
  | History:
 \* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#include "common.H"
+#ifndef CALLSTACK_CODEREFTRIPLET_H_INCLUDED
+#define CALLSTACK_CODEREFTRIPLET_H_INCLUDED
 
-#ifndef PRV_WRITER_H_INCLUDED
-#define PRV_WRITER_H_INCLUDED
+#include <map>
+#include "codereftriplet.H"
 
-#include "ParaverTrace.h"
-#include "ParaverTraceThread.h"
-#include "ParaverTraceTask.h"
-#include "ParaverTraceApplication.h"
-
-#include "instance-container.H"
-#include "interpolation-results.H"
-
-#include <fstream>
-
-namespace libparaver {
-
-class FoldedParaverTrace : public ParaverTrace
+class Callstack_CodeRefTriplet
 {
 	private:
-	ofstream traceout;
+	map<unsigned, CodeRefTriplet> crt;
 
 	public:
-	FoldedParaverTrace (string &traceout, string prvFile, bool multievents);
+	Callstack_CodeRefTriplet (map<unsigned, CodeRefTriplet> & crt);
 
-	void processState (struct state_t &s);
-	void processMultiEvent (struct multievent_t &e);
-	void processEvent (struct singleevent_t &e);
-	void processCommunication (struct comm_t &c);
-	void processCommunicator (string &c);
-	void processComment (string &c);
+	void addBubbles (unsigned nbubbles);
 
-	void DumpStartingParaverLine (void);
-	void DumpParaverLines (const vector<unsigned long long> &type,
-		const vector<unsigned long long > &value, unsigned long long time,
-		const Instance *in);
+	void setMaxDepth (unsigned max);
 
-	void DumpParaverLine (unsigned long long type,
-		unsigned long long value, unsigned long long time,
-	    const Instance *in);
+	map<unsigned, CodeRefTriplet> getAsMap (void)
+	  { return crt; }
 
-	void DumpGroupInfo (const Instance *in);
-	void DumpCallersInInstance (const Instance *in, const InstanceGroup *ig);
-	void DumpReverseCorrectedCallersInInstance (const Instance *in,
-	  const InstanceGroup *ig);
-	void DumpBreakpoints (const Instance *in, const InstanceGroup *ig);
-	void DumpInterpolationData (const Instance *in,
-	  const InstanceGroup *ig, map<string, unsigned> counterCodes);
-/*
-	void DumpReverseMainCallersInInstance (const Instance *in,
-	  const InstanceGroup *ig, unsigned mainid);
-*/
-	void DumpCallstackProcessed (const Instance *in,
-	  const InstanceGroup *ig);
+	const map<unsigned, CodeRefTriplet> & getAsConstReferenceMap (void) const
+	  { return crt; }
+
+	void processCodeTriplets (void);
+
+	unsigned getSize(void) const
+	  { return crt.size(); }
+
+	bool complete_match (Callstack_CodeRefTriplet other) const;
+
+	int prefix_match (Callstack_CodeRefTriplet other, bool & match) const;
+
+	void show (bool endline = false) const;
 };
 
-} /* namespace libparaver */
+#endif /* CODEREFTRIPLET_H_INCLUDED */
 
-#endif /* PRV_WRITER_H_INCLUDED */

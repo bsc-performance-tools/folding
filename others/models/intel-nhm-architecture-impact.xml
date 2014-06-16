@@ -1,0 +1,37 @@
+<?xml version='1.0'?>
+
+<model name="architectureimpact" title-name="Architecture impact" y1="Ratios" y2="MIPS" y1-stacked="no">
+
+	<component name="l1_dcm_ratio" title-name="L1 DCM" where="y1" color="red">
+		<operation type='/'>
+			<value> PAPI_L1_DCM </value>
+			<value> PAPI_TOT_INS </value>
+		</operation>
+	</component>
+
+	<component name="l2_dcm_ratio" title-name="L2 DCM" where="y1" color="blue">
+		<operation type='/'>
+			<value> PAPI_L2_DCM </value>
+			<value> PAPI_TOT_INS </value>
+		</operation>
+	</component>
+
+	<component name="l3_tcm_ratio" title-name="L3 TCM" where="y1" color="green">
+		<operation type='/'>
+			<value> PAPI_L3_TCM </value>
+			<value> PAPI_TOT_INS </value>
+		</operation>
+	</component>
+
+	<component name="br_msp" title-name="BR MSP" where="y1" color="orange">
+		<operation type='/'>
+			<value> PAPI_BR_MSP </value>
+			<value> PAPI_TOT_INS </value>
+		</operation>
+	</component>
+
+	<component name="mips" title-name="MIPS" where="y2" color="black">
+		<value> PAPI_TOT_INS </value>
+	</component>
+
+</model>

@@ -32,10 +32,11 @@ Sample::Sample (unsigned long long sTime, unsigned long long iTime,
     map<unsigned, CodeRefTriplet> & codetriplet)
 	: sTime (sTime), iTime(iTime), bhasAddressReference(false),
 	  AddressReference(0), AddressReference_Mem_Level(0),
-	  AddressReference_TLB_Level(0), AddressReference_Cycles_Cost(0)
+	  AddressReference_TLB_Level(0), AddressReference_Cycles_Cost(0),
+	  crt(codetriplet)
 {
 	this->iCounterValue = icountervalue;
-	this->CodeTriplet = codetriplet;
+	this->usableCallstack = false;
 }
 
 Sample::Sample (unsigned long long sTime, unsigned long long iTime,
@@ -45,12 +46,13 @@ Sample::Sample (unsigned long long sTime, unsigned long long iTime,
 	unsigned cycles_cost)
 	: sTime (sTime), iTime(iTime), bhasAddressReference(true),
 	  AddressReference(address),
-      AddressReference_Mem_Level(ar_mem_level),
+	  AddressReference_Mem_Level(ar_mem_level),
 	  AddressReference_TLB_Level(ar_tlb_level),
-	  AddressReference_Cycles_Cost(cycles_cost)
+	  AddressReference_Cycles_Cost(cycles_cost),
+	  crt(codetriplet)
 {
 	this->iCounterValue = icountervalue;
-	this->CodeTriplet = codetriplet;
+	this->usableCallstack = false;
 }
 
 Sample::~Sample (void)
@@ -63,10 +65,9 @@ void Sample::normalizeData (unsigned long long instanceDuration,
 {
 	assert (common::DefaultTimeUnit == TimeUnit || instanceCounterValue.count(TimeUnit) > 0);
 
-	map<string,unsigned long long>::iterator i;
-	for (i = iCounterValue.begin(); i != iCounterValue.end(); ++i)
+	for (const auto & counterpair : iCounterValue)
 	{
-		string counter = (*i).first;
+		string counter = counterpair.first;
 		assert (instanceCounterValue.count(counter) == 1);
 
 		nCounterValue[counter] =
@@ -81,51 +82,22 @@ void Sample::normalizeData (unsigned long long instanceDuration,
 
 void Sample::show (void)
 {
-	map<unsigned, CodeRefTriplet>::reverse_iterator it1;
 	cout << "Sample @ " << sTime << endl;
-	for (it1 = CodeTriplet.rbegin(); it1 != CodeTriplet.rend(); it1++)
-		cout << "[ " << (*it1).first << " <" << (*it1).second.getCaller() 
-		  << "," << (*it1).second.getCallerLine() << "," 
-		  << (*it1).second.getCallerLineAST() << "> ]" << endl;
-	map<string, unsigned long long>::iterator it2;
+
+	/* Show callers first */
+	crt.show (true);
+
+	/* Show performance counters then */
+	map<string, unsigned long long>::const_iterator it2;
 	cout << "[";
-	for (it2 = iCounterValue.begin(); it2 != iCounterValue.end(); it2++)
-		cout << " " << (*it2).first << "," << (*it2).second;
+	for (const auto & counterpair : iCounterValue)
+		cout << " " << counterpair.first << "," << counterpair.second;
 	cout << " ]" << endl;
 }
 
 void Sample::processCodeTriplets (void)
 {
-	/* Remove head callers 0..2 */
-	map<unsigned, CodeRefTriplet>::iterator i = CodeTriplet.begin();
-	if ((*i).second.getCaller() <= 2) /* 0 = End, 1 = Unresolved, 2 = Not found */
-	{
-		do
-		{
-			CodeTriplet.erase (i);
-			if (CodeTriplet.size() == 0)
-				break;
-			i = CodeTriplet.begin();
-		} while ((*i).second.getCaller() <= 2);
-	}
-
-	/* Remove tail callers 0..2 */
-	i = CodeTriplet.begin();
-	bool tailFound = false;
-	map<unsigned, CodeRefTriplet>::iterator it;
-	while (i != CodeTriplet.end())
-	{
-		if ((*i).second.getCaller() <= 2 && !tailFound)
-		{
-			it = i;
-			tailFound = true;
-		}
-		else if ((*i).second.getCaller() > 2)
-			tailFound = false;
-		i++;
-	}
-	if (tailFound)
-		CodeTriplet.erase (it, CodeTriplet.end());
+	crt.processCodeTriplets ();
 }
 
 bool Sample::hasCounter (string ctr) const
@@ -133,33 +105,51 @@ bool Sample::hasCounter (string ctr) const
 	return iCounterValue.count (ctr) > 0;
 }
 
-double Sample::getNCounterValue (string ctr)
+double Sample::getNCounterValue (string ctr) const
 {
 	assert (hasCounter(ctr));
-	return nCounterValue[ctr];
+	map<string, double>::const_iterator i = nCounterValue.find (ctr);
+	return (*i).second;
 }
 
-unsigned long long Sample::getCounterValue (string ctr)
+unsigned long long Sample::getCounterValue (string ctr) const
 {
 	assert (hasCounter(ctr));
-	return iCounterValue[ctr];
+	map<string, unsigned long long>::const_iterator i = iCounterValue.find (ctr);
+	return (*i).second;
 }
 
-bool Sample::hasCaller (unsigned caller)
+bool Sample::hasCaller (unsigned caller) const
 {
-	map<unsigned, CodeRefTriplet>::iterator i;
-	for (i = CodeTriplet.begin(); i != CodeTriplet.end(); i++)
-		if ((*i).second.getCaller() == caller)
+	for (const auto & codereftriplet : crt.getAsConstReferenceMap ())
+		if (codereftriplet.second.getCaller() == caller)
 			return true;
 	return false;
 }
 
-set<string> Sample::getCounters (void)
+unsigned Sample::getCallerLevel (unsigned caller) const
+{
+	assert (hasCaller(caller));
+	for (const auto & codereftriplet : crt.getAsConstReferenceMap ())
+		if (codereftriplet.second.getCaller() == caller)
+			return codereftriplet.first;
+
+	/* This cannot happen */
+	return 0;
+}
+
+unsigned Sample::getMaxCallerLevel (void) const
+{
+	const map<unsigned, CodeRefTriplet> & ccrt = crt.getAsConstReferenceMap ();
+	map<unsigned, CodeRefTriplet>::const_reverse_iterator it = ccrt.crbegin();
+	return (*it).first;
+}
+
+set<string> Sample::getCounters (void) const
 {
 	set<string> res;
-	map<string, unsigned long long>::iterator it;
-	for (it = iCounterValue.begin(); it != iCounterValue.end(); it++)
-		res.insert ((*it).first);
+	for (const auto & counterpair : iCounterValue)
+		res.insert (counterpair.first);
 	return res;
 }
 

@@ -24,16 +24,21 @@
 #include "common.H"
 #include "generate-gnuplot.H"
 
+#include <assert.h>
 #include <iostream>
+#include <sstream>
 #include <iomanip>
+#include <stack>
 
-
-void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
+void gnuplotGenerator::gnuplot_single (
+	InstanceGroup *ig,
 	const ObjectSelection *os,
 	const string &prefix,
 	const string &counter,
 	InterpolationResults *idata,
-	const string & TimeUnit)
+	const string & TimeUnit,
+	const map<unsigned,string> & hParaverIdRoutine
+)
 {
 	string regionName = ig->getRegionName();
 	string groupName = ig->getGroupName();
@@ -74,13 +79,37 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 	/* Generate the pre-info */
 	gplot << fixed << setprecision(2) <<
 	  "X_LIMIT=" << m / 1000000 << " # Do not touch this" << endl <<
-	  "FACTOR=1" << " # Do not touch this" << endl << endl;
+	  "FACTOR=1" << " # Do not touch this" << endl << endl <<
+	  "# set term postscript eps solid color;" << endl <<
+	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term png size 800,600;" << endl;
+
+	string TITLE;
+	stringstream ssDuration, ssCounterAvg;
+	ssDuration << m/1000000;
+	ssCounterAvg << idata->getAvgCounterValue() / 1000000;
+
+	if (TimeUnit == common::DefaultTimeUnit)
+		TITLE = "\"" + os->toString (true) + " - " + groupName + " - "
+		  + regionName + "\\nDuration = " + ssDuration.str() + " ms, Counter = " 
+		  + ssCounterAvg.str() + " Mevents\";";
+	else
+		TITLE = "\"" + os->toString (true) + " - " + groupName + " - " 
+		  + regionName + "\\nDuration = " + ssDuration.str() + " Mevents, Counter = " 
+		  + ssCounterAvg.str() + " Mevents\";";
+
+	gplot << "set multiplot title " << TITLE << endl;
+
+	gplot << "set size 1,0.25;" << endl
+	      << "set origin 0,0.65;" << endl << endl;
+
+	gnuplot_routine_plot (gplot, ig, hParaverIdRoutine);
+
+	gplot << "set size 1,0.7;" << endl
+	      << "set origin 0,0;" << endl << endl;
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
-	  "# set term postscript eps solid color;" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
-	  "# set term png size 800,600;" << endl <<
 	  "set datafile separator \";\";" << endl <<
 	  "set key bottom outside center horizontal samplen 1;" << endl <<
 	  "set x2range [0:1];" << endl <<
@@ -108,24 +137,16 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 	else	
 	  gplot << "set y2label '" << counter << " rate (in Mevents/s)';" << endl;
 
-	if (TimeUnit == common::DefaultTimeUnit)
-		gplot << "set title \"" << os->toString (true) << " - " << groupName
-		  << " - " << regionName << "\\nDuration = " << (m/1000000) << " ms, Counter = " 
-		  << (idata->getAvgCounterValue() / 1000000) << " Mevents\";" << endl;
-	else
-		gplot << "set title \"" << os->toString (true) << " - " << groupName
-		  << " - " << regionName << "\\nDuration = " << (m/1000000) << " Mevents, Counter = " 
-		  << (idata->getAvgCounterValue() / 1000000) << " Mevents\";" << endl;
 
 	/* Mark the mean rate in the plot */
-	gplot << "# Mean rate" << endl;
+	gplot << endl << "# Mean rate" << endl;
 	if (TimeUnit == common::DefaultTimeUnit)
-		gplot << endl 
+		gplot
 		  << "set label \"\" at first X_LIMIT*1./FACTOR"
 		  << ", second " << (idata->getAvgCounterValue() / 1000)/(m/1000000)
 		  << " point pt 3 ps 2 lc rgbcolor \"#707070\";" << endl;
 	else
-		gplot << endl 
+		gplot 
 		  << "set label \"\" at first X_LIMIT*1./FACTOR"
 		  << ", second " << (idata->getAvgCounterValue()/m)
 		  << " point pt 3 ps 2 lc rgbcolor \"#707070\";" << endl;
@@ -202,16 +223,20 @@ void gnuplotGenerator::gnuplot_single (InstanceGroup *ig,
 	}
 	gplot << ";" << endl << endl
 	  << "unset label;" << endl
-	  << "unset arrow;" << endl;
+	  << "unset arrow;" << endl << endl
+	  << "unset multiplot;" << endl;
 
 	gplot.close();
 }
 
-string gnuplotGenerator::gnuplot_slopes (InstanceGroup *ig,
+string gnuplotGenerator::gnuplot_slopes (
+	InstanceGroup *ig,
 	const ObjectSelection *os,
 	const string &prefix,
 	bool per_instruction,
-	const string & TimeUnit)
+	const string & TimeUnit,
+	const map<unsigned,string> & hParaverIdRoutine
+)
 {
 	string regionName = ig->getRegionName();
 	string groupName = ig->getGroupName();
@@ -372,11 +397,14 @@ string gnuplotGenerator::gnuplot_slopes (InstanceGroup *ig,
 	return gname;
 }
 
-string gnuplotGenerator::gnuplot_model (InstanceGroup *ig,
+string gnuplotGenerator::gnuplot_model (
+	InstanceGroup *ig,
 	const ObjectSelection *os,
 	const string & prefix,
 	const Model *m,
-	const string & TimeUnit)
+	const string & TimeUnit,
+	const map<unsigned,string> & hParaverIdRoutine
+)
 {
 	string regionName = ig->getRegionName();
 	string groupName = ig->getGroupName();
@@ -519,11 +547,14 @@ string gnuplotGenerator::gnuplot_model (InstanceGroup *ig,
 	return gname;
 }
 
-string gnuplotGenerator::gnuplot_addresses_cost (InstanceGroup *ig,
+string gnuplotGenerator::gnuplot_addresses_cost (
+	InstanceGroup *ig,
 	const ObjectSelection *os,
 	const string & prefix,
 	const string & TimeUnit,
-	vector<VariableInfo*> & variables)
+	vector<VariableInfo*> & variables,
+	const map<unsigned,string> & hParaverIdRoutine
+)
 {
 	string regionName = ig->getRegionName();
 	string groupName = ig->getGroupName();
@@ -780,11 +811,14 @@ string gnuplotGenerator::gnuplot_addresses_cost (InstanceGroup *ig,
 	return gname;
 }
 
-string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
+string gnuplotGenerator::gnuplot_addresses (
+	InstanceGroup *ig,
 	const ObjectSelection *os,
 	const string & prefix,
 	const string & TimeUnit,
-	vector<VariableInfo*> & variables)
+	vector<VariableInfo*> & variables,
+	const map<unsigned,string> & hParaverIdRoutine
+)
 {
 	string regionName = ig->getRegionName();
 	string groupName = ig->getGroupName();
@@ -1061,10 +1095,13 @@ string gnuplotGenerator::gnuplot_addresses (InstanceGroup *ig,
 	return gname;
 }
 
-string gnuplotGenerator::gnuplot_callers (InstanceGroup *ig,
+string gnuplotGenerator::gnuplot_callers (
+	InstanceGroup *ig,
 	const ObjectSelection *os,
 	const string & prefix,
-	const string & TimeUnit)
+	const string & TimeUnit,
+	const map<unsigned,string> & hParaverIdRoutine
+)
 {
 	string regionName = ig->getRegionName();
 	string groupName = ig->getGroupName();
@@ -1209,8 +1246,12 @@ string gnuplotGenerator::gnuplot_callers (InstanceGroup *ig,
 	return gname;
 }
 
-void gnuplotGenerator::gnuplot_groups (InstanceContainer *ic,
-	const ObjectSelection *os, const string & prefix, StatisticType_t type)
+void gnuplotGenerator::gnuplot_groups (
+	InstanceContainer *ic,
+	const ObjectSelection *os,
+	const string & prefix,
+	StatisticType_t type
+)
 {
 	string regionName = ic->getRegionName();
 	InstanceSeparator *is = ic->getInstanceSeparator();
@@ -1298,5 +1339,73 @@ void gnuplotGenerator::gnuplot_groups (InstanceContainer *ic,
 	  << "unset arrow;" << endl;
 
 	gplot.close();
+}
+
+
+void gnuplotGenerator::gnuplot_routine_plot (
+	ofstream & gplot,
+	InstanceGroup *ig,
+	const map<unsigned,string> & hParaverIdRoutine
+)
+{
+	assert (gplot.is_open());
+
+	const vector<pair<unsigned,double>> routines = ig->getPreparedCallstacks();
+	vector<pair<unsigned,double>>::const_iterator it = routines.cbegin();
+	vector<pair<unsigned,double>>::const_iterator it_ahead = routines.cbegin();
+	stack<unsigned> routine_stack;
+
+	if ((*it_ahead).first != 0)
+		routine_stack.push ((*it_ahead).first);
+	else
+		routine_stack.pop ();
+
+	gplot << "set xlabel \"ghost\" textcolor rgbcolor \"white\";" << endl
+	      << "set ylabel \"ghost\" textcolor rgbcolor \"white\";" << endl
+	      << "set y2label \"ghost\" textcolor rgbcolor \"white\";" << endl
+	      << "set xrange [0:X_LIMIT*1./FACTOR];" << endl
+	      << "set x2range [0:1];" << endl
+	      << "set yrange [0:1];" << endl
+	      << "set y2range [0:1000];" << endl
+	      << "set ytics textcolor rgbcolor \"white\" (0) format \"0.01\";" << endl
+	      << "set y2tics textcolor rgbcolor \"white\" (1000);" << endl
+	      << "unset xtics;" << endl
+	      << "unset x2tics;" << endl
+	      << endl;
+
+	it_ahead++;
+	while (it_ahead != routines.cend())
+	{
+		double tbegin = (*it).second;
+		double tend = (*it_ahead).second;
+		double middle = tbegin + (tend-tbegin)/2;
+
+		gplot << "set arrow from second " << tend << ", first 0 to second " << tend << ", first 1 nohead" << endl;
+		if (tend - tbegin >= 0.025) /* Ensure that label fits in the plot*/
+		{
+			unsigned top = routine_stack.top();
+			if (hParaverIdRoutine.count (top) > 0)
+				gplot << "set label center \"" << hParaverIdRoutine.at(top) << "\" at second " << middle << ", first 0.5 rotate by 90" << endl;
+			else
+				gplot << "set label center \"Unknown routine " << top << "\" at second " << middle << ", first 0.5 rotate by 90" << endl;
+		}
+
+		if ((*it_ahead).first != 0)
+			routine_stack.push ((*it_ahead).first);
+		else
+			routine_stack.pop ();
+
+		it_ahead++; it++;
+	}
+
+	gplot << "plot \"<echo '0 0'\" with points ps 0 ti \"\"" << endl
+	      << "unset xlabel;" << endl
+	      << "unset ylabel;" << endl
+	      << "unset y2label;" << endl
+	      << "unset ytics;" << endl
+	      << "unset y2tics;" << endl
+	      << "unset label;" << endl
+	      << "unset arrow;" << endl
+	      << endl;
 }
 

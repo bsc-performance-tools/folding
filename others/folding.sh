@@ -18,13 +18,31 @@ LD_LIBRARY_PATH=${FOLDING_HOME}/lib
 for param in "$@"
 do
 	if [[ "${1}" == "-model" ]] ; then
-		echo Given model directory: $2
-		MODELS_SUFFIX+="-model $2 "
+		BASENAME_MODEL=`basename ${2}`
+		if [[ "${2}"  == "${BASENAME_MODEL}" ]] ; then
+			if [[ -f "${2}" ]]; then
+				FILENAME_MODEL=${2}
+			elif [[ -f ${FOLDING_HOME}/etc/models/${2} ]] ; then
+				FILENAME_MODEL=${FOLDING_HOME}/etc/models/${2}
+			else
+				echo "Cannot find model ${2}"
+				exit
+			fi
+		else
+			if [[ -f "${2}" ]]; then
+				FILENAME_MODEL=${2}
+			else
+				echo "Cannot find model ${2}"
+				exit
+			fi
+		fi
+		echo Given model: ${FILENAME_MODEL}
+		MODELS_SUFFIX+="-model ${FILENAME_MODEL} "
 		shift
 		shift
 	elif  [[ "${1}" == "-source" ]] ; then
-		echo Given source directory: `readlink -fn $2`
-		SOURCE_DIRECTORY_SUFFIX="-source `readlink -fn $2`"
+		echo Given source directory: `readlink -fn ${2}`
+		SOURCE_DIRECTORY_SUFFIX="-source `readlink -fn ${2}`"
 		shift
 		shift
 	else
@@ -50,11 +68,19 @@ fi
 if [[ ! -f ${1} ]] ; then
 	echo "Cannot access tracefile ${1}"
 	exit
+else
+	PRVBASE=`basename ${1} .prv`
+	PRVFILE=${1}
+	PCFFILE=`dirname ${PRVFILE}`/${PRVBASE}.pcf
 fi
 
 EXTENSION_PRV="${1##*.}"
 if [[ "${EXTENSION_PRV}" != "prv" ]] ; then
 	echo "Invalid extension for a Paraver tracefile (file was ${1})"
+	exit
+fi
+if test ! -f ${PCFFILE}; then
+	echo "Cannot access PCF file for tracefile ${1}"
 	exit
 fi
 NUMERICAL_RE='^[0-9]+$'
@@ -88,12 +114,12 @@ BASENAME_PRV="${1%.*}"
 mkdir -p ${BASENAME_PRV}
 cd ${BASENAME_PRV}
 
-${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} "../${BASENAME_PRV}.prv"
-${FOLDING_HOME}/bin/fuse "${BASENAME_PRV}.codeblocks.prv"
+${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} "../${BASENAME_PRV}.prv" || exit 1
+${FOLDING_HOME}/bin/fuse "${BASENAME_PRV}.codeblocks.prv" || exit 1
 if [[ "${BASENAME_CSV}" = "" ]] ; then
-	${FOLDING_HOME}/bin/extract -separator "${2}" "${BASENAME_PRV}.codeblocks.fused.prv"
+	${FOLDING_HOME}/bin/extract -separator "${2}" "${BASENAME_PRV}.codeblocks.fused.prv" || exit 1
 else
-	${FOLDING_HOME}/bin/extract -semantic "${BASENAME_CSV}.csv" "${BASENAME_PRV}.codeblocks.fused.prv"
+	${FOLDING_HOME}/bin/extract -semantic "${BASENAME_CSV}.csv" "${BASENAME_PRV}.codeblocks.fused.prv" || exit 1
 fi
 ${FOLDING_HOME}/bin/interpolate \
  -max-samples-distance 2000 \

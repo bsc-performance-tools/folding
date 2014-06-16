@@ -33,4 +33,3 @@ CodeRefTriplet::CodeRefTriplet (unsigned Caller, unsigned CallerLine,
 	CallerLineAST(CallerLineAST)
 {
 }
-

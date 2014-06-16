@@ -1,0 +1,47 @@
+<?xml version='1.0'?>
+
+<trace enabled="yes"
+ home="/gpfs/apps/CEPBATOOLS/extrae/2.2.0"
+ initial-mode="detail"
+ type="paraver"
+ xml-parser-id="Id: xml-parse.c 637 2011-05-30 10:47:47Z harald $"
+>
+
+  <mpi enabled="yes">
+    <counters enabled="yes" />
+  </mpi>
+
+  <callers enabled="yes">
+    <mpi enabled="yes">1-3</mpi>
+    <pacx enabled="no">1-3</pacx>
+    <sampling enabled="yes">1-5</sampling>
+  </callers>
+
+  <counters enabled="yes">
+    <cpu enabled="yes" starting-set-distribution="cyclic">
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM,PAPI_L2_DCM,PAPI_L3_TCM,PAPI_FP_INS,RESOURCE_STALLS:SB
+      </set>
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_BR_CN,PAPI_BR_UCN,PAPI_BR_MSP,PAPI_LD_INS,PAPI_SR_INS,RESOURCE_STALLS:LB
+      </set>
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_VEC_SP,PAPI_VEC_DP,RESOURCE_STALLS,RESOURCE_STALLS:RS,RESOURCE_STALLS:ROB
+      </set>
+    </cpu>
+    <network enabled="no" />
+    <resource-usage enabled="no" />
+    <memory-usage enabled="no" />
+  </counters>
+
+  <buffer enabled="yes">
+    <size enabled="yes">500000</size>
+    <circular enabled="no" />
+  </buffer>
+
+  <sampling enabled="yes" type="default" period="25m" />
+
+  <merge enabled="yes" />
+
+</trace>
+
