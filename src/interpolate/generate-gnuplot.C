@@ -80,6 +80,7 @@ void gnuplotGenerator::gnuplot_single (
 	gplot << fixed << setprecision(2) <<
 	  "X_LIMIT=" << m / 1000000 << " # Do not touch this" << endl <<
 	  "FACTOR=1" << " # Do not touch this" << endl << endl <<
+	  "set datafile separator \";\";" << endl << endl <<
 	  "# set term postscript eps solid color;" << endl <<
 	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
 	  "# set term png size 800,600;" << endl;
@@ -103,20 +104,19 @@ void gnuplotGenerator::gnuplot_single (
 	gplot << "set size 1,0.25;" << endl
 	      << "set origin 0,0.65;" << endl << endl;
 
-	gnuplot_routine_plot (gplot, ig, hParaverIdRoutine);
+	gnuplot_routine_plot (gplot, fdname, ig, hParaverIdRoutine);
 
 	gplot << "set size 1,0.7;" << endl
 	      << "set origin 0,0;" << endl << endl;
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
-	  "set datafile separator \";\";" << endl <<
 	  "set key bottom outside center horizontal samplen 1;" << endl <<
 	  "set x2range [0:1];" << endl <<
 	  "set yrange [0:1];" << endl <<
 	  "set y2range [0:*];" << endl <<
 	  "set ytics nomirror;" << endl <<
-	  "set y2tics nomirror;" << endl <<
+	  "set y2tics nomirror format \"%g\";" << endl <<
 	  "set x2tics nomirror format \"%.02f\";" << endl <<
 	  "set ylabel 'Normalized " << counter << "';" << endl;
 
@@ -153,7 +153,7 @@ void gnuplotGenerator::gnuplot_single (
 
 	/* If the instance-group has more than the regular 0..1 breakpoints,
 	   add this into the plot */
-	gplot << "# Breakpoints" << endl;
+	gplot << endl << "# Breakpoints" << endl;
 	vector<double> brks = idata->getBreakpoints();
 	if (brks.size () > 2)
 	{
@@ -242,6 +242,8 @@ string gnuplotGenerator::gnuplot_slopes (
 	string groupName = ig->getGroupName();
 	unsigned numGroup = ig->getNumGroup();
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
+	string fdname = prefix + "." + os->toString(false, "any") 
+	  + ".dump.csv";
 	string gname = prefix + "." + os->toString (false, "any") + "." +
 	  common::removeUnwantedChars(regionName) + "." + 
 	  common::removeSpaces (groupName);
@@ -263,6 +265,7 @@ string gnuplotGenerator::gnuplot_slopes (
 	gplot << fixed << setprecision(2) <<
 	  "X_LIMIT=" << m / 1000000 << " # Do not touch this" << endl <<
 	  "FACTOR=1" << " # Do not touch this" << endl << endl <<
+	  "set datafile separator \";\";" << endl << endl <<
 	  "# set term postscript eps solid color;" << endl <<
 	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
 	  "# set term png size 800,600;" << endl << endl;
@@ -275,14 +278,13 @@ string gnuplotGenerator::gnuplot_slopes (
 	gplot << "set size 1,0.25;" << endl
 	      << "set origin 0,0.65;" << endl << endl;
 
-	gnuplot_routine_plot (gplot, ig, hParaverIdRoutine);
+	gnuplot_routine_plot (gplot, fdname, ig, hParaverIdRoutine);
 
 	gplot << "set size 1,0.7;" << endl
 	      << "set origin 0,0;" << endl << endl;
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
-	  "set datafile separator \";\";" << endl <<
 	  "set key bottom outside center horizontal samplen 1;" << endl <<
 	  "set x2range [0:1];" << endl <<
 	  "set yrange [0:*];" << endl <<
@@ -311,7 +313,7 @@ string gnuplotGenerator::gnuplot_slopes (
 		gplot << "set ylabel 'Counter ratio per instruction';" << endl <<
 		  "set y2label 'MIPS';" << endl <<
 		  "set ytics nomirror;" << endl <<
-		  "set y2tics nomirror;" << endl;
+		  "set y2tics nomirror format \"%g\";" << endl;
 	}
 	else
 		gplot << "set ylabel 'Performance counter rate (in Mevents/s)';" << endl <<
@@ -319,7 +321,7 @@ string gnuplotGenerator::gnuplot_slopes (
 
 	/* If the instance-group has more than the regular 0..1 breakpoints,
 	   add this into the plot */
-	gplot << "# Breakpoints" << endl;
+	gplot << endl << "# Breakpoints" << endl;
 	vector<double> brks = ig->getInterpolationBreakpoints();
 	if (brks.size () > 2)
 	{
@@ -421,6 +423,8 @@ string gnuplotGenerator::gnuplot_model (
 	string regionName = ig->getRegionName();
 	string groupName = ig->getGroupName();
 	unsigned numGroup = ig->getNumGroup();
+	string fdname = prefix + "." + os->toString(false, "any") 
+	  + ".dump.csv";
 	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
 	string gname = prefix + "." + os->toString (false, "any") + "." +
 	  common::removeUnwantedChars(regionName) + "." + 
@@ -444,6 +448,7 @@ string gnuplotGenerator::gnuplot_model (
 	gplot << fixed << setprecision(2) <<
 	  "X_LIMIT=" << me / 1000000 << " # Do not touch this" << endl <<
 	  "FACTOR=1" << " # Do not touch this" << endl << endl <<
+	  "set datafile separator \";\";" << endl << endl <<
 	  "# set term postscript eps solid color;" << endl <<
 	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
 	  "# set term png size 800,600;" << endl << endl;
@@ -457,7 +462,7 @@ string gnuplotGenerator::gnuplot_model (
 	gplot << "set size 1,0.25;" << endl
 	      << "set origin 0,0.65;" << endl << endl;
 
-	gnuplot_routine_plot (gplot, ig, hParaverIdRoutine);
+	gnuplot_routine_plot (gplot, fdname, ig, hParaverIdRoutine);
 
 	gplot << "set size 1,0.7;" << endl
 	      << "set origin 0,0;" << endl << endl;
@@ -471,7 +476,6 @@ string gnuplotGenerator::gnuplot_model (
 	}
 
 	gplot << endl <<
-	  "set datafile separator \";\";" << endl <<
 	  "set key bottom outside center horizontal samplen 1;" << endl <<
 	  "set y2range [0:*];" << endl;
 	if (m->isY1Stacked())
@@ -488,7 +492,7 @@ string gnuplotGenerator::gnuplot_model (
 	  "set ylabel '" << m->getY1AxisName() <<  "';" << endl <<
 	  "set y2label '" << m->getY2AxisName() << "';" << endl <<
 	  "set ytics nomirror;" << endl <<
-	  "set y2tics nomirror;" << endl;
+	  "set y2tics nomirror format \"%g\";" << endl;
 
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
@@ -1115,157 +1119,6 @@ string gnuplotGenerator::gnuplot_addresses (
 	return gname;
 }
 
-string gnuplotGenerator::gnuplot_callers (
-	InstanceGroup *ig,
-	const ObjectSelection *os,
-	const string & prefix,
-	const string & TimeUnit,
-	const map<unsigned,string> & hParaverIdRoutine
-)
-{
-	string regionName = ig->getRegionName();
-	string groupName = ig->getGroupName();
-	unsigned numGroup = ig->getNumGroup();
-	string fslname = prefix + "." + os->toString(false, "any") + ".slope.csv";
-	string fdname = prefix + "." + os->toString(false, "any") 
-	  + ".dump.csv";
-	string gname = prefix + "." + os->toString (false, "any") + "." +
-	  common::removeUnwantedChars(regionName) + "." + 
-	  common::removeSpaces (groupName);
-	gname += ".callers.gnuplot";
-
-	ofstream gplot (gname.c_str());
-
-	if (!gplot.is_open())
-	{
-		cerr << "Failed to create " << gname << endl;
-		return "";
-	}
-
-	double m = ig->mean(TimeUnit);
-
-	/* Generate the pre-info */
-	gplot << fixed << setprecision(2) <<
-	  "X_LIMIT=" << m / 1000000 << " # Do not touch this" << endl <<
-	  "FACTOR=1" << " # Do not touch this" << endl << endl;
-
-	/* Generate the header, constant part of the plot */
-	gplot << fixed << setprecision(2) <<
-	  "# set term postscript eps solid color;" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
-	  "# set term png size 800,600;" << endl <<
-	  "set datafile separator \";\";" << endl <<
-	  "set key bottom outside center horizontal samplen 1;" << endl <<
-	  "set x2range [0:1];" << endl <<
-	  "set yrange [0:*];" << endl <<
-	  "set xtics nomirror format \"%.02f\";" << endl <<
-	  "set x2tics nomirror format \"%.02f\";" << endl <<
-	  "set ylabel 'Performance counter rate (in Mevents/s)';" << endl <<
-	  "set ytics nomirror;" << endl <<
-	  "set y2label 'Callers referenced';" << endl;
-
-	if (TimeUnit == common::DefaultTimeUnit)
-		gplot << "set xlabel 'Time (in ms)';" << endl;
-	else
-		gplot << "set xlabel '" << TimeUnit << " (in Mevents)';" << endl;
-
-	if (TimeUnit == common::DefaultTimeUnit)
-		gplot << "set title \"" << os->toString (true) << " - " << groupName
-		  << " - " << regionName << "\\nDuration = " << (m/1000000) << "\";" << "\"" << endl;
-	else
-		gplot << "set title \"" << os->toString (true) << " - " << groupName
-		  << " - " << regionName << "\\nDuration = " << (m/1000000) << " Mevents\";" << "\"" << endl;
-
-	gplot << "set xtics ( 0.0 ";
-	for (int i = 1; i <= 5; i++)
-		gplot << ", " << i << "./5.*X_LIMIT";
-	gplot << ");" << endl
-	  << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
-
-	gplot << "set y2tics nomirror;" << endl;
-
-	/* If the instance-group has more than the regular 0..1 breakpoints,
-	   add this into the plot */
-	vector<double> brks = ig->getInterpolationBreakpoints ();
-	if (brks.size () > 2)
-	{
-		gplot << endl;
-		gplot << fixed << setprecision(8);
-		for (unsigned u = 1; u < brks.size()-1; u++) /* Skip 0 and 1 */
-			gplot << "set arrow from graph FACTOR*"
-			  << brks[u] << ",0 to graph " << brks[u]
-			  << ",1 nohead ls 0 lc rgb 'black' lw 2 front;" << endl;
-
-		for (unsigned u = 1; u < brks.size(); u++)
-		{
-			double half = brks[u-1] + (brks[u]-brks[u-1])/2;
-			gplot << "set label \"Phase " << u << "\" at graph FACTOR*" << half 
-			  << ",0.95 rotate by -90 front textcolor rgb '#808080';" << endl;
-		}
-		gplot << fixed << setprecision(2);
-	}
-	else
-		gplot << endl << "# Unneeded phases separators, nb. breakpoints = " << brks.size() << endl;
-
-	/* Generate functions to filter the .csv */
-	map<string, InterpolationResults*>::iterator it;
-	map<string, InterpolationResults*> interpolated = ig->getInterpolated ();
-	for (it = interpolated.begin(); it != interpolated.end(); it++)
-		if ((*it).second->isSlopeCalculated())
-		{
-			string counter_gnuplot = (*it).first;
-			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
-				if (counter_gnuplot[u] == ':')
-					counter_gnuplot[u] = '_';
-
-			gplot << "slope_" << counter_gnuplot << "(ret,c,r,g) = (c eq '" << (*it).first
-			  << "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN" << endl;
-		}
-
-	gplot << "caller(ret,r,g,t) = (r eq '" << regionName <<
-	  "' && g == " << numGroup << " && t eq 'c') ? ret : NaN;" << endl;
-
-	/* Generate the plot command */
-	unsigned count = 0;
-	for (it = interpolated.begin(); it != interpolated.end(); it++)
-	{
-		if ((*it).second->isSlopeCalculated())
-		{
-			if (count == 0)
-				gplot << "plot \\" << endl;
-			else
-				gplot << ",\\" << endl;
-
-			string counter_gnuplot = (*it).first;
-			for (unsigned u = 0; u < counter_gnuplot.length(); u++)
-				if (counter_gnuplot[u] == ':')
-					counter_gnuplot[u] = '_';
-
-			if (common::isMIPS((*it).first))
-				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
-					  << "($5, strcol(3), strcol(1), $2)) ti 'MIPS' axes x2y1 w lines lw 3";
-			else
-				gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
-					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
-				      << "' axes x2y1 w lines lw 3";
-
-			count++;
-		}
-	}
-
-	gplot << ",\\" << endl << "'" << fdname <<
-	  "' u ($4*FACTOR):(caller($5, strcol(2), $3, strcol(1))) ti 'Caller' axes x2y2 w lines lw 2;" <<
-	  endl;
-
-	gplot << endl << endl
-	  << "unset label;" << endl
-	  << "unset arrow;" << endl;
-
-	gplot.close();
-
-	return gname;
-}
-
 void gnuplotGenerator::gnuplot_groups (
 	InstanceContainer *ic,
 	const ObjectSelection *os,
@@ -1364,6 +1217,7 @@ void gnuplotGenerator::gnuplot_groups (
 
 void gnuplotGenerator::gnuplot_routine_plot (
 	ofstream & gplot,
+	const string & fileDump,
 	InstanceGroup *ig,
 	const map<unsigned,string> & hParaverIdRoutine
 )
@@ -1386,9 +1240,9 @@ void gnuplotGenerator::gnuplot_routine_plot (
 	      << "set xrange [0:X_LIMIT*1./FACTOR];" << endl
 	      << "set x2range [0:1];" << endl
 	      << "set yrange [0:1];" << endl
-	      << "set y2range [0:1000];" << endl
-	      << "set ytics textcolor rgbcolor \"white\" (0) format \"0.01\";" << endl
-	      << "set y2tics textcolor rgbcolor \"white\" (1000);" << endl
+	      << "set y2range [0:*];" << endl
+	      << "set ytics textcolor rgbcolor \"white\" (0.001) format \"%0.2f\";" << endl
+	      << "set y2tics textcolor rgbcolor \"white\" (0) format \"0000\";" << endl
 	      << "unset xtics;" << endl
 	      << "unset x2tics;" << endl
 	      << endl;
@@ -1405,9 +1259,11 @@ void gnuplotGenerator::gnuplot_routine_plot (
 		{
 			unsigned top = routine_stack.top();
 			if (hParaverIdRoutine.count (top) > 0)
-				gplot << "set label center \"" << hParaverIdRoutine.at(top) << "\" at second " << middle << ", first 0.5 rotate by 90" << endl;
+				gplot << "set label center \"" << hParaverIdRoutine.at(top) <<
+				  "\" at second " << middle << ", first 0.5 rotate by 90 front" << endl;
 			else
-				gplot << "set label center \"Unknown routine " << top << "\" at second " << middle << ", first 0.5 rotate by 90" << endl;
+				gplot << "set label center \"Unknown routine " << top <<
+				  "\" at second " << middle << ", first 0.5 rotate by 90 front" << endl;
 		}
 
 		if ((*it_ahead).first != 0)
@@ -1418,7 +1274,10 @@ void gnuplotGenerator::gnuplot_routine_plot (
 		it_ahead++; it++;
 	}
 
-	gplot << "plot \"<echo '0 0'\" with points ps 0 ti \"\"" << endl
+	gplot << endl
+	      << "samplecls(ret,r,g,t) = (r eq 'adi' && g == 0  && t eq 'cl') ? ret : NaN;" << endl << endl
+	      << "plot \"" << fileDump << "\" u 4:(samplecls($5,strcol(2),$3,strcol(1))) with lines axes x2y2 ti '' lw 2 lc rgbcolor '#B000B0';" << endl
+	      << endl
 	      << "unset xlabel;" << endl
 	      << "unset ylabel;" << endl
 	      << "unset y2label;" << endl

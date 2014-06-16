@@ -79,6 +79,8 @@ class InstanceGroup
 	vector< map<unsigned, CodeRefTripletAccounting*> > accountsPerLine;/* one per phase */
 
 	vector< pair<unsigned, double> > callerstime;
+	unsigned callerstime_first_depth;
+	vector< Sample * > callerstime_processSamples;
 
 #if defined(HAVE_CUBE)
 	Cnode *cubeTree;
