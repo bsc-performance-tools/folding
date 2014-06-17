@@ -79,9 +79,7 @@ static Interpolation *interpolation = &ik;
 
 enum FeedType_t { FEED_NONE, FEED_TIME, FEED_FIRST_OCCURRENCE };
 static FeedType_t feedTraceType = FEED_NONE;
-static unsigned long long feedTraceFoldType;
 static unsigned long long feedTraceTimes_Begin, feedTraceTimes_End;
-static string feedTraceFoldType_Definition;
 static ObjectSelection *objectToFeed = NULL;
 
 static InstanceSeparatorNone isnone (true);
@@ -339,6 +337,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 			PCFfile << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_MIN + u << " Folded sampling caller line level " << u << endl;
 			PCFfile << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_MIN + EXTRAE_SAMPLE_REVERSE_DELTA + u << " Folded sampling reverse caller line level " << u << endl;
 		}
+		PCFfile << "0 " << FOLDED_CALLERLINE << " Folded processed caller line" << endl;
 
 		PCFfile << "VALUES" << endl;
 		vector<unsigned> v = pcf->getEventValues(EXTRAE_SAMPLE_CALLERLINE_MIN);
@@ -864,7 +863,6 @@ int main (int argc, char *argv[])
 
 	int res = ProcessParameters (argc, argv);
 
-
 	// Read samples information	
 	FoldingReader::ReadSamples (argv[res], objectsSelected, TimeUnit,
 	  presentCounters, presentRegions, vInstances, objectToFeed, feedInstances);
@@ -1021,28 +1019,27 @@ int main (int argc, char *argv[])
 	string cFilePrefix = cFile.substr (0, cFile.rfind (".extract"));
 
 	map<unsigned,string> hParaverIdRoutine;
+
+	string controlFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".control");
+	string objectsFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".objects");
+	string traceFile;
+
+	ifstream control (controlFile.c_str());
+	if (!control.is_open())
 	{
-		string controlFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".control");
-		string objectsFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".objects");
-		string traceFile;
-
-		ifstream control (controlFile.c_str());
-		if (!control.is_open())
-		{
-			cerr << "Error! Cannot open file " << controlFile << " which is needed to feed the tracefile" << endl;
-			exit (-1);
-		}
-		else
-			control >> traceFile;
-
-		UIParaverTraceConfig *pcf = NULL;
-		string pcfFile = traceFile.substr (0, traceFile.rfind (".prv")) + ".pcf";
-		pcf = new UIParaverTraceConfig;
-		pcf->parse (pcfFile);
-
-		for (auto const v : pcf->getEventValues(EXTRAE_SAMPLE_CALLER_MIN))
-			hParaverIdRoutine.insert (make_pair (v, pcf->getEventValue(EXTRAE_SAMPLE_CALLER_MIN, v)));
+		cerr << "Error! Cannot open file " << controlFile << " which is needed to feed the tracefile" << endl;
+		exit (-1);
 	}
+	else
+		control >> traceFile;
+	control.close();
+
+	string pcfFile = traceFile.substr (0, traceFile.rfind (".prv")) + ".pcf";
+	UIParaverTraceConfig *pcf = new UIParaverTraceConfig;
+	pcf->parse (pcfFile);
+
+	for (auto const v : pcf->getEventValues(EXTRAE_SAMPLE_CALLER_MIN))
+		hParaverIdRoutine.insert (make_pair (v, pcf->getEventValue(EXTRAE_SAMPLE_CALLER_MIN, v)));
 
 	// Apply the folding to each region
 	set<string>::iterator it;
@@ -1087,8 +1084,7 @@ int main (int argc, char *argv[])
 			ig->prepareCallstacks (cp);
 			delete cp;
 			ig->dumpInterpolatedData (objectsSelected, cFilePrefix, models);
-			ig->dumpData (objectsSelected, cFilePrefix);
-
+			ig->dumpData (objectsSelected, cFilePrefix, pcf);
 			ig->gnuplot (objectsSelected, cFilePrefix, models, TimeUnit,
 			  variables, hParaverIdRoutine);
 		}
@@ -1103,9 +1099,8 @@ int main (int argc, char *argv[])
 	// Generate a new PRV & CUBE files for the folded data
 	if (feedTraceType != FEED_NONE)
 	{
-		string controlFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".control");
-		string objectsFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".objects");
-		string traceFile;
+		unsigned long long feedTraceFoldType;
+		string feedTraceFoldType_Definition;
 
 		ifstream control (controlFile.c_str());
 		if (!control.is_open())

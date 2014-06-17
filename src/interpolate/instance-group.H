@@ -140,7 +140,8 @@ class InstanceGroup
 	  { return Breakpoints; }
 
 	void removePreviousData (ObjectSelection *os, const string & prefix);
-	void dumpData (ObjectSelection *os, const string & prefix);
+	void dumpData (ObjectSelection *os, const string & prefix,
+	  UIParaverTraceConfig *pcf);
 	void dumpInterpolatedData (ObjectSelection *os, const string & prefix,
 	  const vector<Model*> &models);
 	void gnuplot (const ObjectSelection *os, const string & prefix,
@@ -170,6 +171,10 @@ class InstanceGroup
 	void prepareCallstacks (CallstackProcessor *processor);
 	const vector<pair<unsigned,double>> getPreparedCallstacks (void) const
 	  { return callerstime; }
+	unsigned getPreparedCallstacks_First_Depth (void) const
+	  { return callerstime_first_depth; }
+	vector<Sample*> getPreparedCallstacks_Process_Samples (void) const
+	  { return callerstime_processSamples; }
 };
 
 #endif
