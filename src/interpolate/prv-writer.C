@@ -126,20 +126,21 @@ void FoldedParaverTrace::DumpCallersInInstance (const Instance *in,
 			vector<unsigned long long> types;
 			vector<unsigned long long> values;
 			const map<unsigned, CodeRefTriplet> & ct = vs[v]->getCodeTripletsAsConstReference();
-			map<unsigned, CodeRefTriplet>::const_iterator it;
-			for (it = ct.cbegin(); it != ct.cend(); it++)
+			for (auto const & it : ct)
 			{
-				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLER_MIN + (*it).first); /* caller + depth */
-				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_MIN + (*it).first); /* caller line + depth */
-				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_AST_MIN + (*it).first); /* caller line AST + depth */
+				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLER_MIN + it.first); /* caller + depth */
+				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_MIN + it.first); /* caller line + depth */
+				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLERLINE_AST_MIN + it.first); /* caller line AST + depth */
 
-				values.push_back ((*it).second.getCaller());
-				values.push_back ((*it).second.getCallerLine());
-				values.push_back ((*it).second.getCallerLineAST());
+				values.push_back (it.second.getCaller());
+				values.push_back (it.second.getCallerLine());
+				values.push_back (it.second.getCallerLineAST());
 			}
 
+#if 0
 			types.push_back (1000);
 			values.push_back (vs[v]->getCallersId());
+#endif
 
 			DumpParaverLines (types, values, ts, in);
 
@@ -364,6 +365,47 @@ void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in,
 			unsigned long long delta = (((double) in->getDuration()) * e.second);
 			DumpParaverLine (FOLDED_CALLER, e.first, in->getStartTime() + delta, in);
 		}
+
+	/* Dump caller lines within processed routines from callerstime_processSamples */
+	{
+		unsigned depth = ig->getPreparedCallstacks_First_Depth();
+		const vector<pair<unsigned,double>> routines = ig->getPreparedCallstacks();
+		double last = 0.;
+		for (auto const & r : routines)
+		{
+			if (r.first > 0)
+				depth--;
+			else if (r.first == 0)
+				depth++;
+
+			vector<Sample*> tmp;
+			for (auto s : ig->getPreparedCallstacks_Process_Samples())
+				if (s->getNTime() >= last && s->getNTime() < r.second)
+					tmp.push_back (s);
+
+			for (const auto s : tmp)
+			{
+				const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
+				assert (callers.count (depth) > 0);
+				CodeRefTriplet crt = callers.at (depth);
+
+				// unsigned long long ts = in->getStartTime() + 
+				//	(unsigned long long) (s->getNTime() * (double)(in->getDuration()));
+
+				string time = common::DefaultTimeUnit;
+				//string time = "PAPI_TOT_INS";
+				unsigned long long ts = in->getStartTime() + 
+				  (unsigned long long) (ig->getInterpolatedNTime (time, s) * (double)(in->getDuration()));
+
+				DumpParaverLine (FOLDED_CALLERLINE, crt.getCallerLine(), ts, in);
+			}
+
+			tmp.clear();
+
+			last = r.second;
+		}
+		DumpParaverLine (FOLDED_CALLERLINE, 0, in->getStartTime() + in->getDuration(), in);
+	}
 }
 
 } /* namespace libparaver */

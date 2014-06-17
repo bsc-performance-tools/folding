@@ -29,6 +29,7 @@
 #define FOLDED_PHASE                              600000002
 #define FOLDED_TYPE                               600000003
 #define FOLDED_CALLER                             600000004
+#define FOLDED_CALLERLINE                         600000005
 #define ADDRESS_VARIABLE_ADDRESSES                 41000000
 #define PAPI_CHANGE_COUNTER_SET                    41999999
 #define PAPI_MIN_COUNTER                           42000000

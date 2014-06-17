@@ -22,6 +22,7 @@
 \*****************************************************************************/
 
 #include "common.H"
+#include "pcf-common.H"
 
 #include <assert.h>
 #include <math.h>
@@ -36,7 +37,6 @@
 
 #include <list>
 #include <deque>
-#include <stack>
 
 using namespace std;
 
@@ -319,7 +319,8 @@ static bool compare_SampleTimings (Sample *s1, Sample *s2)
 	//return s1->getNCounterValue("PAPI_TOT_INS") < s2->getNCounterValue("PAPI_TOT_INS");
 }
 
-void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
+void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
+	UIParaverTraceConfig *pcf)
 {
 	string fname = prefix + "." + os->toString(false, "any") +
 	  ".dump.csv";
@@ -395,8 +396,16 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix)
 					const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
 					assert (callers.count (depth) > 0);
 					CodeRefTriplet crt = callers.at (depth);
-					odata << "cl" << ";" << regionName << ";" << numGroup << ";"
-					  << s->getNTime() << ";" << crt.getCallerLine() << ";" << crt.getCaller() << endl;
+
+					unsigned codeline;
+					string file;
+					pcfcommon::lookForCallerLineInfo (pcf, crt.getCallerLine(), file,
+					  codeline);
+
+					if (codeline > 0)
+						odata << "cl" << ";" << regionName << ";" << numGroup << ";"
+						  << s->getNTime() << ";" << codeline << ";" << crt.getCaller()
+						  << endl;
 				}
 
 				tmp.clear();
@@ -748,35 +757,32 @@ double InstanceGroup::getInterpolatedNTime (const string &counter, Sample *s) co
 
 		double res = 0.;
 
-		map<string,InterpolationResults*>::const_iterator it = interpolated.find (counter);
+		InterpolationResults * ir = interpolated.at(counter);
 		double valuetofind = s->getNCounterValue (counter);
-		if (it != interpolated.end())
-		{
-			unsigned n = it->second->getCount();
-			double *ptr = it->second->getInterpolationResultsPtr();
+		unsigned n = ir->getCount();
+		double *ptr = ir->getInterpolationResultsPtr();
 			
-			for (unsigned u = 0; u < n; u++)
+		for (unsigned u = 0; u < n; u++)
+		{
+			if (ptr[u] > valuetofind)
 			{
-				if (ptr[u] > valuetofind)
+				/* Approximate between two points */
+				if (u > 0)
 				{
-					/* Approximate between two points */
-					if (u > 0)
-					{
-						double maxctr = ptr[u];
-						double minctr = ptr[u-1];
-						double pos = (maxctr - valuetofind)/(maxctr - minctr);
-						double tstep = ((double)1/(double)n);
-						res = ((double)(u-1)/(double)(n)) + tstep * pos;
-					}
-					else
-						res = 0.;
-					break;
+					double maxctr = ptr[u];
+					double minctr = ptr[u-1];
+					double pos = (maxctr - valuetofind)/(maxctr - minctr);
+					double tstep = ((double)1/(double)n);
+					res = ((double)(u-1)/(double)(n)) + tstep * pos;
 				}
-				else if (ptr[u] == valuetofind)
-				{
-					res = ((double)(u)/(double)(n));
-					break;
-				}
+				else
+					res = 0.;
+				break;
+			}
+			else if (ptr[u] == valuetofind)
+			{
+				res = ((double)(u)/(double)(n));
+				break;
 			}
 		}
 		return res;

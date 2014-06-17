@@ -83,7 +83,8 @@ void gnuplotGenerator::gnuplot_single (
 	  "set datafile separator \";\";" << endl << endl <<
 	  "# set term postscript eps solid color;" << endl <<
 	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
-	  "# set term png size 800,600;" << endl;
+	  "# set term png size 800,600;" << endl << 
+	  "set term wxt size 800,600;" << endl << endl;
 
 	string TITLE;
 	stringstream ssDuration, ssCounterAvg;
@@ -268,7 +269,8 @@ string gnuplotGenerator::gnuplot_slopes (
 	  "set datafile separator \";\";" << endl << endl <<
 	  "# set term postscript eps solid color;" << endl <<
 	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
-	  "# set term png size 800,600;" << endl << endl;
+	  "# set term png size 800,600;" << endl <<
+	  "set term wxt size 800,600;" << endl << endl;
 
 	string TITLE = string("\"") + os->toString (true) + " - " + groupName + " - " +
 	  regionName + "\"";
@@ -451,7 +453,8 @@ string gnuplotGenerator::gnuplot_model (
 	  "set datafile separator \";\";" << endl << endl <<
 	  "# set term postscript eps solid color;" << endl <<
 	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
-	  "# set term png size 800,600;" << endl << endl;
+	  "# set term png size 800,600;" << endl <<
+	  "set term wxt size 800,600;" << endl << endl;
 
 	string TITLE = string("\"") + "Evolution for " + m->getTitleName()
 	  + " model\\n" + os->toString (true) + " - " + groupName + " - " + regionName
@@ -638,7 +641,7 @@ string gnuplotGenerator::gnuplot_addresses_cost (
 	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
 	  "# set term png size 800,600;" << endl <<
 	  "# set term x11 size 800,600;" << endl <<
-	  endl <<
+	  "set term wxt size 800,600;" << endl << endl <<
 	  "set multiplot layout 2,1" << endl << 
 	  "set datafile separator \";\";" << endl <<
 	  "set key bottom outside center horizontal samplen 1;" << endl <<
@@ -901,7 +904,7 @@ string gnuplotGenerator::gnuplot_addresses (
 	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
 	  "# set term png size 800,600;" << endl <<
 	  "# set term x11 size 800,600;" << endl <<
-	  endl <<
+	  "set term wxt size 800,600;" << endl << endl <<
 	  "set multiplot layout 2,1" << endl << 
 	  "set datafile separator \";\";" << endl <<
 	  "set key bottom outside center horizontal samplen 1;" << endl <<
@@ -1151,6 +1154,7 @@ void gnuplotGenerator::gnuplot_groups (
 	gplot << fixed <<
 	  "# set term postscript eps enhaced solid color" << endl <<
 	  "# set term png size 800,600" << endl <<
+	  "set term wxt size 800,600;" << endl << endl <<
 	  "set datafile separator \";\"" << endl <<
 	  "set key bottom outside center horizontal samplen 1;" << endl <<
 	  "set yrange [-1:1];" << endl <<
@@ -1225,66 +1229,118 @@ void gnuplotGenerator::gnuplot_routine_plot (
 	assert (gplot.is_open());
 
 	const vector<pair<unsigned,double>> routines = ig->getPreparedCallstacks();
-	vector<pair<unsigned,double>>::const_iterator it = routines.cbegin();
-	vector<pair<unsigned,double>>::const_iterator it_ahead = routines.cbegin();
-	stack<unsigned> routine_stack;
 
-	if ((*it_ahead).first != 0)
-		routine_stack.push ((*it_ahead).first);
-	else
-		routine_stack.pop ();
-
-	gplot << "set xlabel \"ghost\" textcolor rgbcolor \"white\";" << endl
-	      << "set ylabel \"ghost\" textcolor rgbcolor \"white\";" << endl
-	      << "set y2label \"ghost\" textcolor rgbcolor \"white\";" << endl
+	gplot << "set xlabel \"ghost\" tc rgbcolor \"white\";" << endl
+	      << "set ylabel \"ghost\" tc rgbcolor \"white\";" << endl
+	      << "set y2label \"Code line\";" << endl
+	      << "set label \"bottom\" at second 1.005, first 0;" << endl
+	      << "set label \"top\"    at second 1.005, first 1;" << endl
 	      << "set xrange [0:X_LIMIT*1./FACTOR];" << endl
 	      << "set x2range [0:1];" << endl
 	      << "set yrange [0:1];" << endl
-	      << "set y2range [0:*];" << endl
-	      << "set ytics textcolor rgbcolor \"white\" (0.001) format \"%0.2f\";" << endl
-	      << "set y2tics textcolor rgbcolor \"white\" (0) format \"0000\";" << endl
+	      << "set y2range [0:*] reverse;" << endl
+	      << "set ytics tc rgbcolor \"white\" (0.001) format \"%0.2f\";" << endl
+	      << "set y2tics 100 tc rgbcolor \"white\" format \"0000\";" << endl
 	      << "unset xtics;" << endl
 	      << "unset x2tics;" << endl
 	      << endl;
 
-	it_ahead++;
-	while (it_ahead != routines.cend())
+	double last = 0.;
+	for (const auto & r : routines)
 	{
-		double tbegin = (*it).second;
-		double tend = (*it_ahead).second;
-		double middle = tbegin + (tend-tbegin)/2;
+		gplot << "# set arrow from second " << last << ", first 0 to second " << r.second << ", first 1 nohead" << endl;
+		last = r.second;
+	}
 
-		gplot << "set arrow from second " << tend << ", first 0 to second " << tend << ", first 1 nohead" << endl;
-		if (tend - tbegin >= 0.025) /* Ensure that label fits in the plot*/
+	gplot << endl;
+
+	vector<pair<unsigned,double>>::const_iterator it = routines.cbegin();
+	last = 0.;
+	vector<string> bgcolors;
+	bgcolors.push_back (string("#ff0000"));
+	bgcolors.push_back (string("#00ff00"));
+	bgcolors.push_back (string("#0000ff"));
+	bgcolors.push_back (string("#ffa000"));
+	bgcolors.push_back (string("#00ffff"));
+	bgcolors.push_back (string("#606060"));
+
+#define X_WIDTH_THRESHOLD 0.025
+
+	map<unsigned, string> routines_colors;
+	unsigned idx = 0;
+	stack<unsigned> routine_stack;
+	for (const auto & r : routines)
+	{
+		if (r.second - last >= X_WIDTH_THRESHOLD)
 		{
-			unsigned top = routine_stack.top();
-			if (hParaverIdRoutine.count (top) > 0)
-				gplot << "set label center \"" << hParaverIdRoutine.at(top) <<
-				  "\" at second " << middle << ", first 0.5 rotate by 90 front" << endl;
+			string color;
+			if (routines_colors.count(routine_stack.top()) == 0)
+			{
+				color = bgcolors[idx];
+				idx = (idx+1)%bgcolors.size();
+			}
 			else
-				gplot << "set label center \"Unknown routine " << top <<
-				  "\" at second " << middle << ", first 0.5 rotate by 90 front" << endl;
+				color = routines_colors.at(routine_stack.top());
+
+			gplot << "set obj rect from second " << last << ", first 0 to second " << r.second << ", first 1 "
+			      << "fs transparent solid 0.33 noborder fc rgbcolor '" << color << "' behind" << endl;
+
+			routines_colors[routine_stack.top()] = color;
 		}
 
-		if ((*it_ahead).first != 0)
-			routine_stack.push ((*it_ahead).first);
+		if (r.first != 0)
+			routine_stack.push (r.first);
 		else
 			routine_stack.pop ();
 
-		it_ahead++; it++;
+		last = r.second;
+	}
+
+	gplot << endl;
+
+	last = 0.;
+	routine_stack = {};
+	for (const auto & r : routines)
+	{
+		double tbegin = last;
+		double tend = r.second;
+		double middle = tbegin + (tend-tbegin)/2;
+
+		if (tend - tbegin >= X_WIDTH_THRESHOLD)
+		{
+			unsigned top = routine_stack.top();
+			if (hParaverIdRoutine.count (top) > 0)
+				gplot << "set label center \"" << hParaverIdRoutine.at(top);
+			else
+				gplot << "set label center \"Unknown routine " << top;
+
+			gplot << "\" at second " << middle << ", first 0.5 rotate by 90 tc rgbcolor 'black' front" << endl;
+		}
+
+		if (r.first != 0)
+			routine_stack.push (r.first);
+		else
+			routine_stack.pop ();
+
+		last = r.second;
 	}
 
 	gplot << endl
-	      << "samplecls(ret,r,g,t) = (r eq 'adi' && g == 0  && t eq 'cl') ? ret : NaN;" << endl << endl
-	      << "plot \"" << fileDump << "\" u 4:(samplecls($5,strcol(2),$3,strcol(1))) with lines axes x2y2 ti '' lw 2 lc rgbcolor '#B000B0';" << endl
+	      << "samplecls(ret,r,g,t) = (r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << "  && t eq 'cl') ? ret : NaN;" << endl << endl
+	      << "plot \"" << fileDump << "\" u 4:(samplecls($5,strcol(2),$3,strcol(1))) with points axes x2y2 ti '' lc rgbcolor '#ff2090' pt 7 ps 0.5;" << endl
 	      << endl
 	      << "unset xlabel;" << endl
 	      << "unset ylabel;" << endl
 	      << "unset y2label;" << endl
 	      << "unset ytics;" << endl
 	      << "unset y2tics;" << endl
+	      << "set y2tics autofreq;" << endl
 	      << "unset label;" << endl
 	      << "unset arrow;" << endl
+	      << "unset xrange;" << endl
+	      << "unset x2range;" << endl
+	      << "unset yrange;" << endl
+	      << "unset y2range;" << endl
 	      << endl;
 }
 

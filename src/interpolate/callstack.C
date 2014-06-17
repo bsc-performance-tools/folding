@@ -32,9 +32,8 @@ Sample * Callstack::lookLongestWithMain (vector<Sample*> &vs, unsigned mainid)
 {
 	Sample *res = NULL;
 
-	for (unsigned u = 0; u < vs.size(); u++)
+	for (auto s : vs)
 	{
-		Sample *s = vs[u];
 		if (s->hasCaller(mainid))
 		{
 			if (res != NULL)
@@ -54,9 +53,8 @@ Sample * Callstack::lookLongest (vector<Sample*> &vs)
 {
 	Sample *res = NULL;
 
-	for (unsigned u = 0; u < vs.size(); u++)
+	for (auto s : vs)
 	{
-		Sample *s = vs[u];
 		const map<unsigned, CodeRefTriplet> & ct = s->getCodeTripletsAsConstReference();
 		map<unsigned, CodeRefTriplet>::const_iterator i;
 		for (i = ct.cbegin(); i != ct.cend(); i++)
