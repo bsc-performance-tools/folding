@@ -112,7 +112,7 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 	for (unsigned u = 0; u < vInstances.size(); u++)
 	{
 		if ((u+1) % 100000 == 0)
-			cout << (u+1)/1000 << "k " << flush;
+			cout << (u+1)/1000 << "k ... " << flush;
 
 		string Region = vInstances[u]->getRegionName();
 		if (ptrInstances.count (Region) == 0)
@@ -1080,8 +1080,10 @@ int main (int argc, char *argv[])
 			  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
 			ss->Select (ig, counters);
 			interpolation->interpolate (ig, counters, TimeUnit);
-			CallstackProcessor *cp = new CallstackProcessor_ConsecutiveRecursive (ig, 3, 0.05);
+			CallstackProcessor *cp = new CallstackProcessor_ConsecutiveRecursive (ig, 3, 0.025);
+			cout << "Preparing callstacks" << endl;
 			ig->prepareCallstacks (cp);
+			cout << "Done callstacks" << endl;
 			delete cp;
 			ig->dumpInterpolatedData (objectsSelected, cFilePrefix, models);
 			ig->dumpData (objectsSelected, cFilePrefix, pcf);

@@ -15,6 +15,7 @@ LD_LIBRARY_PATH=${FOLDING_HOME}/lib
 # Process optional parameters first
 #
 
+SHOW_COMMANDS=no
 for param in "$@"
 do
 	if [[ "${1}" == "-model" ]] ; then
@@ -44,6 +45,9 @@ do
 		echo Given source directory: `readlink -fn ${2}`
 		SOURCE_DIRECTORY_SUFFIX="-source `readlink -fn ${2}`"
 		shift
+		shift
+	elif [[ "${1}" == "-show-commands" ]] ; then
+		SHOW_COMMANDS=yes
 		shift
 	else
 		break
@@ -114,13 +118,32 @@ BASENAME_PRV="${1%.*}"
 mkdir -p ${BASENAME_PRV}
 cd ${BASENAME_PRV}
 
+if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
+	echo Executing: ${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} \"../${BASENAME_PRV}.prv\"
+fi
 ${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} "../${BASENAME_PRV}.prv" || exit 1
+
+if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
+	echo Executing: ${FOLDING_HOME}/bin/fuse \"${BASENAME_PRV}.codeblocks.prv\"
+fi
 ${FOLDING_HOME}/bin/fuse "${BASENAME_PRV}.codeblocks.prv" || exit 1
+
 if [[ "${BASENAME_CSV}" = "" ]] ; then
+	if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
+		echo ${FOLDING_HOME}/bin/extract -separator \"${2}\" \"${BASENAME_PRV}.codeblocks.fused.prv\"
+	fi
 	${FOLDING_HOME}/bin/extract -separator "${2}" "${BASENAME_PRV}.codeblocks.fused.prv" || exit 1
 else
+	if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
+		echo ${FOLDING_HOME}/bin/extract -semantic \"${BASENAME_CSV}.csv\" \"${BASENAME_PRV}.codeblocks.fused.prv\"
+	fi
 	${FOLDING_HOME}/bin/extract -semantic "${BASENAME_CSV}.csv" "${BASENAME_PRV}.codeblocks.fused.prv" || exit 1
 fi
+
+if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
+	echo ${FOLDING_HOME}/bin/interpolate -max-samples-distance 2000 -sigma-times 2.0 -use-median -feed-first-occurrence any ${EXTRA_INTERPOLATE_FLAGS} ${MODELS_SUFFIX} ${SOURCE_DIRECTORY_SUFFIX} "${BASENAME_PRV}.codeblocks.fused.extract"
+fi
+
 ${FOLDING_HOME}/bin/interpolate \
  -max-samples-distance 2000 \
  -sigma-times 2.0 \
