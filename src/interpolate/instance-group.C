@@ -538,7 +538,7 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 	if (preparedCallstacks)
 		return;
 
-	vector<Sample*> workSamples, processSamples;
+	vector<Sample*> workSamples, processSamples, allSamples;
 
 	for (const auto & instance : used)
 		for (auto s : instance.second)
@@ -548,6 +548,8 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 		for (auto s : instance.second)
 			if (s->hasCodeRefTripletSize())
 				workSamples.push_back (s);
+
+	allSamples = workSamples;
 
 	sort (workSamples.begin(), workSamples.end(), ::compare_SampleTimings);
 
@@ -616,7 +618,7 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 #if defined(DEBUG)
 		cout << "Level " << level << " for caller " << caller_at_top
 		  << " contains " << selectedSamples.size() << " out of " 
-		  << workSamples.size() << " (" << ((double)selectedSamples.size()/(double)workSamples.size()) << ")" << endl;
+		  << allSamples.size() << " (" << ((double)selectedSamples.size()/(double)allSamples.size()) << ")" << endl;
 		cout << "Caller " << caller_at_top << " max depth = " << CallerMaxDepth[caller_at_top] << endl;
 #endif
 
@@ -649,8 +651,8 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 				{
 #if defined(DEBUG)
 					cout << "MATCH distance = " << distance << endl;
-					cout << "*"; work_ct.show (false, true);
-					s_ct.show (false, true);
+					cout << "*"; work_ct.show (false);
+					s_ct.show (false);
 #endif
 					if (distance > 0)
 					{
@@ -669,8 +671,8 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 					{
 #if defined(DEBUG)
 						cout << "REV_MATCH_A distance = " << distance << endl;
-						cout << "*"; work_ct.show (false, true);
-						s_ct.show (false, true);
+						cout << "*"; work_ct.show (false);
+						s_ct.show (false);
 #endif
 						(*it)->addCallstackBubbles ((unsigned)(-distance));
 #if defined(DEBUG)
@@ -681,8 +683,8 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 					{
 #if defined(DEBUG)
 						cout << "REV_MATCH_B distance = " << distance << endl;
-						cout << "*"; work_ct.show (false, true);
-						s_ct.show (false, true);
+						cout << "*"; work_ct.show (false);
+						s_ct.show (false);
 
 						cout << "CORRECTION PHASE! (distance = " << distance << ")" << endl;
 #endif
@@ -720,7 +722,7 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 #if defined(DEBUG)
 		cout << "postLevel " << level << " for caller " << caller_at_top
 		  << " contains " << selectedSamples.size() << " out of " 
-		  << workSamples.size() << " (" << ((double)selectedSamples.size()/(double)workSamples.size()) << ")" << endl;
+		  << allSamples.size() << " (" << ((double)selectedSamples.size()/(double)allSamples.size()) << ")" << endl;
 #endif
 
 		/* clear containers for the next round */
