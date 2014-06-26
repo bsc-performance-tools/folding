@@ -1080,11 +1080,11 @@ int main (int argc, char *argv[])
 			  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
 			ss->Select (ig, counters);
 			interpolation->interpolate (ig, counters, TimeUnit);
+#if defined(CALLSTACK_ANALYSIS)
 			CallstackProcessor *cp = new CallstackProcessor_ConsecutiveRecursive (ig, 3, 0.025);
-			cout << "Preparing callstacks" << endl;
 			ig->prepareCallstacks (cp);
-			cout << "Done callstacks" << endl;
 			delete cp;
+#endif
 			ig->dumpInterpolatedData (objectsSelected, cFilePrefix, models);
 			ig->dumpData (objectsSelected, cFilePrefix, pcf);
 			ig->gnuplot (objectsSelected, cFilePrefix, models, TimeUnit,
