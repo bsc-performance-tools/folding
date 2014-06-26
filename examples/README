@@ -1,0 +1,20 @@
+
+We provide different examples on how to use the folding and its API.
+The clusters and user-functions examples are related on how to use the folding,
+more precisely the former is how it is typically used because require little
+user intervention.
+
+  - clusters/
+    Example of usage of folding to apply to regions detected by the clustering
+    tool from the BSC tools package.
+    More details within clusters/README
+
+  - user-functions/
+    Example of usage of folding to manually instrumented routines (using Extrae
+    API).
+    More details within user-functions/README
+
+  - folding-writer/
+    Example on how to use the folding writer API to generate folding input
+    files based on 3rd party performance tools
+
