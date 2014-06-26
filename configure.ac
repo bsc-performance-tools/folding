@@ -6,7 +6,7 @@
 
 # Initialize autoconf & define package name, version and bug-report address 
 #  -- keep version in sync with src/common/extrae_version.h
-AC_INIT(folding, 1.0rc5, tools@bsc.es)
+AC_INIT(folding, 1.0rc6, tools@bsc.es)
 AC_CONFIG_HEADERS([folding-config.h:folding-config.h.in])
 
 # Safety check to ensure that the directory told with `--srcdir` contains the source code
@@ -332,8 +332,13 @@ AM_CONDITIONAL(HAVE_CLUSTERING_SUITE, test "${CLUSTERING_SUITE_FOUND}" = "yes" )
 dnl Example of default-disabled feature
 AC_ARG_ENABLE([gui],
     AS_HELP_STRING([--enable-gui], [Enables GUI frontend based on wxPython]))
-
 AM_CONDITIONAL(WANT_GUI_FRONTEND, test "${enable_gui}" = "yes" )
+
+AC_ARG_ENABLE([callstack-analysis],
+	AS_HELP_STRING([--enable-callstack-analysis], [Enables Call-stack analysis]))
+if test "${enable_callstack_analysis}" = "yes" ; then
+	AC_DEFINE([CALLSTACK_ANALYSIS], [1], [Define if call-stack analysis is enabled])
+fi
 
 AX_PROG_BOOST
 

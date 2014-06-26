@@ -100,6 +100,7 @@ void gnuplotGenerator::gnuplot_single (
 		  + regionName + "\\nDuration = " + ssDuration.str() + " Mevents, Counter = " 
 		  + ssCounterAvg.str() + " Mevents\";";
 
+#if defined(CALLSTACK_ANALYSIS)
 	gplot << "set multiplot title " << TITLE << endl << endl;
 
 	gplot << "set size 1,0.25;" << endl
@@ -109,6 +110,9 @@ void gnuplotGenerator::gnuplot_single (
 
 	gplot << "set size 1,0.7;" << endl
 	      << "set origin 0,0;" << endl << endl;
+#else
+	gplot << "set title " << TITLE << endl << endl;
+#endif
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
@@ -275,6 +279,7 @@ string gnuplotGenerator::gnuplot_slopes (
 	string TITLE = string("\"") + os->toString (true) + " - " + groupName + " - " +
 	  regionName + "\"";
 
+#if defined(CALLSTACK_ANALYSIS)
 	gplot << "set multiplot title " << TITLE << endl << endl;
 
 	gplot << "set size 1,0.25;" << endl
@@ -284,6 +289,9 @@ string gnuplotGenerator::gnuplot_slopes (
 
 	gplot << "set size 1,0.7;" << endl
 	      << "set origin 0,0;" << endl << endl;
+#else
+	gplot << "set title " << TITLE << endl << endl;
+#endif
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
@@ -460,6 +468,7 @@ string gnuplotGenerator::gnuplot_model (
 	  + " model\\n" + os->toString (true) + " - " + groupName + " - " + regionName
 	  + "\n";
 
+#if defined(CALLSTACK_ANALYSIS)
 	gplot << "set multiplot title " << TITLE << endl << endl;
 
 	gplot << "set size 1,0.25;" << endl
@@ -469,6 +478,9 @@ string gnuplotGenerator::gnuplot_model (
 
 	gplot << "set size 1,0.7;" << endl
 	      << "set origin 0,0;" << endl << endl;
+#else
+	gplot << "set title " << TITLE << endl << endl;
+#endif
 
 	if (m->isY1Stacked())
 	{
