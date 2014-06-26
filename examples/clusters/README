@@ -1,0 +1,16 @@
+
+This examples applies the folding to a clustered trace-file. The trace-file also
+includes multiple performance counters from Intel SandyBridge processors which
+allows generating additional performance models such as
+
+  * architecture impact,
+  * instruction mix, and
+  * stall distribution
+
+How to run this example:
+
+${FOLDING_HOME}/bin/folding \
+ -model intel-snb-architecture-impact.xml \
+ -model intel-snb-instruction-mix.xml \
+ -model intel-snb-stall-distribution.xml \
+ nemo.exe.128tasks.chop1.clustered.prv "Cluster ID"
