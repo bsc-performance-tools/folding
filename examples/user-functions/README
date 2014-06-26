@@ -1,0 +1,7 @@
+
+This examples applies the folding to a trace-file that has user functions 
+instrumented through Extrae_user_function () calls.
+
+How to run this example:
+
+${FOLDING_HOME}/bin/folding 444.namd.prv "User function"
