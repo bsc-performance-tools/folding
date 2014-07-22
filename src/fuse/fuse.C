@@ -244,10 +244,7 @@ void Process::processLastEvents (void)
 					multimap<unsigned, unsigned long long>::iterator it;
 					pair<multimap<unsigned, unsigned long long>::iterator,multimap<unsigned, unsigned long long>::iterator> ret = mm_filter.equal_range (e.Type);
 					for (it = ret.first; it != ret.second; ++it)
-					{
-						cout << "e.Type " << e.Type << " :: " << e.Value << endl;
 						found = found || (*it).second == e.Value;
-					}
 
 					if (!found)
 						mm_filter.insert (make_pair (e.Type, e.Value));

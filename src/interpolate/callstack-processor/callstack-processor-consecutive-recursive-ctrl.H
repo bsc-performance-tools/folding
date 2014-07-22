@@ -34,7 +34,7 @@
 
 #include <deque>
 
-class CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl
+class CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl
 {
 	private:
 	const unsigned nConsecutiveSamples;
@@ -43,12 +43,14 @@ class CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl
 	deque<pair<unsigned,double>> callers_times;
 
 	public:
-	CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl (
+	CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl (
 	  unsigned nConsecutiveSamples);
-	void add (pair<unsigned,double> callertime);
+	void add (const pair<unsigned,double> & callertime);
 	bool allEqual (void) const;
 	void show (void) const;
 	double getFirstTime(void) const;
+	double getLastTime(void) const;
+	unsigned getFirstCaller(void) const;
 };
 
 #endif /* CALLSTACK_PROCESSOR_CONSECUTIVE_RECURSIVE_CTRL_H_INCLUDED */

@@ -83,12 +83,14 @@ class Sample
 	  { crt.addBubbles (nbubbles); }
 	void setCallstackMaxDepth (unsigned max)
 	  { crt.setMaxDepth (max); }
+	void copyBottomStack (Sample *other)
+	  { crt.copyBottomStack (other->getCallstackCodeRefTriplet()); };
 
 	void normalizeData (unsigned long long instaceDuration,
 	  map<string, unsigned long long> & instanceCounterValue,
 	  const string & TimeUnit);
 	void processCodeTriplets (void);
-	void show (void);
+	void show (bool counters = true);
 	unsigned long long getTime (void) const
 	  { return sTime; }
 	unsigned long long getiTime (void) const

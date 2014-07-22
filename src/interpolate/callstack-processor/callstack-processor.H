@@ -42,6 +42,24 @@ class InstanceGroup; /* There is a circular dependency here, avoid including ins
 
 using namespace std;
 
+class CallstackProcessor_Result
+{
+	private:
+	const unsigned Level;
+	const unsigned Caller;
+	const double Time;
+
+	public:
+	CallstackProcessor_Result (unsigned level, unsigned caller, double time);
+
+	unsigned getLevel (void) const
+	  { return Level; }
+	unsigned getCaller (void) const
+	  { return Caller; }
+	double getNTime (void) const
+	  { return Time; }
+};
+
 class CallstackProcessor
 {
 	protected:
@@ -49,8 +67,8 @@ class CallstackProcessor
 
 	public:
 	CallstackProcessor (InstanceGroup *ig);	
-	virtual vector < pair < unsigned, double > > processSamples (
-	  const vector<Sample*> & samples, unsigned & first_level) = 0;
+	virtual vector < CallstackProcessor_Result* > processSamples (
+	  const vector<Sample*> & samples) = 0;
 };
 
 #endif /* CALLSTACK_PROCESSOR_H_INCLUDED */

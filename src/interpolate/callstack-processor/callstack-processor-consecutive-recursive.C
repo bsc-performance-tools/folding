@@ -30,12 +30,14 @@
 #include "instance-group.H"
 
 #include <iostream>
+#include <iomanip>
 
-//#define DEBUG
+// #define DEBUG
 
-CallstackProcessor_ConsecutiveRecursive_ProcessedInfo::CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
-	unsigned r, double t, bool s)
-	: routineId(r), time(t), speculated(s)
+CallstackProcessor_ConsecutiveRecursive_ProcessedInfo::
+  CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (unsigned l, unsigned r,
+  double t, bool s)
+	: level(l), caller(r), time(t), speculated(s)
 {
 }
 
@@ -56,14 +58,15 @@ CallstackProcessor_ConsecutiveRecursive::CallstackProcessor_ConsecutiveRecursive
 	assert (ig != NULL);
 }
 
-vector < pair < unsigned, double > >
+vector < CallstackProcessor_Result* >
 CallstackProcessor_ConsecutiveRecursive::processSamples (
-	const vector<Sample*> &samples,
-	unsigned & first_depth)
+	const vector<Sample*> &samples)
 {
 #if defined(DEBUG)
 	cout << "processSamples (or = " << openRecursion << ")" << endl;
 #endif
+
+	cout << std::setprecision(10) << endl;
 
 	/* Look for the max depth of the samples */
 	unsigned max_depth = 0;
@@ -82,8 +85,8 @@ CallstackProcessor_ConsecutiveRecursive::processSamples (
 			  s->getCodeTripletsAsConstReference();
 			if (callers.count (depth) > 0)
 			{
-				map<unsigned, CodeRefTriplet>::const_iterator i = callers.find(depth);
-				if ((*i).second.getCaller() != 0)
+				const CodeRefTriplet crt = callers.at(depth);
+				if (crt.getCaller() != 0)
 				{
 					found = true;
 					break;
@@ -94,17 +97,37 @@ CallstackProcessor_ConsecutiveRecursive::processSamples (
 			depth--;
 	}
 
-	first_depth = depth;
-
 	vector<CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * > tmp = 
 	  processSamples_r (samples, depth, 0, 0.0f, 1.0f, true); 
 
-	vector< pair < unsigned, double> > r;
+	vector< CallstackProcessor_Result* > r;
 	for (auto & t : tmp)
 	{
-		r.push_back (make_pair (t->getRoutineId(), t->getTime()));
+		r.push_back (
+		  new CallstackProcessor_Result (
+		    t->getLevel(), t->getCaller(), t->getTime()
+		  )
+		);
 		delete t;
 	}
+
+#if defined(DEBUG)
+	cout << "processSamples OUTPUT ("<< r.size()<< "):: " << endl;
+	unsigned d = 0;
+	for (const auto rinfo : r)
+	{
+		if (rinfo->getCaller() > 0)
+			d++;
+		for (int i = 0; i < d; i++)
+			cout << "  ";
+	  	cout << "[" << rinfo->getLevel() << "," << rinfo->getCaller() <<
+		     "," << rinfo->getNTime() << "] " << endl;
+		if (rinfo->getCaller() == 0)
+			d--;
+	}
+	cout << endl;
+#endif
+
 	return r;
 }
 
@@ -123,7 +146,8 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 	vector<CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * > res;
 
 #if defined(DEBUG)
-	cout << "processSamples_r (" << stackdepth << "," << depth << "," << start << "," << end << ")" << endl;
+	cout << "processSamples_r (" << stackdepth << "," << depth << ","
+	     << start << "," << end << ", " << allow_speculated << ")" << endl;
 #endif
 
 	vector< CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * > regions = 
@@ -135,7 +159,8 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 #if defined(DEBUG)
 	cout << "REGIONS found: " << regions.size() << " ";
 	for (auto const & r : regions)
-		cout << "<" << r->getRoutineId() << "," << r->getTime() << "," << r->getSpeculated() << "> ";
+		cout << "<" << r->getCaller() << "," << r->getTime() << "," 
+		     << r->getSpeculated() << "> ";
 	cout << endl;
 #endif
 
@@ -177,136 +202,266 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 	const vector<Sample*> &samples, unsigned stackdepth, double start,
 	double end, bool allow_speculated)
 {
+	return (allow_speculated)?
+		searchConsecutiveRegions_speculated (samples, stackdepth, start, end)
+		:
+		searchConsecutiveRegions_nonspeculated (samples, stackdepth, start, end);
+
+}
+
+vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
+ CallstackProcessor_ConsecutiveRecursive::searchConsecutiveRegions_nonspeculated (
+	const vector<Sample*> &samples, unsigned stackdepth, double start,
+	double end)
+{
 	vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * > res;
 
 #if defined(DEBUG)
-	cout << "searchConsecutiveRegions ( depth = " << stackdepth << 
+	cout << "searchConsecutiveRegions_nonspeculated (depth = " << stackdepth << 
 	  " start = " << start << " end = " << end << ")" << endl;
 #endif
+
+	vector < pair < unsigned, double > > vCallerTime;
 
 	string time = common::DefaultTimeUnit;
 	//string time = "PAPI_TOT_INS";
 
 	/* attention, samples should be sorted by time! select first those that 
 	   are within the region delimited by start - end */
-	vector<Sample*> workSamples;
+	bool all_zeroes = true;
 	for (auto s : samples)
-//		if (s->getNTime() >= start && s->getNTime() <= end)
-		if (ig->getInterpolatedNTime (time, s) >= start && 
-		    ig->getInterpolatedNTime (time, s) <= end)
-			workSamples.push_back (s);
-
-	/* Search for first non-zero, and then guess that it will start from there */
-	set<unsigned> foundcallers;
-	for (auto s : workSamples)
 	{
-		const map<unsigned, CodeRefTriplet> & callers =
-		  s->getCodeTripletsAsConstReference();
-		if (callers.count (stackdepth) > 0)
-			if (callers.at(stackdepth).getCaller() != 0)
-				foundcallers.insert (callers.at(stackdepth).getCaller());
-	}
-
-#if defined(DEBUG)
-	cout << "workSamples.size() = " << workSamples.size() << endl;
-	for (auto s : workSamples)
-	{
-		const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
-		if (callers.count (stackdepth) > 0)
+		double sample_time = ig->getInterpolatedNTime (time, s);
+		if (sample_time > start && sample_time <= end)
 		{
-			map<unsigned, CodeRefTriplet>::const_iterator i = callers.find(stackdepth);
-			if ((*i).second.getCaller() != 0)
-//				cout << s->getNTime() << " " << (*i).second.getCaller() << endl;
-				cout << ig->getInterpolatedNTime (time, s) << " " << (*i).second.getCaller() << endl;
-		}
-	}
-	cout << "foundcallers.size() = " << foundcallers.size() << " workSamples.size() = " << workSamples.size() << endl;
-#endif
-
-	if (foundcallers.size() == 1)
-	{
-		/* Only one caller found, consider it covers the whole region
-		   start-end only if speculateds are allowed */
-		if (allow_speculated)
-		{
-			unsigned caller = *(foundcallers.cbegin());
-			res.push_back ( new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (caller, start, true) );
-			res.push_back ( new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (0, end, true) );
-		}
-	}
-	else if (foundcallers.size() > 1)
-	{
-		CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl *ctrl =
-		  new CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl (nConsecutiveSamples);
-
-		bool in_region = false;
-		double entry_time_in_region;
-		unsigned caller_in_region;
-
-		for (auto s : workSamples)
-		{
-			const map<unsigned, CodeRefTriplet> & callers =
-			  s->getCodeTripletsAsConstReference();
+			unsigned caller = 0;
+			const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
 			if (callers.count (stackdepth) > 0)
+				caller = callers.at(stackdepth).getCaller();
+
+			all_zeroes = all_zeroes && caller == 0;
+
+			vCallerTime.push_back (make_pair (caller, sample_time));
+		}
+	}
+
+	/* Empty or everything is 0?, return empty */
+	if (vCallerTime.size() == 0 || all_zeroes)
+		return res;
+
+	CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl *ctrl =
+	  new CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl (nConsecutiveSamples);
+
+	bool in_region = false;
+	double entry_time_in_region;
+	unsigned caller_in_region;
+
+	for (const auto & ct : vCallerTime)
+	{
+		double last_time = ctrl->getLastTime();
+
+		ctrl->add (ct);
+
+#if defined(DEBUG)
+		cout << "Caller: " << ct.first << " @ " << ct.second << endl;
+#endif
+
+		if (!in_region && ctrl->allEqual())
+		{
+#if defined(DEBUG)
+			cout << "Entering at " << ct.first << " @ " << ct.second << endl;
+			ctrl->show();
+#endif
+			in_region = true;
+			entry_time_in_region = ctrl->getFirstTime();
+			caller_in_region = ctrl->getFirstCaller();
+		}
+		else if (in_region && !ctrl->allEqual())
+		{
+#if defined(DEBUG)
+			cout << "Leaving @ " << ct.second << endl;
+			ctrl->show();
+#endif
+			in_region = false;
+			if (caller_in_region != 0 && ct.second - entry_time_in_region > openRecursion)
 			{
-				map<unsigned, CodeRefTriplet>::const_iterator i = 
-				  callers.find(stackdepth);
-				if ((*i).second.getCaller() != 0)
-				{
-					// ctrl->add (make_pair ((*i).second.getCaller(), s->getNTime()));
-					ctrl->add (make_pair ((*i).second.getCaller(), ig->getInterpolatedNTime (time, s)));
-
-					if (!in_region)
-					{
-						if (ctrl->allEqual())
-						{
-#if defined(DEBUG)
-							cout << "Entering at " << (*i).second.getCaller() << " @ " << ctrl->getFirstTime() << endl;
-#endif
-							in_region = true;
-							entry_time_in_region = ctrl->getFirstTime();
-							caller_in_region = (*i).second.getCaller();
-						}
-					}
-					else
-					{
-						if (!ctrl->allEqual())
-						{
-#if defined(DEBUG)
-//							cout << "Leaving @ " << s->getNTime() << endl;
-							cout << "Leaving @ " << ig->getInterpolatedNTime (time, s) << endl;
-							ctrl->show();
-#endif
-							in_region = false;
-							// if (s->getNTime() - entry_time_in_region > openRecursion)
-							if (ig->getInterpolatedNTime (time, s) - entry_time_in_region > openRecursion)
-							{
-								// res.push_back (make_pair (caller_in_region, entry_time_in_region));
-								// // res.push_back (make_pair (0, s->getNTime()));
-								//res.push_back (make_pair (0, ig->getInterpolatedNTime (time, s)));
-
-								res.push_back ( new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (caller_in_region, entry_time_in_region, false)  );
-								res.push_back ( new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (0, ig->getInterpolatedNTime (time, s), false) );
-							}
-						}
-					}
-				}
+				res.push_back (
+				  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+				    stackdepth, caller_in_region, entry_time_in_region, false)  );
+				res.push_back (
+				  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+				    stackdepth, 0, last_time, false) );
 			}
 		}
-
-		/* if we leave within a region, close it */
-#if defined(DEBUG)
-		cout << "Leaving @ " << end << endl;
-		ctrl->show();
-#endif
-		if (in_region && end - entry_time_in_region > openRecursion)
-		{
-			res.push_back ( new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (caller_in_region, entry_time_in_region, false)  );
-			res.push_back ( new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (0, end, false) );
-		}
-
-		delete ctrl;
 	}
+
+#if defined(DEBUG)
+	cout << "Leaving @ " << end << endl;
+	ctrl->show();
+#endif
+
+	/* if we leave within a region, close it at the end */
+	if (in_region && end - entry_time_in_region > openRecursion && caller_in_region != 0)
+	{
+		res.push_back (
+		  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+		    stackdepth, caller_in_region, entry_time_in_region, false)  );
+		res.push_back (
+		  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+		    stackdepth, 0, end, false) );
+	}
+
+	delete ctrl;
+
+	return res;
+}
+
+vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
+ CallstackProcessor_ConsecutiveRecursive::searchConsecutiveRegions_speculated (
+	const vector<Sample*> &samples, unsigned stackdepth, double start,
+	double end)
+{
+	vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * > res;
+
+#if defined(DEBUG)
+	cout << "searchConsecutiveRegions_speculated (depth = " << stackdepth << 
+	  " start = " << start << " end = " << end << ")" << endl;
+#endif
+
+	vector < pair < unsigned, double > > vCallerTime;
+
+	string time = common::DefaultTimeUnit;
+	//string time = "PAPI_TOT_INS";
+
+	/* attention, samples should be sorted by time! select first those that 
+	   are within the region delimited by start - end */
+	set<unsigned> seen_callers;
+	bool all_zeroes = true;
+	for (auto s : samples)
+	{
+		double sample_time = ig->getInterpolatedNTime (time, s);
+		if (sample_time > start && sample_time <= end)
+		{
+			unsigned caller = 0;
+			const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
+			if (callers.count (stackdepth) > 0)
+				caller = callers.at(stackdepth).getCaller();
+
+			all_zeroes = all_zeroes && caller == 0;
+
+			vCallerTime.push_back (make_pair (caller, sample_time));
+#if defined(DEBUG) && 0
+			s->show(false);
+#endif
+			seen_callers.insert (caller);
+		}
+	}
+
+#if defined(DEBUG)
+	cout << "SEEN CALLERS: ";
+	for (auto const c : seen_callers)
+		cout << c << " ";
+	cout << endl;
+#endif
+
+	/* Empty or everything is 0?, return empty */
+	if (vCallerTime.size() == 0 || all_zeroes)
+		return res;
+
+	/* If only one value is seen, or two (including 0),
+	   return the whole area */	
+	if (seen_callers.size() == 1)
+	{
+		/* One only? Then do not speculate from here */
+		set<unsigned>::const_iterator i = seen_callers.cbegin();
+		res.push_back (
+		  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+		    stackdepth, *i, start, false) );
+		res.push_back (
+		  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+		    stackdepth, 0, end, false) );
+		return res;
+	}
+	else if (seen_callers.size() == 2 && seen_callers.count (0) == 1)
+	{
+		/* Two? Allow speculation */
+		set<unsigned>::const_iterator i = seen_callers.cbegin();
+		i++; /* First is always 0, skip it */
+		res.push_back (
+		  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+		    stackdepth, *i, start, true) );
+		res.push_back (
+		  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+		    stackdepth, 0, end, true) );
+		return res;
+	}
+
+	CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl *ctrl =
+	  new CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl (nConsecutiveSamples);
+
+	bool in_region = false;
+	double entry_time_in_region;
+	unsigned caller_in_region;
+
+	for (const auto & ct : vCallerTime)
+	{
+#if defined(DEBUG)
+		cout << "Caller: " << ct.first << " @ " << ct.second << endl;
+#endif
+
+		double last_time = ctrl->getLastTime();
+
+		if (ct.first == 0)
+			continue;
+
+		ctrl->add (ct);
+
+		if (!in_region && ctrl->allEqual())
+		{
+#if defined(DEBUG)
+			cout << "Entering at " << ct.first << " @ " << ct.second << endl;
+			ctrl->show();
+#endif
+			in_region = true;
+			entry_time_in_region = ctrl->getFirstTime();
+			caller_in_region = ctrl->getFirstCaller();
+		}
+		else if (in_region && !ctrl->allEqual() && caller_in_region != 0)
+		{
+#if defined(DEBUG)
+			cout << "Leaving @ " << ct.second << endl;
+			ctrl->show();
+#endif
+			in_region = false;
+			if (caller_in_region != 0 && ct.second - entry_time_in_region > openRecursion)
+			{
+				res.push_back (
+				  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+				    stackdepth, caller_in_region, entry_time_in_region, false)  );
+				res.push_back (
+				  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+				    stackdepth, 0, last_time, false) );
+			}
+		}
+	}
+
+#if defined(DEBUG)
+	cout << "Leaving @ " << end << endl;
+	ctrl->show();
+#endif
+
+	/* if we leave within a region, close it at the end */
+	if (in_region && end - entry_time_in_region > openRecursion && caller_in_region != 0)
+	{
+		res.push_back (
+		  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+		    stackdepth, caller_in_region, entry_time_in_region, false)  );
+		res.push_back (
+		  new CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (
+		    stackdepth, 0, end, false) );
+	}
+
+	delete ctrl;
 
 	return res;
 }

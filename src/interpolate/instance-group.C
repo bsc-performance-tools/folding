@@ -36,7 +36,7 @@
 #include "generate-gnuplot.H"
 
 #include <list>
-#include <deque>
+#include <stack>
 
 using namespace std;
 
@@ -376,26 +376,44 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 
 		/* Dump caller lines within processed routines from callerstime_processSamples */
 		{
-			unsigned depth = callerstime_first_depth;
-			const vector<pair<unsigned,double>> routines = this->getPreparedCallstacks();
-			double last = 0.;
-			for (auto const & r : routines)
+			const vector<CallstackProcessor_Result*> routines = this->getPreparedCallstacks();
+			vector<CallstackProcessor_Result*>::const_iterator it_ahead = routines.cbegin();
+			vector<CallstackProcessor_Result*>::const_iterator it = routines.cbegin();
+			stack<CallstackProcessor_Result*> callers;
+
+			it_ahead++;
+
+			while (it_ahead != routines.cend())
 			{
-				if (r.first > 0)
-					depth--;
-				else if (r.first == 0)
-					depth++;
+				if ((*it)->getCaller() > 0)
+					callers.push (*it);
+				else
+					callers.pop();
+
+				CallstackProcessor_Result *r = callers.top();	
+				unsigned level = r->getLevel();
+				unsigned caller = r->getCaller();
+				double end_time = (*it_ahead)->getNTime();
+				double begin_time = (*it)->getNTime();
+
+#if defined(DEBUG)
+				cout << "Routine " << caller << " at level " << level << " from " << begin_time << " to " << end_time << endl;
+#endif
 
 				vector<Sample*> tmp;
 				for (auto s : callerstime_processSamples)
-					if (s->getNTime() >= last && s->getNTime() < r.second)
+					if (s->getNTime() >= begin_time && s->getNTime() < end_time)
 						tmp.push_back (s);
 
 				for (const auto s : tmp)
 				{
 					const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
-					assert (callers.count (depth) > 0);
-					CodeRefTriplet crt = callers.at (depth);
+					assert (callers.count (level) > 0);
+					CodeRefTriplet crt = callers.at (level);
+
+#if defined(DEBUG)
+					cout << "CRT.getcallerline() = " << crt.getCallerLine() << endl;
+#endif
 
 					unsigned codeline;
 					string file;
@@ -410,8 +428,9 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 
 				tmp.clear();
 
-				last = r.second;
+				it++; it_ahead++;
 			}
+
 		}
 
 	}
@@ -530,6 +549,8 @@ static bool compare_pair_caller_quantity (
 	const pair<unsigned, unsigned> & second)
 { return first.second > second.second;}
 
+// #define DEBUG
+
 void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 {
 	/* Keep samples that contain callers within 5 most frequent */
@@ -562,6 +583,9 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 		/* Compute each caller's frequency */
 		map<unsigned, unsigned> CallerQuantity;
 		map<unsigned, unsigned> CallerMaxDepth;
+		map<unsigned, Sample*> CallerMaxDepth_sample;
+		map<unsigned, unsigned> CallerMinDepth;
+		map<unsigned, Sample*> CallerMinDepth_sample;
 		bool hasMaxMinCaller = false;
 		unsigned MaxCaller = 0;
 
@@ -577,11 +601,23 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 				{
 					CallerQuantity[caller] = 1;
 					CallerMaxDepth[caller] = triplet.first;
+					CallerMinDepth[caller] = triplet.first;
+					CallerMaxDepth_sample[caller] = s;
+					CallerMinDepth_sample[caller] = s;
 				}
 				else
 				{
 					CallerQuantity[caller]++;
-					CallerMaxDepth[caller] = MAX(triplet.first, CallerMaxDepth[caller]);
+					if (triplet.first > CallerMaxDepth[caller])
+					{
+						CallerMaxDepth[caller] = triplet.first;
+						CallerMaxDepth_sample[caller] = s;
+					}
+					if (triplet.first < CallerMinDepth[caller])
+					{
+						CallerMinDepth[caller] = triplet.first;
+						CallerMinDepth_sample[caller] = s;
+					}
 				}
 
 				if (hasMaxMinCaller)
@@ -616,28 +652,63 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 		}
 
 #if defined(DEBUG)
+		cout << endl;
 		cout << "Level " << level << " for caller " << caller_at_top
 		  << " contains " << selectedSamples.size() << " out of " 
 		  << allSamples.size() << " (" << ((double)selectedSamples.size()/(double)allSamples.size()) << ")" << endl;
 		cout << "Caller " << caller_at_top << " max depth = " << CallerMaxDepth[caller_at_top] << endl;
+		CallerMaxDepth_sample[caller_at_top]->show(false);
+		cout << "Caller " << caller_at_top << " min depth = " << CallerMinDepth[caller_at_top] << endl;
+		CallerMinDepth_sample[caller_at_top]->show(false);
+		cout << endl;
 #endif
 
 		for (auto s: selectedSamples)
 		{
+#if defined(DEBUG)
+			s->show(false);
+#endif
 			s->addCallstackBubbles (CallerMaxDepth[caller_at_top] - s->getCallerLevel (caller_at_top));
 #if defined(DEBUG)
-			s->show();
+			s->show(false);
 #endif
 		}
+
+#if defined(DEBUG)
+		cout << endl;
+		cout << "Correcting bottom part with Caller " << caller_at_top << " min depth = " << CallerMinDepth[caller_at_top] << endl;
+		CallerMinDepth_sample[caller_at_top]->show(false);
+		cout << endl;
+#endif
+
+#if 1
+		for (auto s: selectedSamples)
+		{
+#if defined(DEBUG)
+			s->show(false);
+#endif
+			s->copyBottomStack (CallerMinDepth_sample[caller_at_top]);
+#if defined(DEBUG)
+			s->show(false);
+#endif
+		}
+
+#endif
+
+#if 1
 
 #if defined(DEBUG)
 		cout << "Matching remaining samples" << endl;
 #endif
 
+		unsigned counter = 0;
+
 		/* try to match remaining samples */
 		it = workSamples.begin();
 		while (it != workSamples.end())
 		{
+			counter++;
+
 			const Callstack_CodeRefTriplet & work_ct = (*it)->getCallstackCodeRefTriplet();
 
 			int distance = 0;
@@ -651,8 +722,8 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 				{
 #if defined(DEBUG)
 					cout << "MATCH distance = " << distance << endl;
-					cout << "*"; work_ct.show (false);
-					s_ct.show (false);
+					cout << "S1)"; (*it)->show(false); // work_ct.show (false);
+					cout << "S2)"; s->show(false); // s_ct.show (false);
 #endif
 					if (distance > 0)
 					{
@@ -671,20 +742,24 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 					{
 #if defined(DEBUG)
 						cout << "REV_MATCH_A distance = " << distance << endl;
-						cout << "*"; work_ct.show (false);
-						s_ct.show (false);
+						cout << "S1)"; (*it)->show(false); // work_ct.show (false);
+						cout << "S2)"; s->show(false); // s_ct.show (false);
 #endif
 						(*it)->addCallstackBubbles ((unsigned)(-distance));
+						(*it)->copyBottomStack (s);
 #if defined(DEBUG)
-						(*it)->show();
+						(*it)->show(false);
 #endif
 					}
 					else
 					{
+						match = false;
+
+#if 0
 #if defined(DEBUG)
 						cout << "REV_MATCH_B distance = " << distance << endl;
-						cout << "*"; work_ct.show (false);
-						s_ct.show (false);
+						cout << "S1)"; work_ct.show (false);
+						cout << "S2)"; s_ct.show (false);
 
 						cout << "CORRECTION PHASE! (distance = " << distance << ")" << endl;
 #endif
@@ -698,13 +773,32 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 							ss->show();
 #endif
 						}
+#endif
 					}
 					break;
 				}
+
 			}
+
 			if (match)
 			{
 				(*it)->setUsableCallstack (true);
+
+#if defined(DEBUG)
+				cout << "RECORRECTING match" << endl;
+#endif
+
+				for (auto s: selectedSamples)
+				{
+#if defined(DEBUG)
+					s->show(false);
+#endif
+					s->copyBottomStack (*it);
+#if defined(DEBUG)
+					s->show(false);
+#endif
+				}
+
 				selectedSamples.push_back (*it);
 				processSamples.push_back (*it);
 				it = workSamples.erase (it);
@@ -713,11 +807,15 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 				it++;
 		}
 
+#endif
+
+#if 0
 		unsigned max_depth = 0;
 		for (auto s : selectedSamples)
 			max_depth = MAX(max_depth, s->getMaxCallerLevel());
 		for (auto s : selectedSamples)
 			s->setCallstackMaxDepth (max_depth);
+#endif
 
 #if defined(DEBUG)
 		cout << "postLevel " << level << " for caller " << caller_at_top
@@ -737,17 +835,10 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 	sort (processSamples.begin(), processSamples.end(), ::compare_SampleTimings);
 
 	/* Do process the samples to locate user functions */
-	callerstime = processor->processSamples (processSamples, callerstime_first_depth);
+	callerstime_Results = processor->processSamples (processSamples);
 
 	/* Store a copy to dump it later */
 	callerstime_processSamples = processSamples;
-
-#if defined(DEBUG)
-	cout << "OUTPUT (starting at depth " << callerstime_first_depth << ") ::" << endl;
-	for (const auto e : callerstime)
-		cout << e.first << "," << e.second << " ";
-	cout << endl;
-#endif
 }
 
 double InstanceGroup::getInterpolatedNTime (const string &counter, Sample *s) const

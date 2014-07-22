@@ -93,6 +93,9 @@ static double NumOfSigmaTimes = 2.0f;
 static set<string> wantedCounters;
 static set<string> wantedRegions, wantedRegionsStartWith;
 
+static unsigned CallstackProcessor_nconsecutivesamples = 5;
+static unsigned long long CallstackProcessor_duration = 1;
+
 FoldedParaverTrace *ftrace = NULL;
 
 string sourceDirectory;
@@ -429,6 +432,10 @@ int ProcessParameters (int argc, char *argv[])
 			 << " [DEFAULT kriger 1000 0.0001 no]" << endl
 		     << "-source D                [location of the source code]" << endl
 			 << "-time-unit CTR           [specify alternate time measurement / CTR]" << endl
+#if defined(CALLSTACK_ANALYSIS)
+             << "-callstack-processor n d [ where n = num of consecutive samples, d = duration]" << endl
+             << " [DEFAULT 5 1]" << endl
+#endif
 		     << endl;
 		exit (-1);
 	}
@@ -807,6 +814,40 @@ int ProcessParameters (int argc, char *argv[])
 				cerr << "Invalid interpolation algorithm" << endl;
 			}
 		}
+#if defined(CALLSTACK_ANALYSIS)
+		else if (strcmp ("-callstack-processor", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(2, argc, i))
+			{
+				cerr << "Insufficient arguments for -callstack-processor" << endl;
+				exit (-1);
+			}
+
+			unsigned n,d;
+
+			i++;
+			if ((n = atoi(argv[i])) == 0)
+			{
+				cerr << "Invalid number of samples for -callstack-processor (" << argv[i] << ")" << endl;
+				exit (-1);
+			}
+
+			i++;
+#if 0
+			if ((d = atoll(argv[i])) == 0)
+			{
+				cerr << "Invalid duration for -callstack-processor (" << argv[i] << ")" << endl;
+				exit (-1);
+			}
+#else
+			d = atoll (argv[i]);
+#endif
+
+			cout << "Callstack processor analysis: " << n
+			     << " consecutive samples, duration = " << d << " ms" << endl;
+
+		}
+#endif
 		else if (strcmp ("-model", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))
@@ -1024,15 +1065,17 @@ int main (int argc, char *argv[])
 	string objectsFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".objects");
 	string traceFile;
 
-	ifstream control (controlFile.c_str());
-	if (!control.is_open())
 	{
-		cerr << "Error! Cannot open file " << controlFile << " which is needed to feed the tracefile" << endl;
-		exit (-1);
+		ifstream control (controlFile.c_str());
+		if (!control.is_open())
+		{
+			cerr << "Error! Cannot open file " << controlFile << " which is needed to feed the tracefile" << endl;
+			exit (-1);
+		}
+		else
+			control >> traceFile;
+		control.close();
 	}
-	else
-		control >> traceFile;
-	control.close();
 
 	string pcfFile = traceFile.substr (0, traceFile.rfind (".prv")) + ".pcf";
 	UIParaverTraceConfig *pcf = new UIParaverTraceConfig;
@@ -1081,7 +1124,8 @@ int main (int argc, char *argv[])
 			ss->Select (ig, counters);
 			interpolation->interpolate (ig, counters, TimeUnit);
 #if defined(CALLSTACK_ANALYSIS)
-			CallstackProcessor *cp = new CallstackProcessor_ConsecutiveRecursive (ig, 3, 0.025);
+			CallstackProcessor *cp = new CallstackProcessor_ConsecutiveRecursive (ig,
+			  CallstackProcessor_nconsecutivesamples, CallstackProcessor_duration);
 			ig->prepareCallstacks (cp);
 			delete cp;
 #endif
@@ -1214,7 +1258,6 @@ int main (int argc, char *argv[])
 				pair<string, unsigned> RG = make_pair (i->getRegionName(), i->getGroup());
 				if (usedRegions.find(RG) == usedRegions.end())
 				{
-#if 0 /* FIX Due to Semantic CSV passed? */
 					bool found;
 					unsigned long long pv = pcfcommon::lookForValueString (pcf,
  						feedTraceFoldType, i->getRegionName(), found);
@@ -1222,7 +1265,6 @@ int main (int argc, char *argv[])
 						cerr << "Can't find value for '" << i->getRegionName() <<"' in type " << feedTraceFoldType << endl;
 					else
 						i->setPRVvalue (pv);
-#endif
 					whichInstancesToFeed.push_back (i);
 					usedRegions.insert (RG);
 				}

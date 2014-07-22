@@ -28,12 +28,12 @@
 
 #include <iostream>
 
-CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl (
+CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl (
 	unsigned nConsecutiveSamples) : nConsecutiveSamples(nConsecutiveSamples)
 {
 }
 
-void CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::add (pair<unsigned,double> callertime)
+void CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::add (const pair<unsigned,double> & callertime)
 {
 	/* Keep at most up to nConsecutiveSamples in the deque plus their timings */
 	callers_times.push_back (callertime);
@@ -43,7 +43,7 @@ void CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::add (pair<unsigne
 	assert (callers_times.size() <= nConsecutiveSamples);
 }
 
-bool CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::allEqual (void) const
+bool CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::allEqual (void) const
 {
 	unsigned headCaller = (*(callers_times.cbegin())).first;
 	for (auto caller : callers_times)
@@ -52,7 +52,7 @@ bool CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::allEqual (void) c
 	return true;
 }
 
-void CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::show (void) const
+void CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::show (void) const
 {
 	cout << "CTRL contents: ";
 	for (const auto caller : callers_times)
@@ -60,8 +60,22 @@ void CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::show (void) const
 	cout << endl;
 }
 
-double CallastackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::getFirstTime (void) const
+double CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::getFirstTime (void) const
 {
+	assert (callers_times.size() > 0);
 	return (*(callers_times.cbegin())).second;
 }
 
+double CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::getLastTime (void) const
+{
+	if (callers_times.empty())
+		return 0.;
+	else
+		return (*(callers_times.crbegin())).second;
+}
+
+unsigned CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::getFirstCaller (void) const
+{
+	assert (callers_times.size() > 0);
+	return (*(callers_times.cbegin())).first;
+}

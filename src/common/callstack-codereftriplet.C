@@ -68,7 +68,7 @@ void Callstack_CodeRefTriplet::processCodeTriplets (void)
 }
 
 bool Callstack_CodeRefTriplet::complete_match (
-	Callstack_CodeRefTriplet other) const
+	const Callstack_CodeRefTriplet & other) const
 {
 	/* Check if this object is equal to another one */
 
@@ -93,7 +93,7 @@ bool Callstack_CodeRefTriplet::complete_match (
 }
 
 int Callstack_CodeRefTriplet::prefix_match (
-	Callstack_CodeRefTriplet other,
+	const Callstack_CodeRefTriplet & other,
 	bool & match) const
 {
 	/* Check if my callstack partially matches at some level with another */
@@ -158,4 +158,24 @@ void Callstack_CodeRefTriplet::setMaxDepth (unsigned max)
 	for (unsigned u = 0; u <= max; u++)
 		if (crt.count (u) == 0)
 			crt[u] = empty;
+}
+
+void Callstack_CodeRefTriplet::copyBottomStack (
+	const Callstack_CodeRefTriplet other )
+{
+	const map<unsigned, CodeRefTriplet> & other_map = other.getAsConstReferenceMap ();
+	map<unsigned, CodeRefTriplet>::const_reverse_iterator other_it = other_map.crbegin();
+
+	while (other_it != other_map.crend())
+	{
+		/* If this callstack reference triplet contains an entry where
+		   the other callstack points, just stop copying */
+		if (crt.count ((*other_it).first) != 0)
+			break;
+
+		/* Copy the other entry at level X in this CRT at level X */
+		crt[(*other_it).first] = (*other_it).second;
+
+		other_it++;
+	}
 }
