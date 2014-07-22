@@ -3,6 +3,9 @@ noinst_LTLIBRARIES = libkriger.la
 
 noinst_PROGRAMS = kriger_test
 
+# Prevent this makefile to be launched in parallel
+.NOTPARALLEL:
+
 def_kinrea.mod: def_kinrea.f90
 	$(FC) -c $(FCFLAGS) def_kinrea.f90
 
