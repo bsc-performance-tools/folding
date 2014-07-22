@@ -80,19 +80,28 @@ void Sample::normalizeData (unsigned long long instanceDuration,
 		nTime = ((double) iTime) / ((double) instanceDuration);
 }
 
-void Sample::show (void)
+void Sample::show (bool counters)
 {
-	cout << "Sample @ " << sTime << endl;
+	if (counters)
+	{
+		cout << "Sample @ " << sTime << endl;
+	
+		/* Show callers first */
+		crt.show (true);
 
-	/* Show callers first */
-	crt.show (true);
+		map<string, unsigned long long>::const_iterator it2;
+		cout << "[";
+		for (const auto & counterpair : iCounterValue)
+			cout << " " << counterpair.first << "," << counterpair.second;
+		cout << " ]" << endl;
+	}
+	else
+	{
+		/* One-liner approach*/
 
-	/* Show performance counters then */
-	map<string, unsigned long long>::const_iterator it2;
-	cout << "[";
-	for (const auto & counterpair : iCounterValue)
-		cout << " " << counterpair.first << "," << counterpair.second;
-	cout << " ]" << endl;
+		cout << "Sample @ " << sTime << " ";
+		crt.show (true);
+	}
 }
 
 void Sample::processCodeTriplets (void)
@@ -129,13 +138,21 @@ bool Sample::hasCaller (unsigned caller) const
 
 unsigned Sample::getCallerLevel (unsigned caller) const
 {
+#if 0
 	assert (hasCaller(caller));
 	for (const auto & codereftriplet : crt.getAsConstReferenceMap ())
 		if (codereftriplet.second.getCaller() == caller)
 			return codereftriplet.first;
+#else
+	unsigned level = 0;
 
-	/* This cannot happen */
-	return 0;
+	assert (hasCaller(caller));
+	for (const auto & codereftriplet : crt.getAsConstReferenceMap ())
+		if (codereftriplet.second.getCaller() == caller)
+			level = MAX(level, codereftriplet.first);
+#endif
+
+	return level;
 }
 
 unsigned Sample::getMaxCallerLevel (void) const

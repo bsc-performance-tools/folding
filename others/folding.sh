@@ -73,9 +73,11 @@ if [[ ! -f ${1} ]] ; then
 	echo "Cannot access tracefile ${1}"
 	exit
 else
-	PRVBASE=`basename ${1} .prv`
+	PRVDIR=`readlink -f ${1}`
+	PRVDIR=`dirname ${PRVDIR}`
 	PRVFILE=${1}
-	PCFFILE=`dirname ${PRVFILE}`/${PRVBASE}.pcf
+	PRVBASE=`basename ${PRVFILE} .prv`
+	PCFFILE=${PRVDIR}/${PRVBASE}.pcf
 fi
 
 EXTENSION_PRV="${1##*.}"
@@ -113,36 +115,40 @@ else
 	fi
 fi
 
-BASENAME_PRV="${1%.*}"
+# BASENAME_PRV="${1%.*}"
+BASENAME_PRV=${PRVBASE}
 
-mkdir -p ${BASENAME_PRV}
-cd ${BASENAME_PRV}
+mkdir -p ${BASENAME_PRV} || exit
+cd ${BASENAME_PRV} || exit
 
 if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
-	echo Executing: ${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} \"../${BASENAME_PRV}.prv\"
+	echo Executing: ${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} \"${PRVDIR}/${BASENAME_PRV}.prv\"
 fi
-${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} "../${BASENAME_PRV}.prv" || exit 1
+${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} "${PRVDIR}/${BASENAME_PRV}.prv" || exit
 
 if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
 	echo Executing: ${FOLDING_HOME}/bin/fuse \"${BASENAME_PRV}.codeblocks.prv\"
 fi
-${FOLDING_HOME}/bin/fuse "${BASENAME_PRV}.codeblocks.prv" || exit 1
+${FOLDING_HOME}/bin/fuse "${BASENAME_PRV}.codeblocks.prv" || exit
 
 if [[ "${BASENAME_CSV}" = "" ]] ; then
 	if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
 		echo ${FOLDING_HOME}/bin/extract -separator \"${2}\" \"${BASENAME_PRV}.codeblocks.fused.prv\"
 	fi
-	${FOLDING_HOME}/bin/extract -separator "${2}" "${BASENAME_PRV}.codeblocks.fused.prv" || exit 1
+	${FOLDING_HOME}/bin/extract -separator "${2}" "${BASENAME_PRV}.codeblocks.fused.prv" || exit
 else
 	if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
 		echo ${FOLDING_HOME}/bin/extract -semantic \"${BASENAME_CSV}.csv\" \"${BASENAME_PRV}.codeblocks.fused.prv\"
 	fi
-	${FOLDING_HOME}/bin/extract -semantic "${BASENAME_CSV}.csv" "${BASENAME_PRV}.codeblocks.fused.prv" || exit 1
+	${FOLDING_HOME}/bin/extract -semantic "${BASENAME_CSV}.csv" "${BASENAME_PRV}.codeblocks.fused.prv" || exit
 fi
 
 if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
 	echo ${FOLDING_HOME}/bin/interpolate -max-samples-distance 2000 -sigma-times 2.0 -use-median -feed-first-occurrence any ${EXTRA_INTERPOLATE_FLAGS} ${MODELS_SUFFIX} ${SOURCE_DIRECTORY_SUFFIX} "${BASENAME_PRV}.codeblocks.fused.extract"
 fi
+
+# Hook for Paraver
+echo Output directory: ${PWD}
 
 ${FOLDING_HOME}/bin/interpolate \
  -max-samples-distance 2000 \

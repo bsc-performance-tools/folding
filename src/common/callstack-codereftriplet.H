@@ -44,8 +44,8 @@ class Callstack_CodeRefTriplet
 	Callstack_CodeRefTriplet (map<unsigned, CodeRefTriplet> & crt);
 
 	void addBubbles (unsigned nbubbles);
-
 	void setMaxDepth (unsigned max);
+	void copyBottomStack (const Callstack_CodeRefTriplet other);
 
 	map<unsigned, CodeRefTriplet> getAsMap (void)
 	  { return crt; }
@@ -58,11 +58,12 @@ class Callstack_CodeRefTriplet
 	unsigned getSize(void) const
 	  { return crt.size(); }
 
-	bool complete_match (Callstack_CodeRefTriplet other) const;
+	bool complete_match (const Callstack_CodeRefTriplet & other) const;
 
-	int prefix_match (Callstack_CodeRefTriplet other, bool & match) const;
+	int prefix_match (const Callstack_CodeRefTriplet & other, bool & match) const;
 
 	void show (bool endline = false) const;
+
 };
 
 #endif /* CODEREFTRIPLET_H_INCLUDED */

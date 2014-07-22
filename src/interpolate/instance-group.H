@@ -78,8 +78,7 @@ class InstanceGroup
 	vector<CallstackTree *> trees; /* one per phase */
 	vector< map<unsigned, CodeRefTripletAccounting*> > accountsPerLine;/* one per phase */
 
-	vector< pair<unsigned, double> > callerstime;
-	unsigned callerstime_first_depth;
+	vector< CallstackProcessor_Result* > callerstime_Results;
 	vector< Sample * > callerstime_processSamples;
 
 #if defined(HAVE_CUBE)
@@ -169,10 +168,8 @@ class InstanceGroup
 	bool hasAddresses (void) const;
 
 	void prepareCallstacks (CallstackProcessor *processor);
-	const vector<pair<unsigned,double>> getPreparedCallstacks (void) const
-	  { return callerstime; }
-	unsigned getPreparedCallstacks_First_Depth (void) const
-	  { return callerstime_first_depth; }
+	const vector<CallstackProcessor_Result*> getPreparedCallstacks (void) const
+	  { return callerstime_Results; }
 	vector<Sample*> getPreparedCallstacks_Process_Samples (void) const
 	  { return callerstime_processSamples; }
 };

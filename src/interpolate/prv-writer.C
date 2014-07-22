@@ -27,6 +27,8 @@
 #include "prv-types.H"
 #include "interpolate.H"
 
+#include <stack>
+
 namespace libparaver {
 
 FoldedParaverTrace::FoldedParaverTrace (string &traceout, string prvFile, bool multievents) : ParaverTrace (prvFile, multievents)
@@ -356,38 +358,36 @@ void FoldedParaverTrace::DumpBreakpoints (const Instance *in,
 void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in, 
 	const InstanceGroup *ig)
 {
-	const vector<pair<unsigned,double>> events = ig->getPreparedCallstacks();
+	const vector<CallstackProcessor_Result*> events = ig->getPreparedCallstacks();
 	assert (events.size() % 2 == 0);
 
 	if (events.size() > 0)
 		for (const auto & e : events)
 		{
-			unsigned long long delta = (((double) in->getDuration()) * e.second);
-			DumpParaverLine (FOLDED_CALLER, e.first, in->getStartTime() + delta, in);
+			unsigned long long delta = (((double) in->getDuration()) * e->getNTime());
+			DumpParaverLine (FOLDED_CALLER, e->getCaller(), in->getStartTime() + delta, in);
 		}
 
+#if 0
 	/* Dump caller lines within processed routines from callerstime_processSamples */
 	{
-		unsigned depth = ig->getPreparedCallstacks_First_Depth();
-		const vector<pair<unsigned,double>> routines = ig->getPreparedCallstacks();
+		const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
 		double last = 0.;
 		for (auto const & r : routines)
 		{
-			if (r.first > 0)
-				depth--;
-			else if (r.first == 0)
-				depth++;
+
+			cout << "r->getLevel() = " << r->getLevel() << " r->getCaller() = " << r->getCaller() << "r->getNTime() = " << r->getNTime() << endl;
 
 			vector<Sample*> tmp;
 			for (auto s : ig->getPreparedCallstacks_Process_Samples())
-				if (s->getNTime() >= last && s->getNTime() < r.second)
+				if (s->getNTime() >= last && s->getNTime() < r->getNTime())
 					tmp.push_back (s);
 
 			for (const auto s : tmp)
 			{
 				const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
-				assert (callers.count (depth) > 0);
-				CodeRefTriplet crt = callers.at (depth);
+				assert (callers.count (r->getLevel()) > 0);
+				CodeRefTriplet crt = callers.at (r->getLevel());
 
 				// unsigned long long ts = in->getStartTime() + 
 				//	(unsigned long long) (s->getNTime() * (double)(in->getDuration()));
@@ -402,9 +402,69 @@ void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in,
 
 			tmp.clear();
 
-			last = r.second;
+			last = r->getNTime();
 		}
 		DumpParaverLine (FOLDED_CALLERLINE, 0, in->getStartTime() + in->getDuration(), in);
+	}
+#endif
+
+	/* Dump caller lines within processed routines from callerstime_processSamples */
+	{
+		const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
+		vector<CallstackProcessor_Result*>::const_iterator it_ahead = routines.cbegin();
+		vector<CallstackProcessor_Result*>::const_iterator it = routines.cbegin();
+		stack<CallstackProcessor_Result*> callers;
+
+		it_ahead++;
+
+		while (it_ahead != routines.cend())
+		{
+			if ((*it)->getCaller() > 0)
+				callers.push (*it);
+			else
+				callers.pop();
+
+			CallstackProcessor_Result *r = callers.top();	
+			unsigned level = r->getLevel();
+			unsigned caller = r->getCaller();
+			double end_time = (*it_ahead)->getNTime();
+			double begin_time = (*it)->getNTime();
+
+#if defined(DEBUG)
+			cout << "Routine " << caller << " at level " << level << " from " << begin_time << " to " << end_time << endl;
+#endif
+
+			vector<Sample*> tmp;
+			for (const auto s : ig->getPreparedCallstacks_Process_Samples())
+				if (s->getNTime() >= begin_time && s->getNTime() < end_time)
+					tmp.push_back (s);
+
+			for (const auto s : tmp)
+			{
+				const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
+				assert (callers.count (level) > 0);
+				CodeRefTriplet crt = callers.at (level);
+
+
+				string time = common::DefaultTimeUnit;
+				//string time = "PAPI_TOT_INS";
+				unsigned long long ts = in->getStartTime() + 
+				  (unsigned long long) (ig->getInterpolatedNTime (time, s) * (double)(in->getDuration()));
+
+#if defined(DEBUG) 
+				cout << "CRT.getcallerline() = " << crt.getCallerLine() << " @ " << ts << endl;
+#endif
+
+				DumpParaverLine (FOLDED_CALLERLINE, crt.getCallerLine(), ts, in);
+			}
+
+			tmp.clear();
+
+			it++; it_ahead++;
+		}
+
+		DumpParaverLine (FOLDED_CALLERLINE, 0, in->getStartTime() + in->getDuration(), in);
+
 	}
 }
 

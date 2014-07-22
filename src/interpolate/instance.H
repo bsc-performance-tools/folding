@@ -77,7 +77,7 @@ class Instance
 	unsigned long long getPRVvalue (void) const
 	  { return prvValue; }
 	void setPRVvalue (unsigned long long v)
-	  { this->prvValue = v; }
+	  { prvValue = v; }
 	unsigned long long getDuration (void) const
 	  { return duration; }
 	unsigned long long getStartTime (void) const

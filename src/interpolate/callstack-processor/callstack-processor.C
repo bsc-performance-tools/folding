@@ -25,6 +25,12 @@
 
 #include "callstack-processor.H"
 
+CallstackProcessor_Result::CallstackProcessor_Result (unsigned level,
+	unsigned caller, double time) :
+	Level(level), Caller(caller), Time(time)
+{
+}
+
 CallstackProcessor::CallstackProcessor (InstanceGroup *ig)
   : ig(ig)
 {

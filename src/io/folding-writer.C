@@ -66,7 +66,11 @@ unsigned FoldingWriter::getReferenceSample (const vector<Sample*> &Samples)
 	unsigned reference = 0;
 	bool found = Samples[reference]->hasCounters();
 	while (!found && reference < Samples.size())
-		found = Samples[++reference]->hasCounters();
+	{
+		reference++;
+		if (reference < Samples.size())
+			found = Samples[reference]->hasCounters();
+	}
 	return (found)?reference:0;
 }
 

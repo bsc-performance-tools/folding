@@ -88,8 +88,8 @@ void gnuplotGenerator::gnuplot_single (
 
 	string TITLE;
 	stringstream ssDuration, ssCounterAvg;
-	ssDuration << m/1000000;
-	ssCounterAvg << idata->getAvgCounterValue() / 1000000;
+	ssDuration << fixed << setprecision(2) << m/1000000;
+	ssCounterAvg << fixed << setprecision(2) << idata->getAvgCounterValue() / 1000000;
 
 	if (TimeUnit == common::DefaultTimeUnit)
 		TITLE = "\"" + os->toString (true) + " - " + groupName + " - "
@@ -1240,7 +1240,7 @@ void gnuplotGenerator::gnuplot_routine_plot (
 {
 	assert (gplot.is_open());
 
-	const vector<pair<unsigned,double>> routines = ig->getPreparedCallstacks();
+	const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
 
 	gplot << "set xlabel \"ghost\" tc rgbcolor \"white\";" << endl
 	      << "set ylabel \"ghost\" tc rgbcolor \"white\";" << endl
@@ -1257,17 +1257,8 @@ void gnuplotGenerator::gnuplot_routine_plot (
 	      << "unset x2tics;" << endl
 	      << endl;
 
+	vector<CallstackProcessor_Result*>::const_iterator it = routines.cbegin();
 	double last = 0.;
-	for (const auto & r : routines)
-	{
-		gplot << "# set arrow from second " << last << ", first 0 to second " << r.second << ", first 1 nohead" << endl;
-		last = r.second;
-	}
-
-	gplot << endl;
-
-	vector<pair<unsigned,double>>::const_iterator it = routines.cbegin();
-	last = 0.;
 	vector<string> bgcolors;
 	bgcolors.push_back (string("#ff0000"));
 	bgcolors.push_back (string("#00ff00"));
@@ -1276,46 +1267,74 @@ void gnuplotGenerator::gnuplot_routine_plot (
 	bgcolors.push_back (string("#00ffff"));
 	bgcolors.push_back (string("#606060"));
 
-#define X_WIDTH_THRESHOLD 0.025
+#define X_WIDTH_THRESHOLD 0.01
 
+	gplot << fixed << setprecision(3) << endl;
+
+	map<string, double> routines_time;
 	map<unsigned, string> routines_colors;
 	unsigned idx = 0;
 	stack<unsigned> routine_stack;
 	for (const auto & r : routines)
 	{
-		if (r.second - last >= X_WIDTH_THRESHOLD)
+		double duration = r->getNTime() - last;
+		unsigned top = routine_stack.empty()?0:routine_stack.top();
+
+		string routine;
+		if (hParaverIdRoutine.count (top) > 0)
+			routine = hParaverIdRoutine.at(top);
+		else
+			routine = "Unknown";
+
+		if (duration >= X_WIDTH_THRESHOLD)
 		{
 			string color;
-			if (routines_colors.count(routine_stack.top()) == 0)
+			if (routines_colors.count (top) == 0)
 			{
 				color = bgcolors[idx];
 				idx = (idx+1)%bgcolors.size();
 			}
 			else
-				color = routines_colors.at(routine_stack.top());
+				color = routines_colors.at (top);
 
-			gplot << "set obj rect from second " << last << ", first 0 to second " << r.second << ", first 1 "
-			      << "fs transparent solid 0.33 noborder fc rgbcolor '" << color << "' behind" << endl;
+			gplot << "set obj rect from graph " << last << ", graph 0 to graph "
+			      << r->getNTime() << ", graph 1 "
+			      << "fs transparent solid 0.33 noborder fc rgbcolor '" << color
+			      << "' behind # Routine: " << routine << " "
+			      << duration * 100.f << "%" << endl;
 
-			routines_colors[routine_stack.top()] = color;
+			routines_colors[top] = color;
 		}
 
-		if (r.first != 0)
-			routine_stack.push (r.first);
+		if (!routine_stack.empty())
+		{
+			if (routines_time.count (routine) == 0)
+				routines_time[routine] = duration*100.;
+			else
+				routines_time[routine] += duration*100.;
+		}
+
+		if (r->getCaller() != 0)
+			routine_stack.push (r->getCaller());
 		else
 			routine_stack.pop ();
 
-		last = r.second;
+		last = r->getNTime();
 	}
 
 	gplot << endl;
 
+	for (const auto rt : routines_time)
+		gplot << "# Summary for routine " << rt.first << " " << rt.second << "%" << endl;
+
+	gplot << endl;
+
 	last = 0.;
-	routine_stack = {};
+	routine_stack = stack<unsigned>();
 	for (const auto & r : routines)
 	{
 		double tbegin = last;
-		double tend = r.second;
+		double tend = r->getNTime();
 		double middle = tbegin + (tend-tbegin)/2;
 
 		if (tend - tbegin >= X_WIDTH_THRESHOLD)
@@ -1329,13 +1348,15 @@ void gnuplotGenerator::gnuplot_routine_plot (
 			gplot << "\" at second " << middle << ", first 0.5 rotate by 90 tc rgbcolor 'black' front" << endl;
 		}
 
-		if (r.first != 0)
-			routine_stack.push (r.first);
+		if (r->getCaller() != 0)
+			routine_stack.push (r->getCaller());
 		else
 			routine_stack.pop ();
 
-		last = r.second;
+		last = r->getNTime();
 	}
+
+	gplot << fixed << setprecision(2) << endl;
 
 	gplot << endl
 	      << "samplecls(ret,r,g,t) = (r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << "  && t eq 'cl') ? ret : NaN;" << endl << endl
