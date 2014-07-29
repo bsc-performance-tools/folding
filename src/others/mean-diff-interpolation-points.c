@@ -1,5 +1,7 @@
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define MIN(a,b) ((a)>(b)?(b):(a))
 #define MAX(a,b) ((a)<(b)?(b):(a))
