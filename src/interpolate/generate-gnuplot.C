@@ -1240,6 +1240,9 @@ void gnuplotGenerator::gnuplot_routine_plot (
 {
 	assert (gplot.is_open());
 
+	if (!ig->hasPreparedCallstacks())
+		return;
+
 	const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
 
 	gplot << "set xlabel \"ghost\" tc rgbcolor \"white\";" << endl
@@ -1339,13 +1342,16 @@ void gnuplotGenerator::gnuplot_routine_plot (
 
 		if (tend - tbegin >= X_WIDTH_THRESHOLD)
 		{
-			unsigned top = routine_stack.top();
-			if (hParaverIdRoutine.count (top) > 0)
-				gplot << "set label center \"" << hParaverIdRoutine.at(top);
-			else
-				gplot << "set label center \"Unknown routine " << top;
+			if (!routine_stack.empty())
+			{
+				unsigned top = routine_stack.top();
+				if (hParaverIdRoutine.count (top) > 0)
+					gplot << "set label center \"" << hParaverIdRoutine.at(top);
+				else
+					gplot << "set label center \"Unknown routine " << top;
 
-			gplot << "\" at second " << middle << ", first 0.5 rotate by 90 tc rgbcolor 'black' front" << endl;
+				gplot << "\" at second " << middle << ", first 0.5 rotate by 90 tc rgbcolor 'black' front" << endl;
+			}
 		}
 
 		if (r->getCaller() != 0)

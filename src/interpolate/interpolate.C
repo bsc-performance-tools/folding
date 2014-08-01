@@ -93,8 +93,17 @@ static double NumOfSigmaTimes = 2.0f;
 static set<string> wantedCounters;
 static set<string> wantedRegions, wantedRegionsStartWith;
 
+#if defined(CALLSTACK_ANALYSIS)
 static unsigned CallstackProcessor_nconsecutivesamples = 5;
 static unsigned long long CallstackProcessor_duration = 1;
+static double CallstackProcessor_pct = 0.025;
+typedef enum {
+	CALLSTACKPROCESSOR_NONE,
+	CALLSTACKPROCESSOR_CONSECUTIVE_DURATION,
+	CALLSTACKPROCESSOR_CONSECUTIVE_PCT
+} CallstackProcessor_type_t;
+static CallstackProcessor_type_t CallstackProcessor_type = CALLSTACKPROCESSOR_CONSECUTIVE_PCT;
+#endif
 
 FoldedParaverTrace *ftrace = NULL;
 
@@ -433,7 +442,8 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-source D                [location of the source code]" << endl
 			 << "-time-unit CTR           [specify alternate time measurement / CTR]" << endl
 #if defined(CALLSTACK_ANALYSIS)
-             << "-callstack-processor n d [ where n = num of consecutive samples, d = duration]" << endl
+             << "-callstack-processor-duration n d [ where n = num of consecutive samples, d = duration]" << endl
+             << "-callstack-processor-pct      n p [ where n = num of consecutive samples, p = percentage in 0..1]" << endl
              << " [DEFAULT 5 1]" << endl
 #endif
 		     << endl;
@@ -815,11 +825,11 @@ int ProcessParameters (int argc, char *argv[])
 			}
 		}
 #if defined(CALLSTACK_ANALYSIS)
-		else if (strcmp ("-callstack-processor", argv[i]) == 0)
+		else if (strcmp ("-callstack-processor-duration", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(2, argc, i))
 			{
-				cerr << "Insufficient arguments for -callstack-processor" << endl;
+				cerr << "Insufficient arguments for -callstack-processor-duration" << endl;
 				exit (-1);
 			}
 
@@ -828,24 +838,47 @@ int ProcessParameters (int argc, char *argv[])
 			i++;
 			if ((n = atoi(argv[i])) == 0)
 			{
-				cerr << "Invalid number of samples for -callstack-processor (" << argv[i] << ")" << endl;
+				cerr << "Invalid number of samples for -callstack-processor-duration (" << argv[i] << ")" << endl;
 				exit (-1);
 			}
 
 			i++;
-#if 0
-			if ((d = atoll(argv[i])) == 0)
-			{
-				cerr << "Invalid duration for -callstack-processor (" << argv[i] << ")" << endl;
-				exit (-1);
-			}
-#else
 			d = atoll (argv[i]);
-#endif
 
 			cout << "Callstack processor analysis: " << n
 			     << " consecutive samples, duration = " << d << " ms" << endl;
 
+			CallstackProcessor_type = CALLSTACKPROCESSOR_CONSECUTIVE_DURATION;
+			CallstackProcessor_nconsecutivesamples = n;
+			CallstackProcessor_duration = d;
+		}
+		else if (strcmp ("-callstack-processor-pct", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(2, argc, i))
+			{
+				cerr << "Insufficient arguments for -callstack-processor-pct" << endl;
+				exit (-1);
+			}
+
+			unsigned n;
+			double p;
+
+			i++;
+			if ((n = atoi(argv[i])) == 0)
+			{
+				cerr << "Invalid number of samples for -callstack-processor-pct (" << argv[i] << ")" << endl;
+				exit (-1);
+			}
+
+			i++;
+			p = atof (argv[i]);
+
+			cout << "Callstack processor analysis: " << n
+			     << " consecutive samples, percentage = " << p*100 << " %" << endl;
+
+			CallstackProcessor_type = CALLSTACKPROCESSOR_CONSECUTIVE_PCT;
+			CallstackProcessor_nconsecutivesamples = n;
+			CallstackProcessor_pct = p;
 		}
 #endif
 		else if (strcmp ("-model", argv[i]) == 0)
@@ -1123,12 +1156,24 @@ int main (int argc, char *argv[])
 			  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
 			ss->Select (ig, counters);
 			interpolation->interpolate (ig, counters, TimeUnit);
+
 #if defined(CALLSTACK_ANALYSIS)
-			CallstackProcessor *cp = new CallstackProcessor_ConsecutiveRecursive (ig,
-			  CallstackProcessor_nconsecutivesamples, CallstackProcessor_duration);
-			ig->prepareCallstacks (cp);
+
+			CallstackProcessor *cp = NULL;
+			if (CallstackProcessor_type == CALLSTACKPROCESSOR_CONSECUTIVE_DURATION)
+				cp = new CallstackProcessor_ConsecutiveRecursive (ig,
+				  CallstackProcessor_nconsecutivesamples, CallstackProcessor_duration);
+			else if (CallstackProcessor_type == CALLSTACKPROCESSOR_CONSECUTIVE_PCT)
+				cp = new CallstackProcessor_ConsecutiveRecursive (ig,
+				  CallstackProcessor_nconsecutivesamples, CallstackProcessor_pct);
+
+			if (cp != NULL)
+				ig->prepareCallstacks (cp);
+
 			delete cp;
+
 #endif
+
 			ig->dumpInterpolatedData (objectsSelected, cFilePrefix, models);
 			ig->dumpData (objectsSelected, cFilePrefix, pcf);
 			ig->gnuplot (objectsSelected, cFilePrefix, models, TimeUnit,

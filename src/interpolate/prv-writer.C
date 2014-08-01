@@ -173,13 +173,15 @@ void FoldedParaverTrace::DumpReverseCorrectedCallersInInstance (
 			if (!s->getUsableCallstack())
 				continue;
 
-			// unsigned long long ts = in->getStartTime() + 
-			//	(unsigned long long) (s->getNTime() * (double)(in->getDuration()));
-
+#if defined(TIME_BASED_COUNTER)
 			string time = common::DefaultTimeUnit;
-			//string time = "PAPI_TOT_INS";
+			string time = "PAPI_TOT_INS";
 			unsigned long long ts = in->getStartTime() + 
 			  (unsigned long long) (ig->getInterpolatedNTime (time, s) * (double)(in->getDuration()));
+#else
+			unsigned long long ts = in->getStartTime() + 
+				(unsigned long long) (s->getNTime() * (double)(in->getDuration()));
+#endif /* TIME_BASED_COUNTER */
 
 			vector<unsigned long long> types;
 			vector<unsigned long long> values;
@@ -358,6 +360,10 @@ void FoldedParaverTrace::DumpBreakpoints (const Instance *in,
 void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in, 
 	const InstanceGroup *ig)
 {
+
+	if (!ig->hasPreparedCallstacks())
+		return;
+
 	const vector<CallstackProcessor_Result*> events = ig->getPreparedCallstacks();
 	assert (events.size() % 2 == 0);
 
@@ -409,21 +415,22 @@ void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in,
 #endif
 
 	/* Dump caller lines within processed routines from callerstime_processSamples */
+	const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
+	vector<CallstackProcessor_Result*>::const_iterator it_ahead = routines.cbegin();
+	vector<CallstackProcessor_Result*>::const_iterator it = routines.cbegin();
+	stack<CallstackProcessor_Result*> callers;
+
+	it_ahead++;
+
+	while (it_ahead != routines.cend())
 	{
-		const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
-		vector<CallstackProcessor_Result*>::const_iterator it_ahead = routines.cbegin();
-		vector<CallstackProcessor_Result*>::const_iterator it = routines.cbegin();
-		stack<CallstackProcessor_Result*> callers;
+		if ((*it)->getCaller() > 0)
+			callers.push (*it);
+		else
+			callers.pop();
 
-		it_ahead++;
-
-		while (it_ahead != routines.cend())
+		if (!callers.empty())
 		{
-			if ((*it)->getCaller() > 0)
-				callers.push (*it);
-			else
-				callers.pop();
-
 			CallstackProcessor_Result *r = callers.top();	
 			unsigned level = r->getLevel();
 			unsigned caller = r->getCaller();
@@ -442,30 +449,36 @@ void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in,
 			for (const auto s : tmp)
 			{
 				const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
-				assert (callers.count (level) > 0);
-				CodeRefTriplet crt = callers.at (level);
+				if (callers.count (level) > 0)
+				{
+					CodeRefTriplet crt = callers.at (level);
 
-
-				string time = common::DefaultTimeUnit;
-				//string time = "PAPI_TOT_INS";
-				unsigned long long ts = in->getStartTime() + 
-				  (unsigned long long) (ig->getInterpolatedNTime (time, s) * (double)(in->getDuration()));
-
+#if defined(TIME_BASED_COUNTER)
+					//string time = common::DefaultTimeUnit;
+					string time = "PAPI_TOT_INS";
+					unsigned long long ts = in->getStartTime() + 
+					  (unsigned long long) (ig->getInterpolatedNTime (time, s) * (double)(in->getDuration()));
+#else
+					unsigned long long ts = in->getStartTime() +
+					  (unsigned long long) (s->getNTime() * (double) (in->getDuration()));
+#endif /* TIME_BASED_COUNTER */
+	
 #if defined(DEBUG) 
-				cout << "CRT.getcallerline() = " << crt.getCallerLine() << " @ " << ts << endl;
+					cout << "CRT.getcallerline() = " << crt.getCallerLine() << " @ " << ts << endl;
 #endif
 
-				DumpParaverLine (FOLDED_CALLERLINE, crt.getCallerLine(), ts, in);
+					DumpParaverLine (FOLDED_CALLERLINE, crt.getCallerLine(), ts, in);
+				}
 			}
 
 			tmp.clear();
-
-			it++; it_ahead++;
 		}
 
-		DumpParaverLine (FOLDED_CALLERLINE, 0, in->getStartTime() + in->getDuration(), in);
-
+		it++; it_ahead++;
 	}
+
+	DumpParaverLine (FOLDED_CALLERLINE, 0, in->getStartTime() + in->getDuration(), in);
+
 }
 
 } /* namespace libparaver */

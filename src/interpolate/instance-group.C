@@ -315,8 +315,11 @@ void InstanceGroup::dumpInterpolatedData (ObjectSelection *os,
 
 static bool compare_SampleTimings (Sample *s1, Sample *s2)
 {
+#if defined(TIME_BASED_COUNTER)
+	return s1->getNCounterValue("PAPI_TOT_INS") < s2->getNCounterValue("PAPI_TOT_INS");
+#else
 	return s1->getNTime() < s2->getNTime();
-	//return s1->getNCounterValue("PAPI_TOT_INS") < s2->getNCounterValue("PAPI_TOT_INS");
+#endif /* TIME_BASED_COUNTER */
 }
 
 void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
@@ -375,6 +378,7 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 		}
 
 		/* Dump caller lines within processed routines from callerstime_processSamples */
+		if (hasPreparedCallstacks())
 		{
 			const vector<CallstackProcessor_Result*> routines = this->getPreparedCallstacks();
 			vector<CallstackProcessor_Result*>::const_iterator it_ahead = routines.cbegin();
@@ -390,43 +394,50 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 				else
 					callers.pop();
 
-				CallstackProcessor_Result *r = callers.top();	
-				unsigned level = r->getLevel();
-				unsigned caller = r->getCaller();
-				double end_time = (*it_ahead)->getNTime();
-				double begin_time = (*it)->getNTime();
-
-#if defined(DEBUG)
-				cout << "Routine " << caller << " at level " << level << " from " << begin_time << " to " << end_time << endl;
-#endif
-
-				vector<Sample*> tmp;
-				for (auto s : callerstime_processSamples)
-					if (s->getNTime() >= begin_time && s->getNTime() < end_time)
-						tmp.push_back (s);
-
-				for (const auto s : tmp)
+				if (!callers.empty())
 				{
-					const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
-					assert (callers.count (level) > 0);
-					CodeRefTriplet crt = callers.at (level);
+					CallstackProcessor_Result *r = callers.top();	
+					unsigned level = r->getLevel();
+					unsigned caller = r->getCaller();
+					double end_time = (*it_ahead)->getNTime();
+					double begin_time = (*it)->getNTime();
 
 #if defined(DEBUG)
-					cout << "CRT.getcallerline() = " << crt.getCallerLine() << endl;
+					cout << "Routine " << caller << " at level " << level << " from " << begin_time << " to " << end_time << endl;
 #endif
 
-					unsigned codeline;
-					string file;
-					pcfcommon::lookForCallerLineInfo (pcf, crt.getCallerLine(), file,
-					  codeline);
+					vector<Sample*> tmp;
+					for (auto s : callerstime_processSamples)
+						if (s->getNTime() >= begin_time && s->getNTime() < end_time)
+							tmp.push_back (s);
+	
+					for (const auto s : tmp)
+					{
+						const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
+						/* Be careful, is this speculated? */
+						if (callers.count (level) > 0)
+						{
+							CodeRefTriplet crt = callers.at (level);
+	
+#if defined(DEBUG)
+							cout << "CRT.getcallerline() = " << crt.getCallerLine() << endl;
+							s->show(false);
+#endif
 
-					if (codeline > 0)
-						odata << "cl" << ";" << regionName << ";" << numGroup << ";"
-						  << s->getNTime() << ";" << codeline << ";" << crt.getCaller()
-						  << endl;
+							unsigned codeline;
+							string file;
+							pcfcommon::lookForCallerLineInfo (pcf, crt.getCallerLine(), file,
+							  codeline);
+	
+							if (codeline > 0)
+								odata << "cl" << ";" << regionName << ";" << numGroup << ";"
+								  << s->getNTime() << ";" << codeline << ";" << crt.getCaller()
+								  << endl;
+						}
+					}
+	
+					tmp.clear();
 				}
-
-				tmp.clear();
 
 				it++; it_ahead++;
 			}
@@ -576,6 +587,7 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 
 	unsigned tenpct = workSamples.size() / 10;
 	unsigned level = 0;
+
 	while (level < 1 && workSamples.size() > tenpct)
 	{
 		vector<Sample*> selectedSamples;
@@ -651,6 +663,8 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 				it++;
 		}
 
+// #define DEBUG
+
 #if defined(DEBUG)
 		cout << endl;
 		cout << "Level " << level << " for caller " << caller_at_top
@@ -681,7 +695,6 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 		cout << endl;
 #endif
 
-#if 1
 		for (auto s: selectedSamples)
 		{
 #if defined(DEBUG)
@@ -693,9 +706,10 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 #endif
 		}
 
-#endif
 
-#if 1
+#if defined(DEBUG)
+		cout << "End Correcting bottom part" << endl;
+#endif
 
 #if defined(DEBUG)
 		cout << "Matching remaining samples" << endl;
@@ -799,6 +813,10 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 #endif
 				}
 
+#if defined(DEBUG)
+				cout << "END RECORRECTING match" << endl;
+#endif
+
 				selectedSamples.push_back (*it);
 				processSamples.push_back (*it);
 				it = workSamples.erase (it);
@@ -806,16 +824,6 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 			else
 				it++;
 		}
-
-#endif
-
-#if 0
-		unsigned max_depth = 0;
-		for (auto s : selectedSamples)
-			max_depth = MAX(max_depth, s->getMaxCallerLevel());
-		for (auto s : selectedSamples)
-			s->setCallstackMaxDepth (max_depth);
-#endif
 
 #if defined(DEBUG)
 		cout << "postLevel " << level << " for caller " << caller_at_top
