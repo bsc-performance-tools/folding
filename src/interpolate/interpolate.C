@@ -1158,7 +1158,6 @@ int main (int argc, char *argv[])
 			interpolation->interpolate (ig, counters, TimeUnit);
 
 #if defined(CALLSTACK_ANALYSIS)
-
 			CallstackProcessor *cp = NULL;
 			if (CallstackProcessor_type == CALLSTACKPROCESSOR_CONSECUTIVE_DURATION)
 				cp = new CallstackProcessor_ConsecutiveRecursive (ig,
@@ -1171,7 +1170,6 @@ int main (int argc, char *argv[])
 				ig->prepareCallstacks (cp);
 
 			delete cp;
-
 #endif
 
 			ig->dumpInterpolatedData (objectsSelected, cFilePrefix, models);

@@ -534,22 +534,22 @@ void InstanceGroup::setSamples (map<string, vector<Sample*> > &used,
 	this->used = used;
 	this->unused = unused;
 
-	allsamples.clear();
+	allSamples.clear();
 
 	// Add used samples to all samples
 	for (auto instance : used)
 		for (auto s : instance.second)
-			allsamples.insert (s);
+			allSamples.insert (s);
 
 	// Add unused samples to all samples
 	for (auto instance : unused)
 		for (auto s : instance.second)
-			allsamples.insert (s);
+			allSamples.insert (s);
 }
 
 bool InstanceGroup::hasAddresses (void) const
 {
-	for (auto s : allsamples)
+	for (auto s : allSamples)
 		if (s->hasAddressReference())
 			return true;
 	return false;
@@ -570,18 +570,12 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 	if (preparedCallstacks)
 		return;
 
-	vector<Sample*> workSamples, processSamples, allSamples;
+	vector<Sample*> workSamples, processSamples;
+	set<Sample*> allSamples = getAllSamples();
 
-	for (const auto & instance : used)
-		for (auto s : instance.second)
-			if (s->hasCodeRefTripletSize())
-				workSamples.push_back (s);
-	for (const auto & instance : unused)
-		for (auto s : instance.second)
-			if (s->hasCodeRefTripletSize())
-				workSamples.push_back (s);
-
-	allSamples = workSamples;
+	for (const auto s : allSamples)
+		if (s->hasCodeRefTripletSize())
+			workSamples.push_back (s);
 
 	sort (workSamples.begin(), workSamples.end(), ::compare_SampleTimings);
 
@@ -715,14 +709,10 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 		cout << "Matching remaining samples" << endl;
 #endif
 
-		unsigned counter = 0;
-
 		/* try to match remaining samples */
 		it = workSamples.begin();
 		while (it != workSamples.end())
 		{
-			counter++;
-
 			const Callstack_CodeRefTriplet & work_ct = (*it)->getCallstackCodeRefTriplet();
 
 			int distance = 0;
