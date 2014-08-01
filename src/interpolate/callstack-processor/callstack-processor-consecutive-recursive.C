@@ -111,7 +111,7 @@ CallstackProcessor_ConsecutiveRecursive::processSamples (
 		delete t;
 	}
 
-#if defined(DEBUG)
+#if defined(DEBUG) 
 	cout << "processSamples OUTPUT ("<< r.size()<< "):: " << endl;
 	unsigned d = 0;
 	for (const auto rinfo : r)
@@ -164,7 +164,7 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 	cout << endl;
 #endif
 
-	if (stackdepth > 1 && regions.size() > 0)
+	if (stackdepth > 0 && regions.size() > 0)
 	{
 		vector< CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >::const_iterator it = regions.cbegin();
 		while (it != regions.cend())
@@ -223,15 +223,22 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 
 	vector < pair < unsigned, double > > vCallerTime;
 
-	string time = common::DefaultTimeUnit;
-	//string time = "PAPI_TOT_INS";
+#if defined(TIME_BASE_COUNTER)
+	//string time = common::DefaultTimeUnit;
+	string time = "PAPI_TOT_INS";
+#endif /* TIME_BASED_COUNTER */
 
 	/* attention, samples should be sorted by time! select first those that 
 	   are within the region delimited by start - end */
 	bool all_zeroes = true;
 	for (auto s : samples)
 	{
+#if defined(TIME_BASED_COUNTER)
 		double sample_time = ig->getInterpolatedNTime (time, s);
+#else
+		double sample_time = s->getNTime();
+#endif /* TIME_BASED_COUNTER */
+
 		if (sample_time > start && sample_time <= end)
 		{
 			unsigned caller = 0;
@@ -330,8 +337,10 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 
 	vector < pair < unsigned, double > > vCallerTime;
 
-	string time = common::DefaultTimeUnit;
-	//string time = "PAPI_TOT_INS";
+#if defined(TIME_BASED_COUNTER)
+	//string time = common::DefaultTimeUnit;
+	string time = "PAPI_TOT_INS";
+#endif /* TIME_BASED_COUNTER */
 
 	/* attention, samples should be sorted by time! select first those that 
 	   are within the region delimited by start - end */
@@ -339,7 +348,12 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 	bool all_zeroes = true;
 	for (auto s : samples)
 	{
+#if defined(TIME_BASED_COUNTER)
 		double sample_time = ig->getInterpolatedNTime (time, s);
+#else
+		double sample_time = s->getNTime();
+#endif /* TIME_BASED_COUNTER */
+
 		if (sample_time > start && sample_time <= end)
 		{
 			unsigned caller = 0;
@@ -350,7 +364,7 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 			all_zeroes = all_zeroes && caller == 0;
 
 			vCallerTime.push_back (make_pair (caller, sample_time));
-#if defined(DEBUG) && 0
+#if defined(DEBUG)
 			s->show(false);
 #endif
 			seen_callers.insert (caller);

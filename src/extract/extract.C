@@ -43,10 +43,12 @@
 #include "folding-writer.H"
 #include "prv-types.H"
 
-string RegionSeparator;
-unsigned long long RegionSeparatorID = 0;
-string RegionSeparatorName;
-string PRVSemanticCSVName;
+static string RegionSeparator;
+static unsigned long long RegionSeparatorID = 0;
+static string RegionSeparatorName;
+static string PRVSemanticCSVName;
+static int max_callstack_depth = 0;
+static bool has_max_callstack_depth = false;
 
 using namespace std;
 
@@ -266,7 +268,7 @@ class Process : public ParaverTrace
 	unsigned long long TimeOffset; // Specific to CSV support
 	vector<string> SemanticIndex; // Specific to CSV support
 
-	void processCaller (const struct event_t &evt, unsigned base,
+	bool processCaller (const struct event_t &evt, unsigned base,
 	  map<unsigned, unsigned long long> &C);
 	void processCounter (const struct event_t &evt,
 	  map<string, unsigned long long> &m);
@@ -438,11 +440,19 @@ void Process::processAddressReference (const struct event_t &evt,
 		ar.setReferenceCoreCycles (evt.Value);
 }
 
-void Process::processCaller (const struct event_t &evt, unsigned base,
+bool Process::processCaller (const struct event_t &evt, unsigned base,
 	map<unsigned, unsigned long long> &C)
 {
 	unsigned depth = evt.Type - base;
-	C[depth] = evt.Value;
+
+	if (!has_max_callstack_depth ||
+	    (has_max_callstack_depth && depth <= max_callstack_depth))
+	{
+		C[depth] = evt.Value;
+		return true;
+	}
+	else
+		return false;
 }
 
 void Process::processCounter (const struct event_t &evt,
@@ -522,24 +532,21 @@ void Process::processMultiEvent (struct multievent_t &e)
 				if (common::DEBUG())
 					cout << "Processing C " << event.Type << " at timestamp " << e.Timestamp << endl;
 
-				processCaller (event, EXTRAE_SAMPLE_CALLER_MIN, Caller);
-				storeSample = true;
+				storeSample = processCaller (event, EXTRAE_SAMPLE_CALLER_MIN, Caller) || storeSample;
 			}
 			if (event.Type >= EXTRAE_SAMPLE_CALLERLINE_MIN && event.Type <= EXTRAE_SAMPLE_CALLERLINE_MAX)
 			{
 				if (common::DEBUG())
 					cout << "Processing CL " << event.Type << " at timestamp " << e.Timestamp << endl;
 
-				processCaller (event, EXTRAE_SAMPLE_CALLERLINE_MIN, CallerLine);
-				storeSample = true;
+				storeSample = processCaller (event, EXTRAE_SAMPLE_CALLERLINE_MIN, CallerLine) || storeSample;
 			}
 			if (event.Type >= EXTRAE_SAMPLE_CALLERLINE_AST_MIN && event.Type <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX)
 			{
 				if (common::DEBUG())
 					cout << "Processing CL-AST " << event.Type << " at timestamp " << e.Timestamp << endl;
 
-				processCaller (event, EXTRAE_SAMPLE_CALLERLINE_AST_MIN, CallerLineAST);
-				storeSample = true;
+				storeSample = processCaller (event, EXTRAE_SAMPLE_CALLERLINE_AST_MIN, CallerLineAST) || storeSample;
 			}
 			if (event.Type == EXTRAE_SAMPLE_ADDRESS || 
 			    event.Type == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL || 
@@ -908,7 +915,8 @@ int ProcessParameters (int argc, char *argv[])
 		cerr << "Insufficient number of parameters" << endl
 		     << "Available options are: " << endl
 		     << "-separator S" << endl
-		     << "-semantic F" << endl;
+		     << "-semantic F" << endl
+		     << "-max-callstack-depth D" << endl;
 		exit (-1);
 	}
 
@@ -918,6 +926,13 @@ int ProcessParameters (int argc, char *argv[])
 		{
 			i++;
 			RegionSeparator = argv[i];
+			continue;
+		}
+		else if (strcmp ("-max-callstack-depth",  argv[i]) == 0)
+		{
+			i++;
+			has_max_callstack_depth = true;
+			max_callstack_depth = atoi (argv[i]);
 			continue;
 		}
 		else if (strcmp ("-semantic", argv[i]) == 0)

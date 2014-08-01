@@ -172,6 +172,9 @@ class InstanceGroup
 	  { return callerstime_Results; }
 	vector<Sample*> getPreparedCallstacks_Process_Samples (void) const
 	  { return callerstime_processSamples; }
+
+	bool hasPreparedCallstacks (void) const
+	  { return preparedCallstacks; }
 };
 
 #endif

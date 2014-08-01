@@ -138,11 +138,13 @@ bool Sample::hasCaller (unsigned caller) const
 
 unsigned Sample::getCallerLevel (unsigned caller) const
 {
-#if 0
+#if 1
 	assert (hasCaller(caller));
 	for (const auto & codereftriplet : crt.getAsConstReferenceMap ())
 		if (codereftriplet.second.getCaller() == caller)
 			return codereftriplet.first;
+
+	return 0;
 #else
 	unsigned level = 0;
 
@@ -150,9 +152,9 @@ unsigned Sample::getCallerLevel (unsigned caller) const
 	for (const auto & codereftriplet : crt.getAsConstReferenceMap ())
 		if (codereftriplet.second.getCaller() == caller)
 			level = MAX(level, codereftriplet.first);
-#endif
 
 	return level;
+#endif
 }
 
 unsigned Sample::getMaxCallerLevel (void) const
