@@ -72,7 +72,7 @@ class InstanceGroup
 
 	map<string, vector<Sample*> > used;
 	map<string, vector<Sample*> > unused;
-	set<Sample*> allsamples;
+	set<Sample*> allSamples;
 
 	vector<double> Breakpoints; /* nb (breakpoints) = nphases+1 */
 	vector<CallstackTree *> trees; /* one per phase */
@@ -106,7 +106,7 @@ class InstanceGroup
 	map<string, vector<Sample*> > getUnusedSamples (void) 
 	  { return unused; }
 	set<Sample*> getAllSamples (void) const
-	  { return allsamples; }
+	  { return allSamples; }
 	vector<Instance*> getInstances(void) const
 	  { return Instances; };
 	void add (Instance *i);
