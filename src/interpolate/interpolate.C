@@ -94,9 +94,9 @@ static set<string> wantedCounters;
 static set<string> wantedRegions, wantedRegionsStartWith;
 
 #if defined(CALLSTACK_ANALYSIS)
-static unsigned CallstackProcessor_nconsecutivesamples = 5;
+static unsigned CallstackProcessor_nconsecutivesamples = 7;
 static unsigned long long CallstackProcessor_duration = 1;
-static double CallstackProcessor_pct = 0.025;
+static double CallstackProcessor_pct = 2.5;
 typedef enum {
 	CALLSTACKPROCESSOR_NONE,
 	CALLSTACKPROCESSOR_CONSECUTIVE_DURATION,
@@ -442,8 +442,9 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-source D                [location of the source code]" << endl
 			 << "-time-unit CTR           [specify alternate time measurement / CTR]" << endl
 #if defined(CALLSTACK_ANALYSIS)
-             << "-callstack-processor-duration n d [ where n = num of consecutive samples, d = duration]" << endl
-             << "-callstack-processor-pct      n p [ where n = num of consecutive samples, p = percentage in 0..1]" << endl
+             << "-callstack-processor duration n d [ where n = num of consecutive samples, d = duration]" << endl
+             << "                     pct      n p [ where n = num of consecutive samples, p = percentage in 0..100]" << endl
+             << " [DEFAULT pct 7 2.5]" << endl
              << " [DEFAULT 5 1]" << endl
 #endif
 		     << endl;
@@ -825,60 +826,65 @@ int ProcessParameters (int argc, char *argv[])
 			}
 		}
 #if defined(CALLSTACK_ANALYSIS)
-		else if (strcmp ("-callstack-processor-duration", argv[i]) == 0)
+		else if (strcmp ("-callstack-processor", argv[i]) == 0)
 		{
-			if (!CHECK_ENOUGH_ARGS(2, argc, i))
-			{
-				cerr << "Insufficient arguments for -callstack-processor-duration" << endl;
-				exit (-1);
-			}
-
-			unsigned n,d;
-
-			i++;
-			if ((n = atoi(argv[i])) == 0)
-			{
-				cerr << "Invalid number of samples for -callstack-processor-duration (" << argv[i] << ")" << endl;
-				exit (-1);
-			}
-
-			i++;
-			d = atoll (argv[i]);
-
-			cout << "Callstack processor analysis: " << n
-			     << " consecutive samples, duration = " << d << " ms" << endl;
-
-			CallstackProcessor_type = CALLSTACKPROCESSOR_CONSECUTIVE_DURATION;
-			CallstackProcessor_nconsecutivesamples = n;
-			CallstackProcessor_duration = d;
-		}
-		else if (strcmp ("-callstack-processor-pct", argv[i]) == 0)
-		{
-			if (!CHECK_ENOUGH_ARGS(2, argc, i))
+			if (!CHECK_ENOUGH_ARGS(3, argc, i))
 			{
 				cerr << "Insufficient arguments for -callstack-processor-pct" << endl;
 				exit (-1);
 			}
 
-			unsigned n;
-			double p;
-
 			i++;
-			if ((n = atoi(argv[i])) == 0)
+			string cp_mode = argv[i];
+
+			if (cp_mode == "pct")
 			{
-				cerr << "Invalid number of samples for -callstack-processor-pct (" << argv[i] << ")" << endl;
+				unsigned n;
+				double p;
+
+				i++;
+				if ((n = atoi(argv[i])) == 0)
+				{
+					cerr << "Invalid number of samples for -callstack-processor pct (" << argv[i] << ")" << endl;
+					exit (-1);
+				}
+
+				i++;
+				p = atof (argv[i]);
+
+				cout << "Callstack processor analysis: " << n
+				     << " consecutive samples, percentage = " << p << " %" << endl;
+
+				CallstackProcessor_type = CALLSTACKPROCESSOR_CONSECUTIVE_PCT;
+				CallstackProcessor_nconsecutivesamples = n;
+				CallstackProcessor_pct = p;
+			}
+			else if (cp_mode == "duration")
+			{
+				unsigned n,d;
+
+				i++;
+				if ((n = atoi(argv[i])) == 0)
+				{
+					cerr << "Invalid number of samples for -callstack-processor duration (" << argv[i] << ")" << endl;
+					exit (-1);
+				}
+
+				i++;
+				d = atoll (argv[i]);
+
+				cout << "Callstack processor analysis: " << n
+				     << " consecutive samples, duration = " << d << " ms" << endl;
+
+				CallstackProcessor_type = CALLSTACKPROCESSOR_CONSECUTIVE_DURATION;
+				CallstackProcessor_nconsecutivesamples = n;
+				CallstackProcessor_duration = d;
+			}
+			else
+			{
+				cerr << "Invalid -callstack-processor (" << cp_mode << "). Available modes are pct / duration." << endl;
 				exit (-1);
 			}
-
-			i++;
-			p = atof (argv[i]);
-
-			cout << "Callstack processor analysis: " << n
-			     << " consecutive samples, percentage = " << p*100 << " %" << endl;
-
-			CallstackProcessor_type = CALLSTACKPROCESSOR_CONSECUTIVE_PCT;
-			CallstackProcessor_nconsecutivesamples = n;
-			CallstackProcessor_pct = p;
 		}
 #endif
 		else if (strcmp ("-model", argv[i]) == 0)
@@ -1164,7 +1170,7 @@ int main (int argc, char *argv[])
 				  CallstackProcessor_nconsecutivesamples, CallstackProcessor_duration);
 			else if (CallstackProcessor_type == CALLSTACKPROCESSOR_CONSECUTIVE_PCT)
 				cp = new CallstackProcessor_ConsecutiveRecursive (ig,
-				  CallstackProcessor_nconsecutivesamples, CallstackProcessor_pct);
+				  CallstackProcessor_nconsecutivesamples, CallstackProcessor_pct / 100.f);
 
 			if (cp != NULL)
 				ig->prepareCallstacks (cp);
