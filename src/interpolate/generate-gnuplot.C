@@ -82,7 +82,7 @@ void gnuplotGenerator::gnuplot_single (
 	  "FACTOR=1" << " # Do not touch this" << endl << endl <<
 	  "set datafile separator \";\";" << endl << endl <<
 	  "# set term postscript eps solid color;" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term pdfcairo solid color lw 2;" << endl <<
 	  "# set term png size 800,600;" << endl << 
 	  "set term wxt size 800,600;" << endl << endl;
 
@@ -272,7 +272,7 @@ string gnuplotGenerator::gnuplot_slopes (
 	  "FACTOR=1" << " # Do not touch this" << endl << endl <<
 	  "set datafile separator \";\";" << endl << endl <<
 	  "# set term postscript eps solid color;" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term pdfcairo solid color lw 2;" << endl <<
 	  "# set term png size 800,600;" << endl <<
 	  "set term wxt size 800,600;" << endl << endl;
 
@@ -460,7 +460,7 @@ string gnuplotGenerator::gnuplot_model (
 	  "FACTOR=1" << " # Do not touch this" << endl << endl <<
 	  "set datafile separator \";\";" << endl << endl <<
 	  "# set term postscript eps solid color;" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term pdfcairo solid color lw 2;" << endl <<
 	  "# set term png size 800,600;" << endl <<
 	  "set term wxt size 800,600;" << endl << endl;
 
@@ -650,7 +650,7 @@ string gnuplotGenerator::gnuplot_addresses_cost (
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
 	  "# set term postscript eps solid color;" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term pdfcairo solid color lw 2;" << endl <<
 	  "# set term png size 800,600;" << endl <<
 	  "# set term x11 size 800,600;" << endl <<
 	  "set term wxt size 800,600;" << endl << endl <<
@@ -913,7 +913,7 @@ string gnuplotGenerator::gnuplot_addresses (
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
 	  "# set term postscript eps solid color;" << endl <<
-	  "# set term pdfcairo solid color lw 2 font \",9\";" << endl <<
+	  "# set term pdfcairo solid color lw 2;" << endl <<
 	  "# set term png size 800,600;" << endl <<
 	  "# set term x11 size 800,600;" << endl <<
 	  "set term wxt size 800,600;" << endl << endl <<
