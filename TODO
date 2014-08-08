@@ -17,3 +17,7 @@ TALLATS!
 * Eliminar gnuplots
   - deixar slopes o slopes/ins 
     - el darrer requereix ins! Un o altre segons si hi ha ins?
+
+* Event que indica el # de linia foldejat (callerlines)
+
+* processed callstack hauria d'ignorar les instancies excloses. Assegurar-se'n.
