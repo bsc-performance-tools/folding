@@ -1,0 +1,133 @@
+<?xml version='1.0'?>
+
+<model name="Power5_Detailed_CPIStack" title-name="Power5 CPIStack" y1="IPC breakdown" y2="MIPS" y1-stacked="yes">
+
+	<component name="Useful" where="y1" title-name="Useful cycles" color="#c00000">
+		<operation type='/'>
+			<value> PM_GRP_CMPL </value>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="ICache_miss" where="y1" title-name="Icache miss" color="#008000">
+		<operation type='/'>
+			<value> PM_GCT_EMPTY_IC_MISS </value>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="Branch_miss" where="y1" title-name="Branch mispredict" color="#000080">
+		<operation type='/'>
+			<value> PM_GCT_EMPTY_BR_MPRED </value>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="Other_GCT" where="y1" title-name="Flush penalties, etc" color="#f0d000">
+		<operation type='/'>
+			<operation type='-'>
+				<value> PM_GCT_EMPTY_CYC </value>
+				<value> PM_GCT_EMPTY_IC_MISS </value>
+			</operation>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="Stall_Xlate" where="y1" title-name="LSU: Translation lookup" color="#f09000">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_ERAT_MISS </value>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="Other_Reject" where="y1" title-name="LSU: Other reject" color="#b000b0">
+		<operation type='/'>
+			<operation type='-'>
+				<value> PM_CMPLU_STALL_REJECT </value>
+				<value> PM_CMPLU_STALL_ERAT_MISS </value>
+			</operation>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="Stall_Dcache_Miss" where="y1" title-name="LSU: D-cache miss" color="#909090">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_DCACHE_MISS </value>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="Stall_LSU_Basic_Latency" where="y1" title-name="LSU: Basic latency" color="#c00000">
+		<operation type="/">
+			<operation type="-">
+				<value> PM_CMPLU_STALL_LSU </value>
+				<operation type="+">
+					<value> PM_CMPLU_STALL_DCACHE_MISS </value>
+					<value> PM_CMPLU_STALL_REJECT </value>
+				</operation>
+			</operation>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="Stall_DIV" where="y1" title-name="FXU: Div/MSTPR/MSFPR" color="#008000">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_DIV </value>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="Stall_FXU" where="y1" title-name="FXU: Basic latency" color="#000080">
+		<operation type='/'>
+			<operation type="-">
+				<value> PM_CMPLU_STALL_FXU </value>
+				<value> PM_CMPLU_STALL_DIV </value>
+			</operation>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="Stall_FDIV" where="y1" title-name="FPU: FDiv/FSqrt" color="#f0d000">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_FDIV </value>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="Stall_FPU" where="y1" title-name="FPU: Basic latency" color="#f09000">
+		<operation type='/'>
+			<operation type="-">
+				<value> PM_CMPLU_STALL_FPU </value>
+				<value> PM_CMPLU_STALL_FDIV </value>
+			</operation>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="Other_Stalls" where="y1" title-name="Other stall cycles" color="#b000b0">
+		<operation type="/">
+			<operation type="-">
+				<operation type="-">
+					<value> PM_CYC </value>
+					<operation type="+">
+						<value> PM_GRP_CMPL </value>
+						<value> PM_GCT_EMPTY_CYC </value>
+					</operation>
+				</operation>
+				<operation type="+">
+					<operation type="+">
+						<value> PM_CMPLU_STALL_LSU </value>
+						<value> PM_CMPLU_STALL_FPU </value>
+					</operation>
+					<value> PM_CMPLU_STALL_FXU </value>
+				</operation>
+			</operation>
+			<value> PM_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="MIPS" where="y2" title-name="MIPS" color="black">
+		<value> PM_INST_CMPL </value>
+	</component>
+
+</model>
