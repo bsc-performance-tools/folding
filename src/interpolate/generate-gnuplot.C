@@ -134,7 +134,7 @@ void gnuplotGenerator::gnuplot_single (
 	  << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
 		gplot << ", " << i << "./5.*X_LIMIT";
-	gplot << ");" << endl
+	gplot << ", X_LIMIT/FACTOR);" << endl
 	  << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
 
 	if (common::isMIPS(counter))
@@ -308,7 +308,7 @@ string gnuplotGenerator::gnuplot_slopes (
 		  << "set xtics ( 0.0 ";
 		for (int i = 1; i <= 5; i++)
 			gplot << ", " << i << "./5.*X_LIMIT";
-		gplot << ");" << endl
+		gplot << ", X_LIMIT/FACTOR);" << endl
 		  << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
 	}
 	else
@@ -512,7 +512,7 @@ string gnuplotGenerator::gnuplot_model (
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
 		gplot << ", " << i << "./5.*X_LIMIT";
-	gplot << ");" << endl;
+	gplot << ", X_LIMIT/FACTOR);" << endl;
 	gplot << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
 
 	/* If the instance-group has more than the regular 0..1 breakpoints,
@@ -672,7 +672,7 @@ string gnuplotGenerator::gnuplot_addresses_cost (
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
 		gplot << ", " << i << "./5.*X_LIMIT";
-	gplot << ");" << endl
+	gplot << ", X_LIMIT/FACTOR);" << endl
 	  << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
 
 	gplot << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' (" << minaddress;
@@ -935,7 +935,7 @@ string gnuplotGenerator::gnuplot_addresses (
 	gplot << "set xtics ( 0.0 ";
 	for (int i = 1; i <= 5; i++)
 		gplot << ", " << i << "./5.*X_LIMIT";
-	gplot << ");" << endl
+	gplot << ", X_LIMIT/FACTOR);" << endl
 	  << "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
 
 	gplot << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' (" << minaddress;
