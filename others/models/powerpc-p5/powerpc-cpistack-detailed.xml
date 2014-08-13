@@ -57,7 +57,7 @@
 		</operation>
 	</component>
 
-	<component name="Stall_LSU_Basic_Latency" where="y1" title-name="LSU: Basic latency" color="#c00000">
+	<component name="Stall_LSU_Basic_Latency" where="y1" title-name="LSU: Basic latency" color="red">
 		<operation type="/">
 			<operation type="-">
 				<value> PM_CMPLU_STALL_LSU </value>
@@ -70,14 +70,14 @@
 		</operation>
 	</component>
 
-	<component name="Stall_DIV" where="y1" title-name="FXU: Div/MSTPR/MSFPR" color="#008000">
+	<component name="Stall_DIV" where="y1" title-name="FXU: Div/MSTPR/MSFPR" color="blue">
 		<operation type='/'>
 			<value> PM_CMPLU_STALL_DIV </value>
 			<value> PM_INST_CMPL </value>
 		</operation>
 	</component>
 
-	<component name="Stall_FXU" where="y1" title-name="FXU: Basic latency" color="#000080">
+	<component name="Stall_FXU" where="y1" title-name="FXU: Basic latency" color="green">
 		<operation type='/'>
 			<operation type="-">
 				<value> PM_CMPLU_STALL_FXU </value>
