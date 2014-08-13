@@ -87,14 +87,14 @@
 		</operation>
 	</component>
 
-	<component name="Stall_FDIV" where="y1" title-name="FPU: FDiv/FSqrt" color="#f0d000">
+	<component name="Stall_FDIV" where="y1" title-name="FPU: FDiv/FSqrt" color="yellow">
 		<operation type='/'>
 			<value> PM_CMPLU_STALL_FDIV </value>
 			<value> PM_INST_CMPL </value>
 		</operation>
 	</component>
 
-	<component name="Stall_FPU" where="y1" title-name="FPU: Basic latency" color="#f09000">
+	<component name="Stall_FPU" where="y1" title-name="FPU: Basic latency" color="orange">
 		<operation type='/'>
 			<operation type="-">
 				<value> PM_CMPLU_STALL_FPU </value>
