@@ -137,9 +137,33 @@ bool Model::loadXML (char *f)
 			if (!xmlStrcasecmp(root_tag->name, TAG_MODEL))
 			{
 				xmlChar *name = xmlGetProp (root_tag, TAG_MODEL_NAME);
+				if (name == NULL)
+				{
+					cerr << "Missing attribute '" << TAG_MODEL_NAME << "' in <" <<
+					  TAG_MODEL << ">." << endl;
+					exit (-1);
+				}
 				xmlChar *y1 = xmlGetProp (root_tag, TAG_MODEL_Y1);
+				if (y1 == NULL)
+				{
+					cerr << "Missing attribute '" << TAG_MODEL_Y1 << "' in <" <<
+					  TAG_MODEL << ">." << endl;
+					exit (-1);
+				}
 				xmlChar *y2 = xmlGetProp (root_tag, TAG_MODEL_Y2);
+				if (y2 == NULL)
+				{
+					cerr << "Missing attribute '" << TAG_MODEL_Y2 << "' in <" <<
+					  TAG_MODEL << ">." << endl;
+					exit (-1);
+				}
 				xmlChar *titlename = xmlGetProp (root_tag, TAG_TITLE_NAME);
+				if (titlename == NULL)
+				{
+					cerr << "Missing attribute '" << TAG_TITLE_NAME << "' in <" <<
+					  TAG_MODEL << ">." << endl;
+					exit (-1);
+				}
 				Name = string ((const char*) name);
 				Y1AxisName = string ((const char*) y1);
 				Y2AxisName = string ((const char*) y2);
@@ -177,7 +201,7 @@ ComponentModel * Model::loadXML_component (xmlDocPtr xmldoc, xmlNodePtr tag)
 	XML_FREE(cname);
 
 	xmlChar *titlename = xmlGetProp (tag, TAG_TITLE_NAME);
-	if (cname == NULL)
+	if (titlename == NULL)
 	{
 		cerr << "Missing attribute '" << TAG_TITLE_NAME << "' in <" <<
 		  TAG_COMPONENT << ">." << endl;
