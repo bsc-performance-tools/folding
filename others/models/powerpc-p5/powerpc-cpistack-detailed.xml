@@ -94,7 +94,7 @@
 		</operation>
 	</component>
 
-	<component name="Stall_FPU" where="y1" title-name="FPU: Basic latency" color="orange">
+	<component name="Stall_FPU" where="y1" title-name="FPU: Basic latency" color="gold">
 		<operation type='/'>
 			<operation type="-">
 				<value> PM_CMPLU_STALL_FPU </value>
@@ -104,7 +104,7 @@
 		</operation>
 	</component>
 
-	<component name="Other_Stalls" where="y1" title-name="Other stall cycles" color="#b000b0">
+	<component name="Other_Stalls" where="y1" title-name="Other stall cycles" color="purple">
 		<operation type="/">
 			<operation type="-">
 				<operation type="-">
