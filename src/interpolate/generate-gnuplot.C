@@ -103,7 +103,7 @@ void gnuplotGenerator::gnuplot_single (
 #if defined(CALLSTACK_ANALYSIS)
 	gplot << "set multiplot title " << TITLE << endl << endl;
 
-	gplot << "set size 1,0.25;" << endl
+	gplot << "set size 1,0.30;" << endl
 	      << "set origin 0,0.65;" << endl << endl;
 
 	gnuplot_routine_plot (gplot, fdname, ig, hParaverIdRoutine);
@@ -1301,7 +1301,7 @@ void gnuplotGenerator::gnuplot_routine_plot (
 				color = routines_colors.at (top);
 
 			gplot << "set obj rect from graph " << last << ", graph 0 to graph "
-			      << r->getNTime() << ", graph 1 "
+			      << r->getNTime() << "*FACTOR, graph 1 "
 			      << "fs transparent solid 0.33 noborder fc rgbcolor '" << color
 			      << "' behind # Routine: " << routine << " "
 			      << duration * 100.f << "%" << endl;
@@ -1350,7 +1350,7 @@ void gnuplotGenerator::gnuplot_routine_plot (
 				else
 					gplot << "set label center \"Unknown routine " << top;
 
-				gplot << "\" at second " << middle << ", first 0.5 rotate by 90 tc rgbcolor 'black' front" << endl;
+				gplot << "\" at second " << middle << "*FACTOR, first 0.5 rotate by 90 tc rgbcolor 'black' front" << endl;
 			}
 		}
 
@@ -1380,6 +1380,7 @@ void gnuplotGenerator::gnuplot_routine_plot (
 	      << "unset x2range;" << endl
 	      << "unset yrange;" << endl
 	      << "unset y2range;" << endl
+		  << "unset obj;" << endl
 	      << endl;
 }
 
