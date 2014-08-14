@@ -291,22 +291,18 @@ void InstanceGroup::dumpInterpolatedData (ObjectSelection *os,
 		// Process models, generate their data
 		// Unfortunately, we need to generate one csv file per component of
 		// the model
-		for (unsigned m = 0; m < models.size(); m++)
-		{
-			Model *model = models[m];
-			vector<ComponentModel*> vcm = model->getComponents();
-			for (unsigned cm = 0; cm < vcm.size(); cm++)
+		for (const auto model : models)
+			for (const auto cm : model->getComponents())
 			{
-				const ComponentNode * cn = vcm[cm]->getComponentNode();
+				const ComponentNode * cn = cm->getComponentNode();
 				for (unsigned u = 1; u < nsteps; u++)
 				{
 					double d_j = (double) u;
 					sl_data << regionName << ";" << numGroup << ";" <<
-					  model->getName() << "_" << vcm[cm]->getName() << ";" <<
+					  model->getName() << "_" << cm->getName() << ";" <<
 					  d_j / d_steps << ";" << cn->evaluate (interpolated, u) << endl;
 				}
 			}
-		}
 
 		int_data.close ();
 		sl_data.close ();
