@@ -298,9 +298,12 @@ void InstanceGroup::dumpInterpolatedData (ObjectSelection *os,
 				for (unsigned u = 1; u < nsteps; u++)
 				{
 					double d_j = (double) u;
+					double value = cn->evaluate (interpolated, u);
+					if (value < 0.)
+						value = 0.;
 					sl_data << regionName << ";" << numGroup << ";" <<
 					  model->getName() << "_" << cm->getName() << ";" <<
-					  d_j / d_steps << ";" << cn->evaluate (interpolated, u) << endl;
+					  d_j / d_steps << ";" << value << endl;
 				}
 			}
 
