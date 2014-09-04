@@ -43,6 +43,7 @@ ytemp(1,1)=rhsio(1,1)/xmaca_kri(1,1)
 do i=2,numrc
 
 	sumel=0
+    !$OMP PARALLEL DO REDUCTION(-:sumel) SHARED(xmaca_kri,ytemp,i)
 	do k=1,i-1
 		sumel = sumel - (xmaca_kri(i,k)*ytemp(k,1))
 	end do
@@ -57,6 +58,7 @@ xlamb(numrc,1)=ytemp(numrc,1)
 
 do i=1,numrc-1
 	sumel=0
+    !$OMP PARALLEL DO REDUCTION(-:sumel) SHARED(xmaca_kri,xlamb,i,numrc)
 	do k=1,i
 		sumel = sumel -xmaca_kri(numrc-i,(numrc-i)+k)*xlamb((numrc-i)+k,1)
 	end do
