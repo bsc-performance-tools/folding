@@ -33,7 +33,8 @@ CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::CallstackProcessor_Cons
 {
 }
 
-void CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::add (const pair<unsigned,double> & callertime)
+void CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::add (
+	const pair<CodeRefTriplet,double> & callertime)
 {
 	/* Keep at most up to nConsecutiveSamples in the deque plus their timings */
 	callers_times.push_back (callertime);
@@ -45,9 +46,9 @@ void CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::add (const pair<un
 
 bool CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::allEqual (void) const
 {
-	unsigned headCaller = (*(callers_times.cbegin())).first;
+	unsigned headCaller = (*(callers_times.cbegin())).first.getCaller();
 	for (auto caller : callers_times)
-		if (caller.first != headCaller)
+		if (caller.first.getCaller() != headCaller)
 			return false;
 	return true;
 }
@@ -56,7 +57,7 @@ void CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::show (void) const
 {
 	cout << "CTRL contents: ";
 	for (const auto caller : callers_times)
-		cout << " " << caller.first << "@" << caller.second;
+		cout << " " << caller.first.getCaller() << "@" << caller.second;
 	cout << endl;
 }
 
@@ -74,7 +75,7 @@ double CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::getLastTime (voi
 		return (*(callers_times.crbegin())).second;
 }
 
-unsigned CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::getFirstCaller (void) const
+CodeRefTriplet CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl::getFirstCodeRef (void) const
 {
 	assert (callers_times.size() > 0);
 	return (*(callers_times.cbegin())).first;

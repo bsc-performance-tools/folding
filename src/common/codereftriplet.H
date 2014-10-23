@@ -49,6 +49,14 @@ class CodeRefTriplet
 	         CallerLine == other.CallerLine &&
 	         CallerLineAST == other.CallerLineAST; }
 
+	bool operator<(const CodeRefTriplet &other) const
+	  {
+	    if (Caller < other.Caller) 
+		return true;
+	    else
+		return Caller == other.Caller && CallerLine < other.CallerLine;
+	  }
+
 	unsigned getCaller(void) const
 	  { return Caller; }
 
@@ -57,6 +65,8 @@ class CodeRefTriplet
 
 	unsigned getCallerLineAST(void) const
 	  { return CallerLineAST; }
+
+	void show (void) const;
 };
 
 #endif /* CODEREFTRIPLET_H_INCLUDED */

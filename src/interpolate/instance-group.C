@@ -388,7 +388,7 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 
 			while (it_ahead != routines.cend())
 			{
-				if ((*it)->getCaller() > 0)
+				if ((*it)->getCodeRef().getCaller() > 0)
 					callers.push (*it);
 				else
 					callers.pop();
@@ -397,7 +397,7 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 				{
 					CallstackProcessor_Result *r = callers.top();	
 					unsigned level = r->getLevel();
-					unsigned caller = r->getCaller();
+					unsigned caller = r->getCodeRef().getCaller();
 					double end_time = (*it_ahead)->getNTime();
 					double begin_time = (*it)->getNTime();
 
@@ -459,7 +459,7 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 
 void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	const vector<Model*> & models, const string &TimeUnit,
-	vector<VariableInfo*> & variables, const map<unsigned,string> & hParaverIdRoutine)
+	vector<VariableInfo*> & variables, UIParaverTraceConfig *pcf)
 {
 	bool has_instruction_counter = false;
 	map<string, InterpolationResults*>::iterator it;
@@ -469,29 +469,29 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	{
 		has_instruction_counter |= common::isMIPS((*it).first);
 		gnuplotGenerator::gnuplot_single (this, os, prefix, (*it).first,
-		  (*it).second, TimeUnit, hParaverIdRoutine);
+		  (*it).second, TimeUnit, pcf);
 	}
 
 	/* If has instruction counter, generate this in addition to .slopes */
 	string ofile;
 	if (has_instruction_counter)
 		ofile = gnuplotGenerator::gnuplot_slopes (this, os, prefix,
-		  true, TimeUnit, hParaverIdRoutine);
+		  true, TimeUnit, pcf);
 	else
 		ofile = gnuplotGenerator::gnuplot_slopes (this, os, prefix, false,
-		  TimeUnit, hParaverIdRoutine);
+		  TimeUnit, pcf);
 	cout << "Summary plot for region " << regionName << " ("
 	  << ofile << ")"  << endl;
 
 	if (hasAddresses())
 	{
 		string name_addresses = gnuplotGenerator::gnuplot_addresses (this, os,
-		  prefix, TimeUnit, variables, hParaverIdRoutine);
+		  prefix, TimeUnit, variables, pcf);
 		if (name_addresses.length() > 0)
 			cout << "Summary plot for region " << regionName << " ("
 			  << name_addresses << ")" << endl;
 		name_addresses = gnuplotGenerator::gnuplot_addresses_cost (this, os,
-		  prefix, TimeUnit, variables, hParaverIdRoutine);
+		  prefix, TimeUnit, variables, pcf);
 		if (name_addresses.length() > 0)
 			cout << "Summary plot for region " << regionName << " ("
 			  << name_addresses << ")" << endl;
@@ -500,7 +500,7 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	for (unsigned m = 0; m < models.size(); m++)
 	{
 		string tmp = gnuplotGenerator::gnuplot_model (this, os, prefix,
-		  models[m], TimeUnit, hParaverIdRoutine);
+		  models[m], TimeUnit, pcf);
 		cout << "Plot model " << models[m]->getTitleName() << " for region "
 		  << regionName << " (" << tmp << ")" << endl;
 	}

@@ -371,7 +371,7 @@ void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in,
 		for (const auto & e : events)
 		{
 			unsigned long long delta = (((double) in->getDuration()) * e->getNTime());
-			DumpParaverLine (FOLDED_CALLER, e->getCaller(), in->getStartTime() + delta, in);
+			DumpParaverLine (FOLDED_CALLER, e->getCodeRef().getCaller(), in->getStartTime() + delta, in);
 		}
 
 #if 0
@@ -424,7 +424,7 @@ void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in,
 
 	while (it_ahead != routines.cend())
 	{
-		if ((*it)->getCaller() > 0)
+		if ((*it)->getCodeRef().getCaller() > 0)
 			callers.push (*it);
 		else
 			callers.pop();
@@ -433,7 +433,7 @@ void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in,
 		{
 			CallstackProcessor_Result *r = callers.top();	
 			unsigned level = r->getLevel();
-			unsigned caller = r->getCaller();
+			unsigned caller = r->getCodeRef().getCaller();
 			double end_time = (*it_ahead)->getNTime();
 			double begin_time = (*it)->getNTime();
 

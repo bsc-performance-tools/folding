@@ -145,7 +145,7 @@ class InstanceGroup
 	  const vector<Model*> &models);
 	void gnuplot (const ObjectSelection *os, const string & prefix,
 	  const vector<Model*> &models, const string & TimeUnit,
-	  vector<VariableInfo*> & vars, const map<unsigned,string> & hParaverIdRoutine);
+	  vector<VariableInfo*> & vars, UIParaverTraceConfig *pcf);
 	string python (void);
 
 	void setCallstackTrees (vector<CallstackTree*> vtrees)

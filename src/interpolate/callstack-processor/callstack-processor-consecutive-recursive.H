@@ -38,18 +38,18 @@ class CallstackProcessor_ConsecutiveRecursive_ProcessedInfo
 {
 	private:
 	const unsigned level;
-	const unsigned caller;
+	const CodeRefTriplet CodeRef;
 	const double time;
 	const bool speculated;
 
 	public:
 	CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (unsigned level,
-	  unsigned caller, double time, bool speculated);
+	  CodeRefTriplet coderef, double time, bool speculated);
 
 	unsigned getLevel (void) const
 	  { return level; }
-	unsigned getCaller (void) const
-	  { return caller; }
+	CodeRefTriplet getCodeRef (void) const
+	  { return CodeRef; }
 	double getTime (void) const
 	  { return time; }
 	bool getSpeculated (void) const
@@ -77,6 +77,8 @@ class CallstackProcessor_ConsecutiveRecursive : public CallstackProcessor
 	vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * > searchConsecutiveRegions_nonspeculated (
 	  const vector<Sample*> &samples, unsigned stackdepth, double start,
 	  double end);
+
+	CodeRefTriplet SearchMostFrequent (const map<CodeRefTriplet, unsigned> & f);
 
 	public:
 	CallstackProcessor_ConsecutiveRecursive (InstanceGroup *ig,

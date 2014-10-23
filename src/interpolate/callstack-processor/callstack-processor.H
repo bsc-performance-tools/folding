@@ -46,16 +46,17 @@ class CallstackProcessor_Result
 {
 	private:
 	const unsigned Level;
-	const unsigned Caller;
+	const CodeRefTriplet CodeRef;
 	const double Time;
 
 	public:
-	CallstackProcessor_Result (unsigned level, unsigned caller, double time);
+	CallstackProcessor_Result (unsigned level, CodeRefTriplet coderef,
+	  double time);
 
 	unsigned getLevel (void) const
 	  { return Level; }
-	unsigned getCaller (void) const
-	  { return Caller; }
+	CodeRefTriplet getCodeRef (void) const
+	  { return CodeRef; }
 	double getNTime (void) const
 	  { return Time; }
 };

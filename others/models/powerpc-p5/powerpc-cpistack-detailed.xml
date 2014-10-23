@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 
-<model name="Power5_Detailed_CPIStack" title-name="Power5 CPIStack" y1="IPC breakdown" y2="MIPS" y1-stacked="yes">
+<model name="Power5_Detailed_CPIStack" title-name="Power5 CPIStack" y1="CPI breakdown" y2="MIPS" y1-stacked="yes">
 
 	<component name="Useful" where="y1" title-name="Useful cycles" color="#c00000">
 		<operation type='/'>

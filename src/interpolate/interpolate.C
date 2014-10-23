@@ -94,6 +94,7 @@ static set<string> wantedCounters;
 static set<string> wantedRegions, wantedRegionsStartWith;
 
 #if defined(CALLSTACK_ANALYSIS)
+static bool wannaCallstackProcessing = false;
 static unsigned CallstackProcessor_nconsecutivesamples = 7;
 static unsigned long long CallstackProcessor_duration = 1;
 static double CallstackProcessor_pct = 2.5;
@@ -858,6 +859,7 @@ int ProcessParameters (int argc, char *argv[])
 				CallstackProcessor_type = CALLSTACKPROCESSOR_CONSECUTIVE_PCT;
 				CallstackProcessor_nconsecutivesamples = n;
 				CallstackProcessor_pct = p;
+				wannaCallstackProcessing = true;
 			}
 			else if (cp_mode == "duration")
 			{
@@ -879,6 +881,7 @@ int ProcessParameters (int argc, char *argv[])
 				CallstackProcessor_type = CALLSTACKPROCESSOR_CONSECUTIVE_DURATION;
 				CallstackProcessor_nconsecutivesamples = n;
 				CallstackProcessor_duration = d;
+				wannaCallstackProcessing = true;
 			}
 			else
 			{
@@ -1098,7 +1101,6 @@ int main (int argc, char *argv[])
 	string cFile = argv[res];
 	string cFilePrefix = cFile.substr (0, cFile.rfind (".extract"));
 
-	map<unsigned,string> hParaverIdRoutine;
 
 	string controlFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".control");
 	string objectsFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".objects");
@@ -1119,9 +1121,6 @@ int main (int argc, char *argv[])
 	string pcfFile = traceFile.substr (0, traceFile.rfind (".prv")) + ".pcf";
 	UIParaverTraceConfig *pcf = new UIParaverTraceConfig;
 	pcf->parse (pcfFile);
-
-	for (auto const v : pcf->getEventValues(EXTRAE_SAMPLE_CALLER_MIN))
-		hParaverIdRoutine.insert (make_pair (v, pcf->getEventValue(EXTRAE_SAMPLE_CALLER_MIN, v)));
 
 	// Apply the folding to each region
 	set<string>::iterator it;
@@ -1164,24 +1163,27 @@ int main (int argc, char *argv[])
 			interpolation->interpolate (ig, counters, TimeUnit);
 
 #if defined(CALLSTACK_ANALYSIS)
-			CallstackProcessor *cp = NULL;
-			if (CallstackProcessor_type == CALLSTACKPROCESSOR_CONSECUTIVE_DURATION)
-				cp = new CallstackProcessor_ConsecutiveRecursive (ig,
-				  CallstackProcessor_nconsecutivesamples, CallstackProcessor_duration);
-			else if (CallstackProcessor_type == CALLSTACKPROCESSOR_CONSECUTIVE_PCT)
-				cp = new CallstackProcessor_ConsecutiveRecursive (ig,
-				  CallstackProcessor_nconsecutivesamples, CallstackProcessor_pct / 100.f);
+			if (wannaCallstackProcessing)
+			{
+				CallstackProcessor *cp = NULL;
+				if (CallstackProcessor_type == CALLSTACKPROCESSOR_CONSECUTIVE_DURATION)
+					cp = new CallstackProcessor_ConsecutiveRecursive (ig,
+					  CallstackProcessor_nconsecutivesamples, CallstackProcessor_duration);
+				else if (CallstackProcessor_type == CALLSTACKPROCESSOR_CONSECUTIVE_PCT)
+					cp = new CallstackProcessor_ConsecutiveRecursive (ig,
+					  CallstackProcessor_nconsecutivesamples, CallstackProcessor_pct / 100.f);
 
-			if (cp != NULL)
-				ig->prepareCallstacks (cp);
+				if (cp != NULL)
+					ig->prepareCallstacks (cp);
 
-			delete cp;
+				delete cp;
+			}
 #endif
 
 			ig->dumpInterpolatedData (objectsSelected, cFilePrefix, models);
 			ig->dumpData (objectsSelected, cFilePrefix, pcf);
 			ig->gnuplot (objectsSelected, cFilePrefix, models, TimeUnit,
-			  variables, hParaverIdRoutine);
+			  variables, pcf);
 		}
 
 		ic.dumpGroupData (objectsSelected, cFilePrefix, TimeUnit);

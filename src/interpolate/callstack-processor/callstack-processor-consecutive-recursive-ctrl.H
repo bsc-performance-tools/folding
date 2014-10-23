@@ -34,23 +34,25 @@
 
 #include <deque>
 
+#include "codereftriplet.H"
+
 class CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl
 {
 	private:
 	const unsigned nConsecutiveSamples;
 
 	/* keep callers in the deque plus their timings */
-	deque<pair<unsigned,double>> callers_times;
+	deque<pair<CodeRefTriplet,double>> callers_times;
 
 	public:
 	CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl (
 	  unsigned nConsecutiveSamples);
-	void add (const pair<unsigned,double> & callertime);
+	void add (const pair<CodeRefTriplet,double> & callertime);
 	bool allEqual (void) const;
 	void show (void) const;
 	double getFirstTime(void) const;
 	double getLastTime(void) const;
-	unsigned getFirstCaller(void) const;
+	CodeRefTriplet getFirstCodeRef(void) const;
 };
 
 #endif /* CALLSTACK_PROCESSOR_CONSECUTIVE_RECURSIVE_CTRL_H_INCLUDED */
