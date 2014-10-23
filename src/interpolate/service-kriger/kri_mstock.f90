@@ -23,7 +23,6 @@ if (itask .EQ. 1) then
 
 	!Initiate the order vector (permutation)
 
-    !$OMP PARALLEL DO SHARED(order_kri)
 	do i=1,naugm
 		order_kri(i,1)=i
 	end do
@@ -32,7 +31,6 @@ if (itask .EQ. 1) then
 	 call kri_findpi(1)
 
 	!Firts row
-    !$OMP PARALLEL DO SHARED(xmaca_kri)
 	do i=2,naugm
 		xmaca_kri(1,i)=xmaca_kri(1,i)/xmaca_kri(1,1)
 	end do 
@@ -42,7 +40,6 @@ if (itask .EQ. 1) then
 		
 		!Element (i,i):
 		sumel=0
-            !$OMP PARALLEL DO REDUCTION(-:sumel) SHARED(xmaca_kri)
 			do k=1,i-1
 				sumel = sumel + (xmaca_kri(i,k)*xmaca_kri(k,i))
 			end do 
@@ -52,7 +49,6 @@ if (itask .EQ. 1) then
 		do j=i+1,naugm
 
 			sumel=0
-            !$OMP PARALLEL DO REDUCTION(-:sumel) SHARED(xmaca_kri)
 			do k=1,i-1
 				sumel = sumel + (xmaca_kri(j,k)*xmaca_kri(k,i))
 			end do 
@@ -68,7 +64,6 @@ if (itask .EQ. 1) then
 		do j=i+1,naugm
 
 			sumel=0
-            !$OMP PARALLEL DO REDUCTION(-:sumel) SHARED(xmaca_kri)
 			do k=1,i-1
 				sumel = sumel + (xmaca_kri(i,k)*xmaca_kri(k,j))
 			end do 
@@ -81,7 +76,6 @@ if (itask .EQ. 1) then
 
 	!Last term
 	sumel=0
-    !$OMP PARALLEL DO REDUCTION(-:sumel) SHARED(xmaca_kri)
 	do k=1,naugm-1
 		sumel = sumel + (xmaca_kri(naugm,k)*xmaca_kri(k,naugm))
 	end do 

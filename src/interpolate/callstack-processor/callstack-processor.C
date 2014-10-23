@@ -26,8 +26,8 @@
 #include "callstack-processor.H"
 
 CallstackProcessor_Result::CallstackProcessor_Result (unsigned level,
-	unsigned caller, double time) :
-	Level(level), Caller(caller), Time(time)
+	CodeRefTriplet coderef, double time) :
+	Level(level), CodeRef(coderef), Time(time)
 {
 }
 

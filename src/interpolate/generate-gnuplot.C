@@ -30,6 +30,9 @@
 #include <iomanip>
 #include <stack>
 
+#include "prv-types.H"
+#include "pcf-common.H"
+
 void gnuplotGenerator::gnuplot_single (
 	InstanceGroup *ig,
 	const ObjectSelection *os,
@@ -37,7 +40,7 @@ void gnuplotGenerator::gnuplot_single (
 	const string &counter,
 	InterpolationResults *idata,
 	const string & TimeUnit,
-	const map<unsigned,string> & hParaverIdRoutine
+	UIParaverTraceConfig *pcf
 )
 {
 	string regionName = ig->getRegionName();
@@ -106,7 +109,7 @@ void gnuplotGenerator::gnuplot_single (
 	gplot << "set size 1,0.30;" << endl
 	      << "set origin 0,0.65;" << endl << endl;
 
-	gnuplot_routine_plot (gplot, fdname, ig, hParaverIdRoutine);
+	gnuplot_routine_plot (gplot, fdname, ig, pcf);
 
 	gplot << "set size 1,0.7;" << endl
 	      << "set origin 0,0;" << endl << endl;
@@ -240,7 +243,7 @@ string gnuplotGenerator::gnuplot_slopes (
 	const string &prefix,
 	bool per_instruction,
 	const string & TimeUnit,
-	const map<unsigned,string> & hParaverIdRoutine
+	UIParaverTraceConfig *pcf
 )
 {
 	string regionName = ig->getRegionName();
@@ -285,7 +288,7 @@ string gnuplotGenerator::gnuplot_slopes (
 	gplot << "set size 1,0.25;" << endl
 	      << "set origin 0,0.65;" << endl << endl;
 
-	gnuplot_routine_plot (gplot, fdname, ig, hParaverIdRoutine);
+	gnuplot_routine_plot (gplot, fdname, ig, pcf);
 
 	gplot << "set size 1,0.7;" << endl
 	      << "set origin 0,0;" << endl << endl;
@@ -427,7 +430,7 @@ string gnuplotGenerator::gnuplot_model (
 	const string & prefix,
 	const Model *m,
 	const string & TimeUnit,
-	const map<unsigned,string> & hParaverIdRoutine
+	UIParaverTraceConfig *pcf
 )
 {
 	string regionName = ig->getRegionName();
@@ -474,7 +477,7 @@ string gnuplotGenerator::gnuplot_model (
 	gplot << "set size 1,0.25;" << endl
 	      << "set origin 0,0.65;" << endl << endl;
 
-	gnuplot_routine_plot (gplot, fdname, ig, hParaverIdRoutine);
+	gnuplot_routine_plot (gplot, fdname, ig, pcf);
 
 	gplot << "set size 1,0.7;" << endl
 	      << "set origin 0,0;" << endl << endl;
@@ -592,7 +595,7 @@ string gnuplotGenerator::gnuplot_addresses_cost (
 	const string & prefix,
 	const string & TimeUnit,
 	vector<VariableInfo*> & variables,
-	const map<unsigned,string> & hParaverIdRoutine
+	UIParaverTraceConfig *pcf
 )
 {
 	string regionName = ig->getRegionName();
@@ -856,7 +859,7 @@ string gnuplotGenerator::gnuplot_addresses (
 	const string & prefix,
 	const string & TimeUnit,
 	vector<VariableInfo*> & variables,
-	const map<unsigned,string> & hParaverIdRoutine
+	UIParaverTraceConfig *pcf
 )
 {
 	string regionName = ig->getRegionName();
@@ -1230,12 +1233,48 @@ void gnuplotGenerator::gnuplot_groups (
 	gplot.close();
 }
 
+string gnuplotGenerator::getStackStringDepth (unsigned depth,
+	stack<CodeRefTriplet> scrt, UIParaverTraceConfig *pcf)
+{
+	assert (depth > 0);
+
+	string res;
+	unsigned line;
+	string file;
+	string routine;
+	try
+	{ routine = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, scrt.top().getCaller()); }
+	catch (...)
+	{ }
+	pcfcommon::lookForCallerLineInfo (pcf, scrt.top().getCallerLine(), file, line);
+	depth--;
+	scrt.pop();
+
+	stringstream ss;
+	ss << line;
+	res = routine + "\\n[" + ss.str() + "]";
+
+	while (depth > 0 && !scrt.empty())
+	{
+		try
+		{ routine = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, scrt.top().getCaller()); }
+		catch (...)
+		{ }
+
+		res = routine + " >\\n" + res;
+
+		depth--;
+		scrt.pop();
+	}
+
+	return res;
+}
 
 void gnuplotGenerator::gnuplot_routine_plot (
 	ofstream & gplot,
 	const string & fileDump,
 	InstanceGroup *ig,
-	const map<unsigned,string> & hParaverIdRoutine
+	UIParaverTraceConfig *pcf
 )
 {
 	assert (gplot.is_open());
@@ -1270,24 +1309,24 @@ void gnuplotGenerator::gnuplot_routine_plot (
 	bgcolors.push_back (string("#00ffff"));
 	bgcolors.push_back (string("#606060"));
 
-#define X_WIDTH_THRESHOLD 0.01
+#define X_WIDTH_THRESHOLD 0.025
 
 	gplot << fixed << setprecision(3) << endl;
 
 	map<string, double> routines_time;
 	map<unsigned, string> routines_colors;
 	unsigned idx = 0;
-	stack<unsigned> routine_stack;
+	stack<CodeRefTriplet> routine_stack;
 	for (const auto & r : routines)
 	{
 		double duration = r->getNTime() - last;
-		unsigned top = routine_stack.empty()?0:routine_stack.top();
+		unsigned top = routine_stack.empty()?0:routine_stack.top().getCaller();
 
-		string routine;
-		if (hParaverIdRoutine.count (top) > 0)
-			routine = hParaverIdRoutine.at(top);
-		else
-			routine = "Unknown";
+		string routine = "Unknown";
+		try
+		{ routine = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, top); }
+		catch (...)
+		{ }
 
 		if (duration >= X_WIDTH_THRESHOLD)
 		{
@@ -1300,7 +1339,7 @@ void gnuplotGenerator::gnuplot_routine_plot (
 			else
 				color = routines_colors.at (top);
 
-			gplot << "set obj rect from graph " << last << ", graph 0 to graph "
+			gplot << "set obj rect from graph " << last << "*FACTOR, graph 0 to graph "
 			      << r->getNTime() << "*FACTOR, graph 1 "
 			      << "fs transparent solid 0.33 noborder fc rgbcolor '" << color
 			      << "' behind # Routine: " << routine << " "
@@ -1317,8 +1356,8 @@ void gnuplotGenerator::gnuplot_routine_plot (
 				routines_time[routine] += duration*100.;
 		}
 
-		if (r->getCaller() != 0)
-			routine_stack.push (r->getCaller());
+		if (r->getCodeRef().getCaller() != 0)
+			routine_stack.push (r->getCodeRef());
 		else
 			routine_stack.pop ();
 
@@ -1333,7 +1372,7 @@ void gnuplotGenerator::gnuplot_routine_plot (
 	gplot << endl;
 
 	last = 0.;
-	routine_stack = stack<unsigned>();
+	routine_stack = stack<CodeRefTriplet>();
 	for (const auto & r : routines)
 	{
 		double tbegin = last;
@@ -1344,18 +1383,18 @@ void gnuplotGenerator::gnuplot_routine_plot (
 		{
 			if (!routine_stack.empty())
 			{
-				unsigned top = routine_stack.top();
-				if (hParaverIdRoutine.count (top) > 0)
-					gplot << "set label center \"" << hParaverIdRoutine.at(top);
-				else
-					gplot << "set label center \"Unknown routine " << top;
+				unsigned top = routine_stack.top().getCaller();
 
-				gplot << "\" at second " << middle << "*FACTOR, first 0.5 rotate by 90 tc rgbcolor 'black' front" << endl;
+				string routine = getStackStringDepth (3, routine_stack, pcf);
+
+				gplot << "set label center \"" << routine
+				      << "\" at second " << middle
+				      << "*FACTOR, first 0.5 rotate by 90 tc rgbcolor 'black' front" << endl;
 			}
 		}
 
-		if (r->getCaller() != 0)
-			routine_stack.push (r->getCaller());
+		if (r->getCodeRef().getCaller() != 0)
+			routine_stack.push (r->getCodeRef());
 		else
 			routine_stack.pop ();
 
@@ -1366,7 +1405,7 @@ void gnuplotGenerator::gnuplot_routine_plot (
 
 	gplot << endl
 	      << "samplecls(ret,r,g,t) = (r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << "  && t eq 'cl') ? ret : NaN;" << endl << endl
-	      << "plot \"" << fileDump << "\" u 4:(samplecls($5,strcol(2),$3,strcol(1))) with points axes x2y2 ti '' lc rgbcolor '#ff2090' pt 7 ps 0.5;" << endl
+	      << "plot \"" << fileDump << "\" u ($4*FACTOR):(samplecls($5,strcol(2),$3,strcol(1))) with points axes x2y2 ti '' lc rgbcolor '#ff2090' pt 7 ps 0.5;" << endl
 	      << endl
 	      << "unset xlabel;" << endl
 	      << "unset ylabel;" << endl

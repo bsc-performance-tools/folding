@@ -24,6 +24,8 @@
 #include "common.H"
 #include "codereftriplet.H"
 
+#include <iostream>
+
 CodeRefTriplet::CodeRefTriplet (void) : Caller(0), CallerLine(0), CallerLineAST(0)
 {
 }
@@ -32,4 +34,9 @@ CodeRefTriplet::CodeRefTriplet (unsigned Caller, unsigned CallerLine,
 	unsigned CallerLineAST) : Caller(Caller), CallerLine(CallerLine),
 	CallerLineAST(CallerLineAST)
 {
+}
+
+void CodeRefTriplet::show (void) const
+{
+	cout << Caller << "," << CallerLine << "," << CallerLineAST << endl;
 }

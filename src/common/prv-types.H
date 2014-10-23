@@ -34,7 +34,8 @@
 #define PAPI_CHANGE_COUNTER_SET                    41999999
 #define PAPI_MIN_COUNTER                           42000000
 #define PAPI_MAX_COUNTER                           42999999
-#define EXTRAE_SAMPLE_CALLER_MIN                   30000000
+#define EXTRAE_SAMPLE_CALLER                       30000000
+#define EXTRAE_SAMPLE_CALLER_MIN                   EXTRAE_SAMPLE_CALLER
 #define EXTRAE_SAMPLE_CALLER_MAX                   30000099
 #define EXTRAE_SAMPLE_CALLERLINE_MIN               30000100
 #define EXTRAE_SAMPLE_CALLERLINE_MAX               30000199

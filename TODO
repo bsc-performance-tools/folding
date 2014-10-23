@@ -1,6 +1,9 @@
+* A cada fase apuntar quin callstack (3 nivells, pex?) i quina linia final
+es la mes present (moda)
+
 * Afegir els punts foldejats a la trasa (debug)
 
-* Parametre pels models al interpolate.sh, SNB, NHM?
+* Parametre pels models al interpolate.sh, SNB, NHM? Automaticament!?
 
 * Fer secuenciacio de callstacks per a buscar amunt o avall, quants nivells cal corregir.
 
@@ -20,4 +23,6 @@ TALLATS!
 
 * Event que indica el # de linia foldejat (callerlines)
 
-* processed callstack hauria d'ignorar les instancies excloses. Assegurar-se'n.
+* Folding callers >> 
+    Deepest frame i Selected frame al caller-line
+
