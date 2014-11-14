@@ -469,7 +469,7 @@ string gnuplotGenerator::gnuplot_model (
 
 	string TITLE = string("\"") + "Evolution for " + m->getTitleName()
 	  + " model\\n" + os->toString (true) + " - " + groupName + " - " + regionName
-	  + "\n";
+	  + "\"\n";
 
 #if defined(CALLSTACK_ANALYSIS)
 	gplot << "set multiplot title " << TITLE << endl << endl;
@@ -1389,7 +1389,7 @@ void gnuplotGenerator::gnuplot_routine_plot (
 
 				gplot << "set label center \"" << routine
 				      << "\" at second " << middle
-				      << "*FACTOR, first 0.5 rotate by 90 tc rgbcolor 'black' front" << endl;
+				      << "*FACTOR, graph 0.5 rotate by 90 tc rgbcolor 'black' front" << endl;
 			}
 		}
 
