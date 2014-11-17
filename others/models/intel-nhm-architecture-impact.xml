@@ -23,7 +23,7 @@
 		</operation>
 	</component>
 
-	<component name="br_msp" title-name="BR MSP" where="y1" color="orange">
+	<component name="br_msp_ratio" title-name="BR MSP" where="y1" color="orange">
 		<operation type='/'>
 			<value> PAPI_BR_MSP </value>
 			<value> PAPI_TOT_INS </value>
