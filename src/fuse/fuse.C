@@ -40,6 +40,7 @@ class ThreadInformation
 {
 	public:
 	struct multievent_t LastEvents;
+	bool hasLastEvents;
 
 	ThreadInformation ();
 };
@@ -47,6 +48,7 @@ class ThreadInformation
 ThreadInformation::ThreadInformation()
 {
 	LastEvents.Timestamp = 0;
+	hasLastEvents = false;
 }
 
 class TaskInformation
@@ -123,6 +125,7 @@ class Process : public ParaverTrace
 	void processCommunicator (string &c);
 	void processComment (string &c);
 	void processLastEvents (void);
+	void processLastEvents2 (void);
 	InformationHolder ih;
 };
 
@@ -203,6 +206,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 		}
 
 		thi->LastEvents = e;
+		thi->hasLastEvents = true;
 	}
 	else if (thi->LastEvents.Timestamp == e.Timestamp)
 	{
@@ -227,7 +231,7 @@ void Process::processLastEvents (void)
 		for (int thread = 0; thread < ti[task].getNumThreads(); thread++)
 		{
 			ThreadInformation *thi = &((ti[task].getThreadsInformation())[thread]);
-			if (thi->LastEvents.events.size() > 0)
+			if (thi->hasLastEvents && thi->LastEvents.events.size() > 0)
 			{
 				traceout << "2:" 
 					<< thi->LastEvents.ObjectID.cpu << ":"
