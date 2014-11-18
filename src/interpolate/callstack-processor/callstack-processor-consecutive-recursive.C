@@ -238,7 +238,7 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 
 	vector < pair < CodeRefTriplet, double > > vCallerTime;
 
-#if defined(TIME_BASE_COUNTER)
+#if defined(TIME_BASED_COUNTER)
 	//string time = common::DefaultTimeUnit;
 	string time = "PAPI_TOT_INS";
 #endif /* TIME_BASED_COUNTER */
@@ -321,6 +321,9 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 
 			// Restart statistics
 			CodeRefFrequency.clear();
+
+			// Add these consecutive found into the statistics
+			CodeRefFrequency[ct.first] = nConsecutiveSamples;
 
 		}
 		else if (in_region && !ctrl->allEqual())
@@ -530,6 +533,9 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 
 			// Reset frequency stats
 			CodeRefFrequency.clear();
+
+			// Add these consecutive found into the statistics
+			CodeRefFrequency[ct.first] = nConsecutiveSamples;
 		}
 		else if (in_region && !ctrl->allEqual() && crt_in_region.getCaller() != 0)
 		{
