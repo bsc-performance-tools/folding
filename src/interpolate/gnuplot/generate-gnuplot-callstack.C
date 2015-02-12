@@ -113,13 +113,7 @@ void gnuplotGeneratorCallstack::generate (
 
 	vector<CallstackProcessor_Result*>::const_iterator it = routines.cbegin();
 	double last = 0.;
-	vector<string> bgcolors;
-	bgcolors.push_back (string("#ff0000"));
-	bgcolors.push_back (string("#00ff00"));
-	bgcolors.push_back (string("#0000ff"));
-	bgcolors.push_back (string("#ffa000"));
-	bgcolors.push_back (string("#00ffff"));
-	bgcolors.push_back (string("#606060"));
+	vector<string> bgcolors = { "#ff0000", "#00ff00", "#0000ff", "#ffa000", "#00ffff", "#606060" };
 
 #define X_WIDTH_THRESHOLD 0.025
 

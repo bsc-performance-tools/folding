@@ -57,39 +57,6 @@ void gnuplotGeneratorReferences::generate (
 	unsigned long long minaddress_stack, maxaddress_stack;
 	unsigned long long minaddress_nonstack, maxaddress_nonstack;
 	bool hassomeaddress_stack = false, hassomeaddress_nonstack = false;
-#if 0
-	set<Sample*> samples = ig->getAllSamples();
-	set<Sample*>::iterator s;
-	for (s = samples.begin(); s != samples.end(); s++)
-	{
-		if ((*s)->hasAddressReference() && !common::addressInStack ((*s)->getAddressReference()))
-		{
-			if (hassomeaddress_nonstack)
-			{
-				minaddress_nonstack = MIN(minaddress_nonstack, (*s)->getAddressReference());
-				maxaddress_nonstack = MAX(maxaddress_nonstack, (*s)->getAddressReference());
-			}
-			else
-			{
-				maxaddress_nonstack = minaddress_nonstack = (*s)->getAddressReference();
-				hassomeaddress_nonstack = true;
-			}
-		}
-		if ((*s)->hasAddressReference() && common::addressInStack ((*s)->getAddressReference()))
-		{
-			if (hassomeaddress_stack)
-			{
-				minaddress_stack = MIN(minaddress_stack, (*s)->getAddressReference());
-				maxaddress_stack = MAX(maxaddress_stack, (*s)->getAddressReference());
-			}
-			else
-			{
-				maxaddress_stack = minaddress_stack = (*s)->getAddressReference();
-				hassomeaddress_stack = true;
-			}
-		}
-	}
-#endif
 
 	map<unsigned long long, VariableInfo*> seenVariables;
 	for (const auto & v : variables)
@@ -180,8 +147,6 @@ void gnuplotGeneratorReferences::generate (
 				CommonMath::LinearRegression (vtmp, slope, intercept,
 				  correlation_coefficient);
 
-				cout << "v->getName() = " << vi->getName() << " LR slope = " << slope << " coefficient = " << correlation_coefficient << endl;
-
 				// Does the correlation coefficient indicate that the linear regression
 				// is ok?, or maybe random?
 				// (i.e. correlation coefficient in [0.9 , 1.1])
@@ -200,10 +165,7 @@ void gnuplotGeneratorReferences::generate (
 						t += 0.001;
 					}
 
-					// cout << "add rate / acc ins = " << fabs(slope)*(max_sample_time-min_sample_time) / accInstructions << endl;
-
 					double ratio_address_per_ins = fabs(slope)*(max_sample_time-min_sample_time) / accInstructions;
-
 					restmp << setprecision(2) << ratio_address_per_ins;
 				}
 				else
@@ -260,20 +222,7 @@ void gnuplotGeneratorReferences::generate (
 
 	gplot << "set y2range [MIN_ADDRESS_STACK:MAX_ADDRESS_STACK];" << endl;
 
-	vector<string> colors;
-#if 0
-	colors.push_back ("#c00000");
-	colors.push_back ("#00c000");
-	colors.push_back ("#0000c0");
-	colors.push_back ("#c0c000");
-	colors.push_back ("#c000c0");
-	colors.push_back ("#00c0c0");
-	colors.push_back ("#c0c0c0");
-	colors.push_back ("#000000");
-#else
-	colors.push_back ("#a0a0a0");
-	colors.push_back ("#606060");
-#endif
+	vector<string> colors = { "#a0a0a0", "#606060" };
 	unsigned vv = 0;
 	for (const auto & v : seenVariables)
 	{
