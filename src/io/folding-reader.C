@@ -295,8 +295,8 @@ void FoldingReader::ReadVariables (const string & filenameextract,
 		ss_end << hex << s_end;
 		ss_end >> ull_end;
 
-		/* Discard variables that are smaller than 32 Kbytes */
-		if ((ull_end + 1) - ull_start >= 32*1024)
+		/* Discard variables that are smaller than 1024 Kbytes */
+		if ((ull_end + 1) - ull_start >= 1024*1024)
 		{
 			VariableInfo *v = new VariableInfo (name, ull_start, ull_end);
 			vi.push_back (v);
