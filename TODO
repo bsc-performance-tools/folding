@@ -3,10 +3,6 @@ es la mes present (moda)
 
 * Afegir els punts foldejats a la trasa (debug)
 
-* Parametre pels models al interpolate.sh, SNB, NHM? Automaticament!?
-
-* Fer secuenciacio de callstacks per a buscar amunt o avall, quants nivells cal corregir.
-
 * Comptadors a les MPIs si no es separen les MPIs!? Shaurien d'eliminar?
       --> Comptadors de MPIs
 
@@ -25,4 +21,26 @@ TALLATS!
 
 * Folding callers >> 
     Deepest frame i Selected frame al caller-line
+
+* Parametre pels models al interpolate.sh, SNB, NHM? Automaticament!?
+
+   Posar els models dins de directoris que representen arquitectura, i algun preprocés analitzi el PCF per a saber quin directori de models aplicar.
+
+* Filtrat de les instancies, no per temps sino per agrupacio de les mes interessants segons metriques donades. Es a dir posar la informacio en una matriu que representa l'espai i quedar-se amb les cel·les que aporten un minim de mostres demanades.
+
++-----+-----+-----+-----+
+|     |     |i9   |     |   # samples demanades = 1000
+|     |     |     |     |     i1 - 10 samples
++-----+-----+-----+-----+     i2 - 15 samples
+|     |i1   |i3   |     |     i3 - 20 samples
+|     |  i2 |  i4 |     |     i4 - 25 samples
++-----+-----+-----+-----+           ..
+|     |     |i7   |     |
+|     |     |     |     |     triar cel.la que conte i3,i4 i despres anar voltejant fins a trobar les 1000?
++-----+-----+-----+-----+
+| i6  |     |     |i5   |
+|     |     |     |     |
++-----+-----+-----+-----+
+
+* Convertir codeblocks/fuse/extract en una unica tool!
 
