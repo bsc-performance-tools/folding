@@ -49,6 +49,7 @@ static string RegionSeparatorName;
 static string PRVSemanticCSVName;
 static int max_callstack_depth = 0;
 static bool has_max_callstack_depth = false;
+static unsigned malloc_level = 0;
 
 using namespace std;
 
@@ -64,12 +65,44 @@ double DenormalizeValue (double normalized, double min, double max)
 
 namespace libparaver {
 
+class DataObject
+{
+	private:
+	string name;
+	unsigned long long startAddress;
+	unsigned long long endAddress;
+	unsigned long long size;
+
+	public:
+	DataObject(string name, unsigned long long size);
+	string getName (void) const
+	  { return name; }
+	unsigned long long getStartAddress (void) const
+	  { return startAddress; }
+	unsigned long long getEndAddress (void) const
+	  { return endAddress; }
+	void setStartAddress (unsigned long long startAddress)
+	  {
+	    this->startAddress = startAddress;
+	    this->endAddress = startAddress + this->size;
+	  }
+};
+
+DataObject::DataObject(string name, unsigned long long size)
+{
+	this->name = name;
+	this->size = size;
+	this->startAddress = 0;
+	this->endAddress = 0;
+}
 
 class ThreadInformation
 {
 	private:
 	bool seen;
 	vector<Sample*> Samples;
+	map<unsigned long long, DataObject*> dataObjects;
+	DataObject *tmp_dataObject;
 	unsigned long long CurrentRegion;
 	unsigned long long StartRegion;
 
@@ -96,6 +129,14 @@ class ThreadInformation
 			delete s;
 		Samples.clear();
 	  }
+	void addDataObject (DataObject *_do)
+	  { dataObjects[_do->getStartAddress()] = _do; }
+	const map<unsigned long long, DataObject*> & getDataObjects (void) const
+	  {  return dataObjects; }
+	void setTmpDataObject (DataObject *_do)
+	  { tmp_dataObject = _do; }
+	DataObject * getTmpDataObject (void) const
+	  { return tmp_dataObject; }
 	ThreadInformation ();
 	~ThreadInformation ();
 };
@@ -104,6 +145,7 @@ ThreadInformation::ThreadInformation ()
 {	
 	seen = false;
 	CurrentRegion = 0;
+	tmp_dataObject = NULL;
 }
 
 ThreadInformation::~ThreadInformation ()
@@ -515,11 +557,82 @@ void Process::processMultiEvent (struct multievent_t &e)
 	map<unsigned, unsigned long long> CallerLine;    /* Map depth of caller line */
 	map<unsigned, unsigned long long> CallerLineAST; /* Map depth of caller line AST */
 
+	/* Is there a memory-related call? */
+	bool memory_call = false;
+	for (const auto & event : e.events)
+		if (event.Type == EXTRAE_DYNAMIC_MEMORY_TYPE)
+			if (event.Value == EXTRAE_DYNAMIC_MEMORY_MALLOC ||
+			    event.Value == EXTRAE_DYNAMIC_MEMORY_CALLOC ||
+			    event.Value == EXTRAE_DYNAMIC_MEMORY_REALLOC)
+			{
+				memory_call = true;
+				break;
+			}
+
+	if (memory_call)
+	{
+		bool has_minimum_call = false;
+		unsigned minimum_call_type;
+		unsigned minimum_call_value;
+		unsigned long long dynamic_memory_size = 0;
+		for (const auto & event : e.events)
+		{
+			if (event.Type == EXTRAE_DYNAMIC_MEMORY_SIZE)
+				dynamic_memory_size = event.Value;
+
+			if (malloc_level != 0)
+			{
+				if (event.Type == malloc_level)
+				{
+					minimum_call_type = event.Type;
+					minimum_call_value = event.Value;
+					has_minimum_call = true;
+				}
+			}
+			else if (event.Type >= EXTRAE_CALLERLINE_MIN && event.Type <= EXTRAE_CALLERLINE_MAX)
+			{
+				if (has_minimum_call && event.Type <= minimum_call_type)
+				{
+					minimum_call_type = event.Type;
+					minimum_call_value = event.Value;
+				}
+				else if (!has_minimum_call)
+				{
+					minimum_call_type = event.Type;
+					minimum_call_value = event.Value;
+					has_minimum_call = true;
+				}
+			}
+		}
+		if (dynamic_memory_size != 0 && has_minimum_call)
+		{
+			bool found = false;
+			string name, tmp = getTypeValue (minimum_call_type, minimum_call_value, found);
+			// cout << "minimum_call_type = " << minimum_call_type << " minimum_call_value = " << minimum_call_value << " found = " << found  << endl;
+			if (found)
+				name = common::removeUnwantedChars (tmp.substr (0, tmp.find (')')));
+			DataObject *d = new DataObject (found?name:"<unknown>", dynamic_memory_size);
+			thi[thread].setTmpDataObject (d);
+		}
+	}
+
+	/* Close any memory-related call? */
+	DataObject *d = thi[thread].getTmpDataObject ();
+	if (d != NULL)
+		for (const auto & event : e.events)
+			if (event.Type == EXTRAE_DYNAMIC_MEMORY_OUT_PTR)
+			{
+				d->setStartAddress (event.Value);
+				thi[thread].addDataObject (d);
+				thi[thread].setTmpDataObject (NULL);
+				break;
+			}
+
 	for (const auto & event : e.events)
 	{
 		if (thi[thread].getCurrentRegion() > 0)
 		{
-			if (event.Type >= PAPI_MIN_COUNTER && event.Type <= PAPI_MAX_COUNTER )
+			if (event.Type >= PAPI_MIN_COUNTER && event.Type <= PAPI_MAX_COUNTER)
 			{
 				if (common::DEBUG())
 					cout << "Processing counter " << event.Type << " with value " << event.Value << " at timestamp " << e.Timestamp << endl;
@@ -690,7 +803,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 				}
 				else
 					RegionName = SemanticIndex[Region-1];
-	
+
 				/* Write the information */
 				FoldingWriter::Write (IH.outputfile, RegionName, ptask, task,
 				  thread, thi[thread].getStartRegion(),
@@ -847,24 +960,46 @@ void Process::dumpSeenAddressRegions (string filename)
 		bool has_addresses;
 		string r = getType (ADDRESS_VARIABLE_ADDRESSES, has_addresses);
 
-		if (has_addresses)
+		PTaskInformation *ptaskinfo = IH.getPTasksInformation();
+		for (int ptask = 0; ptask < 1 /* IH.getNumPTasks() */; ptask++)
 		{
-			/* As of today, this just dumps addresses for one task (1.1) */
-			for (const auto eventvalue : pcf->getEventValues (ADDRESS_VARIABLE_ADDRESSES))
+			TaskInformation *taskinfo = ptaskinfo[ptask].getTasksInformation();
+			for (int task = 0; task < 1 /* ptaskinfo[ptask].getNumTasks() */; task++)
 			{
-				string value = pcf->getEventValue (ADDRESS_VARIABLE_ADDRESSES, eventvalue);
+				ThreadInformation *threadinfo = taskinfo[task].getThreadsInformation();
+				for (int thread = 0; thread < 1 /* taskinfo[task].getNumThreads() */ ; thread++)
+				{
+					const map<unsigned long long, DataObject*> dataobjects =
+					  threadinfo[thread].getDataObjects ();
 
-				/* Parsing string like: a [0x13730100-0x1cfc68ff] */
-				string variable =
-				  value.substr (0, value.find ("[") - 1);
-				string startaddress =
-				  value.substr (value.find ("[") + 1, value.find("-") - value.find("[") - 1);
-				string endaddress =
-				  value.substr (value.find ("-") + 1, value.find("]") - value.find ("-") - 1);
-
-				f << variable << " " << startaddress << " " << endaddress << endl;
-			}
+					f << std::hex;
+					for (const auto & kv : dataobjects)
+					{
+						DataObject *d = kv.second;
+						f << d->getName() << " 0x" << d->getStartAddress() << " 0x" << d->getEndAddress() << endl;
+					}
+					f << std::dec;
+				}
+				if (has_addresses)
+				{
+					for (const auto eventvalue : pcf->getEventValues (ADDRESS_VARIABLE_ADDRESSES))
+					{
+						string value = pcf->getEventValue (ADDRESS_VARIABLE_ADDRESSES, eventvalue);
+		
+						/* Parsing string like: a [0x13730100-0x1cfc68ff] */
+						string variable =
+						  value.substr (0, value.find ("[") - 1);
+						string startaddress =
+						  value.substr (value.find ("[") + 1, value.find("-") - value.find("[") - 1);
+						string endaddress =
+						  value.substr (value.find ("-") + 1, value.find("]") - value.find ("-") - 1);
+		
+						f << variable << " " << startaddress << " " << endaddress << endl;
+					}
+				}
+			} 
 		}
+
 	}
 	f.close();
 }
@@ -916,36 +1051,45 @@ int ProcessParameters (int argc, char *argv[])
 		     << "Available options are: " << endl
 		     << "-separator S" << endl
 		     << "-semantic F" << endl
+             << "-skip-malloc-level L" << endl
 		     << "-max-callstack-depth D" << endl;
 		exit (-1);
 	}
 
 	for (int i = 1; i < argc-1; i++)
 	{
-		if (strcmp ("-separator",  argv[i]) == 0)
+		string parameter = argv[i];
+
+		if (parameter == "-separator")
 		{
 			i++;
 			RegionSeparator = argv[i];
 			continue;
 		}
-		else if (strcmp ("-max-callstack-depth",  argv[i]) == 0)
+		else if (parameter == "-max-callstack-depth")
 		{
 			i++;
 			has_max_callstack_depth = true;
 			max_callstack_depth = atoi (argv[i]);
 			continue;
 		}
-		else if (strcmp ("-semantic", argv[i]) == 0)
+		else if (parameter == "-malloc-level")
 		{
 			i++;
-			if (common::existsFile(argv[i]))
+			malloc_level = atoi (argv[i]);
+			continue;
+		}
+		else if (parameter == "-semantic")
+		{
+			i++;
+			if (common::existsFile(parameter))
 			{
-				cout << "Reading semantic file " << argv[i] << endl;
-				PRVSemanticCSVName = argv[i];
+				cout << "Reading semantic file " << parameter << endl;
+				PRVSemanticCSVName = parameter;
 			}
 			else
 			{
-				cerr << "The file " << argv[i] << " does exist. Dying ... " << endl;
+				cerr << "The file " << parameter << " does exist. Dying ... " << endl;
 				exit (-1);
 			}
 			continue;
@@ -982,7 +1126,6 @@ int main (int argc, char *argv[])
 		cerr << "ERROR! Exception launched when processing the file " << tracename << ". Check that it exists and it is a Paraver tracefile..." << endl; 
 		return -1;
 	}
-
 	int n;
 	if ( ( n = atoi(RegionSeparator.c_str()) ) > 0)
 	{

@@ -71,18 +71,18 @@ string common::convertInt (size_t st)
 string common::removeSpaces (const string &in)
 {
 	string tmp = in;
-	for (string::iterator it = tmp.begin(); it != tmp.end(); it++)
-		if (*it == ' ')
-			*it = '_';
+	for (auto & c : tmp)
+		if (c == ' ')
+			c = '_';
 	return tmp;
 }
 
 string common::removeUnwantedChars (const string &in)
 {
 	string tmp = in;
-	for (string::iterator it = tmp.begin(); it != tmp.end(); it++)
-		if (*it == ' ' || *it == '[' || *it == ']' || *it == '(' || *it == ')')
-			*it = '_';
+	for (auto & c : tmp)
+		if (c == ' ' || c == '[' || c == ']' || c == '(' || c == ')')
+			c = '_';
 	return tmp;
 }
 

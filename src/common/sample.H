@@ -119,8 +119,6 @@ class Sample
 
 	bool hasAddressReference(void) const
 	  { return bhasAddressReference; }
-	bool hasAddressReferenceInStack(void) const
-	  { return AddressReference >= 0x80000000; }
 	unsigned long long getAddressReference(void) const
 	  { return AddressReference; }
 	unsigned getAddressReference_Mem_Level(void) const

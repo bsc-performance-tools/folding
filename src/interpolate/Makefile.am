@@ -1,4 +1,4 @@
-SUBDIRS = service-kriger service-R model callstack-processor
+SUBDIRS = service-kriger service-R model callstack-processor gnuplot
 
 bin_PROGRAMS = interpolate
 
@@ -19,7 +19,6 @@ interpolate_SOURCES = \
  interpolation-results.C interpolation-results.H \
  interpolation-kriger.C interpolation-kriger.H \
  interpolation-R-strucchange.C interpolation-R-strucchange.H \
- generate-gnuplot.C generate-gnuplot.H \
  interpolate.C interpolate.H
 
 if HAVE_CLUSTERING_SUITE
@@ -47,7 +46,7 @@ endif
 interpolate_LDADD = ../common/libcommon.la -lpcf-common \
                     -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser \
                     service-kriger/libkriger.la service-R/libR.la \
-                    model/libmodel.la \
+                    model/libmodel.la gnuplot/libgnuplot.la \
                     callstack-processor/libcallstack-processor.la ../io/libfolding-io-reader.la \
                     $(XML_LIBS) -lrt -lgfortran -lm
 if HAVE_CLUSTERING_SUITE

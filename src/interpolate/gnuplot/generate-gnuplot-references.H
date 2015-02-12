@@ -21,36 +21,30 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-#ifndef VARIABLE_INFO_H_INCLUDED
-#define VARIABLE_INFO_H_INCLUDED
+#ifndef GNUPLOTGENERATORREFERENCES_H_INCLUDED
+#define GNUPLOTGENERATORREFERENCES_H_INCLUDED
 
-#include "common.H"
-
-#include <string>
+#include "interpolate.H"
+#include "instance-container.H"
+#include "instance-group.H"
+#include "variable-info.H"
 
 using namespace std;
 
-class VariableInfo
-{
-	private:
-	const string name;
-	const unsigned long long startaddress;
-	const unsigned long long endaddress;
+#include <stack>
 
+class gnuplotGeneratorReferences
+{
 	public:
-	VariableInfo (const string &n, unsigned long long start,
-	  unsigned long long end);
-	~VariableInfo();
-	unsigned long long getStartAddress (void) const
-	  { return startaddress; }
-	unsigned long long getEndAddress (void) const
-	  { return endaddress; }
-	unsigned long long getSize (void) const
-	  { return (endaddress + 1) - startaddress; }
-	string getName(void) const
-	  { return name; }
-	bool addressInVariable (unsigned long long address) const
-	  { return startaddress <= address && address <= endaddress; }
+
+	static void generate (
+	  double verticalspace,
+	  double verticalorigin,
+	  ofstream & gplot,
+	  const string & fileDump,
+	  InstanceGroup *ig,
+	  const vector<VariableInfo*> & variables,
+	  UIParaverTraceConfig *pcf);
 };
 
-#endif /* VARIABLE_INFO_H_INCLUDED */
+#endif /* GNUPLOTGENERATORREFERENCES_H_INCLUDED */

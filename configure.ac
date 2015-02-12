@@ -340,6 +340,12 @@ if test "${enable_callstack_analysis}" = "yes" ; then
 	AC_DEFINE([CALLSTACK_ANALYSIS], [1], [Define if call-stack analysis is enabled])
 fi
 
+AC_ARG_ENABLE([reference-analysis],
+	AS_HELP_STRING([--enable-reference-analysis], [Enables reference analysis]))
+if test "${enable_reference_analysis}" = "yes" ; then
+	AC_DEFINE([REFERENCE_ANALYSIS], [1], [Define if reference analysis is enabled])
+fi
+
 AX_PROG_BOOST
 
 AC_CHECK_FUNC(stat, [AC_DEFINE([HAVE_STAT],[1],[Define if have stat])])
@@ -392,6 +398,7 @@ AC_CONFIG_FILES([
  src/interpolate/service-R/Makefile
  src/interpolate/model/Makefile
  src/interpolate/callstack-processor/Makefile
+ src/interpolate/gnuplot/Makefile
  src/others/Makefile
  doc/Makefile
 ])

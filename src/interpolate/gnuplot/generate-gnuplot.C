@@ -23,6 +23,8 @@
 
 #include "common.H"
 #include "generate-gnuplot.H"
+#include "generate-gnuplot-callstack.H"
+#include "generate-gnuplot-references.H"
 
 #include <assert.h>
 #include <iostream>
@@ -104,22 +106,30 @@ void gnuplotGenerator::gnuplot_single (
 		  + regionName + "\\nDuration = " + ssDuration.str() + " Mevents, Counter = " 
 		  + ssCounterAvg.str() + " Mevents\";";
 
-#if defined(CALLSTACK_ANALYSIS)
 	gplot << "set multiplot title " << TITLE << endl << endl;
 
-	gplot << "set size 1,0.175;" << endl
-	      << "set origin 0,0.80;" << endl << endl;
+	double occupied_in_multiplot = 0.;
 
-	gnuplot_routine_part (gplot, fdname, ig, pcf);
+#if defined(CALLSTACK_ANALYSIS)
+#define CALLSTACK_ANALYSIS_PART 0.15
+	gnuplotGeneratorCallstack::generate (CALLSTACK_ANALYSIS_PART,
+	  0.95-CALLSTACK_ANALYSIS_PART, gplot, fdname, ig, pcf);
+	occupied_in_multiplot += CALLSTACK_ANALYSIS_PART;
+#undef CALLSTACK_ANALYSIS_PART
 #endif
 
 #if defined(REFERENCE_ANALYSIS)
-	gnuplot_addresses_part (gplot, fdname, ig, variables, pcf);
+#define CALLSTACK_REFERENCE_PART 0.25
+	gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
+	  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
+	  variables, pcf);
+	occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
+#undef CALLSTACK_REFERENCE_PART
+#endif
 
-	gplot << "set size 1,0.5;" << endl
+	gplot << "set size 1," << 0.95-occupied_in_multiplot << ";" << endl
 	      << "set origin 0,0;" << endl 
 	      << "set tmargin 0; set lmargin 14; set rmargin 17;" << endl << endl;
-#endif
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
@@ -129,7 +139,7 @@ void gnuplotGenerator::gnuplot_single (
 	  "set y2range [0:*];" << endl <<
 	  "set ytics nomirror format \"%.01f\";" << endl <<
 	  "set y2tics nomirror format \"%g\";" << endl <<
-	  "set x2tics nomirror format \"%.02f\";" << endl <<
+	  "#set x2tics nomirror format \"%.02f\";" << endl <<
 	  "set ylabel 'Normalized " << counter << "';" << endl;
 
 	if (TimeUnit == common::DefaultTimeUnit)
@@ -287,22 +297,30 @@ string gnuplotGenerator::gnuplot_slopes (
 	string TITLE = string("\"") + os->toString (true) + " - " + groupName + " - " +
 	  regionName + "\"";
 
-#if defined(CALLSTACK_ANALYSIS)
 	gplot << "set multiplot title " << TITLE << endl << endl;
 
-	gplot << "set size 1,0.175;" << endl
-	      << "set origin 0,0.80;" << endl << endl;
+	double occupied_in_multiplot = 0.;
 
-	gnuplot_routine_part (gplot, fdname, ig, pcf);
+#if defined(CALLSTACK_ANALYSIS)
+#define CALLSTACK_ANALYSIS_PART 0.20
+	gnuplotGeneratorCallstack::generate (CALLSTACK_ANALYSIS_PART,
+	  0.95-CALLSTACK_ANALYSIS_PART, gplot, fdname, ig, pcf);
+	occupied_in_multiplot += CALLSTACK_ANALYSIS_PART;
+#undef CALLSTACK_ANALYSIS_PART
 #endif
 
 #if defined(REFERENCE_ANALYSIS)
-	gnuplot_addresses_part (gplot, fdname, ig, variables, pcf);
+#define CALLSTACK_REFERENCE_PART 0.25
+	gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
+	  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
+	  variables, pcf);
+	occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
+#undef CALLSTACK_REFERENCE_PART
+#endif
 
-	gplot << "set size 1,0.5;" << endl
+	gplot << "set size 1," << 0.95-occupied_in_multiplot << ";" << endl
 	      << "set origin 0,0;" << endl 
 	      << "set tmargin 0; set lmargin 14; set rmargin 17;" << endl << endl;
-#endif
 
 	/* Generate the header, constant part of the plot */
 	gplot << fixed << setprecision(2) <<
@@ -310,7 +328,7 @@ string gnuplotGenerator::gnuplot_slopes (
 	  "set x2range [0:1];" << endl <<
 	  "set yrange [0:*];" << endl <<
 	  "set y2range [0:*];" << endl <<
-	  "set x2tics nomirror format \"%.02f\";" << endl;
+	  "#set x2tics nomirror format \"%.02f\";" << endl;
 
 	if (TimeUnit == common::DefaultTimeUnit)
 	{
@@ -480,22 +498,30 @@ string gnuplotGenerator::gnuplot_model (
 	  + " model\\n" + os->toString (true) + " - " + groupName + " - " + regionName
 	  + "\"\n";
 
-#if defined(CALLSTACK_ANALYSIS)
 	gplot << "set multiplot title " << TITLE << endl << endl;
 
-	gplot << "set size 1,0.175;" << endl
-	      << "set origin 0,0.80;" << endl << endl;
+	double occupied_in_multiplot = 0.;
 
-	gnuplot_routine_part (gplot, fdname, ig, pcf);
+#if defined(CALLSTACK_ANALYSIS)
+#define CALLSTACK_ANALYSIS_PART 0.20
+	gnuplotGeneratorCallstack::generate (CALLSTACK_ANALYSIS_PART,
+	  0.95-CALLSTACK_ANALYSIS_PART, gplot, fdname, ig, pcf);
+	occupied_in_multiplot += CALLSTACK_ANALYSIS_PART;
+#undef CALLSTACK_ANALYSIS_PART
 #endif
 
 #if defined(REFERENCE_ANALYSIS)
-	gnuplot_addresses_part (gplot, fdname, ig, variables, pcf);
+#define CALLSTACK_REFERENCE_PART 0.25
+	gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
+	  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
+	  variables, pcf);
+	occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
+#undef CALLSTACK_REFERENCE_PART
+#endif
 
-	gplot << "set size 1,0.5;" << endl
+	gplot << "set size 1," << 0.95-occupied_in_multiplot << ";" << endl
 	      << "set origin 0,0;" << endl 
 	      << "set tmargin 0; set lmargin 14; set rmargin 17;" << endl << endl;
-#endif
 
 	if (m->isY1Stacked())
 	{
@@ -601,6 +627,7 @@ string gnuplotGenerator::gnuplot_model (
 	return gname;
 }
 
+#if 0
 string gnuplotGenerator::gnuplot_addresses_cost (
 	InstanceGroup *ig,
 	const ObjectSelection *os,
@@ -1220,7 +1247,7 @@ string gnuplotGenerator::gnuplot_addresses (
 	  "set nokey; " << endl <<
 	  "set x2range [0:1];" << endl <<
 	  "set yrange [0:*];" << endl <<
-	  "set x2tics nomirror format \"%.02f\";" << endl <<
+	  "#set x2tics nomirror format \"%.02f\";" << endl <<
 	  "unset xtics; " << endl <<
 	  "unset xlabel;" << endl <<
 	  "set ytics nomirror;" << endl;
@@ -1417,6 +1444,7 @@ string gnuplotGenerator::gnuplot_addresses (
 
 	return gname;
 }
+#endif
 
 void gnuplotGenerator::gnuplot_groups (
 	InstanceContainer *ic,
@@ -1514,393 +1542,3 @@ void gnuplotGenerator::gnuplot_groups (
 	gplot.close();
 }
 
-string gnuplotGenerator::getStackStringDepth (unsigned depth,
-	stack<CodeRefTriplet> scrt, UIParaverTraceConfig *pcf)
-{
-	assert (depth > 0);
-
-	string res;
-	unsigned line;
-	string file;
-	string routine;
-	try
-	{ routine = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, scrt.top().getCaller()); }
-	catch (...)
-	{ }
-	pcfcommon::lookForCallerLineInfo (pcf, scrt.top().getCallerLine(), file, line);
-	depth--;
-	scrt.pop();
-
-	stringstream ss;
-	ss << line;
-	res = routine + "\\n[" + ss.str() + "]";
-
-	while (depth > 0 && !scrt.empty())
-	{
-		try
-		{ routine = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, scrt.top().getCaller()); }
-		catch (...)
-		{ }
-
-		res = routine + " >\\n" + res;
-
-		depth--;
-		scrt.pop();
-	}
-
-	return res;
-}
-
-void gnuplotGenerator::gnuplot_routine_part (
-	ofstream & gplot,
-	const string & fileDump,
-	InstanceGroup *ig,
-	UIParaverTraceConfig *pcf
-)
-{
-	assert (gplot.is_open());
-
-	gplot << "##############################" << endl
-	      << "## Routines part " << endl
-	      << "##############################" << endl << endl;
-
-	if (!ig->hasPreparedCallstacks())
-		return;
-
-	const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
-
-	gplot << "set bmargin 0; set lmargin 14; set rmargin 17;" << endl << endl;
-
-	gplot << "set xlabel \"ghost\" tc rgbcolor \"white\";" << endl
-	      << "set ylabel \"ghost\" tc rgbcolor \"white\";" << endl
-	      << "#set y2label \"Code line\";" << endl
-	      << "set label 'Code line' at screen 0.975, screen 0.8+(0.175/2) rotate by -90 center;" << endl
-	      << "set label \"bottom\" at second 1.005, first 0;" << endl
-	      << "set label \"top\"    at second 1.005, first 1;" << endl
-	      << "set xrange [0:X_LIMIT*1./FACTOR];" << endl
-	      << "set x2range [0:1];" << endl
-	      << "set yrange [0:1];" << endl
-	      << "set y2range [0:*] reverse;" << endl
-	      << "set ytics tc rgbcolor \"white\" (0.001) format \"%0.2f\";" << endl
-	      << "set y2tics 100 tc rgbcolor \"white\" format \"0000\";" << endl
-	      << "unset xtics;" << endl
-	      << "unset x2tics;" << endl
-	      << endl;
-
-	vector<CallstackProcessor_Result*>::const_iterator it = routines.cbegin();
-	double last = 0.;
-	vector<string> bgcolors;
-	bgcolors.push_back (string("#ff0000"));
-	bgcolors.push_back (string("#00ff00"));
-	bgcolors.push_back (string("#0000ff"));
-	bgcolors.push_back (string("#ffa000"));
-	bgcolors.push_back (string("#00ffff"));
-	bgcolors.push_back (string("#606060"));
-
-#define X_WIDTH_THRESHOLD 0.025
-
-	gplot << fixed << setprecision(3) << endl;
-
-	map<string, double> routines_time;
-	map<unsigned, string> routines_colors;
-	unsigned idx = 0;
-	stack<CodeRefTriplet> routine_stack;
-	for (const auto & r : routines)
-	{
-		double duration = r->getNTime() - last;
-		unsigned top = routine_stack.empty()?0:routine_stack.top().getCaller();
-
-		string routine = "Unknown";
-		try
-		{ routine = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, top); }
-		catch (...)
-		{ }
-
-		if (duration >= X_WIDTH_THRESHOLD)
-		{
-			string color;
-			if (routines_colors.count (top) == 0)
-			{
-				color = bgcolors[idx];
-				idx = (idx+1)%bgcolors.size();
-			}
-			else
-				color = routines_colors.at (top);
-
-			gplot << "set obj rect from graph " << last << "*FACTOR, graph 0 to graph "
-			      << r->getNTime() << "*FACTOR, graph 1 "
-			      << "fs transparent solid 0.33 noborder fc rgbcolor '" << color
-			      << "' behind # Routine: " << routine << " "
-			      << duration * 100.f << "%" << endl;
-
-			routines_colors[top] = color;
-		}
-
-		if (!routine_stack.empty())
-		{
-			if (routines_time.count (routine) == 0)
-				routines_time[routine] = duration*100.;
-			else
-				routines_time[routine] += duration*100.;
-		}
-
-		if (r->getCodeRef().getCaller() != 0)
-			routine_stack.push (r->getCodeRef());
-		else
-			routine_stack.pop ();
-
-		last = r->getNTime();
-	}
-
-	gplot << endl;
-
-	for (const auto rt : routines_time)
-		gplot << "# Summary for routine " << rt.first << " " << rt.second << "%" << endl;
-
-	gplot << endl;
-
-	last = 0.;
-	routine_stack = stack<CodeRefTriplet>();
-	for (const auto & r : routines)
-	{
-		double tbegin = last;
-		double tend = r->getNTime();
-		double middle = tbegin + (tend-tbegin)/2;
-
-		if (tend - tbegin >= X_WIDTH_THRESHOLD)
-		{
-			if (!routine_stack.empty())
-			{
-				unsigned top = routine_stack.top().getCaller();
-
-				string routine = getStackStringDepth (3, routine_stack, pcf);
-
-				gplot << "set label center \"" << routine
-				      << "\" at second " << middle
-				      << "*FACTOR, graph 0.5 rotate by 90 tc rgbcolor 'black' front" << endl;
-			}
-		}
-
-		if (r->getCodeRef().getCaller() != 0)
-			routine_stack.push (r->getCodeRef());
-		else
-			routine_stack.pop ();
-
-		last = r->getNTime();
-	}
-
-	gplot << fixed << setprecision(2) << endl;
-
-	gplot << endl
-	      << "samplecls(ret,r,g,t) = (r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << "  && t eq 'cl') ? ret : NaN;" << endl << endl
-	      << "plot \"" << fileDump << "\" u ($4*FACTOR):(samplecls($5,strcol(2),$3,strcol(1))) with points axes x2y2 ti '' lc rgbcolor '#ff2090' pt 7 ps 0.5;" << endl
-	      << endl
-	      << "unset label; unset xlabel; unset x2label; unset ylabel; unset y2label;" << endl
-	      << "unset xtics; unset x2tics; unset ytics; unset y2tics;" << endl
-          << "unset xrange; unset x2range; unset yrange; unset y2range;" << endl
-		  << "unset tmargin; unset bmargin; unset lmargin; unset rmargin" << endl
-	      << "unset label;" << endl
-	      << "unset arrow;" << endl
-		  << "unset obj;" << endl
-	      << endl;
-}
-
-void gnuplotGenerator::gnuplot_addresses_part (
-	  ofstream & gplot,
-	  const string & fileDump,
-	  InstanceGroup *ig,
-	  const vector<VariableInfo*> & variables,
-	  UIParaverTraceConfig *pcf)
-{
-	assert (gplot.is_open());
-
-	gplot << "##############################" << endl
-	      << "## Addresses part " << endl
-	      << "##############################" << endl << endl;
-
-	gplot << "set tmargin 0; set bmargin 0; set lmargin 14; set rmargin 17;" << endl << endl;
-
-	unsigned long long minaddress_stack, maxaddress_stack;
-	unsigned long long minaddress_nonstack, maxaddress_nonstack;
-	bool hassomeaddress_stack = false, hassomeaddress_nonstack = false;
-	set<Sample*> samples = ig->getAllSamples();
-	set<Sample*>::iterator s;
-	for (s = samples.begin(); s != samples.end(); s++)
-	{
-		if ((*s)->hasAddressReference() && !common::addressInStack ((*s)->getAddressReference()))
-		{
-			if (hassomeaddress_nonstack)
-			{
-				minaddress_nonstack = MIN(minaddress_nonstack, (*s)->getAddressReference());
-				maxaddress_nonstack = MAX(maxaddress_nonstack, (*s)->getAddressReference());
-			}
-			else
-			{
-				maxaddress_nonstack = minaddress_nonstack = (*s)->getAddressReference();
-				hassomeaddress_nonstack = true;
-			}
-		}
-		if ((*s)->hasAddressReference() && common::addressInStack ((*s)->getAddressReference()))
-		{
-			if (hassomeaddress_stack)
-			{
-				minaddress_stack = MIN(minaddress_stack, (*s)->getAddressReference());
-				maxaddress_stack = MAX(maxaddress_stack, (*s)->getAddressReference());
-			}
-			else
-			{
-				maxaddress_stack = minaddress_stack = (*s)->getAddressReference();
-				hassomeaddress_stack = true;
-			}
-		}
-	}
-
-	for (const auto & v : variables)
-		if (!common::addressInStack (v->getStartAddress()))
-		{
-			if (hassomeaddress_nonstack)
-			{
-				minaddress_nonstack = MIN(minaddress_nonstack, v->getStartAddress());
-				maxaddress_nonstack = MAX(maxaddress_nonstack, v->getEndAddress());
-			}
-			else
-			{
-				minaddress_nonstack = v->getStartAddress();
-				maxaddress_nonstack = v->getEndAddress();
-				hassomeaddress_nonstack = true;
-			}
-		}
-		else
-		{
-			if (hassomeaddress_stack)
-			{
-				minaddress_stack = MIN(minaddress_stack, v->getStartAddress());
-				maxaddress_stack = MAX(maxaddress_stack, v->getEndAddress());
-			}
-			else
-			{
-				minaddress_stack = v->getStartAddress();
-				maxaddress_stack = v->getEndAddress();
-				hassomeaddress_stack = true;
-			}
-		}
-
-	double StackPlotProportion =
-		((double)(maxaddress_stack-minaddress_stack))
-			/((double)(maxaddress_nonstack-minaddress_nonstack+maxaddress_stack-minaddress_stack));
-
-	unsigned numhexdigits_maxaddress =
-	  common::numHexadecimalDigits(maxaddress_stack);
-
-	/* Generate the header, constant part of the plot */
-	gplot << fixed << setprecision(2) <<
-	  "set x2range [0:1];" << endl <<
-	  "set yrange [0:*];" << endl <<
-	  "unset xlabel;" << endl <<
-	  "unset ytics;" << endl <<
-	  "unset key;" << endl;
-
-	gplot << "set label 'Addresses referenced' at screen 0.975, screen 0.65 rotate by -90 center;" << endl <<
-	  "set size 1, " << 0.3*StackPlotProportion << ";" << endl <<
-	  "set origin 0, " << 0.5+0.3*(1.-StackPlotProportion) << ";" << endl << 
-	  "set border 14;" << endl <<
-	  "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
-
-#if 0
-	gplot << "unset y2tics;" << endl
-	      << "set ytics nomirror format '%0" << numhexdigits_maxaddress << "x' ("
-	      << minaddress_stack << ".";
-	for (int i = 1; i <= 5; i++)
-		gplot << ", " << minaddress_stack+i*((maxaddress_stack-minaddress_stack)/5) << ".";
-	gplot << ");" << endl;
-#else
-	gplot << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' (";
-	for (int i = 1; i < 5; i++)
-		gplot << minaddress_stack+i*((maxaddress_stack-minaddress_stack)/5) << ". , ";
-	gplot << "0);" << endl;
-#endif
-	gplot << "set y2range [" << minaddress_stack << ".:" << maxaddress_stack << ".];" << endl;
-
-	vector<string> colors;
-	colors.push_back ("#c00000");
-	colors.push_back ("#00c000");
-	colors.push_back ("#0000c0");
-	colors.push_back ("#c0c000");
-	colors.push_back ("#c000c0");
-	colors.push_back ("#00c0c0");
-	colors.push_back ("#c0c0c0");
-	colors.push_back ("#000000");
-	unsigned vv = 0;
-	for (const auto & v : variables)
-		if (common::addressInStack (v->getStartAddress()))
-		{
-			gplot << 
-			  "set object rect from second 0, second " << v->getStartAddress() <<
-			  ". to second 1, second " << v->getEndAddress() << ". fc rgb '" <<
-			  colors[vv%(colors.size())] << "' fs solid 0.25 noborder;" << endl <<
-			  "set label at second 0.975, second " <<
-			  v->getStartAddress() + v->getSize()/2 << ". '" << v->getName() <<
-			  "' front right;" << endl;
-			vv++;
-		}
-	gplot << endl;
-
-	gplot << "address(ret,w,r,g,t) = (r eq '" << ig->getRegionName() <<
-	  "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl << endl;
-
-	/* PROCESS FIRST REFERENCES TO THE STACK */
-
-	gplot << "plot\\" << endl << 
-	  "'" << fileDump <<"' u ($4*FACTOR):(address($5, $6, strcol(2), $3, strcol(1))) ti '@ reference' axes x2y2 w points pt 7 ps 0.5lc rgbcolor '#ff00ff';" << endl << endl;
-
-	/* PROCESS SECOND REFERENCES OUT OF THE STACK */
-
-	gplot << "unset label;" << endl <<
-	  "set size 1, " << 0.3*(1.-StackPlotProportion) << ";" << endl <<
-	  "set origin 0, 0.5;" << endl <<
-	  "set border 11;" << endl;
-
-	for (const auto & v : variables)
-		if (!common::addressInStack (v->getStartAddress()))
-		{
-			gplot << 
-			  "set object rect from second 0, second " << v->getStartAddress() <<
-			  ". to second 1, second " << v->getEndAddress() << ". fc rgb '" <<
-			  colors[vv%(colors.size())] << "' fs solid 0.25 noborder;" << endl <<
-			  "set label at second 0.975, second " <<
-			  v->getStartAddress() + v->getSize()/2 << ". '" << v->getName() <<
-			  "' front right;" << endl;
-			vv++;
-		}
-	gplot << endl;
-
-#if 0
-	gplot << "unset ytics;" << endl;
-	gplot << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' ("
-	      << minaddress_nonstack << ".";
-	for (int i = 1; i < 5; i++)
-		gplot << ", " << minaddress_nonstack+i*((maxaddress_nonstack-minaddress_nonstack)/5) << ".";
-	gplot << ");" << endl;
-#else
-	gplot << "unset ytics;" << endl;
-	gplot << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' (";
-	for (int i = 1; i < 5; i++)
-		gplot << minaddress_nonstack+i*((maxaddress_nonstack-minaddress_nonstack)/5) << ". , ";
-	gplot << " 0);" << endl;
-#endif
-
-	gplot << 
-	  "set y2range [" << minaddress_nonstack << ".:" << maxaddress_nonstack << ".];" << endl <<
-	  "unset x2tics;" << endl << endl;
-
-	gplot << "plot\\" << endl
-	      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, $6, strcol(2), $3, strcol(1))) ti '@ reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor '#ff00ff';" << endl << endl
-	      << "unset label; unset xlabel; unset x2label; unset ylabel; unset y2label;" << endl
-	      << "unset xtics; unset x2tics; unset ytics; unset y2tics;" << endl
-          << "unset xrange; unset x2range; unset yrange; unset y2range;" << endl
-		  << "unset tmargin; unset bmargin; unset lmargin; unset rmargin" << endl
-	      << "unset label;" << endl
-	      << "unset arrow;" << endl
-	      << "set border 15;" << endl
-		  << "unset obj;" << endl << endl;
-}

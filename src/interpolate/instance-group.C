@@ -33,7 +33,7 @@
 #include <iostream>
 #include "instance-group.H"
 #include "interpolation-results.H"
-#include "generate-gnuplot.H"
+#include "gnuplot/generate-gnuplot.H"
 
 #include <list>
 #include <stack>
@@ -469,22 +469,29 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	{
 		has_instruction_counter |= common::isMIPS((*it).first);
 		gnuplotGenerator::gnuplot_single (this, os, prefix, (*it).first,
-		  (*it).second, TimeUnit, pcf);
+		  (*it).second, TimeUnit, variables, pcf);
 	}
 
 	/* If has instruction counter, generate this in addition to .slopes */
 	string ofile;
 	if (has_instruction_counter)
 		ofile = gnuplotGenerator::gnuplot_slopes (this, os, prefix,
-		  true, TimeUnit, pcf);
+		  true, TimeUnit, variables, pcf);
 	else
 		ofile = gnuplotGenerator::gnuplot_slopes (this, os, prefix, false,
-		  TimeUnit, pcf);
+		  TimeUnit, variables, pcf);
 	cout << "Summary plot for region " << regionName << " ("
 	  << ofile << ")"  << endl;
 
+#if 0
 	if (hasAddresses())
 	{
+		string name_addresses = gnuplotGenerator::gnuplot_addresses_observed (this, os,
+		  prefix, TimeUnit, variables, pcf);
+		if (name_addresses.length() > 0)
+			cout << "Summary plot for region " << regionName << " ("
+			  << name_addresses << ")" << endl;
+/*
 		string name_addresses = gnuplotGenerator::gnuplot_addresses (this, os,
 		  prefix, TimeUnit, variables, pcf);
 		if (name_addresses.length() > 0)
@@ -495,12 +502,14 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 		if (name_addresses.length() > 0)
 			cout << "Summary plot for region " << regionName << " ("
 			  << name_addresses << ")" << endl;
+*/
 	}
+#endif
 
 	for (unsigned m = 0; m < models.size(); m++)
 	{
 		string tmp = gnuplotGenerator::gnuplot_model (this, os, prefix,
-		  models[m], TimeUnit, pcf);
+		  models[m], TimeUnit, variables, pcf);
 		cout << "Plot model " << models[m]->getTitleName() << " for region "
 		  << regionName << " (" << tmp << ")" << endl;
 	}
