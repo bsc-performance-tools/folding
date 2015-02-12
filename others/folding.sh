@@ -15,30 +15,47 @@ LD_LIBRARY_PATH=${FOLDING_HOME}/lib
 # Process optional parameters first
 #
 
+function process_model ()
+{
+	local model="$1"
+	local basename_model=`basename ${model}`
+	local result=""
+
+	if [[ -f "${basename_model}" ]] ; then
+		# Given model file in current directory
+		result="-model ${PWD}/${basename_model} "
+	elif [[ -f "${1}" ]] ; then
+		# Given model file in current directory
+		result="-model ${1} "
+	elif [[ -d "${basename_model}" ]] ; then
+		# Given model directory in current directory
+		for file in "${basename_model}"/*xml
+		do
+			result+="-model ${PWD}/${file} "
+		done
+	elif [[ -d "${FOLDING_HOME}/etc/models/${model}" ]] ; then
+		# Given model directory in folding installation
+		for file in "${FOLDING_HOME}/etc/models/${model}"/*xml
+		do
+			result+="-model ${file} "
+		done
+	else
+		return 0
+	fi
+
+	echo $result
+	return 1
+}
+
 SHOW_COMMANDS=no
 for param in "$@"
 do
 	if [[ "${1}" == "-model" ]] ; then
-		BASENAME_MODEL=`basename ${2}`
-		if [[ "${2}"  == "${BASENAME_MODEL}" ]] ; then
-			if [[ -f "${2}" ]]; then
-				FILENAME_MODEL=${2}
-			elif [[ -f ${FOLDING_HOME}/etc/models/${2} ]] ; then
-				FILENAME_MODEL=${FOLDING_HOME}/etc/models/${2}
-			else
-				echo "Cannot find model ${2}"
-				exit
-			fi
-		else
-			if [[ -f "${2}" ]]; then
-				FILENAME_MODEL=${2}
-			else
-				echo "Cannot find model ${2}"
-				exit
-			fi
+		MODELS_SUFFIX+=$(process_model "${2}")
+		if [[ $? -ne 1 ]] ; then
+			echo "Cannot process model ${2}"
+			exit
 		fi
-		echo Given model: ${FILENAME_MODEL}
-		MODELS_SUFFIX+="-model ${FILENAME_MODEL} "
 		shift
 		shift
 	elif  [[ "${1}" == "-source" ]] ; then
@@ -61,7 +78,7 @@ done
 if [[ $# -ne 2 ]] ; then
 	echo "Usage: ${0} [-model M] [-source S] Trace InstanceSeparator/SemanticSeparator"
 	echo ""
-	echo "            -model M         : Use performance model M when generating plots (see $FOLDING_HOME/others/models)"
+	echo "            -model M         : Use performance model M when generating plots (see $FOLDING_HOME/etc/models)"
 	echo "            -source S        : Indicate where the source code of the application is located"
 	echo "            Trace            : Paraver trace-file"
 	echo "            InstanceSeparator: Label or value f the event type to separate instances within tracefile"
@@ -151,10 +168,11 @@ fi
 echo Output directory: ${PWD}
 
 ${FOLDING_HOME}/bin/interpolate \
- -max-samples-distance 2000 \
- -sigma-times 2.0 \
+ -max-samples-distance 1500 \
+ -sigma-times 1.5 \
  -use-median \
  -feed-first-occurrence any \
+ -callstack-processor pct 15 5.0 \
  ${EXTRA_INTERPOLATE_FLAGS} \
  ${MODELS_SUFFIX} \
  ${SOURCE_DIRECTORY_SUFFIX} \
