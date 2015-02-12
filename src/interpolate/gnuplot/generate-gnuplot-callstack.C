@@ -219,7 +219,7 @@ void gnuplotGeneratorCallstack::generate (
 	      << "plot \"" << fileDump << "\" u ($4*FACTOR):(samplecls($5,strcol(2),$3,strcol(1))) with points axes x2y2 ti '' lc rgbcolor '#ff2090' pt 7 ps 0.5;" << endl
 	      << endl
 	      << "unset label; unset xlabel; unset x2label; unset ylabel; unset y2label;" << endl
-	      << "unset xtics; unset x2tics; unset ytics; unset y2tics;" << endl
+	      << "unset xtics; unset x2tics; unset ytics; unset y2tics; set y2tics autofreq;" << endl
           << "unset xrange; unset x2range; unset yrange; unset y2range;" << endl
 		  << "unset tmargin; unset bmargin; unset lmargin; unset rmargin" << endl
 	      << "unset label;" << endl
