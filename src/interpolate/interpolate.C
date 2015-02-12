@@ -826,7 +826,6 @@ int ProcessParameters (int argc, char *argv[])
 				cerr << "Invalid interpolation algorithm" << endl;
 			}
 		}
-#if defined(CALLSTACK_ANALYSIS)
 		else if (strcmp ("-callstack-processor", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(3, argc, i))
@@ -856,10 +855,14 @@ int ProcessParameters (int argc, char *argv[])
 				cout << "Callstack processor analysis: " << n
 				     << " consecutive samples, percentage = " << p << " %" << endl;
 
+#if defined(CALLSTACK_ANALYSIS)
 				CallstackProcessor_type = CALLSTACKPROCESSOR_CONSECUTIVE_PCT;
 				CallstackProcessor_nconsecutivesamples = n;
 				CallstackProcessor_pct = p;
 				wannaCallstackProcessing = true;
+#else
+				cerr << "Warning! Callstack processor was not enabled at configure time." << endl;
+#endif
 			}
 			else if (cp_mode == "duration")
 			{
@@ -878,10 +881,14 @@ int ProcessParameters (int argc, char *argv[])
 				cout << "Callstack processor analysis: " << n
 				     << " consecutive samples, duration = " << d << " ms" << endl;
 
+#if defined(CALLSTACK_ANALYSIS)
 				CallstackProcessor_type = CALLSTACKPROCESSOR_CONSECUTIVE_DURATION;
 				CallstackProcessor_nconsecutivesamples = n;
 				CallstackProcessor_duration = d;
 				wannaCallstackProcessing = true;
+#else
+				cerr << "Warning! Callstack processor was not enabled at configure time." << endl;
+#endif
 			}
 			else
 			{
@@ -889,7 +896,6 @@ int ProcessParameters (int argc, char *argv[])
 				exit (-1);
 			}
 		}
-#endif
 		else if (strcmp ("-model", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(1, argc, i))

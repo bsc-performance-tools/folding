@@ -127,7 +127,7 @@ void gnuplotGenerator::gnuplot_single (
 #undef CALLSTACK_REFERENCE_PART
 #endif
 
-	gplot << "set size 1," << 0.95-occupied_in_multiplot << ";" << endl
+	gplot << "set size 1," << 0.925-occupied_in_multiplot << ";" << endl
 	      << "set origin 0,0;" << endl 
 	      << "set tmargin 0; set lmargin 14; set rmargin 17;" << endl << endl;
 
@@ -318,7 +318,7 @@ string gnuplotGenerator::gnuplot_slopes (
 #undef CALLSTACK_REFERENCE_PART
 #endif
 
-	gplot << "set size 1," << 0.95-occupied_in_multiplot << ";" << endl
+	gplot << "set size 1," << 0.925-occupied_in_multiplot << ";" << endl
 	      << "set origin 0,0;" << endl 
 	      << "set tmargin 0; set lmargin 14; set rmargin 17;" << endl << endl;
 
@@ -519,7 +519,7 @@ string gnuplotGenerator::gnuplot_model (
 #undef CALLSTACK_REFERENCE_PART
 #endif
 
-	gplot << "set size 1," << 0.95-occupied_in_multiplot << ";" << endl
+	gplot << "set size 1," << 0.925-occupied_in_multiplot << ";" << endl
 	      << "set origin 0,0;" << endl 
 	      << "set tmargin 0; set lmargin 14; set rmargin 17;" << endl << endl;
 
