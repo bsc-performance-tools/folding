@@ -32,7 +32,7 @@ interpolate_SOURCES += \
  cube-tree.C cube-tree.H 
 endif
 
-interpolate_CXXFLAGS = -I. -I../common -I../io -I$(LIBTOOLS_DIR)/include -Iservice-kriger -Iservice-R -Imodel -Icallstack-processor $(XML_CPPFLAGS) -g -O 
+interpolate_CXXFLAGS = -I. -I../common -I../io -I$(LIBTOOLS_DIR)/include -Iservice-kriger -Iservice-R -Imodel -Icallstack-processor -Ignuplot $(XML_CPPFLAGS) -g -O 
 if HAVE_CLUSTERING_SUITE
 interpolate_CXXFLAGS += -I$(CLUSTERING_HOME)/include
 endif

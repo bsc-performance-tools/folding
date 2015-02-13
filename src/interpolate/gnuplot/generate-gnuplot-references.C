@@ -189,9 +189,22 @@ void gnuplotGeneratorReferences::generate (
 		}
 	}
 
-	double StackPlotProportion =
-		((double)(maxaddress_stack-minaddress_stack))
+	double StackPlotProportion;
+	if (hassomeaddress_stack && hassomeaddress_nonstack)
+		StackPlotProportion = ((double)(maxaddress_stack-minaddress_stack))
 			/((double)(maxaddress_nonstack-minaddress_nonstack+maxaddress_stack-minaddress_stack));
+	else if (hassomeaddress_stack && !hassomeaddress_nonstack)
+		StackPlotProportion = 1.0f;
+	else if (!hassomeaddress_stack && hassomeaddress_nonstack)
+		StackPlotProportion = 0.0f;
+	else
+	{
+		/* None address captured? Fake data to generate an empty plot */
+		StackPlotProportion = 0.0f;
+		minaddress_nonstack = 0x0000;
+		maxaddress_nonstack = 0x1000;
+		hassomeaddress_nonstack = true;
+	}
 
 	unsigned numhexdigits_maxaddress =
 	  common::numHexadecimalDigits(maxaddress_stack);
@@ -204,97 +217,103 @@ void gnuplotGeneratorReferences::generate (
 	  "unset ytics;" << endl <<
 	  "unset key;" << endl;
 
-	gplot << "set label 'Addresses referenced' at screen 0.975, screen 0.65 rotate by -90 center;" << endl <<
-	  "set size 1, " << verticalspace*StackPlotProportion << ";" << endl <<
-	  "set origin 0, " << verticalorigin+verticalspace*(1.-StackPlotProportion) << ";" << endl << 
-	  "set border 14;" << endl <<
-	  "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
-
-	gplot << "MIN_ADDRESS_STACK=" << minaddress_stack << "." << endl;
-	gplot << "MAX_ADDRESS_STACK=" << maxaddress_stack << "." << endl;
-	gplot << "DELTA_ADDRESS_STACK=MAX_ADDRESS_STACK-MIN_ADDRESS_STACK" << endl;
-	gplot << "unset ytics;" << endl
-	      << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' ("
-	      << "MIN_ADDRESS_STACK" ;
-	for (int i = 1; i <= 5; i++)
-		gplot << ", MIN_ADDRESS_STACK+" << i << "*DELTA_ADDRESS_STACK/5";
-	gplot << ");" << endl;
-
-	gplot << "set y2range [MIN_ADDRESS_STACK:MAX_ADDRESS_STACK];" << endl;
-
-	vector<string> colors = { "#a0a0a0", "#606060" };
 	unsigned vv = 0;
-	for (const auto & v : seenVariables)
-	{
-		VariableInfo* vi = v.second;
-		if (common::addressInStack (vi->getStartAddress()))
-		{
-			gplot << 
-			  "set object rect from second 0, second " << vi->getStartAddress() <<
-			  ". to second 1, second " << vi->getEndAddress() << ". fc rgb '" <<
-			  colors[vv%(colors.size())] << "' fs solid 0.25 noborder;" << endl <<
-			  "set label at second -0.01, second " <<
-			  vi->getStartAddress() + vi->getSize()/2 << ". '" << vi->getName() <<
-			  "' front right tc rgb '" << colors[vv%(colors.size())] <<
-			  "; # Size " << vi->getEndAddress() - vi->getStartAddress() << endl;
-			vv++;
-		}
-	}
-	gplot << endl;
-
-	for (auto const & s : stack_labels)
-		gplot << s << endl;
+	vector<string> colors = { "#a0a0a0", "#606060" };
 
 	/* PROCESS FIRST REFERENCES TO THE STACK */
-
-	gplot << endl
-	      <<"plot\\" << endl
-	      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))) ti '@ reference' axes x2y2 w points pt 7 ps 0.5lc rgbcolor '#ff00ff';" << endl << endl;
+	if (hassomeaddress_stack)
+	{
+		gplot << "set label 'Addresses referenced' at screen 0.975, screen 0.65 rotate by -90 center;" << endl <<
+		  "set size 1, " << verticalspace*StackPlotProportion << ";" << endl <<
+		  "set origin 0, " << verticalorigin+verticalspace*(1.-StackPlotProportion) << ";" << endl << 
+		  "set border 14;" << endl <<
+		  "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
+	
+		gplot << "MIN_ADDRESS_STACK=" << minaddress_stack << "." << endl;
+		gplot << "MAX_ADDRESS_STACK=" << maxaddress_stack << "." << endl;
+		gplot << "DELTA_ADDRESS_STACK=MAX_ADDRESS_STACK-MIN_ADDRESS_STACK" << endl;
+		gplot << "unset ytics;" << endl
+		      << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' ("
+		      << "MIN_ADDRESS_STACK" ;
+		for (int i = 1; i <= 5; i++)
+			gplot << ", MIN_ADDRESS_STACK+" << i << "*DELTA_ADDRESS_STACK/5";
+		gplot << ");" << endl;
+	
+		gplot << "set y2range [MIN_ADDRESS_STACK:MAX_ADDRESS_STACK];" << endl;
+	
+		for (const auto & v : seenVariables)
+		{
+			VariableInfo* vi = v.second;
+			if (common::addressInStack (vi->getStartAddress()))
+			{
+				gplot << 
+				  "set object rect from second 0, second " << vi->getStartAddress() <<
+				  ". to second 1, second " << vi->getEndAddress() << ". fc rgb '" <<
+				  colors[vv%(colors.size())] << "' fs solid 0.25 noborder;" << endl <<
+				  "set label at second -0.01, second " <<
+				  vi->getStartAddress() + vi->getSize()/2 << ". '" << vi->getName() <<
+				  "' front right tc rgb '" << colors[vv%(colors.size())] <<
+				  "; # Size " << vi->getEndAddress() - vi->getStartAddress() << endl;
+				vv++;
+			}
+		}
+		gplot << endl;
+	
+		for (auto const & s : stack_labels)
+			gplot << s << endl;
+	
+		gplot << endl
+		      <<"plot\\" << endl
+		      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))) ti '@ reference' axes x2y2 w points pt 7 ps 0.5lc rgbcolor '#ff00ff';" << endl << endl;
+	}
 
 	/* PROCESS SECOND REFERENCES OUT OF THE STACK */
-
-	gplot << "unset label;" << endl <<
-	  "set size 1, " << verticalspace*(1.-StackPlotProportion) << ";" << endl <<
-	  "set origin 0, " << verticalorigin << ";" << endl <<
-	  "set border 11;" << endl;
-
-	for (const auto & v : seenVariables)
+	if (hassomeaddress_nonstack)
 	{
-		VariableInfo* vi = v.second;
-		if (!common::addressInStack (vi->getStartAddress()))
+		gplot << "unset label;" << endl <<
+		  "set size 1, " << verticalspace*(1.-StackPlotProportion) << ";" << endl <<
+		  "set origin 0, " << verticalorigin << ";" << endl <<
+		  "set border 11;" << endl;
+	
+		for (const auto & v : seenVariables)
 		{
-			gplot << 
-			  "set object rect from second 0, second " << vi->getStartAddress() <<
-			  ". to second 1, second " << vi->getEndAddress() << ". fc rgb '" <<
-			  colors[vv%(colors.size())] << "' fs solid 0.25 noborder;" << endl <<
-			  "set label at second -0.01, second " <<
-			  vi->getStartAddress() + vi->getSize()/2 << ". '" << vi->getName() <<
-			  "' front right; # Size " << vi->getEndAddress() - vi->getStartAddress() << endl;
-			vv++;
+			VariableInfo* vi = v.second;
+			if (!common::addressInStack (vi->getStartAddress()))
+			{
+				gplot << 
+				  "set object rect from second 0, second " << vi->getStartAddress() <<
+				  ". to second 1, second " << vi->getEndAddress() << ". fc rgb '" <<
+				  colors[vv%(colors.size())] << "' fs solid 0.25 noborder;" << endl <<
+				  "set label at second -0.01, second " <<
+				  vi->getStartAddress() + vi->getSize()/2 << ". '" << vi->getName() <<
+				  "' front right; # Size " << vi->getEndAddress() - vi->getStartAddress() << endl;
+				vv++;
+			}
 		}
+		gplot << endl;
+	
+		gplot << "MIN_ADDRESS_NONSTACK=" << minaddress_nonstack << "." << endl;
+		gplot << "MAX_ADDRESS_NONSTACK=" << maxaddress_nonstack << "." << endl;
+		gplot << "DELTA_ADDRESS_NONSTACK=MAX_ADDRESS_NONSTACK-MIN_ADDRESS_NONSTACK" << endl;
+		gplot << "unset ytics;" << endl
+		      << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' ("
+		      << "MIN_ADDRESS_NONSTACK" ;
+		for (int i = 1; i <= 5; i++)
+			gplot << ", MIN_ADDRESS_NONSTACK+" << i << "*DELTA_ADDRESS_NONSTACK/5";
+		gplot << ");" << endl;
+	
+		gplot << "set y2range [MIN_ADDRESS_NONSTACK:MAX_ADDRESS_NONSTACK];" << endl
+		      << "unset x2tics;" << endl ;
+	
+		for (auto const & s : nonstack_labels)
+			gplot << s << endl;
+	
+		gplot << endl
+			  << "plot\\" << endl
+		      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))) ti '@ reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor '#ff00ff';" << endl << endl;
 	}
-	gplot << endl;
 
-	gplot << "MIN_ADDRESS_NONSTACK=" << minaddress_nonstack << "." << endl;
-	gplot << "MAX_ADDRESS_NONSTACK=" << maxaddress_nonstack << "." << endl;
-	gplot << "DELTA_ADDRESS_NONSTACK=MAX_ADDRESS_NONSTACK-MIN_ADDRESS_NONSTACK" << endl;
-	gplot << "unset ytics;" << endl
-	      << "set y2tics nomirror format '%0" << numhexdigits_maxaddress << "x' ("
-	      << "MIN_ADDRESS_NONSTACK" ;
-	for (int i = 1; i <= 5; i++)
-		gplot << ", MIN_ADDRESS_NONSTACK+" << i << "*DELTA_ADDRESS_NONSTACK/5";
-	gplot << ");" << endl;
-
-	gplot << "set y2range [MIN_ADDRESS_NONSTACK:MAX_ADDRESS_NONSTACK];" << endl
-	      << "unset x2tics;" << endl ;
-
-	for (auto const & s : nonstack_labels)
-		gplot << s << endl;
-
-	gplot << endl
-		  << "plot\\" << endl
-	      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))) ti '@ reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor '#ff00ff';" << endl << endl
-	      << "unset label; unset xlabel; unset x2label; unset ylabel; unset y2label;" << endl
+	gplot << "unset label; unset xlabel; unset x2label; unset ylabel; unset y2label;" << endl
 	      << "unset xtics; unset x2tics; unset ytics; unset y2tics; set y2tics autofreq;" << endl
 	      << "unset xrange; unset x2range; unset yrange; unset y2range;" << endl
 	      << "unset tmargin; unset bmargin; unset lmargin; unset rmargin" << endl
