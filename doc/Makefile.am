@@ -2,8 +2,7 @@
 EXTRA_DIST = \
  user-guide.ps \
  user-guide.pdf \
- user-guide.preliminary.pdf \
- user-guide
+ user-guide.preliminary.pdf
 
 manual_ug = user-guide
 
