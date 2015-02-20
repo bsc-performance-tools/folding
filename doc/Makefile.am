@@ -2,6 +2,7 @@
 EXTRA_DIST = \
  user-guide.ps \
  user-guide.pdf \
+ user-guide.preliminary.pdf \
  user-guide
 
 manual_ug = user-guide
@@ -33,8 +34,9 @@ endif
 
 install-exec-hook: $(manual_ug).ps $(manual_ug).pdf
 	$(MKDIR_P) $(DESTDIR)$(datadir)/doc
-	cp $(manual_ug).ps $(DESTDIR)$(datadir)/doc
-	cp $(manual_ug).pdf $(DESTDIR)$(datadir)/doc
+#	cp $(manual_ug).ps $(DESTDIR)$(datadir)/doc
+#	cp $(manual_ug).pdf $(DESTDIR)$(datadir)/doc
+	cp user-guide.preliminary.pdf $(DESTDIR)$(datadir)/doc/user-guide.pdf
 	$(MKDIR_P) $(DESTDIR)$(datadir)/doc/html
 #	cp user-guide/user-guide.html user-guide/user-guide.css user-guide/*.png $(DESTDIR)$(datadir)/doc/html
 #	ln -f $(DESTDIR)$(datadir)/doc/html/user-guide.html $(DESTDIR)$(datadir)/doc/html/index.html
