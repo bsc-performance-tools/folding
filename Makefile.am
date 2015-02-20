@@ -19,7 +19,7 @@ endif
 	$(MKDIR_P) $(datarootdir)
 	cp -fr examples $(datarootdir)
 	$(MKDIR_P) $(datarootdir)/cfg
-	cp cfgs/win_folded_caller_types.cfg cfgs/win_folded_types.cfg $(datarootdir)/cfg
+	cp -r cfgs/histograms cfgs/views $(datarootdir)/cfg
 if LIBTOOLS_HAS_SHARED_LIBRARIES
 	cp $(LIBTOOLS_LIB_DIR)/libparavertraceconfig.so.0 $(LIBTOOLS_LIB_DIR)/libparavertraceparser.so.0 $(libdir)
 	$(LN_S) -f $(libdir)/libparavertraceconfig.so.0 $(libdir)/libparavertraceconfig.so
