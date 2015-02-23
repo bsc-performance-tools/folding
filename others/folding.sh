@@ -78,7 +78,17 @@ done
 if [[ $# -ne 2 ]] ; then
 	echo "Usage: ${0} [-model M] [-source S] Trace InstanceSeparator/SemanticSeparator"
 	echo ""
-	echo "            -model M         : Use performance model M when generating plots (see $FOLDING_HOME/etc/models)"
+	echo "            -model M         : Use performance model M when generating plots"
+	echo "                               Available models in $FOLDING_HOME/etc/models:"
+	echo -n "                               "
+	MODELS=`echo /home/harald/folding-binary-package/etc/models/*`
+	for m in ${MODELS}
+	do
+		echo -n `basename ${m}`
+		echo -n " "
+	done
+	echo ""
+	echo ""
 	echo "            -source S        : Indicate where the source code of the application is located"
 	echo "            Trace            : Paraver trace-file"
 	echo "            InstanceSeparator: Label or value f the event type to separate instances within tracefile"
