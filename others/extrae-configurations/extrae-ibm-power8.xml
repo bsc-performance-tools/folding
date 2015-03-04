@@ -1,0 +1,56 @@
+<?xml version='1.0'?>
+
+<trace enabled="yes"
+ home="/gpfs/apps/CEPBATOOLS/extrae/2.2.0"
+ initial-mode="detail"
+ type="paraver"
+ xml-parser-id="Id: xml-parse.c 637 2011-05-30 10:47:47Z harald $"
+>
+
+  <mpi enabled="yes">
+    <counters enabled="yes" />
+  </mpi>
+
+  <callers enabled="yes">
+    <mpi enabled="yes">1-3</mpi>
+    <pacx enabled="no">1-3</pacx>
+    <sampling enabled="yes">1-5</sampling>
+  </callers>
+
+  <counters enabled="yes">
+    <cpu enabled="yes" starting-set-distribution="cyclic">
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL,PM_CMPLU_STALL_DCACHE_MISS,PM_CMPLU_STALL_THRD,PM_GRP_CMPL
+      </set>
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_BRU,PM_GCT_NOSLOT_CYC,PM_CMPLU_STALL_FXU
+      </set>
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_SCALAR,PM_CMPLU_STALL_LSU
+      </set>
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_STORE,PM_CMPLU_STALL_DMISS_L3MISS
+      </set>
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_VECTOR
+      </set>
+      <set enabled="yes" domain="all" changeat-time="500000us">
+        PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_DMISS_L2L3
+      </set>
+    </cpu>
+    <network enabled="no" />
+    <resource-usage enabled="no" />
+    <memory-usage enabled="no" />
+  </counters>
+
+  <buffer enabled="yes">
+    <size enabled="yes">500000</size>
+    <circular enabled="no" />
+  </buffer>
+
+  <sampling enabled="yes" type="default" period="25m" />
+
+  <merge enabled="yes" />
+
+</trace>
+
