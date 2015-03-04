@@ -1,0 +1,102 @@
+<?xml version='1.0'?>
+
+<model name="Power7_Detailed_CPIStack" title-name="Power7 CPIStack" y1="CPI breakdown" y2="MIPS" y1-stacked="yes">
+
+	<component name="Useful" where="y1" title-name="Completion cycles" color="red">
+		<operation type='/'>
+			<value> PM_GRP_CMPL </value>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="GCTEmpty" where="y1" title-name="GCT empty cycles" color="green">
+		<operation type='/'>
+			<value> PM_GCT_NOSLOT_CYC </value>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="StallFXU" where="y1" title-name="Stall/FXU" color="blue">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_FXU </value>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="StallIFU" where="y1" title-name="Stall/IFU" color="orange">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_IFU </value>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="StallSMT" where="y1" title-name="Stall/SMT" color="yellow">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_THRD </value>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="StallVSU_Scalar" where="y1" title-name="Stall/VSU/Scalar" color="purple">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_SCALAR </value>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="StallVSU_Vector" where="y1" title-name="Stall/VSU/Vector" color="red">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_VECTOR </value>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="StallVSU_DFU" where="y1" title-name="Stall/VSU/DFU" color="green">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_DFU </value>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="StallLSU_Reject" where="y1" title-name="Stall/LSU/Reject" color="blue">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_REJECT </value>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="StallLSU_DCacheMiss" where="y1" title-name="Stall/LSU/DCacheMiss" color="orange">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_DACHE_MISS </value>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="StallLSU_Store" where="y1" title-name="Stall/LSU/Store" color="yellow">
+		<operation type='/'>
+			<value> PM_CMPLU_STALL_STORE </value>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="StallLSU_Other" where="y1" title-name="Stall/LSU/Other" color="purple">
+		<operation type='/'>
+			<operation type='-'>
+				<value> PM_CMPLU_STALL_LSU </value>
+				<operation type='+'>
+					<operation type='+'>
+						<value> PM_CMPLU_STALL_REJECT </value>
+						<value> PM_CMPLU_STALL_DCACHE_MISS </value>
+					</operation>
+					<value> PM_CMPLU_STALL_STORE </value>
+				</operation>
+			</operation>
+			<value> PM_RUN_INST_CMPL </value>
+		</operation>
+	</component>
+
+	<component name="MIPS" where="y2" title-name="MIPS" color="black">
+		<value> PM_RUN_INST_CMPL </value>
+	</component>
+
+</model>
