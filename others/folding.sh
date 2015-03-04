@@ -81,7 +81,7 @@ if [[ $# -ne 2 ]] ; then
 	echo "            -model M         : Use performance model M when generating plots"
 	echo "                               Available models in $FOLDING_HOME/etc/models:"
 	echo -n "                               "
-	MODELS=`echo /home/harald/folding-binary-package/etc/models/*`
+	MODELS=`echo ${FOLDING_HOME}/etc/models/*`
 	for m in ${MODELS}
 	do
 		echo -n `basename ${m}`
