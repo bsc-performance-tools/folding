@@ -35,6 +35,8 @@
 #include <map>
 #include "codereftriplet.H"
 
+using namespace std;
+
 class Callstack_CodeRefTriplet
 {
 	private:
