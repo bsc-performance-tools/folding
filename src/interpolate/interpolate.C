@@ -727,7 +727,7 @@ int ProcessParameters (int argc, char *argv[])
 				unsigned ptask, task, thread;
 				if (!common::decomposePtaskTaskThread (o, ptask, task, thread))
 				{
-					cerr << "Cannot translate " << o << " into Paraver object triplet application.task.thread for -feed-time" << endl;
+					cerr << "Cannot translate " << o << " into Paraver object triplet application.task.thread for -feed-first-occurrence" << endl;
 					exit (-1);
 				}
 				objectToFeed = new ObjectSelection (ptask, task, thread);
