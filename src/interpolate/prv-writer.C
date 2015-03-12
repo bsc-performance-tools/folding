@@ -311,7 +311,11 @@ void FoldedParaverTrace::DumpInterpolationData (const Instance *in,
 			InterpolationResults *irr = (*it).second;
 			double hwc_values = irr->getInterpolationAt(u) * irr->getAvgCounterValue(); 
 			if (u > 0)
+			{
 				hwc_values -= irr->getInterpolationAt(u-1) * irr->getAvgCounterValue();
+				if (hwc_values < 0.)
+					hwc_values = 0.;
+			}
 			values.push_back ((unsigned long long) hwc_values);
 			types.push_back (FOLDED_BASE + counterCodes[(*it).first]);
 		}
