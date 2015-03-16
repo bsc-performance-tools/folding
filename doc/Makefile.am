@@ -1,8 +1,12 @@
 
 EXTRA_DIST = \
+ user-guide-api.tex \
+ user-guide-doc.tex \
+ user-guide-get-a-trace.tex \
+ user-guide-tool-design.tex \
+ user-guide.tex \
  user-guide.ps \
- user-guide.pdf \
- user-guide.preliminary.pdf
+ user-guide.pdf
 
 manual_ug = user-guide
 
@@ -13,15 +17,11 @@ manual_ug = user-guide
 all:
 	@echo Nothing to be done by default. If you want to build the documentation issue make build-documentation.
 
-build-documentation: $(manual_ug).tex quick-guide-section.tex get-a-trace.tex
+build-documentation: $(manual_ug).tex user-guide-api.tex user-guide-doc.tex user-guide-get-a-trace.tex user-guide-tool-design.tex
 	@echo "\newcommand{\FOLDINGVERSION}{$(PACKAGE_VERSION)}" > version.tex
-if BUILD_DOCS_PS
-	$(latex) $(manual_ug)
-	$(latex) $(manual_ug)
-	$(dvips) $(manual_ug).dvi -o $(manual_ug).ps
 if BUILD_DOCS_PDF
-	$(dvipdf) $(manual_ug)
-endif
+	$(pdflatex) $(manual_ug)
+	$(pdflatex) $(manual_ug)
 endif
 if BUILD_HTML_DOCS
 	$(latex2html) -split 0 -show_section_numbers -nonumbered_footnotes $(manual_ug)

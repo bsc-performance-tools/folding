@@ -1,0 +1,1554 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2008 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Folding User guide manual for version 1.0rc8</TITLE>
+<META NAME="description" CONTENT="Folding User guide manual for version 1.0rc8">
+<META NAME="keywords" CONTENT="user-guide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-15">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2008">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="user-guide.css">
+
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<IMG WIDTH="81" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next_inactive"
+ SRC="/usr/share/latex2html/icons/nx_grp_g.png"> 
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up_g.png"> 
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev_g.png">   
+<BR>
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<P>
+
+<P>
+
+<P>
+<H1 ALIGN="CENTER"><SPAN  CLASS="textsf">Folding</SPAN>
+<BR>
+User guide manual
+<BR>
+for version 1.0rc8</H1>
+<DIV CLASS="author_info">
+
+<P ALIGN="CENTER"><STRONG>tools@bsc.es
+</STRONG></P>
+</DIV>
+<BR>
+
+<H2><A NAME="SECTION00100000000000000000">
+Contents</A>
+</H2>
+<!--Table of Contents-->
+
+<UL CLASS="TofC">
+<LI><A NAME="tex2html75"
+  HREF="user-guide.html#SECTION00200000000000000000">List of Figures</A>
+<LI><A NAME="tex2html76"
+  HREF="user-guide.html#SECTION00300000000000000000">List of Tables</A>
+<LI><A NAME="tex2html77"
+  HREF="user-guide.html#SECTION00400000000000000000">1. User guide</A>
+<UL>
+<LI><A NAME="tex2html78"
+  HREF="user-guide.html#SECTION00410000000000000000">1.1 Quick start guide</A>
+<UL>
+<LI><A NAME="tex2html79"
+  HREF="user-guide.html#SECTION00411000000000000000">1.1.1 Decompressing the package</A>
+<LI><A NAME="tex2html80"
+  HREF="user-guide.html#SECTION00412000000000000000">1.1.2 Contents of the package</A>
+<LI><A NAME="tex2html81"
+  HREF="user-guide.html#SECTION00413000000000000000">1.1.3 Quick run</A>
+<LI><A NAME="tex2html82"
+  HREF="user-guide.html#SECTION00414000000000000000">1.1.4 Exploring the results</A>
+</UL>
+<LI><A NAME="tex2html83"
+  HREF="user-guide.html#SECTION00420000000000000000">1.2 Configuration, build and installation</A>
+<UL>
+<LI><A NAME="tex2html84"
+  HREF="user-guide.html#SECTION00421000000000000000">1.2.1 Libtools package</A>
+<LI><A NAME="tex2html85"
+  HREF="user-guide.html#SECTION00422000000000000000">1.2.2 Folding package</A>
+</UL>
+</UL>
+<BR>
+<LI><A NAME="tex2html86"
+  HREF="user-guide.html#SECTION00500000000000000000">2. Generate a trace-file for the Folding</A>
+<UL>
+<LI><A NAME="tex2html87"
+  HREF="user-guide.html#SECTION00510000000000000000">2.1 Enabling the sampling mechanism</A>
+<LI><A NAME="tex2html88"
+  HREF="user-guide.html#SECTION00520000000000000000">2.2 Collecting the appropriate performance counters</A>
+<UL>
+<LI><A NAME="tex2html89"
+  HREF="user-guide.html#SECTION00521000000000000000">2.2.1 Intel Haswell processors</A>
+<LI><A NAME="tex2html90"
+  HREF="user-guide.html#SECTION00522000000000000000">2.2.2 Intel SandyBridge processors</A>
+<LI><A NAME="tex2html91"
+  HREF="user-guide.html#SECTION00523000000000000000">2.2.3 Intel Nehalem processors</A>
+<LI><A NAME="tex2html92"
+  HREF="user-guide.html#SECTION00524000000000000000">2.2.4 IBM Power8 processors</A>
+<LI><A NAME="tex2html93"
+  HREF="user-guide.html#SECTION00525000000000000000">2.2.5 IBM Power7 processors</A>
+<LI><A NAME="tex2html94"
+  HREF="user-guide.html#SECTION00526000000000000000">2.2.6 IBM Power5 processors</A>
+<LI><A NAME="tex2html95"
+  HREF="user-guide.html#SECTION00527000000000000000">2.2.7 Other architectures</A>
+</UL>
+<LI><A NAME="tex2html96"
+  HREF="user-guide.html#SECTION00530000000000000000">2.3 Capturing the call-stack at sample points</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html97"
+  HREF="user-guide.html#SECTION00600000000000000000">3. Tool design</A>
+<UL>
+<LI><A NAME="tex2html98"
+  HREF="user-guide.html#SECTION00610000000000000000">3.1 First component: trace-file processing</A>
+<LI><A NAME="tex2html99"
+  HREF="user-guide.html#SECTION00620000000000000000">3.2 Second component: applying the folding</A>
+</UL>
+<BR>
+<LI><A NAME="tex2html100"
+  HREF="user-guide.html#SECTION00700000000000000000">4. API</A>
+<UL>
+<LI><A NAME="tex2html101"
+  HREF="user-guide.html#SECTION00710000000000000000">4.1 Generation of input files for the Folding</A>
+<UL>
+<LI><A NAME="tex2html102"
+  HREF="user-guide.html#SECTION00711000000000000000">4.1.1 Usage example</A>
+</UL></UL></UL>
+<!--End of Table of Contents-->
+<BR>
+
+<H2><A NAME="SECTION00200000000000000000">
+List of Figures</A>
+</H2><UL>
+<LI>1.1. <A NAME="tex2html10"
+  HREF="user-guide.html#305">Evolution of graduated instructions for 444.namd.</A>
+<LI>1.2. <A NAME="tex2html11"
+  HREF="user-guide.html#330">Evolution of multiple counters for 444.namd.</A>
+<LI>1.3. <A NAME="tex2html12"
+  HREF="user-guide.html#361">Instruction mix decomposition for Cluster 1 of Nemo.</A>
+<LI>1.4. <A NAME="tex2html13"
+  HREF="user-guide.html#415">Evolution of graduated instructions for 444.namd in Paraver.</A>
+<LI>1.5. <A NAME="tex2html14"
+  HREF="user-guide.html#426">Paraver time-line showing the callers for Cluster 1 of Nemo.</A>
+<LI>3.1. <A NAME="tex2html26"
+  HREF="user-guide.html#959">Data-flow for the first component of the folding.</A>
+<LI>3.2. <A NAME="tex2html27"
+  HREF="user-guide.html#1028">Main instances and samples related diagram classes.</A>
+<LI>3.3. <A NAME="tex2html28"
+  HREF="user-guide.html#1049">Instance selection related diagram classes.</A>
+<LI>3.4. <A NAME="tex2html31"
+  HREF="user-guide.html#1092">Sample selector related diagram classes.</A>
+<LI>3.5. <A NAME="tex2html32"
+  HREF="user-guide.html#1139">Performance counter interpolation related diagram classes.</A>
+<LI>3.6. <A NAME="tex2html39"
+  HREF="user-guide.html#1190">Performance models related diagram classes.</A>
+<LI>3.7. <A NAME="tex2html40"
+  HREF="user-guide.html#1255">Call-stack processing related diagram classes.</A></UL>
+<BR>
+
+<H2><A NAME="SECTION00300000000000000000">
+List of Tables</A>
+</H2><UL>
+<LI>1.1. <A NAME="tex2html4"
+  HREF="user-guide.html#188">Contents of the folding package.</A></UL>
+<P>
+
+<P>
+
+<H1><A NAME="SECTION00400000000000000000"></A><A NAME="cha:UserGuide"></A>
+<BR>
+<SPAN CLASS="arabic">1</SPAN>. User guide
+</H1>
+
+<P>
+
+<H1><A NAME="SECTION00410000000000000000">
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN> Quick start guide</A>
+</H1>
+
+<P>
+
+<P>
+0
+0pt <SPAN ID="cbox138"></SPAN>
+<P>
+
+<P>
+The <SPAN  CLASS="textsf">Folding</SPAN>is a mechanism that provides instantaneous performance metrics, source code references and memory references<A NAME="tex2html1"
+  HREF="#foot121"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A>.
+This mechanism receives a trace-file (currently generated by <SPAN  CLASS="textsf">Extrae</SPAN>- see further details on generating a trace-file for the <SPAN  CLASS="textsf">Folding</SPAN>in Appendix&nbsp;<A HREF="#cha:GetATrace">2</A>) and generates plots and an additional trace-file depicting the fine evolution of the performance.
+The <SPAN  CLASS="textsf">Folding</SPAN>uses information captured through instrumentation and sampling mechanisms and smartly combines them.
+In this context, the samples are gathered from scattered computing regions into a synthetic region by preserving their relative time within their original region so that the sampled information determines how the performance evolves within the region.
+Consequently, the folded samples represent the progression in shorter periods of time no matter the monitoring sampling frequency, and also, the longer the runs the more samples get mapped into the synthetic instance.
+The framework has shown mean differences up to 5% when comparing results obtained sampling frequencies that are two orders of magnitude more frequent.
+
+<P>
+
+<H2><A NAME="SECTION00411000000000000000">
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN> Decompressing the package</A>
+</H2>
+
+<P>
+The <SPAN  CLASS="textsf">Folding</SPAN>package is distributed in a .tar.bz2 file that can be uncompressed in the working directory by executing the following command:
+
+<P>
+<PRE>
+# tar xvz folding-1.0rc8-x86_64.tar.bz2
+</PRE>
+
+<P>
+where <TT>folding-1.0rc8-x86_64.tar.bz2</TT> refers to the <SPAN  CLASS="textsf">Folding</SPAN>package as distributed from the BSC web page<A NAME="tex2html2"
+  HREF="#foot132"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">2</SPAN></SUP></A>.
+
+<P>
+
+<H2><A NAME="SECTION00412000000000000000"></A><A NAME="subsec:ContentsOfInstallation"></A>
+<BR>
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">2</SPAN> Contents of the package
+</H2>
+
+<P>
+After decompressing the package, the working directory should be populated with the directories (and corresponding descriptions) as listed in Table&nbsp;<A HREF="#tab:contents_folding_package">1.1</A>.
+
+<P>
+<BR><P></P>
+<DIV ALIGN="CENTER">
+  <SMALL CLASS="SMALL">  </SMALL>
+<DIV ALIGN="CENTER"><SMALL CLASS="SMALL">2tabbg2tabbg1
+  
+  <A NAME="tab:contents_folding_package"></A>    </SMALL><A NAME="188"></A>
+<TABLE CELLPADDING=3 BORDER="1">
+<CAPTION><STRONG>Table 1.1:</STRONG>
+Contents of the folding package.</CAPTION>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL">
+    
+    Directory </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Contents </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+    
+    bin/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Binary packages </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+    etc/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+      extrae-configurations/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Minimal configuration files for <SPAN  CLASS="textsf">Extrae</SPAN></SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+      models/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Configuration files to calculate performance models </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+        basic/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+        ibm-power5/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+        ibm-power7/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+        ibm-power8/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+        intel-haswell/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+        intel-nehalem/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+        intel-sandybridge/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+    include/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Header files for the development of 3rd party tools </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+    lib/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Libraries for the folding </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+    share/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Miscellaneous files </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+      cfg/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Configuration files for Paraver </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+      doc/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Documentation</SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+        html </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+      examples/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+        folding-writer/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Example on how to generate data for the folding </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+        user-functions/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Sample tracefile with manually instrumented regions </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+        clusters/ </SMALL></TD>
+<TD ALIGN="CENTER"><SMALL CLASS="SMALL"> </SMALL></TD>
+<TD ALIGN="LEFT"><SMALL CLASS="SMALL"> Sample tracefile with automatically detected regions </SMALL></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><SMALL CLASS="SMALL"> 
+    
+    </SMALL></TD>
+<TD></TD>
+<TD></TD>
+</TR>
+</TABLE></DIV>
+</DIV>
+<BR>
+
+<P>
+
+<H2><A NAME="SECTION00413000000000000000">
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">3</SPAN> Quick run</A>
+</H2>
+
+<P>
+This section provides examples of two types of execution of the <SPAN  CLASS="textsf">Folding</SPAN>tool.
+These examples take benefit of the included sample trace-files from the package.
+For further information on how to generate trace-files for the <SPAN  CLASS="textsf">Folding</SPAN>tool, check Appendix&nbsp;<A HREF="#cha:GetATrace">2</A>.
+
+<P>
+
+<H3><A NAME="SECTION00413100000000000000"></A><A NAME="subsubsec:ManualExample"></A>
+<BR>
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">1</SPAN> Applied to manually instrumented regions
+</H3>
+
+<P>
+This first example uses a trace-file from the 444.namd SPEC benchmark that contains manually instrumented information that is located in 
+
+<P>
+<PRE>
+${FOLDING_HOME}/etc/share/examples/user-functions
+</PRE>
+
+<P>
+This trace-file was generated by <SPAN  CLASS="textsf">Extrae</SPAN>and delimiting the main loop using the <SPAN  CLASS="textsf">Extrae</SPAN>API<A NAME="tex2html5"
+  HREF="#foot225"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">3</SPAN></SUP></A>, more precisely the <TT>Extrae_user_function</TT> which emits events with label <TT>User function</TT> (or event type 60000019).
+To apply the <SPAN  CLASS="textsf">Folding</SPAN>process to this trace-file, simply execute the following commands:
+
+<P>
+<PRE>
+# cd ${FOLDING_HOME}/etc/share/examples/user-functions
+# ${FOLDING_HOME}/bin/folding 444.namd.prv "User function"
+</PRE>
+
+<P>
+
+<H3><A NAME="SECTION00413200000000000000"></A><A NAME="subsubsec:ClusteredExample"></A>
+<BR>
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">2</SPAN> Applied to automatically characterized regions
+</H3>
+
+<P>
+This example consists of a trace-file for the Nemo application when executed in MareNostrum3.
+This trace-file contains information regarding automatically characterized regions.
+This characterization has been done using the Clustering tool<A NAME="tex2html7"
+  HREF="#foot226"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">4</SPAN></SUP></A>.
+This tool enriches the trace-file by adding events labeled as <TT>Cluster ID</TT> (and event type 90000001) into the trace-file.
+In this context, these events identify similar computation regions based on the event value.
+To apply the <SPAN  CLASS="textsf">Folding</SPAN>process to this trace-file, simply execute the following commands:
+
+<P>
+<PRE>
+# cd ${FOLDING_HOME}/etc/share/examples/user-functions
+# ${FOLDING_HOME}/bin/folding \
+  nemo.exe.128tasks.chop1.clustered.prv "Cluster ID"
+</PRE>
+
+<P>
+This trace-file also contains all the necessary performance counters in order to take benefit of several performance models based on performance counters.
+Simply add the <TT>-model intel-sandybridge</TT> option to the <SPAN  CLASS="textsf">Folding</SPAN>script to generate the plots with information of the models instead of providing each performance counter individually.
+The commands to execute should look like this:
+
+<P>
+<PRE>
+# cd ${FOLDING_HOME}/etc/share/examples/user-functions
+# ${FOLDING_HOME}/bin/folding -model intel-sandybridge \
+  nemo.exe.128tasks.chop1.clustered.prv "Cluster ID"
+</PRE>
+
+<P>
+
+<H2><A NAME="SECTION00414000000000000000">
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">4</SPAN> Exploring the results</A>
+</H2>
+
+<P>
+The <SPAN  CLASS="textsf">Folding</SPAN>mechanism generates two types of output inside a directory named as the trace-file given (without the <TT>.prv</TT> suffix).
+The first type of results include a set of gnuplot files where each of these represents the evolution of the performance counters within the region.
+The tool also generates a <SPAN  CLASS="textsf">Paraver</SPAN>trace-file with synthetic information derived from the <SPAN  CLASS="textsf">Folding</SPAN>mechanism.
+
+<P>
+
+<H3><A NAME="SECTION00414100000000000000">
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">4</SPAN>.<SPAN CLASS="arabic">1</SPAN> Using gnuplot</A>
+</H3>
+
+<P>
+With respect to the gnuplot files, the <SPAN  CLASS="textsf">Folding</SPAN>mechanism generates as many files as the combination of analyzed regions (clusters, OpenMP outlined routines, taskified OmpSs routines, or manually delimited regions) and the counters gathered during the application execution.
+The user can easily list the generated gnuplot files calling <TT>ls *.gnuplot</TT> within the directory created.
+The name of the gnuplot files contain the trace-file prefix, the identification of the region folded, and the performance counter shown.
+For instance, the example described in Section&nbsp;<A HREF="#subsubsec:ManualExample">1.1.3</A> generates output files that can be explored by executing the command:
+
+<P>
+<PRE>
+# gnuplot -persist \
+  444.namd.codeblocks.fused.any.any.any.main.Group_0.PAPI_TOT_INS.\
+  gnuplot
+</PRE>
+
+<P>
+When executing the aforementioned command, the <TT>gnuplot</TT> command should open a window that resembles that in Figure&nbsp;<A HREF="#fig:444_namd_instructions">1.1</A><A NAME="tex2html9"
+  HREF="#foot224"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">5</SPAN></SUP></A>.
+The Figure shows that the application faces six phases that execute at 4,500&nbsp;MIPS approximately.
+Most of the code occurs in three code locations (being line 76 the most observed line), and we also observe that phases related to high MIPS are related with the activity in the middle of the code-line plot.
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:444_namd_instructions"></A><A NAME="305"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 1.1:</STRONG>
+Evolution of graduated instructions for 444.namd.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.65]figures/user-guide/444_namd_tot_ins.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+This file refers to the user routine <TT>main</TT> (which was manually instrumented) of the trace-file 444.namd.prv and provides information of the total graduated instructions (<TT>PAPI_TOT_INS</TT>). 
+The user will notice that there are additional files for the different performance counters and they can explore them individually.
+The <SPAN  CLASS="textsf">Folding</SPAN>also generates an additional plot that combines the metrics of all the counters into a single plot.
+This plot mainly provides information with respect to the MIPS rate (referenced on the right Y-axis), and ratio of the remaining performance counters per instruction (referenced on the left Y-axis).
+For the particular case of the example from Section&nbsp;<A HREF="#subsubsec:ManualExample">1.1.3</A>, this plot can be explored calling:
+
+<P>
+<PRE>
+# gnuplot -persist \
+  444.namd.codeblocks.fused.any.any.any.main.\
+  Group_0.ratio_per_instruction.gnuplot
+</PRE>
+
+<P>
+This command should generate an output combining all the performance counter slopes as shown in Figure&nbsp;<A HREF="#fig:444_namd_ratio_per_instruction">1.2</A>.
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:444_namd_ratio_per_instruction"></A><A NAME="330"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 1.2:</STRONG>
+Evolution of multiple counters for 444.namd.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.65]figures/user-guide/444_namd_ratio_per_instruction.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+The aforementioned instructions also apply to the automatically delimited example described in Section&nbsp;<A HREF="#subsubsec:ClusteredExample">1.1.3</A>.
+In this case, the region names are numbered as <TT>Cluster_1</TT> to <TT>Cluster_11</TT>, but they also contain the trace-file prefix and the performance counters to explore them individually.
+If the user requested the performance models, then additional gnuplot files are created to provide information regarding these models.
+For the particular case of the Intel SandyBridge model, it generates three models that always generate the MIPS rate and add different metrics:
+
+<P>
+
+<UL>
+<LI><SPAN  CLASS="textit">instruction-mix</SPAN>
+<BR>
+Gives insight of the type of instructions executed along the region.
+</LI>
+<LI><SPAN  CLASS="textit">architecture-impact</SPAN>
+<BR>
+Provides information regarding to the cache misses at different levels and the branch mispredicts along the region.
+</LI>
+<LI><SPAN  CLASS="textit">stall-distribution</SPAN>
+<BR>
+This plot shows information regarding on which components of the processor are stalling the processor pipeline.
+</LI>
+</UL>
+
+<P>
+For instance, to open the instruction mix for the region labeled as Cluster 1 of the Nemo application executed in Section&nbsp;<A HREF="#subsubsec:ClusteredExample">1.1.3</A>, the user needs to open the plot invoking the commands below and should obtain a plot similar to Figure&nbsp;<A HREF="#fig:Nemo_cluster1_instructionmix">1.3</A>.
+The reader may see that the application shows two distinctive phases (green and blue) and within each of them there are two repetitions of the same performance.
+
+<P>
+<PRE>
+# gnuplot -persist \
+  nemo.exe.128tasks.chop1.clustered.codeblocks.fused.any.any.any.\
+  Cluster_1.Group_0.instructionmix.gnuplot
+</PRE>
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:Nemo_cluster1_instructionmix"></A><A NAME="361"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 1.3:</STRONG>
+Instruction mix decomposition for Cluster 1 of Nemo.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.65]figures/user-guide/nemo_cluster1_instructionmix.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+The tool also provides a GUI-based tool to explore the plots. 
+the user may invoke a visualizer named <TT>wxfolding-viewer</TT>, by invoking it from the newly created directory such as:
+
+<P>
+<PRE>
+# ${FOLDING_HOME}/bin/wxfolding-viewer *.wxfolding
+</PRE>
+
+<P>
+
+<H3><A NAME="SECTION00414200000000000000">
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">4</SPAN>.<SPAN CLASS="arabic">2</SPAN> Using Paraver</A>
+</H3>
+
+<P>
+The <SPAN  CLASS="textsf">Folding</SPAN>process generates a trace-file with a suffix <TT>.folded.prv</TT> that lets <SPAN  CLASS="textsf">Paraver</SPAN>to display some parts of the folded results.
+The <SPAN  CLASS="textsf">Folding</SPAN>package includes several configuration files in the <TT>${FOLDING_HOME}/share/cfg</TT> directory for <SPAN  CLASS="textsf">Paraver</SPAN>to help analysing the results.
+From the configuration files contained in that directory, we outline the following:
+
+<P>
+
+<UL>
+<LI><SPAN  CLASS="textit">views</SPAN>/
+	
+<UL>
+<LI><TT>win_folded_type.cfg</TT>
+<BR>
+Generates a time-line that shows in which instances the <SPAN  CLASS="textsf">Folding</SPAN>results have been integrated. This helps correlating the original trace-file and its contents with the folded trace-file. Notice that only one instance per type (where type refers to function, cluster, <SPAN  CLASS="textit">etc...</SPAN>) is folded.
+</LI>
+<LI><TT>win_folded_mips.cfg</TT>
+<BR>
+Generates a time-line showing a signal of the MIPS rate within the folded instances. See in Figure&nbsp;<A HREF="#fig:444_namd_instructions_paraver">1.4</A> a time-line depicting the MIPS rate achieved in the example trace-file for 444.namd.
+</LI>
+<LI><TT>win_folded_processed_call-stack_caller.cfg</TT>
+<BR>
+Generates a time-line showing the most time-dominant routines as they have been executed within the folded instances. Figure&nbsp;<A HREF="#fig:Nemo_cluster1_callers_paraver">1.5</A> shows a time-line depicting the called routines for the Nemo example.
+</LI>
+<LI><TT>win_folded_processed_call-stack_callerline.cfg</TT>
+<BR>
+Generates a time-line showing the most time-dominant source code references (as pair of line and file) as they have been executed within the folded instances.
+	
+</LI>
+</UL>
+</LI>
+<LI><SPAN  CLASS="textit">histograms</SPAN>/
+	
+<UL>
+<LI><TT>3dh_folded_mips_per_caller.cfg</TT>
+<BR>
+Generates a histogram that shows the achieved MIPS rate depending on the caller (columns) for a particular region folded.
+</LI>
+<LI><TT>3dh_folded_mips_per_callerline.cfg</TT>
+<BR>
+Generates a histogram that shows the achieved MIPS rate depending on the source code references (pair of line and file in columns) for a particular region folded.
+	
+</LI>
+</UL>
+</LI>
+</UL>
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:444_namd_instructions_paraver"></A><A NAME="415"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 1.4:</STRONG>
+Evolution of graduated instructions for 444.namd in Paraver.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.75]figures/user-guide/444_namd_tot_ins_paraver.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:Nemo_cluster1_callers_paraver"></A><A NAME="426"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 1.5:</STRONG>
+Paraver time-line showing the callers for Cluster 1 of Nemo.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.75]figures/user-guide/nemo_cluster1_caller_paraver.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+
+<H1><A NAME="SECTION00420000000000000000">
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">2</SPAN> Configuration, build and installation</A>
+</H1>
+
+<P>
+This section describes how to build and install the <SPAN  CLASS="textsf">Folding</SPAN>package.
+The <SPAN  CLASS="textsf">Folding</SPAN>package (and its dependencies) requires the Boost library (only the headers suffice), a C compiler, a Fortran compiler and a C++ compiler that supports the C++ 2011 specification (such as g++ version 4.8).
+This package optionally uses the <TT>strucchange</TT> package from the R statistical application (and may execute in parallel if the <TT>doParallel</TT> is available) to use the piece-wise linear regression interpolation mechanism.
+Additionally, the <SPAN  CLASS="textsf">Folding</SPAN>package requires the libtools package to be installed.
+This package helps on the parsing of Paraver trace-files and can be downloaded from the BSC download web page.
+
+<P>
+
+<H2><A NAME="SECTION00421000000000000000">
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">1</SPAN> Libtools package</A>
+</H2>&nbsp;<A NAME="subsec:LibtoolsInstallation"></A>
+<P>
+This package can be downloaded from the BSC web page and requires the boost header files<A NAME="tex2html15"
+  HREF="#foot434"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">6</SPAN></SUP></A>.
+If the boost header files are located in the system's default, simply run the following command:
+
+<P>
+<PRE>
+# ./configure --prefix=/home/harald/aplic/libtools/1.0 \
+  &amp;&amp; make &amp;&amp; make install
+</PRE>
+
+<P>
+where <TT>-prefix</TT> indicates the destination folder for this package.
+
+<P>
+If the boost header files are located elsewhere in the system, run the following command:
+
+<P>
+<PRE>
+# ./configure --prefix=/home/harald/aplic/libtools/1.0 \
+  --with-boost=/path/to/boost \
+  &amp;&amp; make &amp;&amp; make install
+</PRE>
+
+<P>
+
+<H2><A NAME="SECTION00422000000000000000">
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN> Folding package</A>
+</H2>
+
+<P>
+The most basic configuration for the <SPAN  CLASS="textsf">Folding</SPAN>package honors the following commands:
+
+<P>
+<PRE>
+# ./configure --with-libtools=$HOME/aplic/libtools/1.0 \
+  --prefix=$HOME/aplic/folding/1.0rc8 &amp;&amp; \
+  make &amp;&amp; make install
+</PRE>
+
+<P>
+where <TT>-with-libtools</TT> refers to the location of the libtools package installed in Section&nbsp;<A HREF="#subsec:LibtoolsInstallation">1.2.1</A> and <TT>-prefix</TT> indicates where to install the <SPAN  CLASS="textsf">Folding</SPAN>tool.
+If the compilation and installation succeed, the contents of the target installation should look like as the contents defined in Section&nbsp;<A HREF="#subsec:ContentsOfInstallation">1.1.2</A>.
+
+<P>
+The <SPAN  CLASS="textsf">Folding</SPAN>tool supports several compilation flags that modify the behavior or enable additional functionalities of the tool.
+The following list groups the flags according to the behavior they enable.
+
+<P>
+
+<UL>
+<LI><TT>-with-clustering-suite=&lt;DIR&gt;</TT>
+<BR>
+The <SPAN  CLASS="textsf">Folding</SPAN>tool relies on the similarity between the folded instances in order to generate its results. By default, the <SPAN  CLASS="textsf">Folding</SPAN>tool includes two mechanisms to reduce the noise that appear from using instances with significant different behavior. However, this flag allows using the BSC Clustering suite as a third alternative in order to reduce the noise.
+
+<P>
+</LI>
+<LI><TT>-with-R=&lt;DIR1&gt;, -with-cube=&lt;DIR2&gt;, -with-clang=&lt;DIR3&gt;</TT>
+<BR>
+Enables the usage of piece-wise linear regressions on top of the strucchange package<A NAME="tex2html16"
+  HREF="#foot460"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">7</SPAN></SUP></A> from the R statistical application<A NAME="tex2html18"
+  HREF="#foot461"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">8</SPAN></SUP></A>. This functionality requires the clang compiler<A NAME="tex2html20"
+  HREF="#foot462"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">9</SPAN></SUP></A> and can generate input files for the Cube3 performance analysis package<A NAME="tex2html22"
+  HREF="#foot463"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">10</SPAN></SUP></A>.
+
+<P>
+</LI>
+<LI><TT>-with-boost=&lt;DIR&gt;</TT>
+<BR>
+This flag lets the <SPAN  CLASS="textsf">Folding</SPAN>to use a given Boost installation package.
+
+<P>
+</LI>
+<LI><TT>-enable-gui</TT>
+<BR>
+The results of the <SPAN  CLASS="textsf">Folding</SPAN>tool is a set of gnuplot files that have to explored manually. If this flag is given at the configure step, the <SPAN  CLASS="textsf">Folding</SPAN>package would include a GUI written in Python that helps exploring all the results from the tool.
+
+<P>
+</LI>
+<LI><TT>-enable-callstack-analysis</TT>
+<BR>
+This flag enables the call-stack analysis of the segments captured during the measurement step. Enabling this option results in gnuplot files that depict the performance progression collocated with the source code progression.
+
+<P>
+</LI>
+<LI><TT>-enable-reference-analysis</TT>
+<BR>
+This flag enables the memory references analysis of the references captured during the measurement step (currently, through the <TT>perf</TT> system tool). Enabling this option results in gnuplot files that depict the performance progression collocated with the memory address space and the sampled references.
+
+<P>
+</LI>
+</UL>
+
+<P>
+
+<H1><A NAME="SECTION00500000000000000000"></A><A NAME="cha:GetATrace"></A>
+<BR>
+<SPAN CLASS="arabic">2</SPAN>. Generate a trace-file for the Folding
+</H1>
+
+<P>
+This chapter covers the minimum and necessary steps so as to configure <SPAN  CLASS="textsf">Extrae</SPAN><A NAME="tex2html24"
+  HREF="#foot551"><SUP><SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A> in order to use its resulting trace-files for the Folding process.
+There are three requirements when monitoring an application with <SPAN  CLASS="textsf">Extrae</SPAN>in order to take the most benefit from the <SPAN  CLASS="textsf">Folding</SPAN>tool. 
+First, it is necessary to enable the sampling mechanism in addition to the instrumentation mechanism (see Section&nbsp;<A HREF="#sec:EnableSamplingMechanism">2.1</A>).
+Second, it is convenient to collect the appropriate performance counters for the underlying processor (see Section&nbsp;<A HREF="#sec:CollectingAppropriatePerformanceCounters">2.2</A>).
+Finally, <SPAN  CLASS="textsf">Extrae</SPAN>needs to capture a segment of the call-stack in order to allow the <SPAN  CLASS="textsf">Folding</SPAN>to provide information regarding the progression of the executed routines.
+The forthcoming sections provide information on how to enable these functionalities through the XML tags for the <SPAN  CLASS="textsf">Extrae</SPAN>configuration file.
+
+<P>
+
+<H1><A NAME="SECTION00510000000000000000"></A><A NAME="sec:EnableSamplingMechanism"></A>
+<BR>
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">1</SPAN> Enabling the sampling mechanism
+</H1>
+
+<P>
+<SPAN  CLASS="textsf">Extrae</SPAN>is an instrumentation package that by default collects information from different parallel runtimes, including but not limited to: MPI, OpenMP, pthreads, CUDA and OpenCL (and even combinations of them).
+<SPAN  CLASS="textsf">Extrae</SPAN>can be configured so that it also uses sampling mechanisms to capture performance metrics on a periodic basis.
+There are currently two alternatives to enable sampling in <SPAN  CLASS="textsf">Extrae</SPAN>: using alarm signals and using performance counters.
+For the sake of simplicity, this document only covers the alarm-based sampling.
+However, if the reader would like to enable the sampling using the performance counters they must look at section 4.9 in the <SPAN  CLASS="textsf">Extrae</SPAN>User's Manual for more details.
+
+<P>
+<BR>
+<IMG
+ WIDTH="732" HEIGHT="51" ALIGN="BOTTOM" BORDER="0"
+ SRC="img2.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...d=''yes'' type=''default'' period=''50m'' variability=''10m''/&gt;
+\end{lstlisting}">
+<BR>
+
+<P>
+The XML statements in Listing&nbsp;<A HREF="#lst:Extrae_enable_sampling_basic">2.1</A> need to be included in the <SPAN  CLASS="textsf">Extrae</SPAN>configuration file.
+These statements indicate <SPAN  CLASS="textsf">Extrae</SPAN>that sampling is enabled (<TT>enabled="yes"</TT>).
+They also tell <SPAN  CLASS="textsf">Extrae</SPAN>to capture samples every 50&nbsp;milliseconds (ms) with a random variability of 10&nbsp;ms, that means that samples will be randomly collected with a periodicity of <SPAN CLASS="MATH"><IMG
+ WIDTH="53" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img3.png"
+ ALT="$50{\pm}10$"></SPAN>&nbsp;ms.
+With respect to type, it determines which timer domain is used (see <TT>man 2 setitimer</TT> or <TT>man 3p setitimer</TT> for further information on time domains).
+Available options are: <TT>real</TT> (which is also the <TT>default</TT> value, <TT>virtual</TT> and <TT>prof</TT> (which use the SIGALRM, SIGVTALRM and SIGPROF respectively).
+The default timing accumulates real time, but only issues samples at master thread.
+To let all the threads collect samples, the type must be set to either <TT>virtual</TT> or <TT>prof</TT>.
+
+<P>
+Additionally, the <SPAN  CLASS="textsf">Folding</SPAN>mechanism is able to combine several performance models and generate summarized results that simplify understanding the behavior of the node-level performance.
+Since these performance models are heavily-tighted with the performance counters available on each processor architecture and family, the following sections provide <SPAN  CLASS="textsf">Extrae</SPAN>XML configuration files ready to use on several architectures.
+Since each architecture has different characteristics, the user may need to tune the XML presented there to make sure that all the list performance counters are gathered appropriately.
+
+<P>
+
+<H1><A NAME="SECTION00520000000000000000"></A><A NAME="sec:CollectingAppropriatePerformanceCounters"></A>
+<BR>
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN> Collecting the appropriate performance counters
+</H1>
+
+<P>
+The <SPAN  CLASS="textsf">Folding</SPAN>mechanism provides, among other type of information, the progression of performance metrics along a delimited region through instrumentation points.
+These performance metrics include the progression of performance counters of every performance counter by default.
+To generate these kind of reports, <SPAN  CLASS="textsf">Extrae</SPAN>must collect the performance counters during the application execution and this is achieved by defining counter sets into the <TT>&lt;counters&gt;</TT> section of the <SPAN  CLASS="textsf">Extrae</SPAN>configuration file (see Section 4.19 of the <SPAN  CLASS="textsf">Extrae</SPAN>User's guide for more information).
+
+<P>
+There has been research that has developed some performance models based on performance counters ratios among performance counters in order to ease the analysis of the reports.
+Each of these performance models aims at providing insight of different aspects of the application and system during the execution.
+Since the availability of the performance counters changes from processor to processor (even in the same processor family), the following sections describe the performance counters that are meant to be collected in order to calculate these performance models.
+These sections include the minimal <TT>&lt;counters&gt;</TT> sections to be added in a previously existing <SPAN  CLASS="textsf">Extrae</SPAN>configuration file, but the <SPAN  CLASS="textsf">Folding</SPAN>package also includes full <SPAN  CLASS="textsf">Extrae</SPAN>configuration files in <TT>${FOLDING_HOME}/etc/extrae-configurations</TT>.
+
+<P>
+
+<H2><A NAME="SECTION00521000000000000000">
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">1</SPAN> Intel Haswell processors</A>
+</H2>
+
+<P>
+<BR>
+<IMG
+ WIDTH="827" HEIGHT="378" ALIGN="BOTTOM" BORDER="0"
+ SRC="img4.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...,PAPI_TOT_CYC,RESOURCE_STALLS,RESOURCE_STALLS:RS
+&lt;/set&gt;
+&lt;/cpu&gt;
+\end{lstlisting}">
+<BR>
+
+<P>
+The listing&nbsp;<A HREF="#lst:Extrae_counters_intel_haswell">2.2</A> indicates <SPAN  CLASS="textsf">Extrae</SPAN>to arrange five performance counter sets with performance counters that are available on Intel Haswell processors.
+The collection of these performance counters allows the <SPAN  CLASS="textsf">Folding</SPAN>to apply the models contained in the <TT>${FOLDING_HOME}/etc/models/intel-sandybridge</TT> that include: instruction mix, architecture impact and stall distribution.
+Unfortunately, the PMU of the Intel Haswell processors do not count neither floating point nor vector instructions.
+
+<P>
+
+<H2><A NAME="SECTION00522000000000000000">
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN> Intel SandyBridge processors</A>
+</H2>
+
+<P>
+<BR>
+<IMG
+ WIDTH="827" HEIGHT="397" ALIGN="BOTTOM" BORDER="0"
+ SRC="img5.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...RESOURCE_STALLS:ROB_FULL,RESOURCE_STALLS:RS_FULL
+&lt;/set&gt;
+&lt;/cpu&gt;
+\end{lstlisting}">
+<BR>
+
+<P>
+The listing&nbsp;<A HREF="#lst:Extrae_counters_intel_sandybridge">2.3</A> indicates <SPAN  CLASS="textsf">Extrae</SPAN>to configure five performance counter sets with performance counters that are available on Intel SandyBridge processors.
+The collection of these performance counters allows the <SPAN  CLASS="textsf">Folding</SPAN>to apply the models contained in the <TT>${FOLDING_HOME}/etc/models/intel-sandybridge</TT> that include: instruction mix, architecture impact and stall distribution.
+
+<P>
+
+<H2><A NAME="SECTION00523000000000000000">
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">3</SPAN> Intel Nehalem processors</A>
+</H2>
+
+<P>
+<BR>
+<IMG
+ WIDTH="796" HEIGHT="320" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...PAPI_VEC_DP,
+RESOURCE_STALLS,RESOURCE_STALLS:RS
+&lt;/set&gt;
+&lt;/cpu&gt;
+\end{lstlisting}">
+<BR>
+
+<P>
+The listing&nbsp;<A HREF="#lst:Extrae_counters_intel_nehalem">2.4</A> indicates <SPAN  CLASS="textsf">Extrae</SPAN>to prepare three performance counter sets with performance counters that are available on Intel Nehalem processors.
+The collection of these performance counters allows the <SPAN  CLASS="textsf">Folding</SPAN>to apply the models contained in the <TT>${FOLDING_HOME}/etc/models/intel-nehalem</TT> that include: instruction mix, architecture impact and stall distribution.
+
+<P>
+
+<H2><A NAME="SECTION00524000000000000000">
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">4</SPAN> IBM Power8 processors</A>
+</H2>
+
+<P>
+<BR>
+<IMG
+ WIDTH="828" HEIGHT="473" ALIGN="BOTTOM" BORDER="0"
+ SRC="img7.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...N_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_DMISS_L2L3
+&lt;/set&gt;
+&lt;/cpu&gt;
+\end{lstlisting}">
+<BR>
+
+<P>
+The listing&nbsp;<A HREF="#lst:Extrae_counters_ibm_power8">2.5</A> indicates <SPAN  CLASS="textsf">Extrae</SPAN>to arrange six performance counter sets with performance counters that are available on IBM Power8 (and similar) processors.
+The collection of these performance counters allows the <SPAN  CLASS="textsf">Folding</SPAN>to calculate the CPIStack model for the IBM Power8 processor which is contained in <TT>${FOLDING_HOME}/etc/models/ibm-power8</TT>.
+
+<P>
+
+<H2><A NAME="SECTION00525000000000000000">
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">5</SPAN> IBM Power7 processors</A>
+</H2>
+
+<P>
+<BR>
+<IMG
+ WIDTH="767" HEIGHT="473" ALIGN="BOTTOM" BORDER="0"
+ SRC="img8.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...M_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_VECTOR
+&lt;/set&gt;
+&lt;/cpu&gt;
+\end{lstlisting}">
+<BR>
+
+<P>
+The listing&nbsp;<A HREF="#lst:Extrae_counters_ibm_power7">2.6</A> indicates <SPAN  CLASS="textsf">Extrae</SPAN>to prepare six performance counter sets with performance counters that are available on IBM Power7 (and similar) processors.
+The collection of these performance counters allows the <SPAN  CLASS="textsf">Folding</SPAN>to calculate the CPIStack model for the IBM Power7 processor which is contained in <TT>${FOLDING_HOME}/etc/models/ibm-power7</TT>.
+
+<P>
+
+<H2><A NAME="SECTION00526000000000000000">
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">6</SPAN> IBM Power5 processors</A>
+</H2>
+
+<P>
+<BR>
+<IMG
+ WIDTH="807" HEIGHT="569" ALIGN="BOTTOM" BORDER="0"
+ SRC="img9.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...PLU_STALL_REJECT,PM_LD_MISS_L1,PM_LD_REF_L1
+&lt;/set&gt;
+&lt;/cpu&gt;
+\par
+\end{lstlisting}">
+<BR>
+
+<P>
+The listing&nbsp;<A HREF="#lst:Extrae_counters_ibm_power5">2.7</A> indicates <SPAN  CLASS="textsf">Extrae</SPAN>to configure six performance counter sets with performance counters that are available on IBM Power5 (and similar) processors.
+The collection of these performance counters allows the <SPAN  CLASS="textsf">Folding</SPAN>to calculate the CPIStack model for the IBM Power5 processor which is contained in <TT>${FOLDING_HOME}/etc/models/ibm-power5</TT>.
+
+<P>
+
+<H2><A NAME="SECTION00527000000000000000">
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">7</SPAN> Other architectures</A>
+</H2>
+
+<P>
+<BR>
+<IMG
+ WIDTH="797" HEIGHT="263" ALIGN="BOTTOM" BORDER="0"
+ SRC="img10.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...,PAPI_VEC_SP,PAPI_VEC_DP,PAPI_FP_INS,PAPI_BR_MSP
+&lt;/set&gt;
+&lt;/cpu&gt;
+\end{lstlisting}">
+<BR>
+
+<P>
+The previous definitions of counter sets included performance counters that are available on the specific stated machines.
+Since these performance counters may not be available on all the systems, the package also provides a group of counter sets that may be available on a variety of systems.
+Listing&nbsp;<A HREF="#lst:Extrae_counters_basic">2.8</A> defines three <SPAN  CLASS="textsf">Extrae</SPAN>counter sets that may be available on many systems (caveat here, not all systems may provide them).
+With the use of these counter sets, the <SPAN  CLASS="textsf">Folding</SPAN>can apply the models contained in the <TT>${FOLDING_HOME}/etc/models/basic</TT> that include: instruction mix and architecture impact.
+
+<P>
+
+<H1><A NAME="SECTION00530000000000000000">
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">3</SPAN> Capturing the call-stack at sample points</A>
+</H1>
+
+<P>
+<BR>
+<IMG
+ WIDTH="578" HEIGHT="127" ALIGN="BOTTOM" BORDER="0"
+ SRC="img11.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...1-3&lt;/pacx&gt;
+&lt;sampling enabled=''yes''&gt;1-5&lt;/sampling&gt;
+&lt;/callers&gt;
+\end{lstlisting}">
+<BR>
+
+<P>
+By default, the sampling mechanism captures the performance counters indicated in the <TT>counters</TT> section and the Program Counter interrupted at the sample point.
+The <SPAN  CLASS="textsf">Folding</SPAN>provides the instantaneous progression of the routines that last at least a minimum given duration.
+To enable this type of analysis, it is necessary to instruct <SPAN  CLASS="textsf">Extrae</SPAN>to capture a portion of the call-stack during its execution.
+Listing&nbsp;<A HREF="#lst:Extrae_enable_sampling_callers">2.9</A> shows how to enable the collection of the call-stack at the sample points in the <SPAN  CLASS="textsf">Extrae</SPAN>configuration file.
+The mandatory lines to capture the call-stack at sample points are lines 1 and 4.
+Line 1 indicates that this section must be processed and Line 4 tells <SPAN  CLASS="textsf">Extrae</SPAN>to capture levels 1 to 5 from the call-stack (where 1 refers to the level below to the top of the call-stack).
+
+<P>
+
+<H1><A NAME="SECTION00600000000000000000">
+<SPAN CLASS="arabic">3</SPAN>. Tool design</A>
+</H1>
+
+<P>
+While the end user executes a single command to apply the <SPAN  CLASS="textsf">Folding</SPAN>tool, this command hides two major components that are executed sequentially and all the outputs are generated into a newly created directory with the name of the input trace-file.
+The first component processes a user-given trace-file that contains instrumented and sampled data and generates a textual file that contains sequences of instances and samples.
+The second component takes these sequences of instances and samples, then applies the contouring algorithm, any performance model, and the call-stack processing, and, finally, it generates the output results.
+Both components are grouped together within the <TT>folding.sh</TT> appearing to the user that the <SPAN  CLASS="textsf">Folding</SPAN>simply consists of a single tool.
+The tool package contains additional components that may be capture the interest of the user.
+
+<P>
+
+<H1><A NAME="SECTION00610000000000000000">
+<SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">1</SPAN> First component: trace-file processing</A>
+</H1>
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:dataflow_1st_component_folding"></A><A NAME="959"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.1:</STRONG>
+Data-flow for the first component of the folding.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.5]figures/user-guide/codeblocks-fuse-extract.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+The first component is divided into three phases that are executed one after another with the user-given trace-file and each of these parse the given trace-file and generates another trace-file that will be used in the subsequent phase as depicted in Figure&nbsp;<A HREF="#fig:dataflow_1st_component_folding">3.1</A>.
+Each of these phases are built in a similar fashion.
+They parse the input trace-file and keep in memory information regarding the thread state, and eventually, add information to the output.
+The phases are:
+
+<P>
+
+<OL>
+<LI><TT>codeblocks</TT> (found in <TT>src/codeblocks</TT>)
+<BR>
+This phase attributes to each sample information regarding to the loop / code region that it belongs to according to the application source code. 
+
+<P>
+</LI>
+<LI><TT>fuse</TT> (found in <TT>src/fuse</TT>)
+<BR>
+This phase compacts the trace-file and ensures that the resulting trace-file is well formed.
+
+<P>
+</LI>
+<LI><TT>extract</TT> (found in <TT>src/extract</TT>)
+<BR>
+This is the final phase and extracts information regarding the instances and samples within the trace-file.
+
+<P>
+</LI>
+</OL>
+
+<P>
+The output of this component is a set of files containing information relative to the application. 
+The most notable output is the <TT>.extract</TT> file, which contains the sequence of instances and their samples.
+For instance, Listing&nbsp;<A HREF="#lst:ExampleGenerationInterpolationOutput">3.1</A> shows the contents of the <TT>.extract</TT> file generated using the provided example to demonstrate the API facility.
+This listing contains information regarding one instance of the <TT>FunctionA</TT> region.
+The instance starts at timestamp 1,000&nbsp;ns and lasts 4,500&nbsp;ns, and it executes up to 2,500 instructions (PAPI_TOT_INS) and takes 5,000 cycles (PAPI_TOT_CYC) to complete.
+This instance has two samples associated that ocurred at timestamps 2,000 and 4,000, and each of those provides information regarding the aforementioned performance counters.
+
+<P>
+<BR>
+<IMG
+ WIDTH="713" HEIGHT="110" ALIGN="BOTTOM" BORDER="0"
+ SRC="img12.png"
+ ALT="\begin{lstlisting}[
+frame=tb,
+basicstyle=\small\ttfamily ,
+keywordstyle=\smal...
+... 3000 2 PAPI_TOT_CYC 4000 PAPI_TOT_INS 2000 2 0 1 2 3 1 3 4 5 0
+\end{lstlisting}">
+<BR>
+
+<P>
+
+<H1><A NAME="SECTION00620000000000000000">
+<SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">2</SPAN> Second component: applying the folding</A>
+</H1>
+
+<P>
+The main objective of this component relies on processing the instances and samples extracted and generate the output results.
+These results include the temporal evolution of the performance counters, any models requested by the user, the source code references and memory references progression, and the results are written in gnuplot and <SPAN  CLASS="textsf">Paraver</SPAN>trace files.
+This section gives a summarized view of the folding work-flow by depicting the most notable class diagrams found in the application source code.
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_instances"></A><A NAME="1028"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.2:</STRONG>
+Main instances and samples related diagram classes.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.80]figures/user-guide/tool-design-interpolate-instances.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+Figure&nbsp;<A HREF="#fig:tool_design_interpolate_instances">3.2</A> shows a portion of the classes that are most important within this tool.
+The classes <SPAN  CLASS="textsl">Instance</SPAN> and <SPAN  CLASS="textsl">Sample</SPAN> refer to the instances and samples as-is, without any further processing and as generated by the <TT>extract</TT> tool, in which each <SPAN  CLASS="textsl">Instance</SPAN> contains a set of <SPAN  CLASS="textsl">Sample</SPAN>, and every <SPAN  CLASS="textsl">Instance</SPAN> belongs to an <SPAN  CLASS="textsl">InstanceContainer</SPAN>.
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_instance_separator"></A><A NAME="1049"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.3:</STRONG>
+Instance selection related diagram classes.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.75]figures/user-guide/tool-design-interpolate-instance-separator.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+After reading every <SPAN  CLASS="textsl">Instance</SPAN>, the folding may apply a clustering algorithm (see Figure&nbsp;<A HREF="#fig:tool_design_interpolate_instance_separator">3.3</A>) according to the duration of each instance in order to reduce the difference between folded <SPAN  CLASS="textsl">Instance</SPAN>.
+Currently, there are three alternatives regarding the grouping.
+
+<P>
+
+<UL>
+<LI><SPAN  CLASS="textsl">InstanceSeparatorNone</SPAN> groups all instances into a single group.
+
+<P>
+</LI>
+<LI><SPAN  CLASS="textsl">InstanceSeparatorAuto</SPAN> automatically groups the instances according to their duration. The grouping partitions the time-space interval defined by the shortest and longest instances and looks for group of nearby instances.
+
+<P>
+</LI>
+<LI><SPAN  CLASS="textsl">InstanceSeparatorDBSCAN</SPAN> groups the instances according to a DBSCAN algorithm applied to the duration of the instances. The DBSCAN algorithm groups together instances that are closely packed together (instances with many nearby neighbors) in terms of time and marks as outliers those instances that lie alone in low-density regions. This grouping uses the ClusteringSuite implementation from the BSC performance tools<A NAME="tex2html29"
+  HREF="#foot1067"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A>.
+
+<P>
+</LI>
+</UL>
+
+<P>
+This grouping begets the <SPAN  CLASS="textsl">InstanceGroup</SPAN> objects which contains references to those <SPAN  CLASS="textsl">Instance</SPAN> that belong to that particular group.
+Then, the folding removes the outliers to each <SPAN  CLASS="textsl">Instance</SPAN> within every <SPAN  CLASS="textsl">InstanceGroup</SPAN> and store the outliers and the remaining in the <SPAN  CLASS="textit">excluded</SPAN> and <SPAN  CLASS="textit">instances</SPAN> associations, respectively.
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_sample_selector"></A><A NAME="1092"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.4:</STRONG>
+Sample selector related diagram classes.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.675]figures/user-guide/tool-design-interpolate-sample-selector.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+Since the complexity of the contouring algorithms depends on the number of points to connect, and therefore the number of samples to fold, the <SPAN  CLASS="textsf">Folding</SPAN>tool supports limiting the number of samples given to these algorithms.
+Figure&nbsp;<A HREF="#fig:tool_design_interpolate_sample_selector">3.4</A> depicts the class diagram of the available <SPAN  CLASS="textsl">SampleSelector</SPAN> mechanisms to limit the number of samples.
+
+<P>
+
+<UL>
+<LI><SPAN  CLASS="textsl">SampleSelectorDefault</SPAN> the <SPAN  CLASS="textit">select</SPAN> method returns all of the samples within the <SPAN  CLASS="textsl">InstanceGroup</SPAN>. This is useful when the user does not impose any limit to the number of samples to be folded.
+
+<P>
+</LI>
+<LI><SPAN  CLASS="textsl">SampleSelectorFirst</SPAN> receives a threshold (<SPAN CLASS="MATH"><IMG
+ WIDTH="20" HEIGHT="15" ALIGN="BOTTOM" BORDER="0"
+ SRC="img13.png"
+ ALT="$N$"></SPAN>) in the class constructor. Then, the <SPAN  CLASS="textit">select</SPAN> method tags the first <SPAN CLASS="MATH"><IMG
+ WIDTH="20" HEIGHT="15" ALIGN="BOTTOM" BORDER="0"
+ SRC="img13.png"
+ ALT="$N$"></SPAN> samples for the processing while the rest are marked as <SPAN  CLASS="textit">unused</SPAN>.
+
+<P>
+</LI>
+<LI><SPAN  CLASS="textsl">SampleSelectorDistance</SPAN> receives a threshold (<SPAN CLASS="MATH"><IMG
+ WIDTH="20" HEIGHT="15" ALIGN="BOTTOM" BORDER="0"
+ SRC="img13.png"
+ ALT="$N$"></SPAN>) in the class constructor. Then, the <SPAN  CLASS="textit">select</SPAN> method tags <SPAN CLASS="MATH"><IMG
+ WIDTH="20" HEIGHT="15" ALIGN="BOTTOM" BORDER="0"
+ SRC="img13.png"
+ ALT="$N$"></SPAN> samples that are equidistant within the <SPAN  CLASS="textsl">Instance</SPAN> duration, while the rest are <SPAN  CLASS="textit">unused</SPAN>.
+
+<P>
+</LI>
+</UL>
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_interpolation"></A><A NAME="1139"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.5:</STRONG>
+Performance counter interpolation related diagram classes.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.50]figures/user-guide/tool-design-interpolate-interpolation.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+Then the <SPAN  CLASS="textsf">Folding</SPAN>repeatedly applies the contouring algorithm to the <SPAN  CLASS="textit">used</SPAN> samples among the different <SPAN  CLASS="textsl">InstanceGroup</SPAN> objects.
+The contouring algorithm applies to each performance counter individually, and as of writing this document, there are two approaches that honor the <SPAN  CLASS="textsl">Interpolation</SPAN> super-class virtual method (mainly <TT>do_interpolate</TT>):
+
+<P>
+
+<UL>
+<LI><SPAN  CLASS="textsl">InterpolationKriger</SPAN> uses the self-provided contouring algorithm based on the Kriging mechanism to implement the <TT>do_interpolate</TT>.
+
+<P>
+</LI>
+<LI><SPAN  CLASS="textsl">InterpolationRstrucchange</SPAN> employs the strucchange package<A NAME="tex2html33"
+  HREF="#foot1159"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">2</SPAN></SUP></A> from the R statistical package<A NAME="tex2html35"
+  HREF="#foot1160"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">3</SPAN></SUP></A> to use piece-wise linear regressions to the folded samples. Additionally, this package may benefit from parallel environments if the doParallel package<A NAME="tex2html37"
+  HREF="#foot1161"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">4</SPAN></SUP></A> is available on the system.
+
+<P>
+</LI>
+</UL>
+
+<P>
+The interpolation results are stored, per performance counter, into <SPAN  CLASS="textsl">InterpolationResults</SPAN> objects that are associated by <SPAN  CLASS="textsl">InstanceGroup</SPAN> by the attribute <SPAN  CLASS="textit">interpolated</SPAN> (as depicted in Figure&nbsp;<A HREF="#fig:tool_design_interpolate_instances">3.2</A>).
+The <SPAN  CLASS="textit">interpolated</SPAN> attribute is implemented as a hash function indexed by the performance counter, so that the interpolation results can be fetched easily.
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_model"></A><A NAME="1190"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.6:</STRONG>
+Performance models related diagram classes.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.825]figures/user-guide/tool-design-interpolate-model.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+<BR>
+<IMG
+ WIDTH="689" HEIGHT="549" ALIGN="BOTTOM" BORDER="0"
+ SRC="img14.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...k''&gt;
+&lt;value&gt; PAPI_TOT_INS &lt;/value&gt;
+&lt;/component&gt;
+\par
+&lt;/model&gt;
+\end{lstlisting}">
+<BR>
+
+<P>
+The <SPAN  CLASS="textsf">Folding</SPAN>allows defining performance models based on performance counters using XML files (see Listing&nbsp;<A HREF="#lst:Folding_sample_model">3.2</A> for exemplification purposes and <TT>${FOLDING_HOME}/etc/models</TT> for more detailed examples).
+Within every XML there may be one or several components (in the last Listing these are: <TT>l1_dcm_ratio</TT>, <TT>l2_dcm_ratio</TT> and <TT>mips</TT>) that will be later represented in the resulting gnuplot using the selected colors and Y-axis (left [y1] or right [y2]).
+Each component may refer to the instantaneous value of a certain performance counter (as in the <TT>mips</TT> component), a constant value or the operation (addition, subtraction, multiplication and division) between two other values (as in <TT>l1_dcm_ratio</TT> and <TT>l2_dcm_ratio</TT> components).
+The <SPAN  CLASS="textsf">Folding</SPAN>implements the performance models based on performance counters employing the diagram classes show in Figure&nbsp;<A HREF="#fig:tool_design_interpolate_model">3.6</A>.
+The XML model files are loaded into the <SPAN  CLASS="textsl">Model</SPAN> class and each of them may contain multiple components (<SPAN  CLASS="textsl">ComponentModel</SPAN>).
+The <SPAN  CLASS="textsl">ComponentModel</SPAN> implements the definition of the component on top of the <SPAN  CLASS="textsl">ComponentNode</SPAN> derived sub-classes.
+These sub-classes allow referencing constant values (<SPAN  CLASS="textsl">ComponentNode_constant</SPAN>), interpolated results from a specific performance counter (<SPAN  CLASS="textsl">ComponentNode_data</SPAN>) and operation between other two <SPAN  CLASS="textsl">ComponentNode</SPAN> objects).
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_callstackprocessor"></A><A NAME="1255"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.7:</STRONG>
+Call-stack processing related diagram classes.</CAPTION>
+<TR><TD>
+<DIV ALIGN="CENTER">
+
+</DIV>  [width=0.35]figures/user-guide/tool-design-interpolate-callstack-processor.pdf</TD></TR>
+</TABLE>
+</DIV>
+
+
+<P>
+With respect to the analysis of the call-stack, the <SPAN  CLASS="textsf">Folding</SPAN>tool has implemented this analysis through the <SPAN  CLASS="textsl">CallstackProcessor</SPAN> related-classes that receives a set of <SPAN  CLASS="textsl">Sample</SPAN> objects to explore.
+Currently, the unique implementation available relies on aligning the call-stacks from the given samples and then exploring the call-stack frames at a given level whether consecutive samples refer to the same routine.
+If the number of samples surpasses a given threshold, then applies it recursively to the next level until no more levels are available or the number of samples do not surpass the threshold.
+
+<H1><A NAME="SECTION00700000000000000000">
+<SPAN CLASS="arabic">4</SPAN>. API</A>
+</H1>
+
+<P>
+This section covers the public API available in the <SPAN  CLASS="textsf">Folding</SPAN>package.
+This API is meant to allow the <SPAN  CLASS="textsf">Folding</SPAN>tool to interact with other performance analysis tools in addition to <SPAN  CLASS="textsf">Extrae</SPAN>.
+
+<P>
+
+<H1><A NAME="SECTION00710000000000000000">
+<SPAN CLASS="arabic">4</SPAN>.<SPAN CLASS="arabic">1</SPAN> Generation of input files for the <SPAN  CLASS="textsf">Folding</SPAN></A>
+</H1>
+
+<P>
+
+<H2><A NAME="SECTION00711000000000000000">
+<SPAN CLASS="arabic">4</SPAN>.<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN> Usage example</A>
+</H2>
+
+<P>
+The directory <TT>$FOLDING_HOME/share/examples/folding-writer</TT> contains an example that shows how to generate an input file for the folding from a programatically point of view.
+The example can be compiled using the following command:
+
+<P>
+<PRE>
+# cd $FOLDING_HOME/share/examples/folding-writer
+# make
+</PRE>
+
+<P>
+The Listing&nbsp;<A HREF="#lst:ExampleGenerationInterpolation">4.1</A> shows the example provided in the distributed/installed package.
+This example demonstrates how to programatically create an <TT>.extract</TT> file for the <TT>interpolate</TT> binary of the <SPAN  CLASS="textsf">Folding</SPAN>package.
+
+<P>
+<BR>
+<IMG
+ WIDTH="840" HEIGHT="1642" ALIGN="BOTTOM" BORDER="0"
+ SRC="img15.png"
+ ALT="\begin{lstlisting}[
+language=C++,
+frame=tb,
+basicstyle=\footnotesize\ttfamily...
+...rtRegion,
+durationRegion, vs);
+f.close();
+}
+\par
+return 0;
+}
+\end{lstlisting}">
+<BR>
+
+<P>
+The given example considers that the region <TT>FunctionA</TT> has been identified somehow by the underlying monitoring mechanism, starts at 1,000&nbsp;ns and lasts 4,500&nbsp;ns (lines 31-33).
+Within this period of time, three samples have occurred (<SPAN  CLASS="textit">s1-s3</SPAN>, created in lines 40, 50 and 58, respectively).
+Samples contain performance counter information and source code references.
+The performance counter information is given in a relative manner, thus each sample contains the difference from the previous sample (or starting point).
+For instance, sample <SPAN  CLASS="textit">s1</SPAN> captured information from two performance counters (<TT>PAPI_TOT_INS</TT> and <TT>PAPI_TOT_CYC</TT>) that counted 1,000 and 2,000 events since the start of the region at time-stamp 2,000&nbsp;ns (lines 36-40).
+The second sample (<SPAN  CLASS="textit">s2</SPAN>) does not only contain information from performance counters, but also contains a call-stack segment referencing two call-stack frames.
+The first frame (<TT>codeinfo_l0</TT>) refers to the routine coded as 1, which has source code information coded as 2, and AST-block information coded as 3 (line 46).
+The same applies to second frame (<TT>codeinfo_l1</TT>) - (line 47).
+These frames are mapped into depths 0 and 1 (where 0 refers to the top of the call-stack) in lines 48 and 49, and then the sample is built using the performance counter information and the call-stack information in line 50.
+Finally, the last sample (<SPAN  CLASS="textit">s3</SPAN>) only accounted 500 and 1,000 events for the <TT>PAPI_TOT_INS</TT> and <TT>PAPI_TOT_CYC</TT> performance counters respectively, but did not capture any source code reference (lines 54-58).
+This last sample should coincide with the end of the region (<TT>FunctionA</TT>), and may not be necessarily information captured from a sample point, but from an instrumentation point that indicates the end of the region.
+All these samples are packed together in a STL vector container (lines 60-63), and then the <TT>FoldingWriter::Write</TT> static method dumps all the information from the samples using the given output stream (lines 65-71).
+
+<P>
+
+<H1><A NAME="SECTION00800000000000000000">
+About this document ...</A>
+</H1>
+ <STRONG><SPAN  CLASS="textsf">Folding</SPAN>
+<BR>
+User guide manual
+<BR>
+for version 1.0rc8</STRONG><P>
+This document was generated using the
+<A HREF="http://www.latex2html.org/"><STRONG>LaTeX</STRONG>2<tt>HTML</tt></A> translator Version 2008 (1.71)
+<P>
+Copyright &#169; 1993, 1994, 1995, 1996,
+Nikos Drakos, 
+Computer Based Learning Unit, University of Leeds.
+<BR>
+Copyright &#169; 1997, 1998, 1999,
+<A HREF="http://www.maths.mq.edu.au/~ross/">Ross Moore</A>, 
+Mathematics Department, Macquarie University, Sydney.
+<P>
+The command line arguments were: <BR>
+ <STRONG>latex2html</STRONG> <TT>-split 0 -show_section_numbers -nonumbered_footnotes user-guide</TT>
+<P>
+The translation was initiated by Harald Servat on 2015-03-16
+<BR><HR><H4>Footnotes</H4>
+<DL>
+<DT><A NAME="foot121">... references</A><A
+ HREF="user-guide.html#tex2html1"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A></DT>
+<DD>This last option is experimental at the moment of writing this document
+
+</DD>
+<DT><A NAME="foot132">... page</A><A
+ HREF="user-guide.html#tex2html2"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">2</SPAN></SUP></A></DT>
+<DD><TT><A NAME="tex2html3"
+  HREF="http://www.bsc.es/computer-sciences/performance-tools/downloads">http://www.bsc.es/computer-sciences/performance-tools/downloads</A></TT>
+
+</DD>
+<DT><A NAME="foot225">...ExtraeAPI</A><A
+ HREF="user-guide.html#tex2html5"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">3</SPAN></SUP></A></DT>
+<DD>Please refer to <TT><A NAME="tex2html6"
+  HREF="http://www.bsc.es/computer-sciences/performance-tools/documentation">http://www.bsc.es/computer-sciences/performance-tools/documentation</A></TT> for the latest <SPAN  CLASS="textsf">Extrae</SPAN>User's Guide.
+
+</DD>
+<DT><A NAME="foot226">... tool</A><A
+ HREF="user-guide.html#tex2html7"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">4</SPAN></SUP></A></DT>
+<DD>Please refer to <TT><A NAME="tex2html8"
+  HREF="http://www.bsc.es/computer-sciences/performance-tools/documentation">http://www.bsc.es/computer-sciences/performance-tools/documentation</A></TT> for the latest documentation with respect to the Clustering tool.
+
+</DD>
+<DT><A NAME="foot224">...fig:444_namd_instructions</A><A
+ HREF="user-guide.html#tex2html9"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">5</SPAN></SUP></A></DT>
+<DD>Warning! If the user has problems to open the gnuplot, they should check whether the gnuplot installation is compatible and supports the default terminal. Otherwise, simply select the appropriate terminal (or leave it blank) in the first four lines in the gnuplot script
+
+</DD>
+<DT><A NAME="foot434">... files</A><A
+ HREF="user-guide.html#tex2html15"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">6</SPAN></SUP></A></DT>
+<DD>The libtools package has been successfully tested against version from 1.48 to 1.54.
+
+</DD>
+<DT><A NAME="foot460">... package</A><A
+ HREF="user-guide.html#tex2html16"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">7</SPAN></SUP></A></DT>
+<DD><TT><A NAME="tex2html17"
+  HREF="http://cran.r-project.org/web/packages/strucchange/index.html">http://cran.r-project.org/web/packages/strucchange/index.html</A></TT>
+
+</DD>
+<DT><A NAME="foot461">... application</A><A
+ HREF="user-guide.html#tex2html18"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">8</SPAN></SUP></A></DT>
+<DD><TT><A NAME="tex2html19"
+  HREF="http://www.r-project.org">http://www.r-project.org</A></TT>
+
+</DD>
+<DT><A NAME="foot462">... compiler</A><A
+ HREF="user-guide.html#tex2html20"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">9</SPAN></SUP></A></DT>
+<DD><TT><A NAME="tex2html21"
+  HREF="http://clang.llvm.org">http://clang.llvm.org</A></TT>
+
+</DD>
+<DT><A NAME="foot463">... package</A><A
+ HREF="user-guide.html#tex2html22"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">10</SPAN></SUP></A></DT>
+<DD><TT><A NAME="tex2html23"
+  HREF="http://www.scalasca.org/software/cube-3.x/download.html">http://www.scalasca.org/software/cube-3.x/download.html</A></TT>
+
+</DD>
+<DT><A NAME="foot551">...Extrae</A><A
+ HREF="user-guide.html#tex2html24"><SUP><SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A></DT>
+<DD>Please refer to <TT><A NAME="tex2html25"
+  HREF="http://www.bsc.es/computer-sciences/performance-tools/documentation">http://www.bsc.es/computer-sciences/performance-tools/documentation</A></TT> for the latest <SPAN  CLASS="textsf">Extrae</SPAN>User's Guide.
+
+</DD>
+<DT><A NAME="foot1067">... tools</A><A
+ HREF="user-guide.html#tex2html29"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A></DT>
+<DD>See <TT><A NAME="tex2html30"
+  HREF="http://www.bsc.es/computer-sciences/performance-tools/downloads">http://www.bsc.es/computer-sciences/performance-tools/downloads</A></TT>.
+
+</DD>
+<DT><A NAME="foot1159">... package</A><A
+ HREF="user-guide.html#tex2html33"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">2</SPAN></SUP></A></DT>
+<DD><TT><A NAME="tex2html34"
+  HREF="http://cran.r-project.org/web/packages/strucchange/index.html">http://cran.r-project.org/web/packages/strucchange/index.html</A></TT>
+
+</DD>
+<DT><A NAME="foot1160">... package</A><A
+ HREF="user-guide.html#tex2html35"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">3</SPAN></SUP></A></DT>
+<DD><TT><A NAME="tex2html36"
+  HREF="http://www.r-project.org">http://www.r-project.org</A></TT>
+
+</DD>
+<DT><A NAME="foot1161">... package</A><A
+ HREF="user-guide.html#tex2html37"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">4</SPAN></SUP></A></DT>
+<DD><TT><A NAME="tex2html38"
+  HREF="http://cran.r-project.org/package=doParallel">http://cran.r-project.org/package=doParallel</A></TT>
+
+</DD>
+</DL>
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<IMG WIDTH="81" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next_inactive"
+ SRC="/usr/share/latex2html/icons/nx_grp_g.png"> 
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up_g.png"> 
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev_g.png">   
+<BR></DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+Harald Servat
+2015-03-16
+</ADDRESS>
+</BODY>
+</HTML>
