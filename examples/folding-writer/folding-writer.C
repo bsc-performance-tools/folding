@@ -43,32 +43,30 @@ int main (int argc, char *argv[])
 	c2["PAPI_TOT_INS"] = 1000;
 	c2["PAPI_TOT_CYC"] = 2000;
 	map<unsigned, CodeRefTriplet> crt2;
-	Sample *s2 = new Sample (3000, 3000-startRegion, c2, crt2);
-
-	map<string, unsigned long long> c3;
-	c3["PAPI_TOT_INS"] = 1000;
-	c3["PAPI_TOT_CYC"] = 2000;
-	map<unsigned, CodeRefTriplet> crt3;
-	Sample *s3 = new Sample (4000, 4000-startRegion, c3, crt3);
+	CodeRefTriplet codeinfo_l0 (1,2,3);
+	CodeRefTriplet codeinfo_l1 (3,4,5);
+	crt2[0] = codeinfo_l0;
+	crt2[1] = codeinfo_l1;
+	Sample *s2 = new Sample (4000, 4000-startRegion, c2, crt2);
 
 	/* Last sample typically coincides with end of region -- see durationRegion,
 	   Folding::Write won't emit in a S entry */
-	map<string, unsigned long long> c4;
-	c4["PAPI_TOT_INS"] = 500;
-	c4["PAPI_TOT_CYC"] = 1000;
-	map<unsigned, CodeRefTriplet> crt4;
-	Sample *s4 = new Sample (4500, 4500-startRegion, c4, crt4);
+	map<string, unsigned long long> c3;
+	c3["PAPI_TOT_INS"] = 500;
+	c3["PAPI_TOT_CYC"] = 1000;
+	map<unsigned, CodeRefTriplet> crt3;
+	Sample *s3 = new Sample (4500, 4500-startRegion, c3, crt3);
 
 	vector<Sample*> vs;
 	vs.push_back (s1);
 	vs.push_back (s2);
 	vs.push_back (s3);
-	vs.push_back (s4);
 
 	ofstream f("output.extract");
 	if (f.is_open())
 	{
-		FoldingWriter::Write (f, nameRegion, 1, 1, 1, startRegion, durationRegion, vs);
+		FoldingWriter::Write (f, nameRegion, 1, 1, 1, startRegion,
+		  durationRegion, vs);
 		f.close();
 	}
 
