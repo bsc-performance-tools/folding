@@ -1,0 +1,42 @@
+\begin{lstlisting}[
+ float=h,
+ language=XML,
+ frame=tb,
+ basicstyle=\small\ttfamily,
+ keywordstyle=\small\bfseries,
+ commentstyle=\small\itshape,
+ numbers=left,
+ firstnumber=1,
+ numberstyle=\tiny\color{gray},
+ captionpos=t,
+ caption={Counter definition sets for the Extrae configuration file when used on IBM Power5 procesors.},
+ label=lst:Extrae_counters_ibm_power5,
+]
+<cpu enabled="yes" starting-set-distribution="cyclic">
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_INST_CMPL,PM_CYC,PM_GCT_EMPTY_CYC,PM_LSU_LMQ_SRQ_EMPTY_CYC,
+    PM_HV_CYC,PM_1PLUS_PPC_CMPL,PM_GRP_CMPL,PM_TB_BIT_TRANS
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_INST_CMPL,PM_CYC,PM_FLUSH_BR_MPRED,PM_BR_MPRED_TA,
+    PM_GCT_EMPTY_IC_MISS,PM_GCT_EMPTY_BR_MPRED,PM_L1_WRITE_CYC
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_INST_CMPL,PM_CYC,PM_LSU_FLUSH,PM_FLUSH_LSU_BR_MPRED,PM_CMPLU_STALL_LSU,
+    PM_CMPLU_STALL_ERAT_MISS
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_INST_CMPL,PM_CYC,PM_GCT_EMPTY_SRQ_FULL,PM_FXU_FIN,PM_FPU_FIN,
+    PM_CMPLU_STALL_FXU,PM_FXU_BUSY,PM_CMPLU_STALL_DIV 
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_INST_CMPL,PM_CYC,PM_IOPS_CMPL,PM_CMPLU_STALL_FDIV,PM_FPU_FSQRT,
+    PM_CMPLU_STALL_FPU,PM_FPU_FDIV,PM_FPU_FMA
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_INST_CMPL,PM_CYC,PM_CMPLU_STALL_OTHER,PM_CMPLU_STALL_DCACHE_MISS,
+    PM_LSU_DERAT_MISS,PM_CMPLU_STALL_REJECT,PM_LD_MISS_L1,PM_LD_REF_L1
+  </set>
+</cpu>
+
+\end{lstlisting}

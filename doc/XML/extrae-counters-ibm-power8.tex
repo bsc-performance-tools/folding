@@ -1,0 +1,37 @@
+\begin{lstlisting}[
+ float=h,
+ language=XML,
+ frame=tb,
+ basicstyle=\small\ttfamily,
+ keywordstyle=\small\bfseries,
+ commentstyle=\small\itshape,
+ numbers=left,
+ firstnumber=1,
+ numberstyle=\tiny\color{gray},
+ captionpos=t,
+ caption={Counter definition sets for the Extrae configuration file when used on IBM Power8 procesors.},
+ label=lst:Extrae_counters_ibm_power8,
+]
+<cpu enabled="yes" starting-set-distribution="cyclic">
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL,PM_CMPLU_STALL_DCACHE_MISS,
+    PM_CMPLU_STALL_THRD,PM_GRP_CMPL
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_BRU,PM_GCT_NOSLOT_CYC,
+    PM_CMPLU_STALL_FXU
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_SCALAR,PM_CMPLU_STALL_LSU
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_STORE,PM_CMPLU_STALL_DMISS_L3MISS
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_VECTOR,PM_CMPLU_STALL_REJECT
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PM_RUN_INST_CMPL,PM_RUN_CYC,PM_CMPLU_STALL_DMISS_L2L3
+  </set>
+</cpu>
+\end{lstlisting}

@@ -1,0 +1,33 @@
+\begin{lstlisting}[
+ float=h,
+ language=XML,
+ frame=tb,
+ basicstyle=\small\ttfamily,
+ keywordstyle=\small\bfseries,
+ commentstyle=\small\itshape,
+ numbers=left,
+ firstnumber=1,
+ numberstyle=\tiny\color{gray},
+ captionpos=t,
+ caption={Counter definition sets for the Extrae configuration file when used on Intel SandyBridge procesors.},
+ label=lst:Extrae_counters_intel_sandybridge,
+]
+<cpu enabled="yes" starting-set-distribution="cyclic">
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM,PAPI_L2_DCM,PAPI_L3_TCM
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_BR_MSP,PAPI_BR_UCN,PAPI_BR_CN,RESOURCE_STALLS
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_VEC_DP,PAPI_VEC_SP,PAPI_FP_INS
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_LD_INS,PAPI_SR_INS
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,RESOURCE_STALLS:LOAD,RESOURCE_STALLS:STORE,
+    RESOURCE_STALLS:ROB_FULL,RESOURCE_STALLS:RS_FULL
+  </set>
+</cpu>
+\end{lstlisting}

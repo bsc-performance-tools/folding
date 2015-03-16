@@ -1,0 +1,12 @@
+#!/bin/bash
+
+files="tool-design-interpolate-sample-selector.tex tool-design-interpolate-instance-separator.tex tool-design-interpolate-interpolation.tex tool-design-interpolate-model.tex tool-design-interpolate-callstack-processor.tex tool-design-interpolate-instances.tex"
+
+for f in $files
+do
+	pdflatex $f
+done
+
+rm *aux *log
+
+cp *pdf ../..

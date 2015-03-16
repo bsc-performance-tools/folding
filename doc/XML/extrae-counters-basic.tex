@@ -1,0 +1,26 @@
+\begin{lstlisting}[
+ float=h,
+ language=XML,
+ frame=tb,
+ basicstyle=\small\ttfamily,
+ keywordstyle=\small\bfseries,
+ commentstyle=\small\itshape,
+ numbers=left,
+ firstnumber=1,
+ numberstyle=\tiny\color{gray},
+ captionpos=t,
+ caption={Basic counter definition sets for other processors not stated before.},
+ label=lst:Extrae_counters_basic,
+]
+<cpu enabled="yes" starting-set-distribution="cyclic">
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM,PAPI_L2_DCM,PAPI_L3_TCM
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_BR_CN,PAPI_BR_UCN,PAPI_LD_INS,PAPI_SR_INS
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_VEC_SP,PAPI_VEC_DP,PAPI_FP_INS,PAPI_BR_MSP
+  </set>
+</cpu>
+\end{lstlisting}

@@ -1,0 +1,22 @@
+\documentclass{standalone}
+
+\usepackage{tikz}
+\usepackage{pgf-umlcd}
+\usepackage[bitstream-charter]{mathdesign} % +1! taules mes petites i hi caben
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\begin{document}
+
+\begin{tikzpicture}
+
+\begin{abstractclass}[text width=6cm]{CallstackProcessor}{0,0}
+\operation[0]{processSamples (vector<Sample>);}
+\end{abstractclass}
+
+\begin{class}[text width=6cm]{CallstackProcessor-ConsecutiveRecursive}{0,-4}
+\inherit{CallstackProcessor}
+\end{class}
+\end{tikzpicture}
+
+\end{document}

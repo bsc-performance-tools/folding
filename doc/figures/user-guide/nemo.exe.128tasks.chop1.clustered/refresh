@@ -1,0 +1,4 @@
+#!/bin/bash
+
+gnuplot prepare.gnuplot > nemo_cluster1_instructionmix.pdf
+cp *pdf ..
