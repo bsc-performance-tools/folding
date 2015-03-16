@@ -1,0 +1,108 @@
+\chapter{Generate a trace-file for the Folding}\label{cha:GetATrace}
+
+This chapter covers the minimum and necessary steps so as to configure \EXTRAE\footnote{Please refer to \url{http://www.bsc.es/computer-sciences/performance-tools/documentation} for the latest \EXTRAE User's Guide.} in order to use its resulting trace-files for the Folding process.
+There are three requirements when monitoring an application with \EXTRAE in order to take the most benefit from the \FOLDING tool. 
+First, it is necessary to enable the sampling mechanism in addition to the instrumentation mechanism (see Section~\ref{sec:EnableSamplingMechanism}).
+Second, it is convenient to collect the appropriate performance counters for the underlying processor (see Section~\ref{sec:CollectingAppropriatePerformanceCounters}).
+Finally, \EXTRAE needs to capture a segment of the call-stack in order to allow the \FOLDING to provide information regarding the progression of the executed routines.
+The forthcoming sections provide information on how to enable these functionalities through the XML tags for the \EXTRAE configuration file.
+
+\section{Enabling the sampling mechanism}\label{sec:EnableSamplingMechanism}
+
+\EXTRAE is an instrumentation package that by default collects information from different parallel runtimes, including but not limited to: MPI, OpenMP, pthreads, CUDA and OpenCL (and even combinations of them).
+\EXTRAE can be configured so that it also uses sampling mechanisms to capture performance metrics on a periodic basis.
+There are currently two alternatives to enable sampling in \EXTRAE: using alarm signals and using performance counters.
+For the sake of simplicity, this document only covers the alarm-based sampling.
+However, if the reader would like to enable the sampling using the performance counters they must look at section 4.9 in the \EXTRAE User's Manual for more details.
+
+\input{XML/extrae-enable-sampling}
+
+The XML statements in Listing~\ref{lst:Extrae_enable_sampling_basic} need to be included in the \EXTRAE configuration file.
+These statements indicate \EXTRAE that sampling is enabled (\texttt{enabled="yes"}).
+They also tell \EXTRAE to capture samples every 50~milliseconds (ms) with a random variability of 10~ms, that means that samples will be randomly collected with a periodicity of $50{\pm}10$~ms.
+With respect to type, it determines which timer domain is used (see {\tt man 2 setitimer} or {\tt man 3p setitimer} for further information on time domains).
+Available options are: {\tt real} (which is also the {\tt default} value, {\tt virtual} and {\tt prof} (which use the SIGALRM, SIGVTALRM and SIGPROF respectively).
+The default timing accumulates real time, but only issues samples at master thread.
+To let all the threads collect samples, the type must be set to either {\tt virtual} or {\tt prof}.
+
+Additionally, the \FOLDING mechanism is able to combine several performance models and generate summarized results that simplify understanding the behavior of the node-level performance.
+Since these performance models are heavily-tighted with the performance counters available on each processor architecture and family, the following sections provide \EXTRAE XML configuration files ready to use on several architectures.
+Since each architecture has different characteristics, the user may need to tune the XML presented there to make sure that all the list performance counters are gathered appropriately.
+
+\section{Collecting the appropriate performance counters}\label{sec:CollectingAppropriatePerformanceCounters}
+
+The \FOLDING mechanism provides, among other type of information, the progression of performance metrics along a delimited region through instrumentation points.
+These performance metrics include the progression of performance counters of every performance counter by default.
+To generate these kind of reports, \EXTRAE must collect the performance counters during the application execution and this is achieved by defining counter sets into the \texttt{<counters>} section of the \EXTRAE configuration file (see Section 4.19 of the \EXTRAE User's guide for more information).
+
+There has been research that has developed some performance models based on performance counters ratios among performance counters in order to ease the analysis of the reports.
+Each of these performance models aims at providing insight of different aspects of the application and system during the execution.
+Since the availability of the performance counters changes from processor to processor (even in the same processor family), the following sections describe the performance counters that are meant to be collected in order to calculate these performance models.
+These sections include the minimal \texttt{<counters>} sections to be added in a previously existing \EXTRAE configuration file, but the \FOLDING package also includes full \EXTRAE configuration files in \texttt{\$\{FOLDING\_HOME\}/etc/extrae-configurations}.
+
+\subsection{Intel Haswell processors}
+
+\input{XML/extrae-counters-intel-haswell}
+
+The listing~\ref{lst:Extrae_counters_intel_haswell} indicates \EXTRAE to arrange five performance counter sets with performance counters that are available on Intel Haswell processors.
+The collection of these performance counters allows the \FOLDING to apply the models contained in the \texttt{\$\{FOLDING\_HOME\}/etc/models/intel-sandybridge} that include: instruction mix, architecture impact and stall distribution.
+Unfortunately, the PMU of the Intel Haswell processors do not count neither floating point nor vector instructions.
+
+\subsection{Intel SandyBridge processors}
+
+\input{XML/extrae-counters-intel-sandybridge}
+
+The listing~\ref{lst:Extrae_counters_intel_sandybridge} indicates \EXTRAE to configure five performance counter sets with performance counters that are available on Intel SandyBridge processors.
+The collection of these performance counters allows the \FOLDING to apply the models contained in the \texttt{\$\{FOLDING\_HOME\}/etc/models/intel-sandybridge} that include: instruction mix, architecture impact and stall distribution.
+
+\subsection{Intel Nehalem processors}
+
+\input{XML/extrae-counters-intel-nehalem}
+
+The listing~\ref{lst:Extrae_counters_intel_nehalem} indicates \EXTRAE to prepare three performance counter sets with performance counters that are available on Intel Nehalem processors.
+The collection of these performance counters allows the \FOLDING to apply the models contained in the \texttt{\$\{FOLDING\_HOME\}/etc/models/intel-nehalem} that include: instruction mix, architecture impact and stall distribution.
+
+\subsection{IBM Power8 processors}
+
+\input{XML/extrae-counters-ibm-power8}
+
+The listing~\ref{lst:Extrae_counters_ibm_power8} indicates \EXTRAE to arrange six performance counter sets with performance counters that are available on IBM Power8 (and similar) processors.
+The collection of these performance counters allows the \FOLDING to calculate the CPIStack model for the IBM Power8 processor which is contained in \texttt{\$\{FOLDING\_HOME\}/etc/models/ibm-power8}.
+
+
+\subsection{IBM Power7 processors}
+
+\input{XML/extrae-counters-ibm-power7}
+
+The listing~\ref{lst:Extrae_counters_ibm_power7} indicates \EXTRAE to prepare six performance counter sets with performance counters that are available on IBM Power7 (and similar) processors.
+The collection of these performance counters allows the \FOLDING to calculate the CPIStack model for the IBM Power7 processor which is contained in \texttt{\$\{FOLDING\_HOME\}/etc/models/ibm-power7}.
+
+\subsection{IBM Power5 processors}
+
+\input{XML/extrae-counters-ibm-power5}
+
+The listing~\ref{lst:Extrae_counters_ibm_power5} indicates \EXTRAE to configure six performance counter sets with performance counters that are available on IBM Power5 (and similar) processors.
+The collection of these performance counters allows the \FOLDING to calculate the CPIStack model for the IBM Power5 processor which is contained in \texttt{\$\{FOLDING\_HOME\}/etc/models/ibm-power5}.
+
+\subsection{Other architectures}
+
+\input{XML/extrae-counters-basic}
+
+The previous definitions of counter sets included performance counters that are available on the specific stated machines.
+Since these performance counters may not be available on all the systems, the package also provides a group of counter sets that may be available on a variety of systems.
+Listing~\ref{lst:Extrae_counters_basic} defines three \EXTRAE counter sets that may be available on many systems (caveat here, not all systems may provide them).
+With the use of these counter sets, the \FOLDING can apply the models contained in the \texttt{\$\{FOLDING\_HOME\}/etc/models/basic} that include: instruction mix and architecture impact.
+
+
+\section{Capturing the call-stack at sample points}
+
+\input{XML/extrae-enable-sampling-callers.tex}
+
+By default, the sampling mechanism captures the performance counters indicated in the \texttt{counters} section and the Program Counter interrupted at the sample point.
+The \FOLDING provides the instantaneous progression of the routines that last at least a minimum given duration.
+To enable this type of analysis, it is necessary to instruct \EXTRAE to capture a portion of the call-stack during its execution.
+Listing~\ref{lst:Extrae_enable_sampling_callers} shows how to enable the collection of the call-stack at the sample points in the \EXTRAE configuration file.
+The mandatory lines to capture the call-stack at sample points are lines 1 and 4.
+Line 1 indicates that this section must be processed and Line 4 tells \EXTRAE to capture levels 1 to 5 from the call-stack (where 1 refers to the level below to the top of the call-stack).
+
+

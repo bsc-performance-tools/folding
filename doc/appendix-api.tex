@@ -1,0 +1,36 @@
+
+\chapter{API}
+
+This section covers the public API available in the \FOLDING package.
+This API is meant to allow the \FOLDING tool to interact with other performance analysis tools in addition to \EXTRAE.
+
+\section{Generation of input files for the \FOLDING}
+
+\subsection{Usage example}
+
+The directory \texttt{\$FOLDING\_HOME/share/examples/folding-writer} contains an example that shows how to generate an input file for the folding from a programatically point of view.
+The example can be compiled using the following command:
+
+\begin{verbatim}
+# cd $FOLDING_HOME/share/examples/folding-writer
+# make
+\end{verbatim}
+
+The Listing~\ref{lst:ExampleGenerationInterpolation} shows the example provided in the distributed/installed package.
+This example demonstrates how to programatically create an \texttt{.extract} file for the \texttt{interpolate} binary of the \FOLDING package.
+
+\input{listings/user-guide/folding-writer.tex}
+
+The given example considers that the region \texttt{FunctionA} has been identified somehow by the underlying monitoring mechanism, starts at 1,000~ns and lasts 4,500~ns (lines 31-33).
+Within this period of time, three samples have occurred (\textit{s1-s3}, created in lines 40, 50 and 58, respectively).
+Samples contain performance counter information and source code references.
+The performance counter information is given in a relative manner, thus each sample contains the difference from the previous sample (or starting point).
+For instance, sample \textit{s1} captured information from two performance counters (\texttt{PAPI\_TOT\_INS} and \texttt{PAPI\_TOT\_CYC}) that counted 1,000 and 2,000 events since the start of the region at time-stamp 2,000~ns (lines 36-40).
+The second sample (\textit{s2}) does not only contain information from performance counters, but also contains a call-stack segment referencing two call-stack frames.
+The first frame (\texttt{codeinfo\_l0}) refers to the routine coded as 1, which has source code information coded as 2, and AST-block information coded as 3 (line 46).
+The same applies to second frame (\texttt{codeinfo\_l1}) - (line 47).
+These frames are mapped into depths 0 and 1 (where 0 refers to the top of the call-stack) in lines 48 and 49, and then the sample is built using the performance counter information and the call-stack information in line 50.
+Finally, the last sample (\textit{s3}) only accounted 500 and 1,000 events for the \texttt{PAPI\_TOT\_INS} and \texttt{PAPI\_TOT\_CYC} performance counters respectively, but did not capture any source code reference (lines 54-58).
+This last sample should coincide with the end of the region (\texttt{FunctionA}), and may not be necessarily information captured from a sample point, but from an instrumentation point that indicates the end of the region.
+All these samples are packed together in a STL vector container (lines 60-63), and then the \texttt{FoldingWriter::Write} static method dumps all the information from the samples using the given output stream (lines 65-71).
+

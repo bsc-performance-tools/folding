@@ -14,7 +14,7 @@ all:
 	@echo Nothing to be done by default. If you want to build the documentation issue make build-documentation.
 
 build-documentation: $(manual_ug).tex quick-guide-section.tex get-a-trace.tex
-	@echo "\newcommand{\TRACEVERSION}{$(PACKAGE_VERSION)}" > version.tex
+	@echo "\newcommand{\FOLDINGVERSION}{$(PACKAGE_VERSION)}" > version.tex
 if BUILD_DOCS_PS
 	$(latex) $(manual_ug)
 	$(latex) $(manual_ug)

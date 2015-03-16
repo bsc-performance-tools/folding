@@ -1,0 +1,3 @@
+# Folding done by harald at Fri Feb 20 16:55:37 2015
+Object=any.any.any
+main;LLC_MISSES,PAPI_BR_INS,PAPI_L1_DCM,PAPI_L2_TCM,PAPI_TOT_CYC,PAPI_TOT_INS;1;Group_0-14647.683-4102.414-26-1

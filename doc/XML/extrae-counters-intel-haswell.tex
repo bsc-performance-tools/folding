@@ -1,0 +1,32 @@
+\begin{lstlisting}[
+ float=h,
+ language=XML,
+ frame=tb,
+ basicstyle=\small\ttfamily,
+ keywordstyle=\small\bfseries,
+ commentstyle=\small\itshape,
+ numbers=left,
+ firstnumber=1,
+ numberstyle=\tiny\color{gray},
+ captionpos=t,
+ caption={Counter definition sets for the Extrae configuration file when used on Intel Haswell procesors.},
+ label=lst:Extrae_counters_intel_haswell,
+]
+<cpu enabled="yes" starting-set-distribution="cyclic">
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM,PAPI_L2_DCM
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L3_TCM,RESOURCE_STALLS:SB,RESOURCE_STALLS:ROB
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_SR_INS,PAPI_BR_CN,PAPI_BR_UCN
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_BR_MSP,PAPI_LD_INS
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,RESOURCE_STALLS,RESOURCE_STALLS:RS
+  </set>
+</cpu>
+\end{lstlisting}

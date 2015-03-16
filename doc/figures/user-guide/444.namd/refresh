@@ -1,0 +1,6 @@
+#!/bin/bash
+
+gnuplot prepare.tot_ins.gnuplot > 444_namd_tot_ins.pdf
+gnuplot prepare.ratio_per_instruction.gnuplot > 444_namd_ratio_per_instruction.pdf
+
+cp *pdf ..
