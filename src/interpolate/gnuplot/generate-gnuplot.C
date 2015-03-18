@@ -143,7 +143,7 @@ void gnuplotGenerator::gnuplot_single (
 	  "set ylabel 'Normalized " << counter << "';" << endl;
 
 	if (TimeUnit == common::DefaultTimeUnit)
-		gplot << "set xlabel 'Time (in ms)';" << endl;
+		gplot << "set xlabel 'Time (ms)';" << endl;
 	else
 		gplot << "set xlabel '" << TimeUnit << " (in Mevents)';" << endl;
 
@@ -332,7 +332,7 @@ string gnuplotGenerator::gnuplot_slopes (
 
 	if (TimeUnit == common::DefaultTimeUnit)
 	{
-		gplot << "set xlabel 'Time (in ms)';" << endl
+		gplot << "set xlabel 'Time (ms)';" << endl
 	  	  << "set xtics nomirror format \"%.02f\";" << endl
 		  << "set xtics ( 0.0 ";
 		for (int i = 1; i <= 5; i++)
@@ -544,7 +544,7 @@ string gnuplotGenerator::gnuplot_model (
 	gplot <<
 	  "set xtics nomirror format \"%.02f\";" << endl <<
 	  "unset x2tics" << endl <<
-	  "set xlabel 'Time (in ms)';" << endl <<
+	  "set xlabel 'Time (ms)';" << endl <<
 	  "set ylabel '" << m->getY1AxisName() <<  "';" << endl <<
 	  "set y2label '" << m->getY2AxisName() << "';" << endl <<
 	  "set ytics nomirror;" << endl <<
