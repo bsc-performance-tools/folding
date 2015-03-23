@@ -189,12 +189,13 @@ From the configuration files contained in that directory, we outline the followi
 This section describes how to build and install the \FOLDING package.
 The \FOLDING package (and its dependencies) requires the Boost library (only the headers suffice), a C compiler, a Fortran compiler and a C++ compiler that supports the C++ 2011 specification (such as g++ version 4.8).
 This package optionally uses the \texttt{strucchange} package from the R statistical application (and may execute in parallel if the \texttt{doParallel} is available) to use the piece-wise linear regression interpolation mechanism.
-Additionally, the \FOLDING package requires the libtools package to be installed.
+Additionally, the \FOLDING package requires the libtools package to be installed first.
 This package helps on the parsing of Paraver trace-files and can be downloaded from the BSC download web page.
 
 \subsection{Libtools package}~\label{subsec:LibtoolsInstallation}
 
-This package can be downloaded from the BSC web page and requires the boost header files\footnote{The libtools package has been successfully tested against version from 1.48 to 1.54.}.
+This package is included within the folding package and needs to be installed first.
+This package reguires the boost header files\footnote{The libtools package has been successfully tested against version from 1.48 to 1.54.}.
 If the boost header files are located in the system's default, simply run the following command:
 
 \begin{verbatim}
