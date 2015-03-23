@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>Folding User guide manual for version 1.0rc8</TITLE>
-<META NAME="description" CONTENT="Folding User guide manual for version 1.0rc8">
+<TITLE>Folding User guide manual for version 1.0</TITLE>
+<META NAME="description" CONTENT="Folding User guide manual for version 1.0">
 <META NAME="keywords" CONTENT="user-guide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -44,7 +44,7 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 <BR>
 User guide manual
 <BR>
-for version 1.0rc8</H1>
+for version 1.0</H1>
 <DIV CLASS="author_info">
 
 <P ALIGN="CENTER"><STRONG>tools@bsc.es
@@ -102,7 +102,7 @@ Contents</A>
 <LI><A NAME="tex2html91"
   HREF="user-guide.html#SECTION00523000000000000000">2.2.3 Intel Nehalem processors</A>
 <LI><A NAME="tex2html92"
-  HREF="user-guide.html#SECTION00524000000000000000">2.2.4 IBM Power8 processors</A>
+  HREF="user-guide.html#SECTION00524000000000000000">2.2.4 IBM Power8 processors (experimental, under revision)</A>
 <LI><A NAME="tex2html93"
   HREF="user-guide.html#SECTION00525000000000000000">2.2.5 IBM Power7 processors</A>
 <LI><A NAME="tex2html94"
@@ -660,7 +660,7 @@ Paraver time-line showing the callers for Cluster 1 of Nemo.</CAPTION>
 This section describes how to build and install the <SPAN  CLASS="textsf">Folding</SPAN>package.
 The <SPAN  CLASS="textsf">Folding</SPAN>package (and its dependencies) requires the Boost library (only the headers suffice), a C compiler, a Fortran compiler and a C++ compiler that supports the C++ 2011 specification (such as g++ version 4.8).
 This package optionally uses the <TT>strucchange</TT> package from the R statistical application (and may execute in parallel if the <TT>doParallel</TT> is available) to use the piece-wise linear regression interpolation mechanism.
-Additionally, the <SPAN  CLASS="textsf">Folding</SPAN>package requires the libtools package to be installed.
+Additionally, the <SPAN  CLASS="textsf">Folding</SPAN>package requires the libtools package to be installed first.
 This package helps on the parsing of Paraver trace-files and can be downloaded from the BSC download web page.
 
 <P>
@@ -669,7 +669,8 @@ This package helps on the parsing of Paraver trace-files and can be downloaded f
 <SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">1</SPAN> Libtools package</A>
 </H2>&nbsp;<A NAME="subsec:LibtoolsInstallation"></A>
 <P>
-This package can be downloaded from the BSC web page and requires the boost header files<A NAME="tex2html15"
+This package is included within the folding package and needs to be installed first.
+This package reguires the boost header files<A NAME="tex2html15"
   HREF="#foot434"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">6</SPAN></SUP></A>.
 If the boost header files are located in the system's default, simply run the following command:
 
@@ -923,7 +924,7 @@ The collection of these performance counters allows the <SPAN  CLASS="textsf">Fo
 <P>
 
 <H2><A NAME="SECTION00524000000000000000">
-<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">4</SPAN> IBM Power8 processors</A>
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">4</SPAN> IBM Power8 processors (experimental, under revision)</A>
 </H2>
 
 <P>
@@ -1430,7 +1431,7 @@ About this document ...</A>
 <BR>
 User guide manual
 <BR>
-for version 1.0rc8</STRONG><P>
+for version 1.0</STRONG><P>
 This document was generated using the
 <A HREF="http://www.latex2html.org/"><STRONG>LaTeX</STRONG>2<tt>HTML</tt></A> translator Version 2008 (1.71)
 <P>
@@ -1445,7 +1446,7 @@ Mathematics Department, Macquarie University, Sydney.
 The command line arguments were: <BR>
  <STRONG>latex2html</STRONG> <TT>-split 0 -show_section_numbers -nonumbered_footnotes user-guide</TT>
 <P>
-The translation was initiated by Harald Servat on 2015-03-16
+The translation was initiated by Harald Servat on 2015-03-23
 <BR><HR><H4>Footnotes</H4>
 <DL>
 <DT><A NAME="foot121">... references</A><A
@@ -1548,7 +1549,7 @@ The translation was initiated by Harald Servat on 2015-03-16
 <!--End of Navigation Panel-->
 <ADDRESS>
 Harald Servat
-2015-03-16
+2015-03-23
 </ADDRESS>
 </BODY>
 </HTML>

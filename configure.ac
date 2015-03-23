@@ -6,7 +6,7 @@
 
 # Initialize autoconf & define package name, version and bug-report address 
 #  -- keep version in sync with src/common/extrae_version.h
-AC_INIT(folding, 1.0rc8, tools@bsc.es)
+AC_INIT(folding, 1.0, tools@bsc.es)
 AC_CONFIG_HEADERS([folding-config.h:folding-config.h.in])
 
 # Safety check to ensure that the directory told with `--srcdir` contains the source code
@@ -376,9 +376,7 @@ AC_CHECK_HEADERS(
 AC_LANG_POP([C++])
 
 # So as to generate documentation
-AC_CHECK_PROGS(latex,[latex elatex lambda],no)
-AC_CHECK_PROGS(dvips,[dvips],no)
-AC_CHECK_PROGS(dvipdf,[dvipdf],no)
+AC_CHECK_PROGS(pdflatex,[pdflatex],no)
 AC_CHECK_PROGS(latex2html,[latex2html],no)
 
 AM_CONDITIONAL(BUILD_DOCS_PS, test "${latex}" != "no" -a "${dvips}" != "no")
