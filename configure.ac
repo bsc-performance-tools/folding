@@ -378,10 +378,8 @@ AC_LANG_POP([C++])
 # So as to generate documentation
 AC_CHECK_PROGS(pdflatex,[pdflatex],no)
 AC_CHECK_PROGS(latex2html,[latex2html],no)
-
-AM_CONDITIONAL(BUILD_DOCS_PS, test "${latex}" != "no" -a "${dvips}" != "no")
-AM_CONDITIONAL(BUILD_DOCS_PDF, test "${latex}" != "no" -a "${dvipdf}" != "no")
-AM_CONDITIONAL(BUILD_HTML_DOCS, test "${latex}" != "no" -a "${latex2html}" != "no")
+AM_CONDITIONAL(BUILD_DOCS_PDF, test "${pdflatex}" != "no")
+AM_CONDITIONAL(BUILD_HTML_DOCS, test "${pdflatex}" != "no" -a "${latex2html}" != "no")
 
 AC_CONFIG_FILES([
  Makefile

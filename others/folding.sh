@@ -9,7 +9,7 @@ else
 	export FOLDING_HOME=${FOLDING_HOME%/bin}
 fi
 
-LD_LIBRARY_PATH=${FOLDING_HOME}/lib
+export LD_LIBRARY_PATH=${FOLDING_HOME}/lib
 
 #
 # Process optional parameters first
