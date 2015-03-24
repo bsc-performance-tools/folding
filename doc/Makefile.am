@@ -5,7 +5,8 @@ EXTRA_DIST = \
  user-guide-get-a-trace.tex \
  user-guide-tool-design.tex \
  user-guide.tex \
- user-guide.pdf
+ user-guide.pdf \
+ user-guide
 
 manual_ug = user-guide
 
