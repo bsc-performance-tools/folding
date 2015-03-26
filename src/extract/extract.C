@@ -49,6 +49,7 @@ static string RegionSeparatorName;
 static string PRVSemanticCSVName;
 static int max_callstack_depth = 0;
 static bool has_max_callstack_depth = false;
+static bool has_malloc_level = false;
 static unsigned malloc_level = 0;
 
 using namespace std;
@@ -580,7 +581,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 			if (event.Type == EXTRAE_DYNAMIC_MEMORY_SIZE)
 				dynamic_memory_size = event.Value;
 
-			if (malloc_level != 0)
+			if (has_malloc_level)
 			{
 				if (event.Type == malloc_level)
 				{
@@ -608,7 +609,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 		{
 			bool found = false;
 			string name, tmp = getTypeValue (minimum_call_type, minimum_call_value, found);
-			// cout << "minimum_call_type = " << minimum_call_type << " minimum_call_value = " << minimum_call_value << " found = " << found  << endl;
+			 cout << "minimum_call_type = " << minimum_call_type << " minimum_call_value = " << minimum_call_value << " found = " << found  << endl;
 			if (found)
 				name = common::removeUnwantedChars (tmp.substr (0, tmp.find (')')));
 			DataObject *d = new DataObject (found?name:"<unknown>", dynamic_memory_size);
@@ -1077,6 +1078,10 @@ int ProcessParameters (int argc, char *argv[])
 		{
 			i++;
 			malloc_level = atoi (argv[i]);
+			if (malloc_level == 0)
+				cerr << "The malloc-level parameter '" << argv[i] << "' was not parsed into a numerical value!" << endl;
+			else
+				has_malloc_level = malloc_level > 0;
 			continue;
 		}
 		else if (parameter == "-semantic")
