@@ -1051,7 +1051,7 @@ int ProcessParameters (int argc, char *argv[])
 		     << "Available options are: " << endl
 		     << "-separator S" << endl
 		     << "-semantic F" << endl
-             << "-skip-malloc-level L" << endl
+             << "-malloc-level L" << endl
 		     << "-max-callstack-depth D" << endl;
 		exit (-1);
 	}
