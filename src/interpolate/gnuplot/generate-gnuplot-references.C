@@ -52,7 +52,8 @@ void gnuplotGeneratorReferences::generate (
 	      << "##############################" << endl << endl 
 	      << "address(ret,r,g,t) = (r eq '" << ig->getRegionName()
 	      << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl << endl
-	      << "set tmargin 0; set bmargin 0; set lmargin 14; set rmargin 17;" << endl << endl;
+	      << "set tmargin 0; set bmargin 0; set lmargin 14; set rmargin 17;" << endl << endl
+	      << "plot_address_cycles = 1; # Set to 0 if want to see accesses to memory hierarchy" << endl << endl;
 
 	unsigned long long minaddress_stack, maxaddress_stack;
 	unsigned long long minaddress_nonstack, maxaddress_nonstack;
@@ -215,7 +216,19 @@ void gnuplotGeneratorReferences::generate (
 	  "set yrange [0:*];" << endl <<
 	  "unset xlabel;" << endl <<
 	  "unset ytics;" << endl <<
-	  "unset key;" << endl;
+	  "unset key;" << endl << endl <<
+	  "MAX_COST_GRADIENT=100;" << endl <<
+	  "min(x,y) = (x < y) ? x : y;" << endl <<
+	  "max(x,y) = (x > y) ? x : y;" << endl <<
+	  "address_COST_GRADIENT(x) = (int((MAX_COST_GRADIENT-x/MAX_COST_GRADIENT)*65535)&0xff00) + (x/MAX_COST_GRADIENT)*255;" << endl <<
+	  "address_COST_CYCLES(ret,r,g,t) = (r eq 'main' && g == 0 && t eq 'a') ? ret : NaN;" << endl << endl <<
+	  "address_L1(ret,w,r,g,t) = (w == 1 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
+	  "address_LFB(ret,w,r,g,t) = (w == 2 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
+	  "address_L2(ret,w,r,g,t) = (w == 3 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
+	  "address_L3(ret,w,r,g,t) = (w == 4 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
+	  "address_RCACHE(ret,w,r,g,t) = (w == 5 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
+	  "address_DRAM(ret,w,r,g,t) = (w == 6 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
+	  "address_OTHER(ret,w,r,g,t) = (w == 0 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl << endl;
 
 	unsigned vv = 0;
 	vector<string> colors = { "#a0a0a0", "#606060" };
@@ -262,9 +275,20 @@ void gnuplotGeneratorReferences::generate (
 		for (auto const & s : stack_labels)
 			gplot << s << endl;
 	
-		gplot << endl
-		      <<"plot\\" << endl
-		      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))) ti '@ reference' axes x2y2 w points pt 7 ps 0.5lc rgbcolor '#ff00ff';" << endl << endl;
+		gplot << "if (plot_address_cycles == 1)" << endl
+		      << "{" << endl	
+			  << "plot \\" << endl
+		      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))):(address_COST_GRADIENT($7)) ti '@ reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor variable;" << endl
+			  << "} else {" << endl
+			  << "plot \\" << endl
+			  << "'" << fileDump <<"' u ($4*FACTOR):(address_L1($5, $6, strcol(2), $3, strcol(1))) ti 'L1 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_LFB($5, $6, strcol(2), $3, strcol(1))) ti 'LFB reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_L2($5, $6, strcol(2), $3, strcol(1))) ti 'L2 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_L3($5, $6, strcol(2), $3, strcol(1))) ti 'L3 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_RCACHE($5, $6, strcol(2), $3, strcol(1))) ti 'RCache reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_DRAM($5, $6, strcol(2), $3, strcol(1))) ti 'DRAM reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_OTHER($5, $6, strcol(2), $3, strcol(1))) ti 'Other reference' axes x2y2 w points pt 7 ps 0.5;" << endl
+			  << "}" << endl;
 	}
 
 	/* PROCESS SECOND REFERENCES OUT OF THE STACK */
@@ -307,10 +331,21 @@ void gnuplotGeneratorReferences::generate (
 	
 		for (auto const & s : nonstack_labels)
 			gplot << s << endl;
-	
-		gplot << endl
-			  << "plot\\" << endl
-		      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))) ti '@ reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor '#ff00ff';" << endl << endl;
+
+		gplot << "if (plot_address_cycles == 1)" << endl
+		      << "{" << endl	
+			  << "plot \\" << endl
+		      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))):(address_COST_GRADIENT($7)) ti '@ reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor variable;" << endl
+			  << "} else {" << endl
+			  << "plot \\" << endl
+			  << "'" << fileDump <<"' u ($4*FACTOR):(address_L1($5, $6, strcol(2), $3, strcol(1))) ti 'L1 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_LFB($5, $6, strcol(2), $3, strcol(1))) ti 'LFB reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_L2($5, $6, strcol(2), $3, strcol(1))) ti 'L2 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_L3($5, $6, strcol(2), $3, strcol(1))) ti 'L3 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_RCACHE($5, $6, strcol(2), $3, strcol(1))) ti 'RCache reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_DRAM($5, $6, strcol(2), $3, strcol(1))) ti 'DRAM reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_OTHER($5, $6, strcol(2), $3, strcol(1))) ti 'Other reference' axes x2y2 w points pt 7 ps 0.5;" << endl
+			  << "}" << endl;
 	}
 
 	gplot << "unset label; unset xlabel; unset x2label; unset ylabel; unset y2label;" << endl

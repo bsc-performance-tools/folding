@@ -1,0 +1,5 @@
+
+ChangeLog
+ [ + added, - removed, * changed ]
+ * 27Mar2015 Support cycles or memory hierarchy in address plot
+ * 26Mar2015 Addresses are shown in green-blue gradient color
