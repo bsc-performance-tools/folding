@@ -609,7 +609,6 @@ void Process::processMultiEvent (struct multievent_t &e)
 		{
 			bool found = false;
 			string name, tmp = getTypeValue (minimum_call_type, minimum_call_value, found);
-			 cout << "minimum_call_type = " << minimum_call_type << " minimum_call_value = " << minimum_call_value << " found = " << found  << endl;
 			if (found)
 				name = common::removeUnwantedChars (tmp.substr (0, tmp.find (')')));
 			DataObject *d = new DataObject (found?name:"<unknown>", dynamic_memory_size);
