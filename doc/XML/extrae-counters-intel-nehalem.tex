@@ -9,21 +9,25 @@
  firstnumber=1,
  numberstyle=\tiny\color{gray},
  captionpos=t,
- caption={Counter definition sets for the Extrae configuration file when used on Intel Nehalem procesors.},
- label=lst:Extrae_counters_intel_nehalem,
+ caption={Counter definition sets for the Extrae configuration file when used on Intel SandyBridge procesors.},
+ label=lst:Extrae_counters_intel_sandybridge,
 ]
 <cpu enabled="yes" starting-set-distribution="cyclic">
   <set enabled="yes" domain="all" changeat-time="500000us">
-    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM,PAPI_L2_DCM,PAPI_L3_TCM,
-    RESOURCE_STALLS:SB,RESOURCE_STALLS:ROB
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM,PAPI_L2_DCM,PAPI_L3_TCM
   </set>
   <set enabled="yes" domain="all" changeat-time="500000us">
-    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_SR_INS,PAPI_BR_CN,PAPI_BR_UCN,PAPI_BR_MSP,
-    PAPI_FP_INS,RESOURCE_STALLS:LB
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_BR_MSP,PAPI_BR_UCN,PAPI_BR_CN,RESOURCE_STALLS
   </set>
   <set enabled="yes" domain="all" changeat-time="500000us">
-    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_LD_INS,PAPI_VEC_SP,PAPI_VEC_DP,
-    RESOURCE_STALLS,RESOURCE_STALLS:RS
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_VEC_DP,PAPI_VEC_SP,PAPI_FP_INS
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_LD_INS,PAPI_SR_INS
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,RESOURCE_STALLS:LOAD,RESOURCE_STALLS:STORE,
+    RESOURCE_STALLS:ROB_FULL,RESOURCE_STALLS:RS_FULL
   </set>
 </cpu>
 \end{lstlisting}
