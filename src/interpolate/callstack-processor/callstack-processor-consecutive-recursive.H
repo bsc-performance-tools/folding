@@ -88,6 +88,8 @@ class CallstackProcessor_ConsecutiveRecursive : public CallstackProcessor
 	
 	vector < CallstackProcessor_Result* > processSamples (
 	  const vector<Sample*> & samples);
+
+	~CallstackProcessor_ConsecutiveRecursive ();
 };
 
 #endif /* CALLSTACK_PROCESSOR_CONSECUTIVE_RECURSIVE_H_INCLUDED */

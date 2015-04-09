@@ -111,7 +111,6 @@ void gnuplotGeneratorCallstack::generate (
 	      << "unset x2tics;" << endl
 	      << endl;
 
-	vector<CallstackProcessor_Result*>::const_iterator it = routines.cbegin();
 	double last = 0.;
 	vector<string> bgcolors = { "#ff0000", "#00ff00", "#0000ff", "#ffa000", "#00ffff", "#606060" };
 
@@ -189,8 +188,6 @@ void gnuplotGeneratorCallstack::generate (
 		{
 			if (!routine_stack.empty())
 			{
-				unsigned top = routine_stack.top().getCaller();
-
 				string routine = getStackStringDepth (3, routine_stack, pcf);
 
 				gplot << "set label center \"" << routine

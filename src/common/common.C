@@ -138,7 +138,7 @@ void common::CleanMetricsDirectory_r (const char *dir)
 		return;
 	}
 
-	while (de = readdir(d))
+	while ((de = readdir(d)))
 	{
 		int res = stat (de->d_name, &sb);
 		if (res == 0 && (sb.st_mode & S_IFMT) == S_IFREG)
@@ -149,7 +149,7 @@ void common::CleanMetricsDirectory_r (const char *dir)
 
 	rewinddir (d);
 
-	while (de = readdir(d))
+	while ((de = readdir(d)))
 	{
 		int res = stat (de->d_name, &sb);
 		if (res > 0 && strcmp (de->d_name, ".") != 0 && strcmp (de->d_name, "..") != 0)
@@ -273,10 +273,12 @@ string common::basename (const string & s)
 	string r;
 
 	if (s.length() > 0)
+	{
 		if (s.rfind ('/') != string::npos)
 			r = s.substr (s.rfind ('/')+1);
 		else
 			r = s;
+	}
 
 	return r;
 }

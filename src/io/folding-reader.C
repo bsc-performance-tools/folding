@@ -260,7 +260,6 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 void FoldingReader::ReadVariables (const string & filenameextract,
 	vector<VariableInfo*> &vi)
 {
-	Instance *i = NULL;
 	int line = 0;
 
 	string filename = filenameextract.substr (0, filenameextract.rfind (".extract"))

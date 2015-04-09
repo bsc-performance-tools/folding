@@ -584,7 +584,6 @@ string gnuplotGenerator::gnuplot_model (
 	vector<ComponentModel*> vcm = m->getComponents();
 	for (unsigned cm = 0; cm < vcm.size(); cm++)
 	{
-		const ComponentNode * cn = vcm[cm]->getComponentNode();
 		gplot << "slope_" << m->getName() << "_" << vcm[cm]->getName() << 
 		  "(ret,c,r,g) = (c eq '" << m->getName() << "_" << vcm[cm]->getName() <<
 		  "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl;
@@ -598,8 +597,6 @@ string gnuplotGenerator::gnuplot_model (
 			gplot << "plot \\" << endl;
 		else
 			gplot << ",\\" << endl;
-
-		const ComponentNode * cn = vcm[cm]->getComponentNode();
 
 		string Yaxis = vcm[cm]->getPlotLocation();
 
