@@ -45,17 +45,17 @@ class Sample
 	private:
 	const unsigned long long sTime; /* integral time of the sample */
 	const unsigned long long iTime; /* integral time since start of instance */
-	double nTime; /* normalized time since start of instance */
-	map<string, unsigned long long> iCounterValue; /* integral counter value */
-	map<string, double> nCounterValue; /* normalized counter value */
-	bool usableCallstack; /* Is the callstack marked as valid / useful? */
-	Callstack_CodeRefTriplet crt; /* Code reference triplets (caller, callerline, callerlineAST) */
 	const bool bhasAddressReference;           /* Does this sample point to a data address? */
 	const unsigned long long AddressReference; /* which address? */
 	const unsigned AddressReference_Mem_Level; /* where was it found in mem hierarchy ? */
 	const unsigned AddressReference_TLB_Level; /* where was it found in tlb hierarchy ? */
 	const unsigned AddressReference_Cycles_Cost; /* how many cycles to resolve this reference */
 
+	double nTime; /* normalized time since start of instance */
+	map<string, unsigned long long> iCounterValue; /* integral counter value */
+	map<string, double> nCounterValue; /* normalized counter value */
+	bool usableCallstack; /* Is the callstack marked as valid / useful? */
+	Callstack_CodeRefTriplet crt; /* Code reference triplets (caller, callerline, callerlineAST) */
 	unsigned callersId; /* Calculated from outside, in reference to which callers are within this sample */
 
 	public:

@@ -70,6 +70,7 @@ class CallstackProcessor
 	CallstackProcessor (InstanceGroup *ig);	
 	virtual vector < CallstackProcessor_Result* > processSamples (
 	  const vector<Sample*> & samples) = 0;
+	virtual ~CallstackProcessor();
 };
 
 #endif /* CALLSTACK_PROCESSOR_H_INCLUDED */

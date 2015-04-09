@@ -37,3 +37,7 @@ CallstackProcessor::CallstackProcessor (InstanceGroup *ig)
 	/* Does nothing ATM */
 }
 
+CallstackProcessor::~CallstackProcessor ()
+{
+	/* Does nothing ATM */
+}

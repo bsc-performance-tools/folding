@@ -26,20 +26,21 @@
 
 #include <sstream>
 
-ObjectSelection::ObjectSelection () : anyptask (true), anytask(true),
-	anythread(true), ptask(0), task(0), thread(0)
+ObjectSelection::ObjectSelection () :
+	ptask(0), task(0), thread(0), anyptask(true), anytask(true), anythread(true)
 {
 }
 
 ObjectSelection::ObjectSelection (unsigned ptask, bool aptask, unsigned task,
-	bool atask, unsigned thread, bool athread) : anyptask (aptask), anytask(atask),
-	anythread(athread), ptask(ptask), task(task), thread(thread)
+	bool atask, unsigned thread, bool athread) : 
+	ptask(ptask), task(task), thread(thread),
+	anyptask(aptask), anytask(atask), anythread(athread)
 {
 }
 
 ObjectSelection::ObjectSelection (unsigned ptask, unsigned task, unsigned thread) :
-	anyptask(false), anytask(false), anythread(false), ptask(ptask), task(task),
-	thread(thread)
+	ptask(ptask), task(task), thread(thread),
+	anyptask(false), anytask(false), anythread(false)
 {
 }
 

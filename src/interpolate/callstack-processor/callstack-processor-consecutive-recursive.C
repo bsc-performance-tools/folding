@@ -57,6 +57,10 @@ CallstackProcessor_ConsecutiveRecursive::CallstackProcessor_ConsecutiveRecursive
 	assert (ig != NULL);
 }
 
+CallstackProcessor_ConsecutiveRecursive::~CallstackProcessor_ConsecutiveRecursive ()
+{
+}
+
 vector < CallstackProcessor_Result* >
 CallstackProcessor_ConsecutiveRecursive::processSamples (
 	const vector<Sample*> &samples)
