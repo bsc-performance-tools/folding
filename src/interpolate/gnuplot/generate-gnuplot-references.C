@@ -275,8 +275,7 @@ void gnuplotGeneratorReferences::generate (
 		for (auto const & s : stack_labels)
 			gplot << s << endl;
 	
-		gplot << "if (plot_address_cycles == 1)" << endl
-		      << "{" << endl	
+		gplot << "if (plot_address_cycles == 1) {" << endl
 			  << "plot \\" << endl
 		      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))):(address_COST_GRADIENT($7)) ti '@ reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor variable;" << endl
 			  << "} else {" << endl
@@ -332,8 +331,7 @@ void gnuplotGeneratorReferences::generate (
 		for (auto const & s : nonstack_labels)
 			gplot << s << endl;
 
-		gplot << "if (plot_address_cycles == 1)" << endl
-		      << "{" << endl	
+		gplot << "if (plot_address_cycles == 1) {" << endl
 			  << "plot \\" << endl
 		      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))):(address_COST_GRADIENT($7)) ti '@ reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor variable;" << endl
 			  << "} else {" << endl

@@ -384,7 +384,8 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 			vector<CallstackProcessor_Result*>::const_iterator it = routines.cbegin();
 			stack<CallstackProcessor_Result*> callers;
 
-			it_ahead++;
+			if (routines.size() > 0)
+				it_ahead++;
 
 			while (it_ahead != routines.cend())
 			{
@@ -482,29 +483,6 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 		  TimeUnit, variables, pcf);
 	cout << "Summary plot for region " << regionName << " ("
 	  << ofile << ")"  << endl;
-
-#if 0
-	if (hasAddresses())
-	{
-		string name_addresses = gnuplotGenerator::gnuplot_addresses_observed (this, os,
-		  prefix, TimeUnit, variables, pcf);
-		if (name_addresses.length() > 0)
-			cout << "Summary plot for region " << regionName << " ("
-			  << name_addresses << ")" << endl;
-/*
-		string name_addresses = gnuplotGenerator::gnuplot_addresses (this, os,
-		  prefix, TimeUnit, variables, pcf);
-		if (name_addresses.length() > 0)
-			cout << "Summary plot for region " << regionName << " ("
-			  << name_addresses << ")" << endl;
-		name_addresses = gnuplotGenerator::gnuplot_addresses_cost (this, os,
-		  prefix, TimeUnit, variables, pcf);
-		if (name_addresses.length() > 0)
-			cout << "Summary plot for region " << regionName << " ("
-			  << name_addresses << ")" << endl;
-*/
-	}
-#endif
 
 	for (unsigned m = 0; m < models.size(); m++)
 	{
@@ -836,12 +814,13 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 		level++;
 	}
 
-	preparedCallstacks = true;
-
-	sort (processSamples.begin(), processSamples.end(), ::compare_SampleTimings);
-
 	/* Do process the samples to locate user functions */
-	callerstime_Results = processor->processSamples (processSamples);
+	if (processSamples.size() > 0)
+	{
+		sort (processSamples.begin(), processSamples.end(), ::compare_SampleTimings);
+		callerstime_Results = processor->processSamples (processSamples);
+		preparedCallstacks = callerstime_Results.size() > 0;
+	}
 
 	/* Store a copy to dump it later */
 	callerstime_processSamples = processSamples;
