@@ -32,7 +32,7 @@
 #include <iostream>
 #include <iomanip>
 
-// #define DEBUG
+//#define DEBUG
 
 CallstackProcessor_ConsecutiveRecursive_ProcessedInfo::
   CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (unsigned l,
@@ -66,15 +66,24 @@ CallstackProcessor_ConsecutiveRecursive::processSamples (
 	const vector<Sample*> &samples)
 {
 #if defined(DEBUG)
-	cout << "processSamples (or = " << openRecursion << ")" << endl;
+	cout << "processSamples (or = " << openRecursion << ", samples.size = " << samples.size() << ")" << endl;
 #endif
 
 	cout << std::setprecision(10) << endl;
+
+#if defined(DEBUG)
+	cout << "looking for max depth in samples" << endl;
+#endif
 
 	/* Look for the max depth of the samples */
 	unsigned max_depth = 0;
 	for (auto s : samples)
 		max_depth = MAX(max_depth, s->getMaxCallerLevel());
+
+#if defined(DEBUG)
+	cout << "max depth = " << max_depth << endl;
+	cout << "looking for first all-non-zeros" << endl;
+#endif
 
 	/* Look for the first level that has non-all zeros at the bottom level,
 	   this should be at max_depth, but just in case */
@@ -100,6 +109,10 @@ CallstackProcessor_ConsecutiveRecursive::processSamples (
 			depth--;
 	}
 
+#if defined(DEBUG)
+	cout << "found = " << found << " depth = " << depth << endl;
+#endif
+
 	vector<CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * > tmp = 
 	  processSamples_r (samples, depth, 0, 0.0f, 1.0f, true); 
 
@@ -119,13 +132,13 @@ CallstackProcessor_ConsecutiveRecursive::processSamples (
 	unsigned d = 0;
 	for (const auto rinfo : r)
 	{
-		if (rinfo->getCaller() > 0)
+		if (rinfo->getCodeRef().getCaller() > 0)
 			d++;
 		for (int i = 0; i < d; i++)
 			cout << "  ";
 	  	cout << "[" << rinfo->getLevel() << "," << rinfo->getCodeRef().getCaller() <<
 		     "," << rinfo->getNTime() << "] " << endl;
-		if (rinfo->getCaller() == 0)
+		if (rinfo->getCodeRef().getCaller() == 0)
 			d--;
 	}
 	cout << endl;
@@ -162,7 +175,7 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 #if defined(DEBUG)
 	cout << "REGIONS found: " << regions.size() << " ";
 	for (auto const & r : regions)
-		cout << "<" << r->getCaller() << "," << r->getTime() << "," 
+		cout << "<" << r->getCodeRef().getCaller() << "," << r->getTime() << "," 
 		     << r->getSpeculated() << "> ";
 	cout << endl;
 #endif

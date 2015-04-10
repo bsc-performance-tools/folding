@@ -63,6 +63,10 @@ do
 		SOURCE_DIRECTORY_SUFFIX="-source `readlink -fn ${2}`"
 		shift
 		shift
+	elif [[ "${1}" == "-region" ]] ; then
+		REQUESTED_REGIONS_TO_FOLD+=" -region ${2}"
+		shift
+		shift
 	elif [[ "${1}" == "-show-commands" ]] ; then
 		SHOW_COMMANDS=yes
 		shift
@@ -76,9 +80,9 @@ done
 #
 
 if [[ $# -ne 2 ]] ; then
-	echo "Usage: ${0} [-model M] [-source S] Trace InstanceSeparator/SemanticSeparator"
+	echo "Usage: ${0} [-model M] [-source S] [-region R] Trace InstanceSeparator/SemanticSeparator"
 	echo ""
-	echo "            -model M         : Use performance model M when generating plots"
+	echo "            -model M         : Uses performance model M when generating plots"
 	echo "                               Available models in $FOLDING_HOME/etc/models:"
 	echo -n "                               "
 	MODELS=`echo ${FOLDING_HOME}/etc/models/*`
@@ -89,7 +93,8 @@ if [[ $# -ne 2 ]] ; then
 	done
 	echo ""
 	echo ""
-	echo "            -source S        : Indicate where the source code of the application is located"
+	echo "            -source S        : Indicates where the source code of the application is located"
+	echo "            -region R        : Requests to apply the folding to region R"
 	echo "            Trace            : Paraver trace-file"
 	echo "            InstanceSeparator: Label or value f the event type to separate instances within tracefile"
 	echo "            SemanticSeparator: .csv file generated from Paraver to separate instances within tracefile"
@@ -116,30 +121,34 @@ if test ! -f ${PCFFILE}; then
 	echo "Cannot access PCF file for tracefile ${1}"
 	exit
 fi
-NUMERICAL_RE='^[0-9]+$'
 
-if [[ ${2} =~ ${NUMERICAL_RE} ]]; then
-	echo "Using event type ${2} as instance delimiter"
-	BASENAME_CSV=""
-	if [[ ${2} = 90000001 ]] ; then
-		 EXTRA_INTERPOLATE_FLAGS+=" -region-start-with Cluster_"
-	fi
-else
-	BASENAME_CSV=""
-	EXTENSION_CSV="${2##*.}"
-	if [[ "${EXTENSION_CSV}" = "csv" ]] ; then
-		if [[ -r ${2} ]]; then
-			BASENAME_CSV="${2%.*}"
-			echo "Using semantic file ${2} as instance delimiter"
-		fi
-	fi
-
-	if [[ "${BASENAME_CSV}" = "" ]] ; then
-		echo "Using event type with name '${2}' as instance delimiter"
-		if [[ "${2}" = "Cluster ID" ]] ; then
+if [[ -z ${REQUESTED_REGIONS_TO_FOLD+x} ]] ; then
+	NUMERICAL_RE='^[0-9]+$'
+	if [[ ${2} =~ ${NUMERICAL_RE} ]]; then
+		echo "Using event type ${2} as instance delimiter"
+		BASENAME_CSV=""
+		if [[ ${2} = 90000001 ]] ; then
 			 EXTRA_INTERPOLATE_FLAGS+=" -region-start-with Cluster_"
 		fi
+	else
+		BASENAME_CSV=""
+		EXTENSION_CSV="${2##*.}"
+		if [[ "${EXTENSION_CSV}" = "csv" ]] ; then
+			if [[ -r ${2} ]]; then
+				BASENAME_CSV="${2%.*}"
+				echo "Using semantic file ${2} as instance delimiter"
+			fi
+		fi
+	
+		if [[ "${BASENAME_CSV}" = "" ]] ; then
+			echo "Using event type with name '${2}' as instance delimiter"
+			if [[ "${2}" = "Cluster ID" ]] ; then
+				 EXTRA_INTERPOLATE_FLAGS+=" -region-start-with Cluster_"
+			fi
+		fi
 	fi
+else
+	EXTRA_INTERPOLATE_FLAGS=${REQUESTED_REGIONS_TO_FOLD}
 fi
 
 # BASENAME_PRV="${1%.*}"

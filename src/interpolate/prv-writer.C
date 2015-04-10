@@ -378,53 +378,14 @@ void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in,
 			DumpParaverLine (FOLDED_CALLER, e->getCodeRef().getCaller(), in->getStartTime() + delta, in);
 		}
 
-#if 0
-	/* Dump caller lines within processed routines from callerstime_processSamples */
-	{
-		const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
-		double last = 0.;
-		for (auto const & r : routines)
-		{
-
-			cout << "r->getLevel() = " << r->getLevel() << " r->getCaller() = " << r->getCaller() << "r->getNTime() = " << r->getNTime() << endl;
-
-			vector<Sample*> tmp;
-			for (auto s : ig->getPreparedCallstacks_Process_Samples())
-				if (s->getNTime() >= last && s->getNTime() < r->getNTime())
-					tmp.push_back (s);
-
-			for (const auto s : tmp)
-			{
-				const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
-				assert (callers.count (r->getLevel()) > 0);
-				CodeRefTriplet crt = callers.at (r->getLevel());
-
-				// unsigned long long ts = in->getStartTime() + 
-				//	(unsigned long long) (s->getNTime() * (double)(in->getDuration()));
-
-				string time = common::DefaultTimeUnit;
-				//string time = "PAPI_TOT_INS";
-				unsigned long long ts = in->getStartTime() + 
-				  (unsigned long long) (ig->getInterpolatedNTime (time, s) * (double)(in->getDuration()));
-
-				DumpParaverLine (FOLDED_CALLERLINE, crt.getCallerLine(), ts, in);
-			}
-
-			tmp.clear();
-
-			last = r->getNTime();
-		}
-		DumpParaverLine (FOLDED_CALLERLINE, 0, in->getStartTime() + in->getDuration(), in);
-	}
-#endif
-
 	/* Dump caller lines within processed routines from callerstime_processSamples */
 	const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
 	vector<CallstackProcessor_Result*>::const_iterator it_ahead = routines.cbegin();
 	vector<CallstackProcessor_Result*>::const_iterator it = routines.cbegin();
 	stack<CallstackProcessor_Result*> callers;
 
-	it_ahead++;
+	if (routines.size() > 0)
+		it_ahead++;
 
 	while (it_ahead != routines.cend())
 	{

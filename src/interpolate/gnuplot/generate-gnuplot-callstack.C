@@ -81,21 +81,16 @@ void gnuplotGeneratorCallstack::generate (
 {
 	assert (gplot.is_open());
 
+	const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
+
 	gplot << "##############################" << endl
 	      << "## Routines part " << endl
 	      << "##############################" << endl << endl
 	      << "samplecls(ret,r,g,t) = (r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << "  && t eq 'cl') ? ret : NaN;" << endl << endl
 	      << "set size 1," << verticalsize << ";" << endl
-	      << "set origin 0," << verticalorigin << ";" << endl << endl;
-
-	if (!ig->hasPreparedCallstacks())
-		return;
-
-	const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
-
-	gplot << "set bmargin 0; set lmargin 14; set rmargin 17;" << endl << endl;
-
-	gplot << "set xlabel \"ghost\" tc rgbcolor \"white\";" << endl
+	      << "set origin 0," << verticalorigin << ";" << endl << endl
+	      << "set bmargin 0; set lmargin 14; set rmargin 17;" << endl << endl
+	      << "set xlabel \"ghost\" tc rgbcolor \"white\";" << endl
 	      << "set ylabel \"ghost\" tc rgbcolor \"white\";" << endl
 	      << "#set y2label \"Code line\";" << endl
 	      << "set label 'Code line' at screen 0.975, screen 0.8+(0.175/2) rotate by -90 center;" << endl
@@ -103,9 +98,12 @@ void gnuplotGeneratorCallstack::generate (
 	      << "set label \"top\"    at second 1.005, first 1;" << endl
 	      << "set xrange [0:X_LIMIT*1./FACTOR];" << endl
 	      << "set x2range [0:1];" << endl
-	      << "set yrange [0:1];" << endl
-	      << "set y2range [0:*] reverse;" << endl
-	      << "set ytics tc rgbcolor \"white\" (0.001) format \"%0.2f\";" << endl
+	      << "set yrange [0:1];" << endl;
+	if (ig->hasPreparedCallstacks())
+		gplot << "set y2range [0:*] reverse;" << endl;
+	else
+		gplot << "set y2range [0:1] reverse; " << endl; /* gnuplot will not calculate the * */
+	gplot << "set ytics tc rgbcolor \"white\" (0.001) format \"%0.2f\";" << endl
 	      << "set y2tics 100 tc rgbcolor \"white\" format \"0000\";" << endl
 	      << "unset xtics;" << endl
 	      << "unset x2tics;" << endl
@@ -116,7 +114,7 @@ void gnuplotGeneratorCallstack::generate (
 
 #define X_WIDTH_THRESHOLD 0.025
 
-	gplot << fixed << setprecision(3) << endl;
+	gplot << fixed << setprecision(3);
 
 	map<string, double> routines_time;
 	map<unsigned, string> routines_colors;
@@ -169,12 +167,13 @@ void gnuplotGeneratorCallstack::generate (
 		last = r->getNTime();
 	}
 
-	gplot << endl;
-
-	for (const auto rt : routines_time)
-		gplot << "# Summary for routine " << rt.first << " " << rt.second << "%" << endl;
-
-	gplot << endl;
+	if (routines_time.size() > 0)
+	{
+		gplot << endl;
+		for (const auto rt : routines_time)
+			gplot << "# Summary for routine " << rt.first << " " << rt.second << "%" << endl;
+		gplot << endl;
+	}
 
 	last = 0.;
 	routine_stack = stack<CodeRefTriplet>();
@@ -204,7 +203,7 @@ void gnuplotGeneratorCallstack::generate (
 		last = r->getNTime();
 	}
 
-	gplot << fixed << setprecision(2) << endl;
+	gplot << fixed << setprecision(2);
 
 	gplot << endl
 	      << "plot \"" << fileDump << "\" u ($4*FACTOR):(samplecls($5,strcol(2),$3,strcol(1))) with points axes x2y2 ti '' lc rgbcolor '#ff2090' pt 7 ps 0.5;" << endl
