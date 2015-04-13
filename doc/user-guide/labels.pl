@@ -170,7 +170,7 @@ $external_latex_labels{$key} = q|2.1|;
 $noresave{$key} = "$nosave";
 
 $key = q/lst:Extrae_counters_intel_nehalem/;
-$external_latex_labels{$key} = q|2.4|; 
+$external_latex_labels{$key} = q|2.3|; 
 $noresave{$key} = "$nosave";
 
 $key = q/fig:tool_design_interpolate_sample_selector/;
@@ -210,7 +210,7 @@ $external_latex_labels{$key} = q|1.2|;
 $noresave{$key} = "$nosave";
 
 $key = q/lst:Extrae_counters_intel_sandybridge/;
-$external_latex_labels{$key} = q|2.3|; 
+$external_latex_labels{$key} = q|2.4|; 
 $noresave{$key} = "$nosave";
 
 $key = q/lst:Extrae_enable_sampling_callers/;

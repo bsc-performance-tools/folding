@@ -96,7 +96,7 @@ if [[ $# -ne 2 ]] ; then
 	echo "            -source S        : Indicates where the source code of the application is located"
 	echo "            -region R        : Requests to apply the folding to region R"
 	echo "            Trace            : Paraver trace-file"
-	echo "            InstanceSeparator: Label or value f the event type to separate instances within tracefile"
+	echo "            InstanceSeparator: Label or value of the event type to separate instances within tracefile"
 	echo "            SemanticSeparator: .csv file generated from Paraver to separate instances within tracefile"
 	exit
 fi
