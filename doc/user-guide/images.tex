@@ -46,7 +46,7 @@
 \providecommand{\FOLDING}{\textsf{{F}olding}} 
 
 %
-\providecommand{\FOLDINGVERSION}{1.0} 
+\providecommand{\FOLDINGVERSION}{1.0.1} 
 
 
 \urlstyle{leostyle}
@@ -200,6 +200,7 @@
 \stepcounter{subsection}
 \stepcounter{subsubsection}
 \stepcounter{subsubsection}
+\stepcounter{subsection}
 \stepcounter{section}
 \stepcounter{subsection}
 \stepcounter{subsection}
@@ -208,6 +209,40 @@
 \stepcounter{section}
 \stepcounter{subsection}
 \stepcounter{subsection}
+{\newpage\clearpage
+\lthtmlfigureA{lstlisting750}%
+\begin{lstlisting}[
+ float=h,
+ language=XML,
+ frame=tb,
+ basicstyle=\small\ttfamily ,
+ keywordstyle=\small\bfseries ,
+ commentstyle=\small\itshape ,
+ numbers=left,
+ firstnumber=1,
+ numberstyle=\tiny\color{gray},
+ captionpos=t,
+ caption={Counter definition sets for the Extrae configuration file when used on Intel SandyBridge procesors.},
+ label=lst:Extrae_counters_intel_nehalem,
+]
+<cpu enabled="yes" starting-set-distribution="cyclic">
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM,PAPI_L2_DCM,PAPI_L3_TCM,PAPI_BR_MSP,
+    PAPI_BR_UCN,PAPI_BR_CN
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_VEC_SP,PAPI_LD_INS,PAPI_SR_INS,
+    RESOURCE_STALLS,RESOURCE_STALLS:RS,RESOURCE_STALLS:ROB
+  </set>
+  <set enabled="yes" domain="all" changeat-time="500000us">
+    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_VEC_DP,PAPI_FP_INS,RESOURCE_STALLS:SB,
+    RESOURCE_STALLS:LB
+  </set>
+</cpu>
+\end{lstlisting}%
+\lthtmlfigureZ
+\lthtmlcheckvsize\clearpage}
+
 \stepcounter{subsection}
 \stepcounter{subsection}
 \stepcounter{subsection}

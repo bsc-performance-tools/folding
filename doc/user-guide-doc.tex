@@ -184,6 +184,32 @@ From the configuration files contained in that directory, we outline the followi
 
 \input{figures/user-guide/nemo.cluster1.callers.paraver.tex}
 
+\subsection{Folding options}
+
+These are the available options for the folding command:
+
+\begin{itemize}
+
+	\item \texttt{-model M} \textit{(optional)}\\
+	Requests to use the performance model M when generating plots. Currently, available models include: basic, ibm-power5, ibm-power7, intel-haswell, intel-sandybridge and intel-nehalem.
+
+	\item \texttt{-source S} \textit{(optional)}\\
+	Indicates where the source code of the application is located. This is used to detect routines and loops when using the piece-wise linear regression method through the R/strucchange packages.
+
+	\item \texttt{-region R} \textit{(optional)}\\
+	Applies the folding only to the instance type named R. Please, notice that region names will not contain special characters (spaces, tabs, ...) because these are swaped by underscores, so if the folding should apply to \texttt{Cluster 2} use \texttt{-region Cluster\_2}. The user can provide multiple of these flags like: \texttt{-region R1 ... -region RN}.
+
+	\item \texttt{trace.prv} \textit{(mandatory)}\\
+	The Paraver trace-file to which apply the folding. Should be the penultimate parameter.
+
+	\item \texttt{InstanceSeparator} \textit{(mandatory)}\\
+	The label or value of the event type to separate instances within the trace-file. Should be the last parameter. Cannot be given at the same time with \texttt{SemanticSeparator}.
+
+	\item \texttt{SemanticSeparator} \textit{(mandatory)}\\
+	.csv file generated from Paraver to separate instances within the trace-file. Should be the last parameter. Cannot be given at the same time with \texttt{InstanceSeparator}.
+	
+\end{itemize}
+
 \section{Configuration, build and installation}
 
 This section describes how to build and install the \FOLDING package.

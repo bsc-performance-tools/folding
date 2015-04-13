@@ -7,8 +7,8 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
   Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
 <HTML>
 <HEAD>
-<TITLE>Folding User guide manual for version 1.0</TITLE>
-<META NAME="description" CONTENT="Folding User guide manual for version 1.0">
+<TITLE>Folding User guide manual for version 1.0.1</TITLE>
+<META NAME="description" CONTENT="Folding User guide manual for version 1.0.1">
 <META NAME="keywords" CONTENT="user-guide">
 <META NAME="resource-type" CONTENT="document">
 <META NAME="distribution" CONTENT="global">
@@ -44,7 +44,7 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 <BR>
 User guide manual
 <BR>
-for version 1.0</H1>
+for version 1.0.1</H1>
 <DIV CLASS="author_info">
 
 <P ALIGN="CENTER"><STRONG>tools@bsc.es
@@ -58,78 +58,80 @@ Contents</A>
 <!--Table of Contents-->
 
 <UL CLASS="TofC">
-<LI><A NAME="tex2html75"
-  HREF="#SECTION00200000000000000000">List of Figures</A>
 <LI><A NAME="tex2html76"
-  HREF="#SECTION00300000000000000000">List of Tables</A>
+  HREF="#SECTION00200000000000000000">List of Figures</A>
 <LI><A NAME="tex2html77"
+  HREF="#SECTION00300000000000000000">List of Tables</A>
+<LI><A NAME="tex2html78"
   HREF="#SECTION00400000000000000000">1. User guide</A>
 <UL>
-<LI><A NAME="tex2html78"
+<LI><A NAME="tex2html79"
   HREF="#SECTION00410000000000000000">1.1 Quick start guide</A>
 <UL>
-<LI><A NAME="tex2html79"
-  HREF="#SECTION00411000000000000000">1.1.1 Decompressing the package</A>
 <LI><A NAME="tex2html80"
-  HREF="#SECTION00412000000000000000">1.1.2 Contents of the package</A>
+  HREF="#SECTION00411000000000000000">1.1.1 Decompressing the package</A>
 <LI><A NAME="tex2html81"
-  HREF="#SECTION00413000000000000000">1.1.3 Quick run</A>
+  HREF="#SECTION00412000000000000000">1.1.2 Contents of the package</A>
 <LI><A NAME="tex2html82"
-  HREF="#SECTION00414000000000000000">1.1.4 Exploring the results</A>
-</UL>
+  HREF="#SECTION00413000000000000000">1.1.3 Quick run</A>
 <LI><A NAME="tex2html83"
+  HREF="#SECTION00414000000000000000">1.1.4 Exploring the results</A>
+<LI><A NAME="tex2html84"
+  HREF="#SECTION00415000000000000000">1.1.5 Folding options</A>
+</UL>
+<LI><A NAME="tex2html85"
   HREF="#SECTION00420000000000000000">1.2 Configuration, build and installation</A>
 <UL>
-<LI><A NAME="tex2html84"
+<LI><A NAME="tex2html86"
   HREF="#SECTION00421000000000000000">1.2.1 Libtools package</A>
-<LI><A NAME="tex2html85"
+<LI><A NAME="tex2html87"
   HREF="#SECTION00422000000000000000">1.2.2 Folding package</A>
 </UL>
 </UL>
 <BR>
-<LI><A NAME="tex2html86"
+<LI><A NAME="tex2html88"
   HREF="#SECTION00500000000000000000">2. Generate a trace-file for the Folding</A>
 <UL>
-<LI><A NAME="tex2html87"
+<LI><A NAME="tex2html89"
   HREF="#SECTION00510000000000000000">2.1 Enabling the sampling mechanism</A>
-<LI><A NAME="tex2html88"
+<LI><A NAME="tex2html90"
   HREF="#SECTION00520000000000000000">2.2 Collecting the appropriate performance counters</A>
 <UL>
-<LI><A NAME="tex2html89"
-  HREF="#SECTION00521000000000000000">2.2.1 Intel Haswell processors</A>
-<LI><A NAME="tex2html90"
-  HREF="#SECTION00522000000000000000">2.2.2 Intel SandyBridge processors</A>
 <LI><A NAME="tex2html91"
-  HREF="#SECTION00523000000000000000">2.2.3 Intel Nehalem processors</A>
+  HREF="#SECTION00521000000000000000">2.2.1 Intel Haswell processors</A>
 <LI><A NAME="tex2html92"
-  HREF="#SECTION00524000000000000000">2.2.4 IBM Power8 processors (experimental, under revision)</A>
+  HREF="#SECTION00522000000000000000">2.2.2 Intel SandyBridge processors</A>
 <LI><A NAME="tex2html93"
-  HREF="#SECTION00525000000000000000">2.2.5 IBM Power7 processors</A>
+  HREF="#SECTION00523000000000000000">2.2.3 Intel Nehalem processors</A>
 <LI><A NAME="tex2html94"
-  HREF="#SECTION00526000000000000000">2.2.6 IBM Power5 processors</A>
+  HREF="#SECTION00524000000000000000">2.2.4 IBM Power8 processors (experimental, under revision)</A>
 <LI><A NAME="tex2html95"
+  HREF="#SECTION00525000000000000000">2.2.5 IBM Power7 processors</A>
+<LI><A NAME="tex2html96"
+  HREF="#SECTION00526000000000000000">2.2.6 IBM Power5 processors</A>
+<LI><A NAME="tex2html97"
   HREF="#SECTION00527000000000000000">2.2.7 Other architectures</A>
 </UL>
-<LI><A NAME="tex2html96"
+<LI><A NAME="tex2html98"
   HREF="#SECTION00530000000000000000">2.3 Capturing the call-stack at sample points</A>
 </UL>
 <BR>
-<LI><A NAME="tex2html97"
+<LI><A NAME="tex2html99"
   HREF="#SECTION00600000000000000000">3. Tool design</A>
 <UL>
-<LI><A NAME="tex2html98"
+<LI><A NAME="tex2html100"
   HREF="#SECTION00610000000000000000">3.1 First component: trace-file processing</A>
-<LI><A NAME="tex2html99"
+<LI><A NAME="tex2html101"
   HREF="#SECTION00620000000000000000">3.2 Second component: applying the folding</A>
 </UL>
 <BR>
-<LI><A NAME="tex2html100"
+<LI><A NAME="tex2html102"
   HREF="#SECTION00700000000000000000">4. API</A>
 <UL>
-<LI><A NAME="tex2html101"
+<LI><A NAME="tex2html103"
   HREF="#SECTION00710000000000000000">4.1 Generation of input files for the Folding</A>
 <UL>
-<LI><A NAME="tex2html102"
+<LI><A NAME="tex2html104"
   HREF="#SECTION00711000000000000000">4.1.1 Usage example</A>
 </UL></UL></UL>
 <!--End of Table of Contents-->
@@ -149,19 +151,19 @@ List of Figures</A>
 <LI>1.5. <A NAME="tex2html14"
   HREF="#426">Paraver time-line showing the callers for Cluster 1 of Nemo.</A>
 <LI>3.1. <A NAME="tex2html26"
-  HREF="#959">Data-flow for the first component of the folding.</A>
+  HREF="#999">Data-flow for the first component of the folding.</A>
 <LI>3.2. <A NAME="tex2html27"
-  HREF="#1028">Main instances and samples related diagram classes.</A>
+  HREF="#1068">Main instances and samples related diagram classes.</A>
 <LI>3.3. <A NAME="tex2html28"
-  HREF="#1049">Instance selection related diagram classes.</A>
+  HREF="#1089">Instance selection related diagram classes.</A>
 <LI>3.4. <A NAME="tex2html31"
-  HREF="#1092">Sample selector related diagram classes.</A>
+  HREF="#1132">Sample selector related diagram classes.</A>
 <LI>3.5. <A NAME="tex2html32"
-  HREF="#1139">Performance counter interpolation related diagram classes.</A>
+  HREF="#1179">Performance counter interpolation related diagram classes.</A>
 <LI>3.6. <A NAME="tex2html39"
-  HREF="#1190">Performance models related diagram classes.</A>
+  HREF="#1230">Performance models related diagram classes.</A>
 <LI>3.7. <A NAME="tex2html40"
-  HREF="#1255">Call-stack processing related diagram classes.</A></UL>
+  HREF="#1295">Call-stack processing related diagram classes.</A></UL>
 <BR>
 
 <H2><A NAME="SECTION00300000000000000000">
@@ -652,6 +654,55 @@ Paraver time-line showing the callers for Cluster 1 of Nemo.</CAPTION>
 
 <P>
 
+<H2><A NAME="SECTION00415000000000000000">
+<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">5</SPAN> Folding options</A>
+</H2>
+
+<P>
+These are the available options for the folding command:
+
+<P>
+
+<UL>
+<LI><TT>-model M</TT> <SPAN  CLASS="textit">(optional)</SPAN>
+<BR>
+Requests to use the performance model M when generating plots. Currently, available models include: basic, ibm-power5, ibm-power7, intel-haswell, intel-sandybridge and intel-nehalem.
+
+<P>
+</LI>
+<LI><TT>-source S</TT> <SPAN  CLASS="textit">(optional)</SPAN>
+<BR>
+Indicates where the source code of the application is located. This is used to detect routines and loops when using the piece-wise linear regression method through the R/strucchange packages.
+
+<P>
+</LI>
+<LI><TT>-region R</TT> <SPAN  CLASS="textit">(optional)</SPAN>
+<BR>
+Applies the folding only to the instance type named R. Please, notice that region names will not contain special characters (spaces, tabs, ...) because these are swaped by underscores, so if the folding should apply to <TT>Cluster 2</TT> use <TT>-region Cluster_2</TT>. The user can provide multiple of these flags like: <TT>-region R1 ... -region RN</TT>.
+
+<P>
+</LI>
+<LI><TT>trace.prv</TT> <SPAN  CLASS="textit">(mandatory)</SPAN>
+<BR>
+The Paraver trace-file to which apply the folding. Should be the penultimate parameter.
+
+<P>
+</LI>
+<LI><TT>InstanceSeparator</TT> <SPAN  CLASS="textit">(mandatory)</SPAN>
+<BR>
+The label or value of the event type to separate instances within the trace-file. Should be the last parameter. Cannot be given at the same time with <TT>SemanticSeparator</TT>.
+
+<P>
+</LI>
+<LI><TT>SemanticSeparator</TT> <SPAN  CLASS="textit">(mandatory)</SPAN>
+<BR>	.csv file generated from Paraver to separate instances within the trace-file. Should be the last parameter. Cannot be given at the same time with <TT>InstanceSeparator</TT>.
+
+<P>
+</LI>
+</UL>
+
+<P>
+
 <H1><A NAME="SECTION00420000000000000000">
 <SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">2</SPAN> Configuration, build and installation</A>
 </H1>
@@ -671,7 +722,7 @@ This package helps on the parsing of Paraver trace-files and can be downloaded f
 <P>
 This package is included within the folding package and needs to be installed first.
 This package reguires the boost header files<A NAME="tex2html15"
-  HREF="#foot434"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">6</SPAN></SUP></A>.
+  HREF="#foot454"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">6</SPAN></SUP></A>.
 If the boost header files are located in the system's default, simply run the following command:
 
 <P>
@@ -729,10 +780,10 @@ The <SPAN  CLASS="textsf">Folding</SPAN>tool relies on the similarity between th
 <LI><TT>-with-R=&lt;DIR1&gt;, -with-cube=&lt;DIR2&gt;, -with-clang=&lt;DIR3&gt;</TT>
 <BR>
 Enables the usage of piece-wise linear regressions on top of the strucchange package<A NAME="tex2html16"
-  HREF="#foot460"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">7</SPAN></SUP></A> from the R statistical application<A NAME="tex2html18"
-  HREF="#foot461"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">8</SPAN></SUP></A>. This functionality requires the clang compiler<A NAME="tex2html20"
-  HREF="#foot462"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">9</SPAN></SUP></A> and can generate input files for the Cube3 performance analysis package<A NAME="tex2html22"
-  HREF="#foot463"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">10</SPAN></SUP></A>.
+  HREF="#foot480"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">7</SPAN></SUP></A> from the R statistical application<A NAME="tex2html18"
+  HREF="#foot481"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">8</SPAN></SUP></A>. This functionality requires the clang compiler<A NAME="tex2html20"
+  HREF="#foot482"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">9</SPAN></SUP></A> and can generate input files for the Cube3 performance analysis package<A NAME="tex2html22"
+  HREF="#foot483"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">10</SPAN></SUP></A>.
 
 <P>
 </LI>
@@ -771,7 +822,7 @@ This flag enables the memory references analysis of the references captured duri
 
 <P>
 This chapter covers the minimum and necessary steps so as to configure <SPAN  CLASS="textsf">Extrae</SPAN><A NAME="tex2html24"
-  HREF="#foot551"><SUP><SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A> in order to use its resulting trace-files for the Folding process.
+  HREF="#foot591"><SUP><SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A> in order to use its resulting trace-files for the Folding process.
 There are three requirements when monitoring an application with <SPAN  CLASS="textsf">Extrae</SPAN>in order to take the most benefit from the <SPAN  CLASS="textsf">Folding</SPAN>tool. 
 First, it is necessary to enable the sampling mechanism in addition to the instrumentation mechanism (see Section&nbsp;<A HREF="#sec:EnableSamplingMechanism">2.1</A>).
 Second, it is convenient to collect the appropriate performance counters for the underlying processor (see Section&nbsp;<A HREF="#sec:CollectingAppropriatePerformanceCounters">2.2</A>).
@@ -877,8 +928,35 @@ Unfortunately, the PMU of the Intel Haswell processors do not count neither floa
 <P>
 <BR>
 <IMG
- WIDTH="827" HEIGHT="397" ALIGN="BOTTOM" BORDER="0"
+ WIDTH="806" HEIGHT="320" ALIGN="BOTTOM" BORDER="0"
  SRC="http://www.bsc.es/sites/default/files/public/computer_science/performance_tools/img5.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...I_FP_INS,RESOURCE_STALLS:SB,
+RESOURCE_STALLS:LB
+&lt;/set&gt;
+&lt;/cpu&gt;
+\end{lstlisting}">
+<BR>
+
+<P>
+The listing&nbsp;<A HREF="#lst:Extrae_counters_intel_sandybridge">2.4</A> indicates <SPAN  CLASS="textsf">Extrae</SPAN>to configure five performance counter sets with performance counters that are available on Intel SandyBridge processors.
+The collection of these performance counters allows the <SPAN  CLASS="textsf">Folding</SPAN>to apply the models contained in the <TT>${FOLDING_HOME}/etc/models/intel-sandybridge</TT> that include: instruction mix, architecture impact and stall distribution.
+
+<P>
+
+<H2><A NAME="SECTION00523000000000000000">
+<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">3</SPAN> Intel Nehalem processors</A>
+</H2>
+
+<P>
+<BR>
+<IMG
+ WIDTH="827" HEIGHT="397" ALIGN="BOTTOM" BORDER="0"
+ SRC="http://www.bsc.es/sites/default/files/public/computer_science/performance_tools/img6.png"
  ALT="\begin{lstlisting}[
 float=h,
 language=XML,
@@ -891,34 +969,7 @@ basicstyle=\small\ttfam...
 <BR>
 
 <P>
-The listing&nbsp;<A HREF="#lst:Extrae_counters_intel_sandybridge">2.3</A> indicates <SPAN  CLASS="textsf">Extrae</SPAN>to configure five performance counter sets with performance counters that are available on Intel SandyBridge processors.
-The collection of these performance counters allows the <SPAN  CLASS="textsf">Folding</SPAN>to apply the models contained in the <TT>${FOLDING_HOME}/etc/models/intel-sandybridge</TT> that include: instruction mix, architecture impact and stall distribution.
-
-<P>
-
-<H2><A NAME="SECTION00523000000000000000">
-<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">3</SPAN> Intel Nehalem processors</A>
-</H2>
-
-<P>
-<BR>
-<IMG
- WIDTH="796" HEIGHT="320" ALIGN="BOTTOM" BORDER="0"
- SRC="http://www.bsc.es/sites/default/files/public/computer_science/performance_tools/img6.png"
- ALT="\begin{lstlisting}[
-float=h,
-language=XML,
-frame=tb,
-basicstyle=\small\ttfam...
-...PAPI_VEC_DP,
-RESOURCE_STALLS,RESOURCE_STALLS:RS
-&lt;/set&gt;
-&lt;/cpu&gt;
-\end{lstlisting}">
-<BR>
-
-<P>
-The listing&nbsp;<A HREF="#lst:Extrae_counters_intel_nehalem">2.4</A> indicates <SPAN  CLASS="textsf">Extrae</SPAN>to prepare three performance counter sets with performance counters that are available on Intel Nehalem processors.
+The listing&nbsp;<A HREF="#lst:Extrae_counters_intel_nehalem">2.3</A> indicates <SPAN  CLASS="textsf">Extrae</SPAN>to prepare three performance counter sets with performance counters that are available on Intel Nehalem processors.
 The collection of these performance counters allows the <SPAN  CLASS="textsf">Folding</SPAN>to apply the models contained in the <TT>${FOLDING_HOME}/etc/models/intel-nehalem</TT> that include: instruction mix, architecture impact and stall distribution.
 
 <P>
@@ -1079,7 +1130,7 @@ The tool package contains additional components that may be capture the interest
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:dataflow_1st_component_folding"></A><A NAME="959"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:dataflow_1st_component_folding"></A><A NAME="999"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.1:</STRONG>
 Data-flow for the first component of the folding.</CAPTION>
@@ -1154,7 +1205,7 @@ This section gives a summarized view of the folding work-flow by depicting the m
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_instances"></A><A NAME="1028"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_instances"></A><A NAME="1068"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.2:</STRONG>
 Main instances and samples related diagram classes.</CAPTION>
@@ -1172,7 +1223,7 @@ The classes <SPAN  CLASS="textsl">Instance</SPAN> and <SPAN  CLASS="textsl">Samp
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_instance_separator"></A><A NAME="1049"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_instance_separator"></A><A NAME="1089"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.3:</STRONG>
 Instance selection related diagram classes.</CAPTION>
@@ -1200,7 +1251,7 @@ Currently, there are three alternatives regarding the grouping.
 <P>
 </LI>
 <LI><SPAN  CLASS="textsl">InstanceSeparatorDBSCAN</SPAN> groups the instances according to a DBSCAN algorithm applied to the duration of the instances. The DBSCAN algorithm groups together instances that are closely packed together (instances with many nearby neighbors) in terms of time and marks as outliers those instances that lie alone in low-density regions. This grouping uses the ClusteringSuite implementation from the BSC performance tools<A NAME="tex2html29"
-  HREF="#foot1067"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A>.
+  HREF="#foot1107"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A>.
 
 <P>
 </LI>
@@ -1212,7 +1263,7 @@ Then, the folding removes the outliers to each <SPAN  CLASS="textsl">Instance</S
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_sample_selector"></A><A NAME="1092"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_sample_selector"></A><A NAME="1132"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.4:</STRONG>
 Sample selector related diagram classes.</CAPTION>
@@ -1259,7 +1310,7 @@ Figure&nbsp;<A HREF="#fig:tool_design_interpolate_sample_selector">3.4</A> depic
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_interpolation"></A><A NAME="1139"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_interpolation"></A><A NAME="1179"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.5:</STRONG>
 Performance counter interpolation related diagram classes.</CAPTION>
@@ -1283,9 +1334,9 @@ The contouring algorithm applies to each performance counter individually, and a
 <P>
 </LI>
 <LI><SPAN  CLASS="textsl">InterpolationRstrucchange</SPAN> employs the strucchange package<A NAME="tex2html33"
-  HREF="#foot1159"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">2</SPAN></SUP></A> from the R statistical package<A NAME="tex2html35"
-  HREF="#foot1160"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">3</SPAN></SUP></A> to use piece-wise linear regressions to the folded samples. Additionally, this package may benefit from parallel environments if the doParallel package<A NAME="tex2html37"
-  HREF="#foot1161"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">4</SPAN></SUP></A> is available on the system.
+  HREF="#foot1199"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">2</SPAN></SUP></A> from the R statistical package<A NAME="tex2html35"
+  HREF="#foot1200"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">3</SPAN></SUP></A> to use piece-wise linear regressions to the folded samples. Additionally, this package may benefit from parallel environments if the doParallel package<A NAME="tex2html37"
+  HREF="#foot1201"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">4</SPAN></SUP></A> is available on the system.
 
 <P>
 </LI>
@@ -1297,7 +1348,7 @@ The <SPAN  CLASS="textit">interpolated</SPAN> attribute is implemented as a hash
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_model"></A><A NAME="1190"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_model"></A><A NAME="1230"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.6:</STRONG>
 Performance models related diagram classes.</CAPTION>
@@ -1338,7 +1389,7 @@ These sub-classes allow referencing constant values (<SPAN  CLASS="textsl">Compo
 
 <P>
 
-<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_callstackprocessor"></A><A NAME="1255"></A>
+<DIV ALIGN="CENTER"><A NAME="fig:tool_design_interpolate_callstackprocessor"></A><A NAME="1295"></A>
 <TABLE>
 <CAPTION ALIGN="BOTTOM"><STRONG>Figure 3.7:</STRONG>
 Call-stack processing related diagram classes.</CAPTION>
@@ -1431,7 +1482,7 @@ About this document ...</A>
 <BR>
 User guide manual
 <BR>
-for version 1.0</STRONG><P>
+for version 1.0.1</STRONG><P>
 This document was generated using the
 <A HREF="http://www.latex2html.org/"><STRONG>LaTeX</STRONG>2<tt>HTML</tt></A> translator Version 2008 (1.71)
 <P>
@@ -1446,7 +1497,7 @@ Mathematics Department, Macquarie University, Sydney.
 The command line arguments were: <BR>
  <STRONG>latex2html</STRONG> <TT>-split 0 -show_section_numbers -nonumbered_footnotes user-guide</TT>
 <P>
-The translation was initiated by Harald Servat on 2015-03-23
+The translation was initiated by Harald Servat on 2015-04-13
 <BR><HR><H4>Footnotes</H4>
 <DL>
 <DT><A NAME="foot121">... references</A><A
@@ -1477,60 +1528,60 @@ The translation was initiated by Harald Servat on 2015-03-23
 <DD>Warning! If the user has problems to open the gnuplot, they should check whether the gnuplot installation is compatible and supports the default terminal. Otherwise, simply select the appropriate terminal (or leave it blank) in the first four lines in the gnuplot script
 
 </DD>
-<DT><A NAME="foot434">... files</A><A
+<DT><A NAME="foot454">... files</A><A
  HREF="#tex2html15"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">6</SPAN></SUP></A></DT>
 <DD>The libtools package has been successfully tested against version from 1.48 to 1.54.
 
 </DD>
-<DT><A NAME="foot460">... package</A><A
+<DT><A NAME="foot480">... package</A><A
  HREF="#tex2html16"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">7</SPAN></SUP></A></DT>
 <DD><TT><A NAME="tex2html17"
   HREF="http://cran.r-project.org/web/packages/strucchange/index.html">http://cran.r-project.org/web/packages/strucchange/index.html</A></TT>
 
 </DD>
-<DT><A NAME="foot461">... application</A><A
+<DT><A NAME="foot481">... application</A><A
  HREF="#tex2html18"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">8</SPAN></SUP></A></DT>
 <DD><TT><A NAME="tex2html19"
   HREF="http://www.r-project.org">http://www.r-project.org</A></TT>
 
 </DD>
-<DT><A NAME="foot462">... compiler</A><A
+<DT><A NAME="foot482">... compiler</A><A
  HREF="#tex2html20"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">9</SPAN></SUP></A></DT>
 <DD><TT><A NAME="tex2html21"
   HREF="http://clang.llvm.org">http://clang.llvm.org</A></TT>
 
 </DD>
-<DT><A NAME="foot463">... package</A><A
+<DT><A NAME="foot483">... package</A><A
  HREF="#tex2html22"><SUP><SPAN CLASS="arabic">1</SPAN>.<SPAN CLASS="arabic">10</SPAN></SUP></A></DT>
 <DD><TT><A NAME="tex2html23"
   HREF="http://www.scalasca.org/software/cube-3.x/download.html">http://www.scalasca.org/software/cube-3.x/download.html</A></TT>
 
 </DD>
-<DT><A NAME="foot551">...Extrae</A><A
+<DT><A NAME="foot591">...Extrae</A><A
  HREF="#tex2html24"><SUP><SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A></DT>
 <DD>Please refer to <TT><A NAME="tex2html25"
   HREF="http://www.bsc.es/computer-sciences/performance-tools/documentation">http://www.bsc.es/computer-sciences/performance-tools/documentation</A></TT> for the latest <SPAN  CLASS="textsf">Extrae</SPAN>User's Guide.
 
 </DD>
-<DT><A NAME="foot1067">... tools</A><A
+<DT><A NAME="foot1107">... tools</A><A
  HREF="#tex2html29"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">1</SPAN></SUP></A></DT>
 <DD>See <TT><A NAME="tex2html30"
   HREF="http://www.bsc.es/computer-sciences/performance-tools/downloads">http://www.bsc.es/computer-sciences/performance-tools/downloads</A></TT>.
 
 </DD>
-<DT><A NAME="foot1159">... package</A><A
+<DT><A NAME="foot1199">... package</A><A
  HREF="#tex2html33"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">2</SPAN></SUP></A></DT>
 <DD><TT><A NAME="tex2html34"
   HREF="http://cran.r-project.org/web/packages/strucchange/index.html">http://cran.r-project.org/web/packages/strucchange/index.html</A></TT>
 
 </DD>
-<DT><A NAME="foot1160">... package</A><A
+<DT><A NAME="foot1200">... package</A><A
  HREF="#tex2html35"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">3</SPAN></SUP></A></DT>
 <DD><TT><A NAME="tex2html36"
   HREF="http://www.r-project.org">http://www.r-project.org</A></TT>
 
 </DD>
-<DT><A NAME="foot1161">... package</A><A
+<DT><A NAME="foot1201">... package</A><A
  HREF="#tex2html37"><SUP><SPAN CLASS="arabic">3</SPAN>.<SPAN CLASS="arabic">4</SPAN></SUP></A></DT>
 <DD><TT><A NAME="tex2html38"
   HREF="http://cran.r-project.org/package=doParallel">http://cran.r-project.org/package=doParallel</A></TT>
@@ -1549,7 +1600,7 @@ The translation was initiated by Harald Servat on 2015-03-23
 <!--End of Navigation Panel-->
 <ADDRESS>
 Harald Servat
-2015-03-23
+2015-04-13
 </ADDRESS>
 </BODY>
 </HTML>

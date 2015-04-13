@@ -2,21 +2,6 @@
 # Associate images original text with physical files.
 
 
-$key = q/{lstlisting}[float=h,language=XML,frame=tb,basicstyle={small{{ttfamily{,keywordsDP,RESOURCE_STALLS,RESOURCE_STALLS:RS<slashset><slashcpu>{lstlisting};LFS=11;AAT/;
-$cached_env_img{$key} = q|<IMG
- WIDTH="796" HEIGHT="320" ALIGN="BOTTOM" BORDER="0"
- SRC="|."$dir".q|img6.png"
- ALT="\begin{lstlisting}[
-float=h,
-language=XML,
-frame=tb,
-basicstyle=\small\ttfam...
-...PAPI_VEC_DP,
-RESOURCE_STALLS,RESOURCE_STALLS:RS
-&lt;/set&gt;
-&lt;/cpu&gt;
-\end{lstlisting}">|; 
-
 $key = q/{lstlisting}[float=h,language=XML,frame=tb,basicstyle={small{{ttfamily{,keywordsEJECT,PM_LD_MISS_L1,PM_LD_REF_L1<slashset><slashcpu>{par{{lstlisting};LFS=11;AAT/;
 $cached_env_img{$key} = q|<IMG
  WIDTH="807" HEIGHT="569" ALIGN="BOTTOM" BORDER="0"
@@ -46,6 +31,17 @@ basicstyle=\small\ttfam...
 &lt;/cpu&gt;
 \end{lstlisting}">|; 
 
+$key = q/{lstlisting}[frame=tb,basicstyle={small{{ttfamily{,keywordstyle={small{{bfseries00000S400030002PAPI_TOT_CYC4000PAPI_TOT_INS20002012313450{lstlisting};LFS=11;AAT/;
+$cached_env_img{$key} = q|<IMG
+ WIDTH="713" HEIGHT="110" ALIGN="BOTTOM" BORDER="0"
+ SRC="|."$dir".q|img12.png"
+ ALT="\begin{lstlisting}[
+frame=tb,
+basicstyle=\small\ttfamily ,
+keywordstyle=\smal...
+... 3000 2 PAPI_TOT_CYC 4000 PAPI_TOT_INS 2000 2 0 1 2 3 1 3 4 5 0
+\end{lstlisting}">|; 
+
 $key = q/{lstlisting}[float=h,language=XML,frame=tb,basicstyle={small{{ttfamily{,keywords,PM_RUN_CYC,PM_CMPLU_STALL_DMISS_L2L3<slashset><slashcpu>{lstlisting};LFS=11;AAT/;
 $cached_env_img{$key} = q|<IMG
  WIDTH="828" HEIGHT="473" ALIGN="BOTTOM" BORDER="0"
@@ -60,15 +56,19 @@ basicstyle=\small\ttfam...
 &lt;/cpu&gt;
 \end{lstlisting}">|; 
 
-$key = q/{lstlisting}[frame=tb,basicstyle={small{{ttfamily{,keywordstyle={small{{bfseries00000S400030002PAPI_TOT_CYC4000PAPI_TOT_INS20002012313450{lstlisting};LFS=11;AAT/;
+$key = q/{lstlisting}[float=h,language=XML,frame=tb,basicstyle={small{{ttfamily{,keywordsRESOURCE_STALLS:SB,RESOURCE_STALLS:LB<slashset><slashcpu>{lstlisting};LFS=11;AAT/;
 $cached_env_img{$key} = q|<IMG
- WIDTH="713" HEIGHT="110" ALIGN="BOTTOM" BORDER="0"
- SRC="|."$dir".q|img12.png"
+ WIDTH="806" HEIGHT="320" ALIGN="BOTTOM" BORDER="0"
+ SRC="|."$dir".q|img5.png"
  ALT="\begin{lstlisting}[
+float=h,
+language=XML,
 frame=tb,
-basicstyle=\small\ttfamily ,
-keywordstyle=\smal...
-... 3000 2 PAPI_TOT_CYC 4000 PAPI_TOT_INS 2000 2 0 1 2 3 1 3 4 5 0
+basicstyle=\small\ttfam...
+...I_FP_INS,RESOURCE_STALLS:SB,
+RESOURCE_STALLS:LB
+&lt;/set&gt;
+&lt;/cpu&gt;
 \end{lstlisting}">|; 
 
 $key = q/{lstlisting}[float=h,language=XML,frame=tb,basicstyle={small{{ttfamily{,keywordsed="yes"type="default"period="50m"variability="10m"slash>{lstlisting};LFS=11;AAT/;
@@ -83,16 +83,16 @@ basicstyle=\small\ttfam...
 ...d=''yes'' type=''default'' period=''50m'' variability=''10m''/&gt;
 \end{lstlisting}">|; 
 
-$key = q/50{pm}10;MSF=1.6;LFS=11;AAT/;
+$key = q/N;MSF=1.6;LFS=11;AAT/;
 $cached_env_img{$key} = q|<IMG
- WIDTH="53" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
- SRC="|."$dir".q|img3.png"
- ALT="$50{\pm}10$">|; 
+ WIDTH="20" HEIGHT="15" ALIGN="BOTTOM" BORDER="0"
+ SRC="|."$dir".q|img13.png"
+ ALT="$N$">|; 
 
 $key = q/{lstlisting}[float=h,language=XML,frame=tb,basicstyle={small{{ttfamily{,keywordsALLS:ROB_FULL,RESOURCE_STALLS:RS_FULL<slashset><slashcpu>{lstlisting};LFS=11;AAT/;
 $cached_env_img{$key} = q|<IMG
  WIDTH="827" HEIGHT="397" ALIGN="BOTTOM" BORDER="0"
- SRC="|."$dir".q|img5.png"
+ SRC="|."$dir".q|img6.png"
  ALT="\begin{lstlisting}[
 float=h,
 language=XML,
@@ -103,11 +103,11 @@ basicstyle=\small\ttfam...
 &lt;/cpu&gt;
 \end{lstlisting}">|; 
 
-$key = q/N;MSF=1.6;LFS=11;AAT/;
+$key = q/50{pm}10;MSF=1.6;LFS=11;AAT/;
 $cached_env_img{$key} = q|<IMG
- WIDTH="20" HEIGHT="15" ALIGN="BOTTOM" BORDER="0"
- SRC="|."$dir".q|img13.png"
- ALT="$N$">|; 
+ WIDTH="53" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="|."$dir".q|img3.png"
+ ALT="$50{\pm}10$">|; 
 
 $key = q/{lstlisting}[float=h,language=XML,frame=tb,basicstyle={small{{ttfamily{,keywordsx><samplingenabled="yes">1-5<slashsampling><slashcallers>{lstlisting};LFS=11;AAT/;
 $cached_env_img{$key} = q|<IMG
@@ -137,22 +137,6 @@ basicstyle=\small\ttfam...
 &lt;/cpu&gt;
 \end{lstlisting}">|; 
 
-$key = q/{lstlisting}[float=h,language=XML,frame=tb,basicstyle={small{{ttfamily{,keywordsPAPI_TOT_INS<slashvalue><slashcomponent>{par{<slashmodel>{lstlisting};LFS=11;AAT/;
-$cached_env_img{$key} = q|<IMG
- WIDTH="689" HEIGHT="549" ALIGN="BOTTOM" BORDER="0"
- SRC="|."$dir".q|img14.png"
- ALT="\begin{lstlisting}[
-float=h,
-language=XML,
-frame=tb,
-basicstyle=\small\ttfam...
-...k''&gt;
-&lt;value&gt; PAPI_TOT_INS &lt;/value&gt;
-&lt;/component&gt;
-\par
-&lt;/model&gt;
-\end{lstlisting}">|; 
-
 $key = q/{lstlisting}[language=C++,frame=tb,basicstyle={footnotesize{{ttfamily{,keywordst,startRegion,durationRegion,vs);f.close();}{par{return0;}{lstlisting};LFS=11;AAT/;
 $cached_env_img{$key} = q|<IMG
  WIDTH="840" HEIGHT="1642" ALIGN="BOTTOM" BORDER="0"
@@ -168,6 +152,22 @@ f.close();
 \par
 return 0;
 }
+\end{lstlisting}">|; 
+
+$key = q/{lstlisting}[float=h,language=XML,frame=tb,basicstyle={small{{ttfamily{,keywordsPAPI_TOT_INS<slashvalue><slashcomponent>{par{<slashmodel>{lstlisting};LFS=11;AAT/;
+$cached_env_img{$key} = q|<IMG
+ WIDTH="689" HEIGHT="549" ALIGN="BOTTOM" BORDER="0"
+ SRC="|."$dir".q|img14.png"
+ ALT="\begin{lstlisting}[
+float=h,
+language=XML,
+frame=tb,
+basicstyle=\small\ttfam...
+...k''&gt;
+&lt;value&gt; PAPI_TOT_INS &lt;/value&gt;
+&lt;/component&gt;
+\par
+&lt;/model&gt;
 \end{lstlisting}">|; 
 
 $key = q/{lstlisting}[float=h,language=XML,frame=tb,basicstyle={small{{ttfamily{,keywordsCMPL,PM_RUN_CYC,PM_CMPLU_STALL_VECTOR<slashset><slashcpu>{lstlisting};LFS=11;AAT/;
