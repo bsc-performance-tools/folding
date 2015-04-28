@@ -1,5 +1,8 @@
 
 ChangeLog
  [ + added, - removed, * changed ]
+ * 28Apr2015 Version 1.0.2
+ *           Support for non-parenthesized labels for performance counters
+             according to changes in Extrae 3.1.0
  * 27Mar2015 Support cycles or memory hierarchy in address plot
  * 26Mar2015 Addresses are shown in green-blue gradient color
