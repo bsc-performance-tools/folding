@@ -394,7 +394,6 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 	HackCounter = new bool[numCounterIDs];
 	CounterUsed = new bool[numCounterIDs];
 
-
 	unsigned j = 0;
 	for (const auto type : pcf->getEventTypes())
 		if ( type >= PAPI_MIN_COUNTER && type <= PAPI_MAX_COUNTER )
@@ -406,8 +405,12 @@ Process::Process (string prvFile, bool multievents) : ParaverTrace (prvFile, mul
 			{
 				CounterUsed[j] = false;
 				CounterIDs[j] = type;
-				CounterIDNames[j] = s.substr (s.find ('(')+1, s.find (')', s.find ('(')+1) - (s.find ('(') + 1));
-				HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?1:0;
+				string tmp = s.substr (0, s.find (' '));
+				if (tmp[0] == '(' && tmp[tmp.length()-1] == ')')
+					CounterIDNames[j] = tmp.substr (1, tmp.length()-2);
+				else
+					CounterIDNames[j] = tmp;
+				HackCounter[j] = (CounterIDNames[j] == "PM_CMPLU_STALL_FDIV" || CounterIDNames[j] == "PM_CMPLU_STALL_ERAT_MISS")?true:false;
 				j++;
 			}
 		}
