@@ -33,19 +33,19 @@ unsigned pcfcommon::lookForCounter (string &name, UIParaverTraceConfig *pcf)
 {
 	vector<unsigned> vtypes = pcf->getEventTypes();
 
-	for (unsigned u = 0; u < vtypes.size(); u++)
-	{
-		if (vtypes[u] >= PAPI_MIN_COUNTER && vtypes[u] <= PAPI_MAX_COUNTER)
+	for (const auto & type : vtypes)
+		if (type >= PAPI_MIN_COUNTER && type <= PAPI_MAX_COUNTER)
 		{
-			string s = pcf->getEventType (vtypes[u]);
+			string s = pcf->getEventType (type);
 			if (s.length() > 0)
 			{
-				string tmp = s.substr (s.find ('(')+1, s.find (')', s.find ('(')+1) - (s.find ('(') + 1));
+				string tmp = s.substr (0, s.find (' '));
+				if (tmp[0] == '(' && tmp[tmp.length()-1] == ')')
+					tmp = tmp.substr (1, tmp.length()-2);
 				if (tmp == name)
-					return vtypes[u];
+					return type;
 			}
 		}
-	}
 
 	return 0;
 }
