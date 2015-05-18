@@ -1372,28 +1372,28 @@ int main (int argc, char *argv[])
 
 #if defined(HAVE_CUBE)
 		/* Generate a callstack tree for the CUBE program */
-		string oFileCUBE = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.cube";
-		cout << "Generating callstack tree for CUBE (" << cwd << "/" << common::basename (oFileCUBE.c_str()) << ")" << endl;
+		string oFileCUBE = traceFile.substr (0, traceFile.rfind (".prv")) +
+		  "." + objectsSelected->toString(false, "any") + ".cube";
+		cout << "Generating callstack tree for CUBE (" << cwd << "/" <<
+		  common::basename (oFileCUBE.c_str()) << ")" << endl;
 		
 		CubeHolder ch (pcf, counters);
 
 		ch.eraseLaunch (oFileCUBE);
-		for (it = regions.begin(); it != regions.end(); it++)
-		{
-			if (Instances.count(*it) == 0)
-				continue;
-
-			InstanceContainer ic = Instances.at(*it);
-			for (unsigned u = 0; u < ic.numGroups(); u++)
+		for (const auto & region : regions)
+			if (Instances.count(region) > 0)
 			{
-				bool found;
-				Callstack *ct = new Callstack;
-				ct->generate (ic.getInstanceGroup(u), found, mainid);
+				InstanceContainer ic = Instances.at(region);
+				for (unsigned u = 0; u < ic.numGroups(); u++)
+				{
+					bool found;
+					Callstack *ct = new Callstack;
+					ct->generate (ic.getInstanceGroup(u), found, mainid);
+				}
+				ch.generateCubeTree (ic, sourceDirectory, counters);
+				ch.dumpLaunch (ic, objectsSelected, counters, oFileCUBE);
+				ch.dumpFileMetrics (sourceDirectory, ic, counters);
 			}
-			ch.generateCubeTree (ic, pcf, sourceDirectory, counters);
-			ch.dumpLaunch (ic, objectsSelected, counters, oFileCUBE);
-			ch.dumpFileMetrics (sourceDirectory, ic, counters);
-		}
 		ch.dump (oFileCUBE);
 #endif
 	}

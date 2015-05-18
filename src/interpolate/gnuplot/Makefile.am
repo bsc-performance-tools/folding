@@ -10,3 +10,6 @@ libgnuplot_la_CXXFLAGS = \
 if NEED_BOOST_HOME
 libgnuplot_la_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
+if HAVE_CUBE
+libgnuplot_la_CXXFLAGS += -I$(CUBE_DIR)/include
+endif

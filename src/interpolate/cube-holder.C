@@ -31,7 +31,7 @@
 #include <fstream>
 #include <sstream>
 
-CubeHolder::CubeHolder (UIParaverTraceConfig *pcf, set<string> &counters)
+CubeHolder::CubeHolder (UIParaverTraceConfig *pcf, const set<string> &counters)
 {
 	this->pcf = pcf;
 
@@ -57,22 +57,22 @@ CubeHolder::CubeHolder (UIParaverTraceConfig *pcf, set<string> &counters)
 	c.def_met ("Duration", DURATION, "INTEGER",
 	  "occ", "", "", "Duration of each region", NULL);
 
-    for (set<string>::iterator it = counters.begin(); it != counters.end(); it++)
+    for (const auto & ctr : counters)
     {
-        if (common::isMIPS(*it))
+        if (common::isMIPS(ctr))
             c.def_met ("MIPS", "MIPS", "FLOAT", "occ", "", "", "", NULL);
         else
-            c.def_met (*it+"/ms", *it+"pms", "FLOAT", "occ", "", "", "", NULL);
+            c.def_met (ctr+"/ms", ctr+"pms", "FLOAT", "occ", "", "", "", NULL);
     }
 }
 
-void CubeHolder::generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *pcf,
-	string &sourceDir, set<string> counters)
+void CubeHolder::generateCubeTree (InstanceContainer &ic,
+	const string &sourceDir, const set<string> & counters)
 {
 	string name = ic.getRegionName();
 
 	/* Create a node for this subtree */
-	Region *r = c.def_region (name, 0, 0, "", "", "");
+	Region *r = c.def_region (name, name, "", "", 0, 0, "", "", "");
 	Cnode *cnode = c.def_cnode (r, "", 0, NULL);
 
 	for (unsigned g = 0; g < ic.numGroups(); g++)
@@ -81,7 +81,7 @@ void CubeHolder::generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *
 		ss << "Group " << g+1;
 
 		/* Create a node for this subtree */
-		Region *rtmp = c.def_region (ss.str(), 0, 0, "", "", "");
+		Region *rtmp = c.def_region (ss.str(), ss.str(), "", "", 0, 0, "", "", "");
 		Cnode *ctmp = c.def_cnode (rtmp, "", 0, cnode);
 
 		InstanceGroup *ig = ic.getInstanceGroup(g);
@@ -101,7 +101,7 @@ void CubeHolder::generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *
 
 
 			/* Create a node for this subtree */
-			Region *rtmp2 = c.def_region (ss.str(), 0, 0, "", "", "");
+			Region *rtmp2 = c.def_region (ss.str(), ss.str(), "", "", 0, 0, "", "", "");
 			Cnode *ctmp2 = c.def_cnode (rtmp2, "", 0, ctmp);
 
 			/* Generate the remaining tree */
@@ -119,7 +119,7 @@ void CubeHolder::generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *
 
 
 void CubeHolder::setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase,
-	set<string> counters)
+	const set<string> & counters)
 {
 	vector<double> bpts = ig->getInterpolationBreakpoints();
 	double portion = bpts[phase+1] - bpts[phase];
@@ -128,23 +128,22 @@ void CubeHolder::setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase,
 	double severity = (ig->mean()) * portion;
 	Metric *metric = c.get_met (DURATION);
 	cube::Thread *t = (c.get_thrdv())[0];
-	c.set_sev (metric, node, t, severity);
+	// c.set_sev (metric, node, t, severity);
 
 	map<string, InterpolationResults*> iresults = ig->getInterpolated();
-	set<string>::iterator ctr;
-	for (ctr = counters.begin(); ctr != counters.end(); ctr++)
-		if (iresults.count (*ctr) > 0)
+	for (const auto & ctr : counters)
+		if (iresults.count (ctr) > 0)
 		{
 			string nCounterID;
-			if (common::isMIPS(*ctr))
+			if (common::isMIPS(ctr))
 				nCounterID = "MIPS";
 			else
-				nCounterID = (*ctr)+"pms";
+				nCounterID = ctr+"pms";
 
-			severity = (iresults[*ctr])->getSlopeAt (inbetween);
+			severity = (iresults[ctr])->getSlopeAt (inbetween);
 			metric = c.get_met (nCounterID);
 			cube::Thread *t = (c.get_thrdv())[0];
-			c.set_sev (metric, node, t, severity);
+			// c.set_sev (metric, node, t, severity);
 		}
 }
 
@@ -170,8 +169,9 @@ void CubeHolder::eraseLaunch (string file)
 }
 
 void CubeHolder::dumpLaunch (InstanceContainer &ic, ObjectSelection *os,
-	set<string> counters, string file)
+	const set<string> & counters, string file)
 {
+#if 0
 	string prefix = file.substr (0, file.rfind (".folded"));
 
 	ofstream launch ((prefix + ".folded.launch").c_str(), std::ofstream::app);
@@ -240,6 +240,7 @@ void CubeHolder::dumpLaunch (InstanceContainer &ic, ObjectSelection *os,
 		cerr << "Error! Cannot create " << file << endl;
 
 	launch.close();
+#endif
 }
 
 void CubeHolder::EmitMetricFileLine (string &dir, string &file, string &region, 
@@ -261,12 +262,17 @@ void CubeHolder::EmitMetricFileLine (string &dir, string &file, string &region,
 }
 
 void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
-	set<string> counters)
+	const set<string> & counters)
 {
 	string region = ig->getRegionName();
 	map<string, InterpolationResults*> iresults = ig->getInterpolated();
 	vector< map< unsigned, CodeRefTripletAccounting* > > aXline = ig->getAccountingPerLine();
 	vector<double> bpts = ig->getInterpolationBreakpoints();
+
+	string MIPS_ctr;
+	for (const auto & ctr : counters)
+		if (common::isMIPS(ctr))
+			MIPS_ctr = ctr;
 
 	map<unsigned, unsigned> totalCounts;
 	map<unsigned, map<unsigned, unsigned> > totalCountsPerPhase;
@@ -336,18 +342,27 @@ void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 						EmitMetricFileLine (dir, filename, region, phase+1,
 						  "Duration(ms)", l, duration / 1000000.f);
 
-						set<string>::iterator ctr;
-						for (ctr = counters.begin(); ctr != counters.end(); ctr++)
+						for (const auto & ctr : counters)
 						{
 							string nCounterID;
-							if (common::isMIPS(*ctr))
+							if (common::isMIPS(ctr))
 								nCounterID = "MIPS";
 							else
-								nCounterID = (*ctr)+"pms";
+								nCounterID = ctr+"pms";
 
-							double hwcvalue = (iresults[*ctr])->getSlopeAt (inbetween);
+							double hwcvalue = (iresults[ctr])->getSlopeAt (inbetween);
 							EmitMetricFileLine (dir, filename, region, phase+1,
 							  nCounterID, l, hwcvalue);
+							if (!common::isMIPS(ctr))
+							{
+								double hwcvalue_ins = (iresults[MIPS_ctr])->getSlopeAt (inbetween);
+								if (hwcvalue > 0)
+									EmitMetricFileLine (dir, filename, region, phase+1,
+									  ctr+"_per_ins", l, hwcvalue/hwcvalue_ins);
+								else
+									EmitMetricFileLine (dir, filename, region, phase+1,
+									  ctr+"_per_ins", l, 0.0);
+							}
 						}
 					}
 					processedASTs.insert (crt.getCallerLineAST());
@@ -357,7 +372,8 @@ void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 	}
 }
 
-void CubeHolder::dumpFileMetrics (string dir, InstanceContainer &ic, set<string> counters)
+void CubeHolder::dumpFileMetrics (string dir, InstanceContainer &ic, 
+	const set<string> & counters)
 {
 	if (common::existsDir (dir))
 	{
