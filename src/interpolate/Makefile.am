@@ -53,5 +53,5 @@ if HAVE_CLUSTERING_SUITE
 interpolate_LDADD += -L$(CLUSTERING_HOME)/lib -lClustering -lBasicClasses
 endif
 if HAVE_CUBE
-interpolate_LDADD += -L$(CUBE_DIR)/lib -lcube3 -lz
+interpolate_LDADD += -L$(CUBE_DIR)/lib -lcube4 -lz
 endif

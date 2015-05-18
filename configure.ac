@@ -105,13 +105,13 @@ AM_CONDITIONAL(OS_FREEBSD,   test "${OperatingSystem}" = "freebsd" )
 AM_CONDITIONAL(OS_DARWIN,    test "${OperatingSystem}" = "darwin" )
 AM_CONDITIONAL(OS_SOLARIS,   test "${OperatingSystem}" = "solaris" )
 
-
 # Specify the output configuration header file
 # AM_CONFIG_HEADER(folding-config.h)
 
 # Search for libtool support
-#AC_LIBTOOL_DLOPEN
+AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
+AC_ENABLE_SHARED
 
 # Search for C++, C and Fortran compilers
 AC_PROG_CC
@@ -177,33 +177,8 @@ fi
 AC_MSG_RESULT([${LibToolsDir_HasShared}])
 AM_CONDITIONAL(LIBTOOLS_HAS_SHARED_LIBRARIES, test "${LibToolsDir_HasShared}" = "yes")
 
-AC_ARG_WITH(cube,
-	AC_HELP_STRING(
-		[--with-cube@<:@=ARG@:>@],
-		[Specify where Cube (v 3.5.1 or higher) is installed]
-	),
-	[CubeDir="$withval"],
-	[CubeDir="no"]
-)
-if test "${CubeDir}" != "no" ; then
-	AC_MSG_CHECKING([for Cube])
-	if test ! -d ${CubeDir} ; then
-		AC_MSG_ERROR([Invalid directory specified in --with-cube])
-	fi
-
-	if test ! -f ${CubeDir}/include/cube3/Cube.h ; then
-		AC_MSG_ERROR([Cannot find cube header files of the libtools! Make sure that --with-cube is pointing to the correct place.])
-	fi
-	if test ! -f ${CubeDir}/lib/libcube3.a ; then
-		AC_MSG_ERROR([Cannot find libcube3.a! Make sure that --with-cube is pointing to the correct place.])
-	fi
-	AC_MSG_RESULT([found in ${CubeDir}])
-	CUBE_DIR=${CubeDir}
-	AC_SUBST(CUBE_DIR)
-	CUBE_AVAILABLE="yes"
-	AC_DEFINE([HAVE_CUBE], 1, [Defined CUBE is installed and available to use])
-fi
-AM_CONDITIONAL(HAVE_CUBE, test "${CUBE_AVAILABLE}" = "yes")
+AT_WITH_QT
+AX_HAVE_CUBE
 
 AC_MSG_CHECKING([for R statistical package])
 AC_ARG_WITH(R,
@@ -395,6 +370,11 @@ AC_CONFIG_FILES([
  src/interpolate/model/Makefile
  src/interpolate/callstack-processor/Makefile
  src/interpolate/gnuplot/Makefile
+ src/gui/Makefile
+ src/gui/qcustomplot/Makefile
+ src/gui/cube-plugin/Makefile
+ src/gui/cube-plugin/time-line/Makefile
+ src/gui/cube-plugins/source-code/Makefile
  src/others/Makefile
  doc/Makefile
 ])

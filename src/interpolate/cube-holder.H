@@ -32,7 +32,7 @@
 #ifndef CUBEHOLDER_H_INCLUDED
 #define CUBEHOLDER_H_INCLUDED
 
-#include <cube3/Cube.h>
+#include <cube/Cube.h>
 
 #include "cube-tree.H"
 #include "instance-container.H"
@@ -58,10 +58,10 @@ class CubeHolder
 	Thread *thrd0;
 
 	void setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase,
-	  set<string> counters);
+	  const set<string> & counters);
 
 	void dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
-	  set<string> counters);
+	  const set<string> & counters);
 
 	void EmitMetricFileLine (string &dir, string &file, string &region, 
 	  unsigned phase, string metric, unsigned line, unsigned val);
@@ -69,16 +69,16 @@ class CubeHolder
 	  unsigned phase, string metric, unsigned line, double val);
 
 	public:
-	CubeHolder (UIParaverTraceConfig *pcf, set<string> &counters);
-	void generateCubeTree (InstanceContainer &ic, UIParaverTraceConfig *pcf,
-	  string &sourceDir, set<string> counters);
+	CubeHolder (UIParaverTraceConfig *pcf, const set<string> &counters);
+	void generateCubeTree (InstanceContainer &ic,
+	  const string &sourceDir, const set<string> & counters);
 	void eraseLaunch (string file);
 	void dumpLaunch (InstanceContainer &ic, ObjectSelection *os, 
-	  set<string> counters, string file);
+	  const set<string> & counters, string file);
 	void dump (string file);
 
 	void dumpFileMetrics (string dir, InstanceContainer &ic,
-	  set<string> counters);
+	  const set<string> & counters);
 };
 
 #endif /* CUBEHOLDER_H_INCLUDED */

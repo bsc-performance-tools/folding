@@ -33,7 +33,7 @@
 #define CUBETREE_H_INCLUDED
 
 #include "callstack-tree.H"
-#include <cube3/Cube.h>
+#include <cube/Cube.h>
 
 using namespace cube;
 
@@ -47,7 +47,7 @@ class CubeTree
 
 	public:
 	void generate (Cube &, Cnode *, CallstackTree *, UIParaverTraceConfig *pcf,
-	  string &sourceDir, unsigned depth = 0);
+	  const string &sourceDir, unsigned depth = 0);
 	Cnode *getCubeNode (void)
 	  { return cube_node; }
 };

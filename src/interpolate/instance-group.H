@@ -41,7 +41,7 @@
 #include <map>
 #include <set>
 #if defined(HAVE_CUBE)
-# include <cube3/Cube.h>
+# include <cube/Cube.h>
 #endif
 
 #include "model.H"
