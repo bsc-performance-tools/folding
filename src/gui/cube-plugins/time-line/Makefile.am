@@ -8,12 +8,12 @@ SUFFIXES = .moc.cpp .hpp
 
 lib_LTLIBRARIES = cubeplugin-folding-time-line.la
 
-cubeplugin_folding_timeline_la_SOURCES = \
+cubeplugin_folding_time_line_la_SOURCES = \
 	time-line.cpp time-line.moc.cpp time-line.hpp 
 
-cubeplugin_folding_timeline_la_CXXFLAGS = @QT_CXXFLAGS@ @QT_INCPATH@ -I$(CUBE_INCLUDE_PATH) -I$(CUBE_GUI_INCLUDE_PATH) -I../../qcustomplot/latest/qcustomplot
-cubeplugin_folding_timeline_la_LDFLAGS = -shared -avoid-version -module @QT_LIBS@ @CUBE_LDFLAGS@ @CUBE_GUI_LDFLAGS@
-cubeplugin_folding_timeline_la_LIBADD  = ../../qcustomplot/libqcustomplot.la 
+cubeplugin_folding_time_line_la_CXXFLAGS = @QT_CXXFLAGS@ @QT_INCPATH@ -I$(CUBE_INCLUDE_PATH) -I$(CUBE_GUI_INCLUDE_PATH) -I../../qcustomplot/latest/qcustomplot
+cubeplugin_folding_time_line_la_LDFLAGS = -shared -avoid-version -module @QT_LIBS@ @CUBE_LDFLAGS@ @CUBE_GUI_LDFLAGS@
+cubeplugin_folding_time_line_la_LIBADD  = ../../qcustomplot/libqcustomplot.la 
 
 BUILT_SOURCES = time-line.moc.cpp
 

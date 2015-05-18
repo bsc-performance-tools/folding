@@ -18,3 +18,5 @@ libqcustomplot_la_CXXFLAGS = @QT_CXXFLAGS@ @QT_INCPATH@
 BUILT_SOURCES = ${QCUSTOMPLOT_VERSION}/qcustomplot/qcustomplot.moc.cpp
 
 DISTCLEANFILES = $(BUILT_SOURCES)
+
+EXTRA_DIST = latest 1.3.1
