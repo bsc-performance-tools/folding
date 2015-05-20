@@ -106,15 +106,13 @@ class RegionGroupCounter
 };
 
 RegionGroupCounter::RegionGroupCounter ()
+	: region (""), group (0), counter ("")
 {
-	region = "";
-	group= 0;
-	counter = "";
 }
 
 static QMap<RegionGroupCounter, InstantaneousMetrics*> RegionGroupCounter_InstantaneousMetrics;
 
-bool FoldingSourceCode::cubeOpened( PluginServices* service )
+bool FoldingSourceCode::cubeOpened (PluginServices* service)
 {
 	this->service = service;
 
@@ -125,7 +123,7 @@ bool FoldingSourceCode::cubeOpened( PluginServices* service )
 	sourceCodeTable->verticalHeader()->hide();
 	layout->addWidget (sourceCodeTable);
 	sourceCodeWidget->setLayout (layout);
-	service->addTab( SYSTEM, this );
+	service->addTab (SYSTEM, this);
 
 	QString foldingdata = service->getCubeBaseName() + ".slope.csv";
 
@@ -224,9 +222,9 @@ void FoldingSourceCode::cubeClosed()
 /** set a version number, the plugin with the highest version number will be loaded */
 void FoldingSourceCode::version( int& major, int& minor, int& bugfix ) const
 {
-    major  = 0;
-    minor  = 1;
-    bugfix = 0;
+	major  = 0;
+	minor  = 1;
+	bugfix = 0;
 }
 
 /** unique plugin name */

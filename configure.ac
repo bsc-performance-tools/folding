@@ -372,8 +372,8 @@ AC_CONFIG_FILES([
  src/interpolate/gnuplot/Makefile
  src/gui/Makefile
  src/gui/qcustomplot/Makefile
- src/gui/cube-plugin/Makefile
- src/gui/cube-plugin/time-line/Makefile
+ src/gui/cube-plugins/Makefile
+ src/gui/cube-plugins/time-line/Makefile
  src/gui/cube-plugins/source-code/Makefile
  src/others/Makefile
  doc/Makefile
