@@ -33,33 +33,31 @@
 
 class FoldingTimeline: public QObject, public CubePlugin, TabInterface
 {
-    Q_OBJECT
-    Q_INTERFACES( CubePlugin )
+	Q_OBJECT
+	Q_INTERFACES( CubePlugin )
 #if QT_VERSION >= 0x050000
-    Q_PLUGIN_METADATA( IID "FoldingTimelinePlugin" ) // unique plugin name
+	Q_PLUGIN_METADATA( IID "FoldingTimelinePlugin" ) // unique plugin name
 #endif
 
 public:
-    // CubePlugin implementation
-    virtual bool cubeOpened( PluginServices* service );
-    virtual void cubeClosed();
-    virtual QString name() const;
-    virtual void version( int& major, int& minor, int& bugfix ) const;
-    virtual QString getHelpText() const;
+	// CubePlugin implementation
+	virtual bool cubeOpened( PluginServices* service );
+	virtual void cubeClosed();
+	virtual QString name() const;
+	virtual void version( int& major, int& minor, int& bugfix ) const;
+	virtual QString getHelpText() const;
 
-    // TabInterface implementation
-    virtual QString label() const;
-    virtual QWidget* widget();
+	// TabInterface implementation
+	virtual QString label() const;
+	virtual QWidget* widget();
 
 private slots:
-    void treeItemIsSelected( TreeType  type, TreeItem* item );
+	void treeItemIsSelected( TreeType  type, TreeItem* item );
 
 private:
-    QCustomPlot * customPlot;
+	QCustomPlot * customPlot;
 	QWidget * widgetPlot;
-    PluginServices* service;
-
-    // TabInterface interface
+	PluginServices* service;
 };
 
 #endif // FOLDING_TIMELINE_PLUGIN_H

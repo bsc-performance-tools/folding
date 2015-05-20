@@ -1,3 +1,9 @@
+
+PLUGIN/
+  source-code/
+    comprovar que no estigui al valor a la cel.la, fer split del qstring, pex i buscar-lo a la llista?
+  *FIXERS* moc no distribuirlos!?
+
 * A cada fase apuntar quin callstack (3 nivells, pex?) i quina linia final
 es la mes present (moda)
 

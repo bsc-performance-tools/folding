@@ -117,90 +117,86 @@ static QPen blackPen;
 
 bool FoldingTimeline::cubeOpened( PluginServices* service )
 {
-    this->service = service;
+	this->service = service;
 
 	widgetPlot = new QWidget;
-    QVBoxLayout* layout = new QVBoxLayout();
-    customPlot = new QCustomPlot();
+	QVBoxLayout* layout = new QVBoxLayout();
+	customPlot = new QCustomPlot();
 	layout->addWidget (customPlot);
-    widgetPlot->setLayout( layout );
-    service->addTab( SYSTEM, this );
+	widgetPlot->setLayout (layout);
+	service->addTab (SYSTEM, this);
 
-	QString foldingdata = service->getCubeBaseName() + ".slope.csv";
+	QString foldingdatafile = service->getCubeBaseName() + ".slope.csv";
 
 	service->debug() << "loading instantaneous metrics from "
-	   << foldingdata << endl;
-	std::ifstream dataf;
-	dataf.open (foldingdata.toStdString());
-	if (dataf.is_open())
+	   << foldingdatafile << endl;
+
+	QFile *fmetrics = new QFile (foldingdatafile);
+	if (fmetrics->exists())
 	{
-		service->debug() << "file was opened" << endl;
-
-		InstantaneousMetrics *im = new InstantaneousMetrics;
-
-		RegionGroupCounter previousRGC;
-		bool firstread = true;
-
-		std::string line;
-		dataf >> line;
-		while (!dataf.eof())
+		if (fmetrics->open (QIODevice::ReadOnly | QIODevice::Text))
 		{
-			QVector<QString> datacsv;
+			InstantaneousMetrics *im = new InstantaneousMetrics;
+			bool firstread = true;
+			RegionGroupCounter previousRGC;
+			QString line;
 
-			/* Break each component separated by ; */
-			while (line.find (";") != std::string::npos)
+			QTextStream inmetrics (fmetrics);
+			while (!inmetrics.atEnd())
 			{
-				std::string cut = line.substr (0, line.find(";"));
-				line = line.substr (line.find (";")+1);
-				datacsv.push_back (QString(cut.c_str()));
+				inmetrics >> line;
+
+				if (inmetrics.atEnd())
+					break;
+
+				QStringList datacsv = line.split (";");
+				assert (datacsv.size() == 5);
+
+				/* Translations done in Folding */
+				if (datacsv[2] == "PAPI_TOT_INS")
+					datacsv[2] = "MIPS";
+
+				if (firstread)
+				{
+					previousRGC.setRegion (datacsv[0]);
+					previousRGC.setGroup (datacsv[1].toUInt());
+					previousRGC.setCounter (datacsv[2]);
+					firstread = false;
+				}
+
+				/* If we change to another region, group or counter, create new metrics for it */
+				if (previousRGC.getRegion() != datacsv[0] ||
+				    previousRGC.getGroup() != datacsv[1].toUInt() ||
+				    previousRGC.getCounter() != datacsv[2])
+				{
+					RegionGroupCounter_InstantaneousMetrics[previousRGC] = im;
+					previousRGC.setRegion (datacsv[0]);
+					previousRGC.setGroup (datacsv[1].toUInt());
+					previousRGC.setCounter (datacsv[2]);
+					im = new InstantaneousMetrics;
+				}
+
+				im->addValue (datacsv[3].toDouble(), datacsv[4].toDouble());
 			}
-			/* Add last component */
-			datacsv.push_back (QString(line.c_str()));
-
-			assert (datacsv.size() == 5);
-
-			/* Translations done in Folding */
-			if (datacsv[2] == "PAPI_TOT_INS")
-				datacsv[2] = "MIPS";
-
-			if (firstread)
-			{
-				previousRGC.setRegion (datacsv[0]);
-				previousRGC.setGroup (datacsv[1].toUInt());
-				previousRGC.setCounter (datacsv[2]);
-				firstread = false;
-			}
-
-			/* If we change to another region, group or counter, create new metrics for it */
-			if (previousRGC.getRegion() != datacsv[0] ||
-			    previousRGC.getGroup() != datacsv[1].toUInt() ||
-			    previousRGC.getCounter() != datacsv[2])
-			{
+			/* Add last readed data */
+			if (!firstread)
 				RegionGroupCounter_InstantaneousMetrics[previousRGC] = im;
-				previousRGC.setRegion (datacsv[0]);
-				previousRGC.setGroup (datacsv[1].toUInt());
-				previousRGC.setCounter (datacsv[2]);
-				im = new InstantaneousMetrics;
-			}
 
-			im->addValue (datacsv[3].toDouble(), datacsv[4].toDouble());
-
-			/* read next line */
-			dataf >> line;
+			fmetrics->close();
 		}
-		/* Add last readed data */
-		if (!firstread)
-			RegionGroupCounter_InstantaneousMetrics[previousRGC] = im;
-		dataf.close();
-
-		QMap<RegionGroupCounter,InstantaneousMetrics*>::iterator it;
-		for (it = RegionGroupCounter_InstantaneousMetrics.begin();
-		     it != RegionGroupCounter_InstantaneousMetrics.end();
-			 ++it)
-			service->debug() << it.key().getRegion() << " " << it.key().getGroup() << " " << it.key().getCounter()  << endl;
+		else
+		{
+			service->debug() << "Cannot open file "
+			  << foldingdatafile << " does not exist " << ": "
+			  << fmetrics->errorString() << endl;
+		}
 	}
 	else
-		service->debug() << "could not open file" << endl;
+	{
+		service->debug() << "File " << foldingdatafile
+		  << " does not exist " << ": " << fmetrics->errorString()
+		  << endl;
+	}
 
 #define WIDTH_PEN 2
 	blackPen.setColor (QColor (0, 0, 0));
@@ -228,47 +224,49 @@ bool FoldingTimeline::cubeOpened( PluginServices* service )
 
 	activeCounters.push_back ("MIPS");
 
-    connect( service, SIGNAL( treeItemIsSelected( TreeType, TreeItem* ) ),
-             this, SLOT( treeItemIsSelected( TreeType, TreeItem* ) ) );
+	connect(
+		service, SIGNAL( treeItemIsSelected( TreeType, TreeItem* ) ),
+		this, SLOT( treeItemIsSelected( TreeType, TreeItem* ) )
+	);
 
-    return true; // initialisation is ok => plugin should be shown
+	return true; // initialisation is ok => plugin should be shown
 }
 
 void FoldingTimeline::cubeClosed()
 {
-    delete customPlot;
-    delete widgetPlot;
+	delete customPlot;
+	delete widgetPlot;
 }
 
 /** set a version number, the plugin with the highest version number will be loaded */
 void FoldingTimeline::version( int& major, int& minor, int& bugfix ) const
 {
-    major  = 0;
-    minor  = 1;
-    bugfix = 0;
+	major  = 0;
+	minor  = 1;
+	bugfix = 0;
 }
 
 /** unique plugin name */
 QString FoldingTimeline::name() const
 {
-    return "Folding/TimeLine";
+	return "Folding/TimeLine";
 }
 
 QString FoldingTimeline::getHelpText() const
 {
-    return "No help text available at this moment";
+	return "No help text available at this moment";
 }
 
 /** widget that will be placed into the tab */
 QWidget* FoldingTimeline::widget()
 {
-    return widgetPlot;
+	return widgetPlot;
 }
 
 /** tab label */
 QString FoldingTimeline::label() const
 {
-    return "Instantaneous metrics";
+	return "Instantaneous metrics";
 }
 
 /** slot, which is called if a tree item is selected */
