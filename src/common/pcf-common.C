@@ -89,43 +89,102 @@ unsigned pcfcommon::lookForValueString (UIParaverTraceConfig *pcf, unsigned type
 void pcfcommon::lookForCallerLineInfo (UIParaverTraceConfig *pcf, unsigned id,
 	string &file, unsigned &line)
 {
+	/* Example: NEW 178 (stream.simple.c, stream.simple) 
+                    Line file             binary
+                OLD 178 (stream.simple.c) [stream.simple]
+                OR
+                    END? */
 	string cl = pcf->getEventValue (30000100, id);
-	line = atoi ((cl.substr (0, cl.find (" "))).c_str());
-	int pos_open = cl.find ("(");
-	int pos_close = cl.find (")");
-	file = cl.substr (pos_open+1, pos_close-pos_open-1);
+
+	if (cl.find (" ") != string::npos)
+	{
+		string afterspace = cl.substr (cl.find(" "));
+		line = atoi ((cl.substr (0, cl.find (" "))).c_str());
+	
+		int pos_begin, pos_end;
+		bool newformat = afterspace.find (",") != string::npos;
+		if (newformat)
+		{
+			pos_begin = afterspace.find ("(");
+			pos_end = afterspace.find (",");
+		}
+		else
+		{
+			pos_begin = afterspace.find ("(");
+			pos_end = afterspace.find (")");
+		}
+	
+		file = afterspace.substr (pos_begin+1, pos_end-pos_begin-1);
+	}
+	else
+	{
+		file = "";
+		line = 0;
+	}
 }
 
 void pcfcommon::lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller,
 	unsigned callerlineast, string &routine, string &file, unsigned &bline,
 	unsigned &eline)
 {
+	/* Example: NEW
+                178 (stream.simple.c, stream.simple) 
+                Line file             binary 
+       OR
+                179-180 (stream.simple.c)
+
+                OLD
+                178 (stream.simple.c) [stream.simple]
+       OR
+                179-180 (stream.simple.c) */
+
 	string cl = pcf->getEventValue (30000200, callerlineast);
 
 	bline = 0;
 	eline = 0;
+	file = "";
 
-	/* Check whether we have a line separator or not */
-
-	int sep_position, par_position = cl.find ("(");
-	string tmp = cl.substr (0, par_position);
-	if ((sep_position = tmp.find ("-")) != string::npos)
+	if (cl.find (" ") != string::npos)
 	{
-		string tmp1 = tmp.substr (0, sep_position);
-		string tmp2 = tmp.substr (sep_position+1);
-		bline = atoi (tmp1.c_str());
-		eline = atoi (tmp2.c_str());
+		/* Check whether we have a line separator or not */
+	
+		string beforespace = cl.substr (0, cl.find (" "));
+		string afterspace = cl.substr (cl.find(" "));
+	
+		int pos_begin, pos_end;
+		int sep_position = beforespace.find ("-");
+		int par_position = afterspace.find (" ");
+		bool has_range = sep_position != string::npos;
+		if (has_range)
+		{
+			string tmp1 = beforespace.substr (0, sep_position);
+			string tmp2 = beforespace.substr (sep_position+1);
+			bline = atoi (tmp1.c_str());
+			eline = atoi (tmp2.c_str());
+			pos_begin = afterspace.find ("(");
+			pos_end = afterspace.find (")");
+		}
+		else
+		{
+			/* If can't find -, then there isn't a separator */
+			bline = eline = atoi (beforespace.c_str());
+			bool newformat = afterspace.find (",") != string::npos;
+			if (newformat)
+			{
+				pos_begin = afterspace.find ("(");
+				pos_end = afterspace.find (",");
+			}
+			else
+			{
+				pos_begin = afterspace.find ("(");
+				pos_end = afterspace.find (")");
+			}
+		}
+	
+		file = afterspace.substr (pos_begin+1, pos_end-pos_begin-1);
+	
+		routine = pcf->getEventValue (30000000, caller);
 	}
-	else
-	{
-		/* If can't find -, then there isn't a separator */
-		bline = eline = atoi (tmp.c_str());
-	}
-
-	int pos_open = par_position;
-	int pos_close = cl.find (")");
-	file = cl.substr (pos_open+1, pos_close-pos_open-1);
-	routine = pcf->getEventValue (30000000, caller);
 }
 
 void pcfcommon::lookForCallerFullInfo (UIParaverTraceConfig *pcf, unsigned caller,

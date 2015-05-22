@@ -58,8 +58,8 @@ private:
 	PluginServices* service;
 	QWidget *sourceCodeWidget;
 	QTableWidget* sourceCodeTable;
-	void fillCodeTable (const QString &file, int startLine, 
-	  const QString &topregion, const QVector<QString> & activeCounters);
+	void fillCodeTable (const QString &file, const QString &topregion,
+	  const QVector<QString> & activeCounters);
 	void putDataintoCodeTable (unsigned phase, 
 	  const QString &metric, unsigned line, double severity,
 	  const QVector<QString> &metrics);
