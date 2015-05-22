@@ -2,16 +2,6 @@
 
 <model name="stalldistribution" title-name="Stall distribution" y1="Stalls (% over total cycles)" y2="MIPS" y1-stacked="no">
 
-	<component name="stalls" title-name="Stalls" where="y1" color="red">
-		<operation type='*'>
-			<operation type='/'>
-				<value> RESOURCE_STALLS </value>
-				<value> PAPI_TOT_CYC </value>
-			</operation>
-			<value> 100 </value>
-		</operation>
-	</component>
-
 	<component name="lsr" title-name="Stalls:SB" where="y1" color="green">
 		<operation type='*'>
 			<operation type='/'>
