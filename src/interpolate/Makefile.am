@@ -43,7 +43,7 @@ if NEED_BOOST_HOME
 interpolate_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
-interpolate_LDADD = ../common/libcommon.la -lpcf-common \
+interpolate_LDADD = ../common/libcommon.la ../common/libpcf-common.la \
                     -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser \
                     service-kriger/libkriger.la service-R/libR.la \
                     model/libmodel.la gnuplot/libgnuplot.la \

@@ -111,6 +111,9 @@ RegionGroupCounter::RegionGroupCounter ()
 }
 
 static QMap<RegionGroupCounter, InstantaneousMetrics*> RegionGroupCounter_InstantaneousMetrics;
+static QVector<QColor> colorPalette;
+static QColor colorBlack;
+static QColor colorWhite;
 
 bool FoldingSourceCode::cubeOpened (PluginServices* service)
 {
@@ -203,6 +206,19 @@ bool FoldingSourceCode::cubeOpened (PluginServices* service)
 
 	activeCounters.push_back ("MIPS");
 
+	colorBlack = QColor (0, 0, 0);
+	colorWhite = QColor (255, 255, 255);
+
+	colorPalette.push_back (QColor (255, 0, 0));
+	colorPalette.push_back (QColor (255, 192, 0));
+	colorPalette.push_back (QColor (192, 255, 0));
+	colorPalette.push_back (QColor (0, 255, 0));
+	colorPalette.push_back (QColor (0, 255, 192));
+	colorPalette.push_back (QColor (0, 192, 255));
+	colorPalette.push_back (QColor (0, 0, 255));
+	colorPalette.push_back (QColor (192, 0, 255));
+	colorPalette.push_back (QColor (255, 0, 192));
+
 	fontSourceCode = QFont("Courier 10 Pitch", 10);
 
 	connect( service, SIGNAL( treeItemIsSelected( TreeType, TreeItem* ) ),
@@ -258,23 +274,30 @@ void FoldingSourceCode::treeItemIsSelected( TreeType type, TreeItem* item )
 	{
 		case METRICTREE:
 			ctrClicked = item->getName();
-			if (ctrClicked.endsWith ("/ms"))
+			service->debug() << "Counter clicked '" << ctrClicked << "'" << endl;
+
+			if (ctrClicked.endsWith ("/ms")) /* regular counter */
 				ctrClicked.chop(3);
-			if (ctrClicked != "MIPS")
+			else if (ctrClicked == "# Occurrences") /* num of occurrences */
+				ctrClicked = "#Occurrences";
+			else if (ctrClicked == "Duration") /* duration of phase */
+				ctrClicked = "Duration(ms)";
+
+			if (ctrClicked != "MIPS" && ctrClicked != "#Occurrences" && ctrClicked != "Duration(ms)")
 			{
-				if (!activeCounters.contains(ctrClicked+"_per_ins"))
+				if (!activeCounters.contains (ctrClicked+"_per_ins"))
 					activeCounters.push_back (ctrClicked+"_per_ins");
 				else
 					activeCounters.remove (activeCounters.indexOf(ctrClicked+"_per_ins"));
 			}
 			else
 			{
-				if (!activeCounters.contains(ctrClicked))
+				if (!activeCounters.contains (ctrClicked))
 					activeCounters.push_back (ctrClicked);
 				else
 					activeCounters.remove (activeCounters.indexOf(ctrClicked));
 			}
-			service->debug() << "Toggling counter " << ctrClicked << endl;
+			service->debug() << "Toggling counter '" << ctrClicked << "'" << endl;
 		break;
 		case CALLTREE:
 			activeCallTreeItem = item;
@@ -306,13 +329,12 @@ void FoldingSourceCode::treeItemIsSelected( TreeType type, TreeItem* item )
 		  << file << " between lines " << startLine << "," << endLine
 		  << endl;
 
-		fillCodeTable (file, startLine,
-		  activeCallTreeItem->getTopLevelItem()->getName(),
+		fillCodeTable (file, activeCallTreeItem->getTopLevelItem()->getName(),
 		  activeCounters);
 	}
 }
 
-void FoldingSourceCode::fillCodeTable (const QString & file, int startLine, 
+void FoldingSourceCode::fillCodeTable (const QString & file,
 	const QString &topregion, const QVector<QString> & activeCounters)
 {
 	/* Empty the previous contents of the table */
@@ -350,13 +372,23 @@ void FoldingSourceCode::fillCodeTable (const QString & file, int startLine,
 	metrics.push_back ("Code");
 
 	sourceCodeTable->setColumnCount (metrics.count());
+	int ctrindex = 0;
 	for (int i = 0; i < metrics.count(); i++)
 	{
 		QString ctr = metrics[i];
+
+		QTableWidgetItem *itm = new QTableWidgetItem ();
+
 		if (ctr.endsWith ("_per_ins"))
-			ctr.chop(QString("_per_ins").length());
-		sourceCodeTable->setHorizontalHeaderItem (i,
-		  new QTableWidgetItem (ctr));
+		{
+			ctr.chop (QString("_per_ins").length());
+			ctr += "/ins";
+			itm->setForeground (colorPalette[(ctrindex++)%colorPalette.count()]);
+		}
+		else if (ctr == "MIPS")
+			itm->setForeground (colorBlack);
+		itm->setText (ctr);
+		sourceCodeTable->setHorizontalHeaderItem (i, itm);
 	}
 	sourceCodeTable->horizontalHeader()->show();
 
@@ -446,9 +478,6 @@ void FoldingSourceCode::fillCodeTable (const QString & file, int startLine,
 	delete f;
 
 	sourceCodeTable->resizeColumnsToContents();
-	sourceCodeTable->scrollToItem (
-	  sourceCodeTable->item (startLine, 0),
-	  QAbstractItemView::PositionAtCenter );
 }
 
 void FoldingSourceCode::putDataintoCodeTable (unsigned phase, 
@@ -461,7 +490,11 @@ void FoldingSourceCode::putDataintoCodeTable (unsigned phase,
 	{
 		QString phase_str, severity_str;
 		phase_str.setNum (phase);
-		severity_str.setNum (severity, 'f', 3);
+
+		if (metric != "#Occurrences")
+			severity_str.setNum (severity, 'f', 3);
+		else
+			severity_str.setNum ((unsigned long long) severity);
 
 		QTableWidgetItem *previtemPhase = sourceCodeTable->item (line-1, 0);
 		if (previtemPhase == NULL)
@@ -473,9 +506,13 @@ void FoldingSourceCode::putDataintoCodeTable (unsigned phase,
 		}
 		else
 		{
-			QString tmp_str = previtemPhase->text();
-			tmp_str += "," + phase_str;
-			previtemPhase->setText (tmp_str);
+			QString tmp = previtemPhase->text();
+			QStringList tmpl = tmp.split (",");
+			if (!tmpl.contains (phase_str))
+			{
+				tmp += "," + phase_str;
+				previtemPhase->setText (tmp);
+			}
 		}
 
 		QTableWidgetItem *previtemMetric = sourceCodeTable->item (line-1,
@@ -489,9 +526,13 @@ void FoldingSourceCode::putDataintoCodeTable (unsigned phase,
 		}
 		else
 		{
-			QString tmp_str = previtemMetric->text();
-			tmp_str += "," + severity_str;
-			previtemMetric->setText (tmp_str);
+			QString tmp = previtemMetric->text();
+			QStringList tmpl = tmp.split (",");
+			if (!tmpl.contains (severity_str))
+			{
+				tmp += "," + severity_str;
+				previtemMetric->setText (tmp);
+			}
 		}
 	}
 }
@@ -503,16 +544,14 @@ void FoldingSourceCode::onTableClick (int row, int column)
 	double min = DBL_MAX;
 	double max = 0;
 
-	QColor white(255,255,255);
-	QColor black(0,0,0);
 	for (int i = 0; i < sourceCodeTable->rowCount(); i++)
 		for (int j = 0; j < sourceCodeTable->columnCount(); j++)
 		{
 			QTableWidgetItem *item = sourceCodeTable->item (i, j);
 			if (item != NULL)
 			{
-				item->setBackgroundColor (white);
-				item->setTextColor (black);
+				item->setBackgroundColor (colorWhite);
+				item->setTextColor (colorBlack);
 			}
 		}
 
@@ -555,12 +594,11 @@ void FoldingSourceCode::onTableClick (int row, int column)
 		  bgcolor.greenF() * 0.7152 + 
 		  bgcolor.blueF() * 0.0722;
 				
-		QColor fgcolor = (bgluma > 0.5) ? black : white;
+		QColor fgcolor = (bgluma > 0.5) ? colorBlack : colorWhite;
 
 		for (int j = 0; j < sourceCodeTable->columnCount(); j++)
 		{
-			QTableWidgetItem *item = sourceCodeTable->item (
-			  it.key(), j);
+			QTableWidgetItem *item = sourceCodeTable->item (it.key(), j);
 			if (item != NULL)
 			{
 				item->setBackgroundColor (bgcolor);

@@ -93,15 +93,16 @@ class Process : public ParaverTrace
 	UIParaverTraceConfig *pcf;
 
 	public:
-	Process (string prvFile, string sourceDir, bool multievents, string tracename);
+	Process (const string & prvFile, const string & sourceDir,
+	  bool multievents, string tracename);
 	~Process ();
 
 	void prepare (void);
 	void appendtoPCF (string file);
 
-	bool is_f90 (string &f) const;
-	bool is_cxx (string &f) const;
-	bool is_c (string &f) const;
+	bool is_f90 (const string &f) const;
+	bool is_cxx (const string &f) const;
+	bool is_c (const string &f) const;
 
 	void processState (struct state_t &s);
 	void processMultiEvent (struct multievent_t &e);
@@ -111,7 +112,7 @@ class Process : public ParaverTrace
 	void processComment (string &c);
 };
 
-bool Process::is_f90 (string &f) const
+bool Process::is_f90 (const string &f) const
 {
 	if (f.length() >= 4)
 		if (f.substr(f.length()-4) == ".f90" ||
@@ -119,7 +120,7 @@ bool Process::is_f90 (string &f) const
 			return true;
 	return false;}
 
-bool Process::is_cxx (string &f) const
+bool Process::is_cxx (const string &f) const
 {
 	if (f.length() >= 2)
 		if (f.substr(f.length()-2) == ".C")
@@ -134,7 +135,7 @@ bool Process::is_cxx (string &f) const
 	return false;
 }
 
-bool Process::is_c (string &f) const
+bool Process::is_c (const string &f) const
 {
 	if (f.length() >= 2)
 		if (f.substr(f.length()-2) == ".c")
@@ -142,7 +143,8 @@ bool Process::is_c (string &f) const
 	return false;
 }
 
-Process::Process (string prvFile, string sourceDir, bool multievents, string tracename) : ParaverTrace (prvFile, multievents)
+Process::Process (const string & prvFile, const string & sourceDir,
+	bool multievents, string tracename) : ParaverTrace (prvFile, multievents)
 {
 	traceout.open (tracename.c_str());
 	if (!traceout.is_open())
@@ -214,7 +216,7 @@ void Process::prepare (void)
 				{
 					codeblock c(preline, lastline, total_id++);
 					vtmp.push_back (c);
-					preline = lastline;
+					preline = lastline+1;
 				}
 				bb_file.close();
 				unlink ((string("/tmp/astblocks.")+ss.str()+".out").c_str());
@@ -363,15 +365,14 @@ void Process::appendtoPCF (string file)
 	for (unsigned i = 0; i < SampleLocations.size(); i++)
 		PCFfile << i << " " << pcf->getEventValue(30000100, i) << endl;
 
-	map <string, vector< codeblock > > :: iterator it;
-	for (it = fileblocks.begin(); it != fileblocks.end(); it++)
+	for (const auto & fb : fileblocks)
 	{
-		vector < codeblock > vblocks = (*it).second;
+		vector < codeblock > vblocks = fb.second;
 		for (unsigned u = 0; u < vblocks.size(); u++)
 		{
 			codeblock c = vblocks[u];
 			if (c.inUse())
-				PCFfile << c.getID() << " " << c.getBeginLine() << "-" << c.getEndLine() << " (" << (*it).first << ")" << endl;
+				PCFfile << c.getID() << " " << c.getBeginLine() << "-" << c.getEndLine() << " (" << fb.first << ")" << endl;
 		}
 	}
 	PCFfile << endl;

@@ -7,4 +7,5 @@ if NEED_BOOST_HOME
 codeblocks_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
-codeblocks_LDADD = -L../common -lcommon -lpcf-common -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
+codeblocks_LDADD = ../common/libcommon.la ../common/libpcf-common.la \
+                   -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
