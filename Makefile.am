@@ -1,5 +1,7 @@
 SUBDIRS = src doc
 
+ACLOCAL_AMFLAGS=-I config
+
 EXTRA_DIST = others examples cfgs SVN-branch SVN-revision
 
 install-data-hook:
