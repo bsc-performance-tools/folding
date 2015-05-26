@@ -14,6 +14,7 @@ AC_CONFIG_HEADERS([folding-config.h:folding-config.h.in])
 
 # GNU Autotools intermediate files are stored in the following directory
 AC_CONFIG_AUX_DIR(config)
+AC_CONFIG_MACRO_DIR([config])
 
 SVN=`which svn`
 
