@@ -25,6 +25,7 @@
 #include <QtPlugin>
 #include "PluginServices.h"
 #include "time-line.hpp"
+#include "qcustomplot.h"
 
 #include <fstream>
 #include <string>
