@@ -267,6 +267,7 @@ class AddressReference
 	bool has_reference_tlb_level;
 	unsigned core_cycles;
 	bool has_core_cycles;
+	AddressReferenceType_t ReferenceType;
 
 	public:
 	AddressReference ()
@@ -279,8 +280,12 @@ class AddressReference
 	  { reference_tlb_level = TLBLevel; has_reference_tlb_level = true; }
 	void setReferenceCoreCycles (unsigned cycles)
 	  { core_cycles = cycles; has_core_cycles = true; }
+	void setReferenceType (AddressReferenceType_t t)
+	  { ReferenceType = t; }
 	bool isCompleted (void) const
 	  { return has_address && has_reference_mem_level && has_reference_tlb_level; }
+	bool hasAddress (void) const
+	  { return has_address; }
 	unsigned long long getAddress (void) const
 	  { return address; }
 	unsigned getReferenceMemLevel (void) const
@@ -289,6 +294,8 @@ class AddressReference
 	  { return reference_tlb_level; }
 	unsigned setReferenceCoreCycles (void) const
 	  { return core_cycles; }
+	AddressReferenceType_t getReferenceType (void) const
+	  { return ReferenceType; }
 };
 
 class Process : public ParaverTrace
@@ -476,8 +483,16 @@ void Process::processState (struct state_t &s)
 void Process::processAddressReference (const struct event_t &evt,
 	  AddressReference &ar)
 {
-	if (evt.Type == EXTRAE_SAMPLE_ADDRESS)
+	if (evt.Type == EXTRAE_SAMPLE_ADDRESS_LD)
+	{
 		ar.setAddress (evt.Value);
+		ar.setReferenceType (LOAD);
+	}
+	else if (evt.Type == EXTRAE_SAMPLE_ADDRESS_ST)
+	{
+		ar.setAddress (evt.Value);
+		ar.setReferenceType (STORE);
+	}
 	else if (evt.Type == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL)
 		ar.setReferenceMemLevel (evt.Value);
 	else if (evt.Type == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL)
@@ -664,11 +679,14 @@ void Process::processMultiEvent (struct multievent_t &e)
 
 				storeSample = processCaller (event, EXTRAE_SAMPLE_CALLERLINE_AST_MIN, CallerLineAST) || storeSample;
 			}
-			if (event.Type == EXTRAE_SAMPLE_ADDRESS || 
+			if (event.Type == EXTRAE_SAMPLE_ADDRESS_LD || 
+			    event.Type == EXTRAE_SAMPLE_ADDRESS_ST ||
 			    event.Type == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL || 
 			    event.Type == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL ||
 			    event.Type == EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES )
 			{
+				if (common::DEBUG())
+					cout << "Processing sampled address info (" << event.Type << ")" << endl;
 				processAddressReference (event, AR);
 				storeSample = true;
 			}
@@ -756,14 +774,25 @@ void Process::processMultiEvent (struct multievent_t &e)
 			CodeRefs[d] = t;
 		}
 
-		Sample *s;
+		Sample *s = NULL;
+
 		if (AR.isCompleted())
+		{
 			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].getStartRegion(),
-			  CV, CodeRefs, AR.getAddress(), AR.getReferenceMemLevel(),
-			  AR.getReferenceTLBLevel(), AR.setReferenceCoreCycles());
+			  CV, CodeRefs, AR.getReferenceType(), AR.getAddress(),
+			  AR.getReferenceMemLevel(), AR.getReferenceTLBLevel(),
+			  AR.setReferenceCoreCycles());
+		}
+		else if (AR.hasAddress()) /* does not contain all info but address is present*/
+		{
+			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].getStartRegion(),
+			  CV, CodeRefs, AR.getReferenceType(), AR.getAddress());
+		}
 		else
+		{
 			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].getStartRegion(),
 			  CV, CodeRefs);
+		}
 		assert (s != NULL);
 
 		if (common::DEBUG())

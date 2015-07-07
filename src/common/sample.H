@@ -40,12 +40,16 @@
 
 using namespace std;
 
+enum AddressReferenceType_t { NONE, LOAD, STORE };
+
 class Sample
 {
 	private:
 	const unsigned long long sTime; /* integral time of the sample */
 	const unsigned long long iTime; /* integral time since start of instance */
 	const bool bhasAddressReference;           /* Does this sample point to a data address? */
+	const bool bhasAddressReferenceInfo;       /* Does this sample contain information from data reference? */
+	const AddressReferenceType_t ReferenceType; /* Load or Store? */
 	const unsigned long long AddressReference; /* which address? */
 	const unsigned AddressReference_Mem_Level; /* where was it found in mem hierarchy ? */
 	const unsigned AddressReference_TLB_Level; /* where was it found in tlb hierarchy ? */
@@ -68,8 +72,13 @@ class Sample
 	Sample (unsigned long long sTime, unsigned long long iTime,
 	  map<string, unsigned long long> & icountervalue,
 	  map<unsigned, CodeRefTriplet> & codetriplet,
-	  unsigned long long address, unsigned ar_mem_level,
-	  unsigned ar_tlb_level, unsigned cycles_cost);
+	  AddressReferenceType_t rt, unsigned long long address,
+	  unsigned ar_mem_level, unsigned ar_tlb_level, unsigned cycles_cost);
+
+	Sample (unsigned long long sTime, unsigned long long iTime,
+	  map<string, unsigned long long> & icountervalue,
+	  map<unsigned, CodeRefTriplet> & codetriplet,
+	  AddressReferenceType_t rt, unsigned long long address);
 
 	~Sample (void);
 
@@ -119,6 +128,8 @@ class Sample
 
 	bool hasAddressReference(void) const
 	  { return bhasAddressReference; }
+	bool hasAddressReferenceInfo(void) const
+	  { return bhasAddressReferenceInfo; }
 	unsigned long long getAddressReference(void) const
 	  { return AddressReference; }
 	unsigned getAddressReference_Mem_Level(void) const
@@ -127,6 +138,9 @@ class Sample
 	  { return AddressReference_TLB_Level; }
 	unsigned getAddressReference_Cycles_Cost(void) const
 	  { return AddressReference_Cycles_Cost; }
+	AddressReferenceType_t getReferenceType (void) const
+	  { return ReferenceType; }
+	
 
 	void setCallersId (unsigned id)
 	  { callersId = id; }
