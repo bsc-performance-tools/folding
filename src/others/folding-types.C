@@ -50,23 +50,24 @@ int main (int argc, char *argv[])
 	pcf->parse (prvFile.substr (0, prvFile.length()-3) + string ("pcf"));
 
 	vector<unsigned> vtypes = pcf->getEventTypes();
-	for (unsigned u = 0; u < vtypes.size(); u++)
+	for (const auto & t : vtypes)
 	{
 		bool unusable =
-		  ( vtypes[u] >= PAPI_MIN_COUNTER && vtypes[u] <= PAPI_MAX_COUNTER ) ||
-		  ( vtypes[u] == PAPI_CHANGE_COUNTER_SET ) ||
-		  ( vtypes[u] >= FOLDED_BASE ) ||
-		  ( vtypes[u] >= EXTRAE_SAMPLE_CALLER_MIN && vtypes[u] <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX) ||
-		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS ) ||
-		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL ) ||
-		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL ) ||
-		  ( vtypes[u] == ADDRESS_VARIABLE_ADDRESSES ) ||
-		  ( vtypes[u] == EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES );
+		  ( t >= PAPI_MIN_COUNTER && t <= PAPI_MAX_COUNTER ) ||
+		  ( t == PAPI_CHANGE_COUNTER_SET ) ||
+		  ( t >= FOLDED_BASE ) ||
+		  ( t >= EXTRAE_SAMPLE_CALLER_MIN && t <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX) ||
+		  ( t == EXTRAE_SAMPLE_ADDRESS_LD ) ||
+		  ( t == EXTRAE_SAMPLE_ADDRESS_ST ) ||
+		  ( t == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL ) ||
+		  ( t == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL ) ||
+		  ( t == ADDRESS_VARIABLE_ADDRESSES ) ||
+		  ( t == EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES );
 
 		if (!unusable)
 		{
-			string description = pcf->getEventType (vtypes[u]);
-			cout << vtypes[u] << ";" << description << endl;
+			string description = pcf->getEventType (t);
+			cout << t << ";" << description << endl;
 		}
 	}
 

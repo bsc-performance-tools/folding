@@ -190,10 +190,25 @@ void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 		/* Dump address references */
 		if (Samples[u]->hasAddressReference())
 		{
-			ofile << " 1 " << Samples[u]->getAddressReference() << " "
-			  << Samples[u]->getAddressReference_Mem_Level() << " "
-			  << Samples[u]->getAddressReference_TLB_Level() << " "
-			  << Samples[u]->getAddressReference_Cycles_Cost();
+			string rt;
+			if (Samples[u]->getReferenceType() == LOAD)
+				rt = "LD";
+			else if (Samples[u]->getReferenceType() == STORE)
+				rt = "ST";
+
+			if (Samples[u]->hasAddressReferenceInfo())
+			{
+				ofile << " 1 " << rt << " "
+				  << Samples[u]->getAddressReference() << " 1 "
+				  << Samples[u]->getAddressReference_Mem_Level() << " "
+				  << Samples[u]->getAddressReference_TLB_Level() << " "
+				  << Samples[u]->getAddressReference_Cycles_Cost();
+			}
+			else
+			{
+				ofile << " 1 " << rt << " "
+				  << Samples[u]->getAddressReference() << " 0 ";
+			}
 		}
 		else
 			ofile << " 0";

@@ -30,7 +30,9 @@
 Sample::Sample (unsigned long long sTime, unsigned long long iTime,
     map<string, unsigned long long> & icountervalue,
     map<unsigned, CodeRefTriplet> & codetriplet)
-	: sTime (sTime), iTime(iTime), bhasAddressReference(false),
+	: sTime (sTime), iTime(iTime),
+	  bhasAddressReference(false), bhasAddressReferenceInfo(false),
+	  ReferenceType(NONE),
 	  AddressReference(0), AddressReference_Mem_Level(0),
 	  AddressReference_TLB_Level(0), AddressReference_Cycles_Cost(0),
 	  crt(codetriplet)
@@ -42,13 +44,33 @@ Sample::Sample (unsigned long long sTime, unsigned long long iTime,
 Sample::Sample (unsigned long long sTime, unsigned long long iTime,
 	map<string, unsigned long long> & icountervalue,
 	map<unsigned, CodeRefTriplet> & codetriplet,
+	AddressReferenceType_t rt,
 	unsigned long long address, unsigned ar_mem_level, unsigned ar_tlb_level,
 	unsigned cycles_cost)
-	: sTime (sTime), iTime(iTime), bhasAddressReference(true),
+	: sTime (sTime), iTime(iTime),
+	  bhasAddressReference(true), bhasAddressReferenceInfo(true),
+	  ReferenceType(rt),
 	  AddressReference(address),
 	  AddressReference_Mem_Level(ar_mem_level),
 	  AddressReference_TLB_Level(ar_tlb_level),
 	  AddressReference_Cycles_Cost(cycles_cost),
+	  crt(codetriplet)
+{
+	this->iCounterValue = icountervalue;
+	this->usableCallstack = false;
+}
+
+Sample::Sample (unsigned long long sTime, unsigned long long iTime,
+	map<string, unsigned long long> & icountervalue,
+	map<unsigned, CodeRefTriplet> & codetriplet,
+	AddressReferenceType_t rt, unsigned long long address)
+	: sTime (sTime), iTime(iTime),
+	  bhasAddressReference(true), bhasAddressReferenceInfo(false),
+	  ReferenceType(rt),
+	  AddressReference(address),
+	  AddressReference_Mem_Level(0),
+	  AddressReference_TLB_Level(0),
+	  AddressReference_Cycles_Cost(0),
 	  crt(codetriplet)
 {
 	this->iCounterValue = icountervalue;

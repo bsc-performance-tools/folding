@@ -50,8 +50,10 @@ void gnuplotGeneratorReferences::generate (
 	gplot << "##############################" << endl
 	      << "## Addresses part " << endl
 	      << "##############################" << endl << endl 
-	      << "address(ret,r,g,t) = (r eq '" << ig->getRegionName()
-	      << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl << endl
+	      << "address_ld(ret,r,g,t) = (r eq '" << ig->getRegionName()
+	      << "' && g == " << ig->getNumGroup() << " && t eq 'a_ld') ? ret : NaN;" << endl
+	      << "address_st(ret,r,g,t) = (r eq '" << ig->getRegionName()
+	      << "' && g == " << ig->getNumGroup() << " && t eq 'a_st') ? ret : NaN;" << endl << endl
 	      << "set tmargin 0; set bmargin 0; set lmargin 14; set rmargin 17;" << endl << endl
 	      << "plot_address_cycles = 1; # Set to 0 if want to see accesses to memory hierarchy" << endl << endl;
 
@@ -220,15 +222,15 @@ void gnuplotGeneratorReferences::generate (
 	  "MAX_COST_GRADIENT=100;" << endl <<
 	  "min(x,y) = (x < y) ? x : y;" << endl <<
 	  "max(x,y) = (x > y) ? x : y;" << endl <<
-	  "address_COST_GRADIENT(x) = (int((MAX_COST_GRADIENT-x/MAX_COST_GRADIENT)*65535)&0xff00) + (x/MAX_COST_GRADIENT)*255;" << endl <<
-	  "address_COST_CYCLES(ret,r,g,t) = (r eq 'main' && g == 0 && t eq 'a') ? ret : NaN;" << endl << endl <<
-	  "address_L1(ret,w,r,g,t) = (w == 1 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
-	  "address_LFB(ret,w,r,g,t) = (w == 2 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
-	  "address_L2(ret,w,r,g,t) = (w == 3 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
-	  "address_L3(ret,w,r,g,t) = (w == 4 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
-	  "address_RCACHE(ret,w,r,g,t) = (w == 5 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
-	  "address_DRAM(ret,w,r,g,t) = (w == 6 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl <<
-	  "address_OTHER(ret,w,r,g,t) = (w == 0 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a') ? ret : NaN;" << endl << endl;
+	  "address_ld_COST_GRADIENT(x) = (int((MAX_COST_GRADIENT-x/MAX_COST_GRADIENT)*65535)&0xff00) + (x/MAX_COST_GRADIENT)*255;" << endl <<
+	  "address_ld_COST_CYCLES(ret,r,g,t) = (r eq 'main' && g == 0 && t eq 'a_ld') ? ret : NaN;" << endl << endl <<
+	  "address_ld_L1(ret,w,r,g,t) = (w == 1 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a_ld') ? ret : NaN;" << endl <<
+	  "address_ld_LFB(ret,w,r,g,t) = (w == 2 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a_ld') ? ret : NaN;" << endl <<
+	  "address_ld_L2(ret,w,r,g,t) = (w == 3 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a_ld') ? ret : NaN;" << endl <<
+	  "address_ld_L3(ret,w,r,g,t) = (w == 4 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a_ld') ? ret : NaN;" << endl <<
+	  "address_ld_RCACHE(ret,w,r,g,t) = (w == 5 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a_ld') ? ret : NaN;" << endl <<
+	  "address_ld_DRAM(ret,w,r,g,t) = (w == 6 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a_ld') ? ret : NaN;" << endl <<
+	  "address_ld_OTHER(ret,w,r,g,t) = (w == 0 && r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << " && t eq 'a_ld') ? ret : NaN;" << endl << endl;
 
 	unsigned vv = 0;
 	vector<string> colors = { "#a0a0a0", "#606060" };
@@ -277,16 +279,18 @@ void gnuplotGeneratorReferences::generate (
 	
 		gplot << "if (plot_address_cycles == 1) {" << endl
 			  << "plot \\" << endl
-		      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))):(address_COST_GRADIENT($7)) ti '@ reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor variable;" << endl
+		      << "'" << fileDump <<"' u ($4*FACTOR):(address_ld($5, strcol(2), $3, strcol(1))):(address_ld_COST_GRADIENT($7)) ti '@ LD reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor variable,\\" << endl
+		      << "'" << fileDump <<"' u ($4*FACTOR):(address_st($5, strcol(2), $3, strcol(1))) ti '@ ST reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor 'black';" << endl
 			  << "} else {" << endl
 			  << "plot \\" << endl
-			  << "'" << fileDump <<"' u ($4*FACTOR):(address_L1($5, $6, strcol(2), $3, strcol(1))) ti 'L1 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_LFB($5, $6, strcol(2), $3, strcol(1))) ti 'LFB reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_L2($5, $6, strcol(2), $3, strcol(1))) ti 'L2 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_L3($5, $6, strcol(2), $3, strcol(1))) ti 'L3 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_RCACHE($5, $6, strcol(2), $3, strcol(1))) ti 'RCache reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_DRAM($5, $6, strcol(2), $3, strcol(1))) ti 'DRAM reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_OTHER($5, $6, strcol(2), $3, strcol(1))) ti 'Other reference' axes x2y2 w points pt 7 ps 0.5;" << endl
+			  << "'" << fileDump <<"' u ($4*FACTOR):(address_ld_L1($5, $6, strcol(2), $3, strcol(1))) ti 'L1 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_LFB($5, $6, strcol(2), $3, strcol(1))) ti 'LFB reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_L2($5, $6, strcol(2), $3, strcol(1))) ti 'L2 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_L3($5, $6, strcol(2), $3, strcol(1))) ti 'L3 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_RCACHE($5, $6, strcol(2), $3, strcol(1))) ti 'RCache reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_DRAM($5, $6, strcol(2), $3, strcol(1))) ti 'DRAM reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_OTHER($5, $6, strcol(2), $3, strcol(1))) ti 'Other reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+		      << "'" << fileDump <<"' u ($4*FACTOR):(address_st($5, strcol(2), $3, strcol(1))) ti '@ ST reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor 'black';" << endl
 			  << "}" << endl;
 	}
 
@@ -333,16 +337,18 @@ void gnuplotGeneratorReferences::generate (
 
 		gplot << "if (plot_address_cycles == 1) {" << endl
 			  << "plot \\" << endl
-		      << "'" << fileDump <<"' u ($4*FACTOR):(address($5, strcol(2), $3, strcol(1))):(address_COST_GRADIENT($7)) ti '@ reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor variable;" << endl
+		      << "'" << fileDump <<"' u ($4*FACTOR):(address_ld($5, strcol(2), $3, strcol(1))):(address_ld_COST_GRADIENT($7)) ti '@ LD reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor variable,\\" << endl
+		      << "'" << fileDump <<"' u ($4*FACTOR):(address_st($5, strcol(2), $3, strcol(1))) ti '@ ST reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor 'black';" << endl
 			  << "} else {" << endl
 			  << "plot \\" << endl
-			  << "'" << fileDump <<"' u ($4*FACTOR):(address_L1($5, $6, strcol(2), $3, strcol(1))) ti 'L1 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_LFB($5, $6, strcol(2), $3, strcol(1))) ti 'LFB reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_L2($5, $6, strcol(2), $3, strcol(1))) ti 'L2 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_L3($5, $6, strcol(2), $3, strcol(1))) ti 'L3 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_RCACHE($5, $6, strcol(2), $3, strcol(1))) ti 'RCache reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_DRAM($5, $6, strcol(2), $3, strcol(1))) ti 'DRAM reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
-			  << "'" << fileDump << "' u ($4*FACTOR):(address_OTHER($5, $6, strcol(2), $3, strcol(1))) ti 'Other reference' axes x2y2 w points pt 7 ps 0.5;" << endl
+			  << "'" << fileDump <<"' u ($4*FACTOR):(address_ld_L1($5, $6, strcol(2), $3, strcol(1))) ti 'L1 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_LFB($5, $6, strcol(2), $3, strcol(1))) ti 'LFB reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_L2($5, $6, strcol(2), $3, strcol(1))) ti 'L2 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_L3($5, $6, strcol(2), $3, strcol(1))) ti 'L3 reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_RCACHE($5, $6, strcol(2), $3, strcol(1))) ti 'RCache reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_DRAM($5, $6, strcol(2), $3, strcol(1))) ti 'DRAM reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+			  << "'" << fileDump << "' u ($4*FACTOR):(address_ld_OTHER($5, $6, strcol(2), $3, strcol(1))) ti 'Other reference' axes x2y2 w points pt 7 ps 0.5,\\" << endl
+		      << "'" << fileDump <<"' u ($4*FACTOR):(address_st($5, strcol(2), $3, strcol(1))) ti '@ ST reference' axes x2y2 w points pt 7 ps 0.5 lc rgbcolor 'black';" << endl
 			  << "}" << endl;
 	}
 

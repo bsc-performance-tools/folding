@@ -344,13 +344,20 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 					odata << "u" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << counter << ";"
 					  << s->getNCounterValue(counter) << endl;
-				if (s->hasAddressReference())
+
+				if (s->hasAddressReferenceInfo() && s->getReferenceType() == LOAD)
 				{
-					odata << "a" << ";" << regionName << ";" << numGroup << ";"
+					odata << "a_ld" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << s->getAddressReference() << ";"
 					  << s->getAddressReference_Mem_Level() << ";"
 					  << s->getAddressReference_Cycles_Cost() << endl;
 				}
+				else if (s->hasAddressReference() && s->getReferenceType() == STORE)
+				{
+					odata << "a_st" << ";" << regionName << ";" << numGroup << ";"
+					  << s->getNTime() << ";" << s->getAddressReference() << endl;
+				}
+
 				if (s->hasCodeRefTripletSize())
 					timingsamples.push_back (s);
 			}
@@ -364,12 +371,18 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 					odata << "un" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << counter << ";"
 					  << s->getNCounterValue(counter) << endl;
-				if (s->hasAddressReference())
+
+				if (s->hasAddressReferenceInfo() && s->getReferenceType() == LOAD)
 				{
-					odata << "a" << ";" << regionName << ";" << numGroup << ";"
+					odata << "a_ld" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << s->getAddressReference() << ";"
 					  << s->getAddressReference_Mem_Level() << ";"
 					  << s->getAddressReference_Cycles_Cost() << endl;
+				}
+				else if (s->hasAddressReference() && s->getReferenceType() == STORE)
+				{
+					odata << "a_st" << ";" << regionName << ";" << numGroup << ";"
+					  << s->getNTime() << ";" << s->getAddressReference() << endl;
 				}
 				if (s->hasCodeRefTripletSize())
 					timingsamples.push_back (s);
