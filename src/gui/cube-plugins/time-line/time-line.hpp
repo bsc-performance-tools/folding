@@ -29,7 +29,9 @@
 #include "CubePlugin.h"
 #include "TabInterface.h"
 
-#include "qcustomplot.h"
+// #include "qcustomplot.h"
+
+class QCustomPlot;
 
 class FoldingTimeline: public QObject, public CubePlugin, TabInterface
 {

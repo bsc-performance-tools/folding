@@ -123,17 +123,24 @@ void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 	map<string, unsigned long long> totals;
 	unsigned reference = getReferenceSample (Samples);
 	set<string> Counters = Samples[reference]->getCounters();
-	set<string>::iterator it;
-	for (it = Counters.begin(); it != Counters.end(); ++it)
-		totals[*it] = 0; // has to accumulate
+	for (const auto & c : Counters)
+		totals[c] = 0; // has to accumulate
 
 	/* Generate header for this instance */
 	ofile << "I " << ptask+1 << " " << task+1 << " " << thread+1 
 	  << " " << RegionName << " " << start << " " << duration;
 	for (unsigned u = 0; u < Samples.size(); u++)
-		for (it = Counters.begin(); it != Counters.end(); it++)
-			if (Samples[u]->hasCounter(*it))
-				totals[*it] = totals[*it] + Samples[u]->getCounterValue (*it);
+		for (const auto & c : Counters)
+			if (Samples[u]->hasCounter(c))
+				totals[c] = totals[c] + Samples[u]->getCounterValue (c);
+
+	if (common::DEBUG())
+	{
+		cout << "FoldingWriter::Write Totals at for duration " << duration;
+		for (const auto & t : totals)
+			cout << " [" << t.first << " " << t.second << "]"; 
+		cout << endl;
+	}
 
 	ofile << " " << totals.size();
 	map<string, unsigned long long>::iterator it_totals;
@@ -147,8 +154,8 @@ void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 
 	/* Prepare partial accum hash */
 	map<string, unsigned long long> partials;
-	for (it = Counters.begin(); it != Counters.end(); it++)
-		partials[*it] = 0;
+	for (const auto & c : Counters)
+		partials[c] = 0;
 
 	/* Dump all the samples for this instance except the last one, which can be extrapolated
        from the instance header data */
@@ -158,19 +165,28 @@ void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 		  << Samples[u]->getiTime() << " ";
 
 		unsigned ncounters = 0;
-		for (it = Counters.begin(); it != Counters.end(); it++)
-			if (Samples[u]->hasCounter(*it))
+		for (const auto & c : Counters)
+			if (Samples[u]->hasCounter(c))
 				ncounters++;
 		ofile << ncounters;
 
-		for (it = Counters.begin(); it != Counters.end(); it++)
-			if (Samples[u]->hasCounter(*it))
+		for (const auto & c : Counters)
+			if (Samples[u]->hasCounter(c))
 			{
 				unsigned long long tmp;
-				tmp = partials[*it] + Samples[u]->getCounterValue (*it);
-				ofile << " " << *it << " " << tmp;
-				partials[*it] = tmp;
+				tmp = partials[c] + Samples[u]->getCounterValue (c);
+				ofile << " " << c << " " << tmp;
+				partials[c] = tmp;
 			}
+
+		if (common::DEBUG())
+		{
+			cout << "FoldingWriter::Write partial at sample time " <<
+			  Samples[u]->getTime();
+			for (const auto & p : partials)
+				cout << " [" << p.first << " " << p.second << "]"; 
+			cout << endl;
+		}
 
 		/* Dump callers, callerlines and caller line ASTs triplets */
 		map<unsigned, CodeRefTriplet> CodeRefs = Samples[u]->getCodeTriplets();

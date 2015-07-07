@@ -652,9 +652,16 @@ void Process::processMultiEvent (struct multievent_t &e)
 		{
 			if (event.Type >= PAPI_MIN_COUNTER && event.Type <= PAPI_MAX_COUNTER)
 			{
+				bool found;
+				unsigned index = LookupCounter (event.Type, found);
 				if (common::DEBUG())
-					cout << "Processing counter " << event.Type << " with value " << event.Value << " at timestamp " << e.Timestamp << endl;
-
+				{
+					if (!found)
+						cout << "Processing counter " << event.Type << " with value " << event.Value << " at timestamp " << e.Timestamp << endl;
+					else
+						cout << "Processing counter " << CounterIDNames[index] << " with value " << event.Value << " at timestamp " << e.Timestamp << endl;
+				}
+	
 				processCounter (event, CV);
 				storeSample = true;
 			}
