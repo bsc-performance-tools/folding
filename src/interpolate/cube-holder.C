@@ -31,7 +31,8 @@
 #include <fstream>
 #include <sstream>
 
-CubeHolder::CubeHolder (UIParaverTraceConfig *pcf, const set<string> &counters)
+CubeHolder::CubeHolder (UIParaverTraceConfig *pcf, const set<string> &ctrs)
+	: counters(ctrs)
 {
 	this->pcf = pcf;
 
@@ -67,7 +68,7 @@ CubeHolder::CubeHolder (UIParaverTraceConfig *pcf, const set<string> &counters)
 }
 
 void CubeHolder::generateCubeTree (InstanceContainer &ic,
-	const string &sourceDir, const set<string> & counters)
+	const string &sourceDir)
 {
 	string name = ic.getRegionName();
 
@@ -90,7 +91,6 @@ void CubeHolder::generateCubeTree (InstanceContainer &ic,
 
 		/* Get the trees for each phase */
 		vector<CallstackTree*> trees = ig->getCallstackTrees();
-
 		vector<double> bpts = ig->getInterpolationBreakpoints();
 
 		for (unsigned ph = 0; ph < trees.size(); ph++)
@@ -98,7 +98,6 @@ void CubeHolder::generateCubeTree (InstanceContainer &ic,
 			ss.str (string());
 			ss << "Phase " << ph+1 << " [" << common::convertDouble (bpts[ph], 2)
 			  << "-" << common::convertDouble (bpts[ph+1], 2) << "]";
-
 
 			/* Create a node for this subtree */
 			Region *rtmp2 = c.def_region (ss.str(), ss.str(), "", "", 0, 0, "", "", "");
@@ -111,15 +110,30 @@ void CubeHolder::generateCubeTree (InstanceContainer &ic,
 				CallstackTree *cst = trees[ph];
 				ct->generate (c, ctmp2, cst, pcf, sourceDir);
 
-				setSeverities (ctmp2, ig, ph, counters); 
+				/* Insert into hash for future use in setCubeSeverities */
+				rootNodes[std::make_pair (ig, ph)] = std::make_pair(ctmp2,ct);
 			}
 		}
 	}
 }
 
+void CubeHolder::setCubeSeverities (void)
+{
+	for (const auto & rn : rootNodes)
+	{
+		/* Apply to top level first, groups & phases */
+		pair<InstanceGroup*,unsigned> instance_phase = rn.first;
+		pair<Cnode*,CubeTree*> cubenode_tree = rn.second;
+		Cnode *node = cubenode_tree.first;
+		setSeverities (node, instance_phase.first, instance_phase.second);
 
-void CubeHolder::setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase,
-	const set<string> & counters)
+		/* Apply to each level within a subtree of every group and phase */
+		CubeTree *ct = cubenode_tree.second;
+		ct->setSeverities (c);
+	}
+}
+
+void CubeHolder::setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase)
 {
 	vector<double> bpts = ig->getInterpolationBreakpoints();
 	double portion = bpts[phase+1] - bpts[phase];
@@ -128,7 +142,7 @@ void CubeHolder::setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase,
 	double severity = (ig->mean()) * portion;
 	Metric *metric = c.get_met (DURATION);
 	cube::Thread *t = (c.get_thrdv())[0];
-	// c.set_sev (metric, node, t, severity);
+	c.set_sev (metric, node, t, severity);
 
 	map<string, InterpolationResults*> iresults = ig->getInterpolated();
 	for (const auto & ctr : counters)
@@ -143,11 +157,11 @@ void CubeHolder::setSeverities (Cnode *node, InstanceGroup *ig, unsigned phase,
 			severity = (iresults[ctr])->getSlopeAt (inbetween);
 			metric = c.get_met (nCounterID);
 			cube::Thread *t = (c.get_thrdv())[0];
-			// c.set_sev (metric, node, t, severity);
+			c.set_sev (metric, node, t, severity);
 		}
 }
 
-void CubeHolder::dump (string file)
+void CubeHolder::dump (const string & file)
 {
 	ofstream out (file.c_str());
 	if (out.is_open())
@@ -159,7 +173,7 @@ void CubeHolder::dump (string file)
 		cerr << "Error! Cannot create " << file << endl;
 }
 
-void CubeHolder::eraseLaunch (string file)
+void CubeHolder::eraseLaunch (const string & file)
 {
 	string f = file.substr (0, file.rfind (".folded")) + ".folded.launch";
 
@@ -168,83 +182,9 @@ void CubeHolder::eraseLaunch (string file)
 			cerr << "Warning! Could not remove " << f << endl;
 }
 
-void CubeHolder::dumpLaunch (InstanceContainer &ic, ObjectSelection *os,
-	const set<string> & counters, string file)
-{
-#if 0
-	string prefix = file.substr (0, file.rfind (".folded"));
-
-	ofstream launch ((prefix + ".folded.launch").c_str(), std::ofstream::app);
-	if (launch.is_open())
-	{
-		string RegionName = ic.getRegionName();
-
-		for (unsigned g = 0; g < ic.numGroups(); g++)
-		{
-			InstanceGroup *ig = ic.getInstanceGroup(g);
-
-			/* Get the group name */
-			string groupName = ig->getGroupName();
-
-			/* Get the general tree for this group */
-			Cnode *tree = ig->getGeneralCubeTree();
-
-			string gname = prefix + "." + os->toString (false, "any") + "." +
-			  common::removeUnwantedChars(RegionName) + "." + common::removeSpaces (groupName);
-
-			unsigned cnodeid = c.get_cnode_id (tree);
-
-			launch
-			  << DURATION << endl
-			  << "- cnode " << cnodeid << endl
-			  << "See all detailed counters" << endl
-			  << "gnuplot -persist " << gname << ".slopes.gnuplot" << endl;
-			launch
-			  << NO_OCCURRENCES << endl
-			  << "- cnode " << cnodeid << endl
-			  << "See all detailed counters" << endl
-			  << "gnuplot -persist " << gname << ".slopes.gnuplot" << endl;
-
-			set<string>::iterator ctr;
-			for (ctr = counters.begin(); ctr != counters.end(); ctr++)
-			{
-				launch
-				  << DURATION << endl
-				  << "- cnode " << cnodeid << endl
-				  << "See detailed " << *ctr << endl
-				  << "gnuplot -persist " << gname  << "." << *ctr
-				  << ".gnuplot" << endl;
-				launch
-				  << NO_OCCURRENCES << endl
-				  << "- cnode " << cnodeid << endl
-				  << "See detailed " << *ctr << endl
-				  << "gnuplot -persist " << gname  << "." << *ctr
-				  << ".gnuplot" << endl;
-
-				string nCounterID;
-				if (common::isMIPS(*ctr))
-					nCounterID = "MIPS";
-				else
-					nCounterID = (*ctr)+"pms";
-
-				launch
-				  << nCounterID << endl
-				  << "- cnode " << cnodeid << endl
-				  << "See detailed " << *ctr << endl
-				  << "gnuplot -persist " << gname  << "." << *ctr
-				  << ".gnuplot" << endl;
-			}
-		}
-	}
-	else
-		cerr << "Error! Cannot create " << file << endl;
-
-	launch.close();
-#endif
-}
-
-void CubeHolder::EmitMetricFileLine (string &dir, string &file, string &region, 
-	unsigned phase, string metric, unsigned line, unsigned val)
+void CubeHolder::EmitMetricFileLine (const string &dir, const string &file,
+	const string &region, unsigned phase, const string & metric, unsigned line,
+	unsigned val)
 {
 	ofstream f((dir+"/"+file+"."+region+".metrics").c_str(), std::ofstream::app);
 	if (f.is_open())
@@ -252,8 +192,9 @@ void CubeHolder::EmitMetricFileLine (string &dir, string &file, string &region,
 	f.close();
 }
 
-void CubeHolder::EmitMetricFileLine (string &dir, string &file, string &region, 
-	unsigned phase, string metric, unsigned line, double val)
+void CubeHolder::EmitMetricFileLine (const string &dir, const string &file,
+	const string &region, unsigned phase, const string & metric, unsigned line,
+	double val)
 {
 	ofstream f((dir+"/"+file+"."+region+".metrics").c_str(), std::ofstream::app);
 	if (f.is_open())
@@ -261,8 +202,8 @@ void CubeHolder::EmitMetricFileLine (string &dir, string &file, string &region,
 	f.close();
 }
 
-void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
-	const set<string> & counters)
+void CubeHolder::dumpFileMetrics_Lines_ASTs (const string & dir,
+	InstanceGroup *ig)
 {
 	string region = ig->getRegionName();
 	map<string, InterpolationResults*> iresults = ig->getInterpolated();
@@ -372,8 +313,7 @@ void CubeHolder::dumpFileMetrics_Lines_ASTs (string dir, InstanceGroup *ig,
 	}
 }
 
-void CubeHolder::dumpFileMetrics (string dir, InstanceContainer &ic, 
-	const set<string> & counters)
+void CubeHolder::dumpFileMetrics (const string & dir, InstanceContainer &ic)
 {
 	if (common::existsDir (dir))
 	{
@@ -389,7 +329,7 @@ void CubeHolder::dumpFileMetrics (string dir, InstanceContainer &ic,
 			}
 		}
 
-		dumpFileMetrics_Lines_ASTs (dir, maxig, counters);
+		dumpFileMetrics_Lines_ASTs (dir, maxig);
 	}
 }
 

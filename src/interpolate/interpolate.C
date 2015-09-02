@@ -1390,9 +1390,16 @@ int main (int argc, char *argv[])
 					Callstack *ct = new Callstack;
 					ct->generate (ic.getInstanceGroup(u), found, mainid);
 				}
-				ch.generateCubeTree (ic, sourceDirectory, counters);
-				ch.dumpLaunch (ic, objectsSelected, counters, oFileCUBE);
-				ch.dumpFileMetrics (sourceDirectory, ic, counters);
+				ch.generateCubeTree (ic, sourceDirectory);
+			}
+		/* Severities in Cube 4.x should be written after defining the CUBE tree
+		   according to Pavel Savionkou (Cube v4.3.1 / September 2015) */
+		for (const auto & region : regions)
+			if (Instances.count(region) > 0)
+			{
+				ch.setCubeSeverities ();
+				InstanceContainer ic = Instances.at(region);
+				ch.dumpFileMetrics (sourceDirectory, ic);
 			}
 		ch.dump (oFileCUBE);
 #endif

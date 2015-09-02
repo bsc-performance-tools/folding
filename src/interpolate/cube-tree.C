@@ -56,11 +56,7 @@ void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree,
 	cube_node = c.def_cnode (cube_region, sourceDir + "/" + file, 0, parent);
 	tree_node = ctree;
 
-	/* Store # occurrences */
-	Metric *m = c.get_met (NO_OCCURRENCES);
-	Thread *t = (c.get_thrdv())[0];
-	// c.set_sev (m, cube_node, t, ctree->getOccurrences());
-
+	/* Recursively create the children for this ctree node */
 	vector<CallstackTree*> vctree = ctree->getChildren();
 	for (const auto & child : vctree)
 	{
@@ -70,3 +66,14 @@ void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree,
 	}
 }
 
+void CubeTree::setSeverities (Cube &c)
+{
+	/* Store # occurrences in the cnode associated to this node*/
+	Metric *m = c.get_met (NO_OCCURRENCES);
+	Thread *t = (c.get_thrdv())[0];
+	c.set_sev (m, cube_node, t, tree_node->getOccurrences());
+
+	/* Apply recursively */
+	for (const auto & child : children)
+		child->setSeverities (c);
+}
