@@ -49,6 +49,7 @@ class Instance
 	const unsigned thread;
 	const unsigned long long startTime;
 	const unsigned long long duration;
+	const set<unsigned> livingDataObjects;
 	unsigned long long prvValue;
 	unsigned group;
 	vector<Sample*> Samples;
@@ -58,7 +59,8 @@ class Instance
 	public:
 	Instance (unsigned ptask, unsigned task, unsigned thread, string region,
 	  unsigned long long startTime, unsigned long long duration,
-	  set<string> &counters, map<string, unsigned long long> totalcountervalues);
+	  set<string> &counters, map<string, unsigned long long> totalcountervalues,
+	  const set<unsigned> & livingDataObjects);
 	~Instance(void);
 
 	void Show(void);
@@ -93,6 +95,8 @@ class Instance
 	  { return TotalCounterValues; }
 	string getRegionName(void) const
 	  { return RegionName; }
+	const set<unsigned> getLivingDataObjects (void) const
+	  { return livingDataObjects; }
 };
 
 #endif

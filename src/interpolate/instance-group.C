@@ -473,7 +473,7 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 
 void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	const vector<Model*> & models, const string &TimeUnit,
-	vector<VariableInfo*> & variables, UIParaverTraceConfig *pcf)
+	vector<DataObject*> & variables, UIParaverTraceConfig *pcf)
 {
 	bool has_instruction_counter = false;
 	map<string, InterpolationResults*>::iterator it;

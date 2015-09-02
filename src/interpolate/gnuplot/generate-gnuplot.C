@@ -42,7 +42,7 @@ void gnuplotGenerator::gnuplot_single (
 	const string &counter,
 	InterpolationResults *idata,
 	const string & TimeUnit,
-	const vector<VariableInfo*> & variables,
+	const vector<DataObject*> & variables,
 	UIParaverTraceConfig *pcf
 )
 {
@@ -257,7 +257,7 @@ string gnuplotGenerator::gnuplot_slopes (
 	const string &prefix,
 	bool per_instruction,
 	const string & TimeUnit,
-	const vector<VariableInfo*> & variables,
+	const vector<DataObject*> & variables,
 	UIParaverTraceConfig *pcf
 )
 {
@@ -456,7 +456,7 @@ string gnuplotGenerator::gnuplot_model (
 	const string & prefix,
 	const Model *m,
 	const string & TimeUnit,
-	const vector<VariableInfo*> & variables,
+	const vector<DataObject*> & variables,
 	UIParaverTraceConfig *pcf
 )
 {

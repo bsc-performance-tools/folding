@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "sample.H"
+#include "data-object.H"
 
 using namespace std;
 
@@ -53,7 +54,9 @@ class FoldingWriter
 	static void Write (ofstream & ofile, const string & RegionName,
 	  unsigned ptask, unsigned task, unsigned thread,
 	  unsigned long long start, unsigned long long duration,
-	  const vector<Sample*> & Samples);
+	  const vector<Sample*> & Samples,
+	  const vector<DataObject*> &DataObjects,
+	  const set<unsigned> & livingDataObjects );
 };
 
 #endif /* FOLDING_WRITER_H_INCLUDED */

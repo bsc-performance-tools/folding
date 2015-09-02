@@ -5,10 +5,10 @@ include_HEADERS = sample.H codereftriplet.H callstack-codereftriplet.H object-se
 libcommon_la_SOURCES = \
  common.H common.C \
  common-math.H common-math.C \
- variable-info.H variable-info.C \
  object-selection.H object-selection.C \
  codereftriplet.H codereftriplet.C \
  callstack-codereftriplet.H callstack-codereftriplet.C \
+ data-object.H data-object.C \
  sample.H sample.C \
  prv-types.H
 

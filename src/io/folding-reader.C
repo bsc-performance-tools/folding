@@ -36,7 +36,6 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 	vector<Instance*> &feedInstances)
 {
 	Instance *i = NULL;
-	int line = 0;
 	char type;
 
 	cout << "Reading data belonging to Paraver Object " << os->toString()
@@ -55,7 +54,6 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 	while (true)
 	{
 		file >> type;
-		line++;
 
 		if (file.eof())
 			break;
@@ -89,7 +87,6 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 					delete i;
 			}
 
-
 			unsigned ptask, task, thread;
 			string RegionName;
 			unsigned long long startTime, duration;
@@ -117,8 +114,29 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 				ncounters--;
 			}
 
+			set<unsigned> dataobjects;
+			string dataobjectsheader;
+			file >> dataobjectsheader;
+			if (dataobjectsheader == "DO")
+			{
+				unsigned ndataobjects;
+				file >> ndataobjects;
+				while (ndataobjects > 0)
+				{
+					unsigned tmp;
+					file >> tmp;
+					dataobjects.insert (tmp);
+					ndataobjects--;
+				}
+			}
+			else
+			{
+				cerr << "Fatal error! Cannot locate DataObject header for instance" << endl;
+				exit (-1);
+			}
+
 			i = new Instance (ptask, task, thread, RegionName, startTime,
-			  duration, icounters, itotalcountervalues);
+			  duration, icounters, itotalcountervalues, dataobjects);
 			if (i == NULL)
 			{
 				cerr << "Fatal error! Cannot allocate memory for a new instance!" << endl;
@@ -276,12 +294,10 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 
 
 void FoldingReader::ReadVariables (const string & filenameextract,
-	vector<VariableInfo*> &vi)
+	vector<DataObject*> &dataObjects)
 {
-	int line = 0;
-
 	string filename = filenameextract.substr (0, filenameextract.rfind (".extract"))
-	  + ".address_regions";
+	  + ".dataobjects";
 
 	cout << "Reading variable info from file '" << filename << "'" << endl;
 
@@ -294,14 +310,12 @@ void FoldingReader::ReadVariables (const string & filenameextract,
 
 	while (true)
 	{
-		string name, s_start, s_end;
+		string type, name, s_start, s_end;
 
-		file >> name;
-		line++;
-
+		file >> type;
 		if (file.eof())
 			break;
-
+		file >> name;
 		file >> s_start;
 		file >> s_end;
 
@@ -312,11 +326,14 @@ void FoldingReader::ReadVariables (const string & filenameextract,
 		ss_end << hex << s_end;
 		ss_end >> ull_end;
 
-		/* Discard variables that are smaller than 1024 Kbytes */
-		if ((ull_end + 1) - ull_start >= 1024*1024)
-		{
-			VariableInfo *v = new VariableInfo (name, ull_start, ull_end);
-			vi.push_back (v);
-		}
+		DataObject *DO = NULL;
+		if (type == "S")
+			DO = new DataObject_static (ull_start, ull_end, name);
+		else if (type == "D")
+			DO = new DataObject_dynamic (ull_start, ull_end, name);
+
+		if (DO != NULL)
+			dataObjects.push_back (DO);
 	}
 }
+

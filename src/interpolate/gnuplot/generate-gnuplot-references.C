@@ -42,7 +42,7 @@ void gnuplotGeneratorReferences::generate (
 	  ofstream & gplot,
 	  const string & fileDump,
 	  InstanceGroup *ig,
-	  const vector<VariableInfo*> & variables,
+	  const vector<DataObject*> & variables,
 	  UIParaverTraceConfig *pcf)
 {
 	assert (gplot.is_open());
@@ -61,8 +61,22 @@ void gnuplotGeneratorReferences::generate (
 	unsigned long long minaddress_nonstack, maxaddress_nonstack;
 	bool hassomeaddress_stack = false, hassomeaddress_nonstack = false;
 
-	map<unsigned long long, VariableInfo*> seenVariables;
-	for (const auto & v : variables)
+	/* From all data objects, use only those that are alive */
+	vector<DataObject*> livingVariables;
+	set<unsigned> livingVariableIndices;
+	for (const auto & i : ig->getInstances())
+		for (const auto l : i->getLivingDataObjects())
+			livingVariableIndices.insert (l);
+	for (const auto l : livingVariableIndices)
+	{
+		assert (l >= 0);
+		assert (l < variables.size());
+		livingVariables.push_back (variables[l]);
+	}
+
+	/* Compute those variables that have been referenced into seenVariables */
+	map<unsigned long long, DataObject*> seenVariables;
+	for (const auto & v : livingVariables)
 	{
 		set<Sample*> samples = ig->getAllSamples();
 		bool any_sample_in_variable = false;
@@ -119,13 +133,13 @@ void gnuplotGeneratorReferences::generate (
 			double min_sample_time = 0., max_sample_time = 0.;
 			unsigned long long min_address = 0, max_address = 0;
 			bool has_times = false;
-			VariableInfo* vi = v.second;
+			DataObject* DO = v.second;
 
 			vector< pair< double, double> > vtmp;
 			for (const auto s : samples)
 				if (r.first < s->getNTime() && s->getNTime() < r.second)
 					if (s->hasAddressReference())
-						if (vi->addressInVariable (s->getAddressReference()))
+						if (DO->addressInVariable (s->getAddressReference()))
 						{
 							vtmp.push_back (make_pair(s->getNTime(), s->getAddressReference()));
 							if (has_times)
@@ -180,9 +194,9 @@ void gnuplotGeneratorReferences::generate (
 				res << "set label '" << restmp.str() << " @/ins' at second "
 				  << min_sample_time + (max_sample_time-min_sample_time)/2
 				  << "*FACTOR," << min_address + (max_address-min_address)/2 
-				  << ". center front; # " << vi->getName();
+				  << ". center front; # " << DO->getName();
 
-				if (common::addressInStack (vi->getStartAddress()))
+				if (common::addressInStack (DO->getStartAddress()))
 					stack_labels.push_back (res.str());
 				else
 					nonstack_labels.push_back (res.str());
@@ -258,17 +272,17 @@ void gnuplotGeneratorReferences::generate (
 	
 		for (const auto & v : seenVariables)
 		{
-			VariableInfo* vi = v.second;
-			if (common::addressInStack (vi->getStartAddress()))
+			DataObject* DO = v.second;
+			if (common::addressInStack (DO->getStartAddress()))
 			{
 				gplot << 
-				  "set object rect from second 0, second " << vi->getStartAddress() <<
-				  ". to second 1, second " << vi->getEndAddress() << ". fc rgb '" <<
+				  "set object rect from second 0, second " << DO->getStartAddress() <<
+				  ". to second 1, second " << DO->getEndAddress() << ". fc rgb '" <<
 				  colors[vv%(colors.size())] << "' fs solid 0.25 noborder;" << endl <<
 				  "set label at second -0.01, second " <<
-				  vi->getStartAddress() + vi->getSize()/2 << ". '" << vi->getName() <<
+				  DO->getStartAddress() + DO->getSize()/2 << ". '" << DO->getName() <<
 				  "' front right tc rgb '" << colors[vv%(colors.size())] <<
-				  "; # Size " << vi->getEndAddress() - vi->getStartAddress() << endl;
+				  "; # Size " << DO->getEndAddress() - DO->getStartAddress() << endl;
 				vv++;
 			}
 		}
@@ -304,16 +318,16 @@ void gnuplotGeneratorReferences::generate (
 	
 		for (const auto & v : seenVariables)
 		{
-			VariableInfo* vi = v.second;
-			if (!common::addressInStack (vi->getStartAddress()))
+			DataObject* DO = v.second;
+			if (!common::addressInStack (DO->getStartAddress()))
 			{
 				gplot << 
-				  "set object rect from second 0, second " << vi->getStartAddress() <<
-				  ". to second 1, second " << vi->getEndAddress() << ". fc rgb '" <<
+				  "set object rect from second 0, second " << DO->getStartAddress() <<
+				  ". to second 1, second " << DO->getEndAddress() << ". fc rgb '" <<
 				  colors[vv%(colors.size())] << "' fs solid 0.25 noborder;" << endl <<
 				  "set label at second -0.01, second " <<
-				  vi->getStartAddress() + vi->getSize()/2 << ". '" << vi->getName() <<
-				  "' front right; # Size " << vi->getEndAddress() - vi->getStartAddress() << endl;
+				  DO->getStartAddress() + DO->getSize()/2 << ". '" << DO->getName() <<
+				  "' front right; # Size " << DO->getEndAddress() - DO->getStartAddress() << endl;
 				vv++;
 			}
 		}
