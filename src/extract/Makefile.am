@@ -10,4 +10,4 @@ if NEED_BOOST_HOME
 extract_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
-extract_LDADD = -L../common -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser ../io/libfolding-io-writer.la
+extract_LDADD = -L../common -lcommon -lpcf-common -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser ../io/libfolding-io-writer.la

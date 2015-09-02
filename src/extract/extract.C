@@ -42,6 +42,8 @@
 #include "sample.H"
 #include "folding-writer.H"
 #include "prv-types.H"
+#include "data-object.H"
+#include "pcf-common.H"
 
 static string RegionSeparator;
 static unsigned long long RegionSeparatorID = 0;
@@ -56,54 +58,21 @@ using namespace std;
 
 double NormalizeValue (double value, double min, double max)
 { 
-  return (value-min) / (max-min);
+	return (value-min) / (max-min);
 } 
     
 double DenormalizeValue (double normalized, double min, double max)
 {     
-  return (normalized*(max-min))+min;
+	return (normalized*(max-min))+min;
 }     
 
 namespace libparaver {
-
-class DataObject
-{
-	private:
-	string name;
-	unsigned long long startAddress;
-	unsigned long long endAddress;
-	unsigned long long size;
-
-	public:
-	DataObject(string name, unsigned long long size);
-	string getName (void) const
-	  { return name; }
-	unsigned long long getStartAddress (void) const
-	  { return startAddress; }
-	unsigned long long getEndAddress (void) const
-	  { return endAddress; }
-	void setStartAddress (unsigned long long startAddress)
-	  {
-	    this->startAddress = startAddress;
-	    this->endAddress = startAddress + this->size;
-	  }
-};
-
-DataObject::DataObject(string name, unsigned long long size)
-{
-	this->name = name;
-	this->size = size;
-	this->startAddress = 0;
-	this->endAddress = 0;
-}
 
 class ThreadInformation
 {
 	private:
 	bool seen;
 	vector<Sample*> Samples;
-	map<unsigned long long, DataObject*> dataObjects;
-	DataObject *tmp_dataObject;
 	unsigned long long CurrentRegion;
 	unsigned long long StartRegion;
 
@@ -130,14 +99,6 @@ class ThreadInformation
 			delete s;
 		Samples.clear();
 	  }
-	void addDataObject (DataObject *_do)
-	  { dataObjects[_do->getStartAddress()] = _do; }
-	const map<unsigned long long, DataObject*> & getDataObjects (void) const
-	  {  return dataObjects; }
-	void setTmpDataObject (DataObject *_do)
-	  { tmp_dataObject = _do; }
-	DataObject * getTmpDataObject (void) const
-	  { return tmp_dataObject; }
 	ThreadInformation ();
 	~ThreadInformation ();
 };
@@ -146,7 +107,6 @@ ThreadInformation::ThreadInformation ()
 {	
 	seen = false;
 	CurrentRegion = 0;
-	tmp_dataObject = NULL;
 }
 
 ThreadInformation::~ThreadInformation ()
@@ -158,6 +118,9 @@ class TaskInformation
 	private:
 	int numThreads;
 	ThreadInformation *ThreadsInfo;
+	vector<DataObject*> dataObjects;
+	DataObject_dynamic *tmpdataobject;
+	set<unsigned> livingDataObjects;
 
 	public:
 	int getNumThreads (void) const
@@ -168,6 +131,33 @@ class TaskInformation
 
 	void AllocateThreads (int nThreads);
 	~TaskInformation();
+
+	void addDataObject (DataObject *_do)
+	  {
+	    dataObjects.push_back (_do);
+		livingDataObjects.insert (dataObjects.size()-1);
+	  }
+	void removeDataObject (unsigned long long address)
+	  {
+		/* We want to reference every allocated memory region, so we don't
+		   actually remove the data object reference. We only remove its
+		   last living reference */
+	    for (size_t i = 0; i < dataObjects.size(); i++)
+			if (dataObjects[i]->getStartAddress() == address)
+				if (livingDataObjects.count (i) > 0)
+				{
+					livingDataObjects.erase (i);
+					break;
+				}
+	  }
+	const vector<DataObject*> & getDataObjects (void) const
+	  {  return dataObjects; }
+	void setTmpDataObject (DataObject_dynamic *_do)
+	  { tmpdataobject = _do; }
+	DataObject_dynamic * getTmpDataObject (void) const
+	  { return tmpdataobject; } 
+	set<unsigned> getLivingDataObjects (void) const
+	  { return livingDataObjects; }
 };
 
 TaskInformation::~TaskInformation()
@@ -577,18 +567,23 @@ void Process::processMultiEvent (struct multievent_t &e)
 	map<unsigned, unsigned long long> CallerLineAST; /* Map depth of caller line AST */
 
 	/* Is there a memory-related call? */
-	bool memory_call = false;
+	bool memory_call_alloc = false, memory_call_free = false;
 	for (const auto & event : e.events)
 		if (event.Type == EXTRAE_DYNAMIC_MEMORY_TYPE)
 			if (event.Value == EXTRAE_DYNAMIC_MEMORY_MALLOC ||
 			    event.Value == EXTRAE_DYNAMIC_MEMORY_CALLOC ||
 			    event.Value == EXTRAE_DYNAMIC_MEMORY_REALLOC)
 			{
-				memory_call = true;
+				memory_call_alloc = true;
+				break;
+			}
+			else if (event.Value == EXTRAE_DYNAMIC_MEMORY_FREE)
+			{
+				memory_call_free = true;
 				break;
 			}
 
-	if (memory_call)
+	if (memory_call_alloc)
 	{
 		bool has_minimum_call = false;
 		unsigned minimum_call_type;
@@ -629,20 +624,31 @@ void Process::processMultiEvent (struct multievent_t &e)
 			string name, tmp = getTypeValue (minimum_call_type, minimum_call_value, found);
 			if (found)
 				name = common::removeUnwantedChars (tmp.substr (0, tmp.find (')')));
-			DataObject *d = new DataObject (found?name:"<unknown>", dynamic_memory_size);
-			thi[thread].setTmpDataObject (d);
+			DataObject_dynamic *d = new DataObject_dynamic (dynamic_memory_size,
+			  found?name:string("<unknown>"));
+			ti[task].setTmpDataObject (d);
 		}
+	}
+	else if (memory_call_free)
+	{
+		unsigned long long dynamic_memory_inptr = 0;
+		for (const auto & event : e.events)
+			if (event.Type == EXTRAE_DYNAMIC_MEMORY_IN_PTR)
+				dynamic_memory_inptr = event.Value;
+
+		if (dynamic_memory_inptr)
+			ti[task].removeDataObject (dynamic_memory_inptr);
 	}
 
 	/* Close any memory-related call? */
-	DataObject *d = thi[thread].getTmpDataObject ();
+	DataObject_dynamic *d = ti[task].getTmpDataObject ();
 	if (d != NULL)
 		for (const auto & event : e.events)
 			if (event.Type == EXTRAE_DYNAMIC_MEMORY_OUT_PTR)
 			{
 				d->setStartAddress (event.Value);
-				thi[thread].addDataObject (d);
-				thi[thread].setTmpDataObject (NULL);
+				ti[task].setTmpDataObject (NULL);
+				ti[task].addDataObject (d);
 				break;
 			}
 
@@ -847,7 +853,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 				FoldingWriter::Write (IH.outputfile, RegionName, ptask, task,
 				  thread, thi[thread].getStartRegion(),
 				  e.Timestamp - thi[thread].getStartRegion(),
-				  thi[thread].getSamples());
+				  thi[thread].getSamples(),
+				  ti[task].getDataObjects(),
+				  ti[task].getLivingDataObjects());
 			}
 
 			/* Clean */
@@ -877,6 +885,9 @@ void Process::allocateBuffers (void)
 	if (common::DEBUG())
 		cout << "Application has " << va.size() << " ptasks" << endl;
 
+	bool has_addresses = false;
+	string r = getType (ADDRESS_VARIABLE_ADDRESSES, has_addresses);
+
 	IH.AllocatePTasks (va.size());
 	PTaskInformation *pti = IH.getPTasksInformation();
 	for (unsigned ptask = 0; ptask < va.size(); ptask++)
@@ -888,6 +899,30 @@ void Process::allocateBuffers (void)
 
 		pti[ptask].AllocateTasks (vt.size());
 		TaskInformation *ti = pti->getTasksInformation();
+
+		/* Copy static data objects */
+		if (has_addresses)
+			for (const auto eventvalue : pcf->getEventValues (ADDRESS_VARIABLE_ADDRESSES))
+			{
+				unsigned long long eav, sav;
+
+				string value = pcf->getEventValue (ADDRESS_VARIABLE_ADDRESSES, eventvalue);
+	
+				/* Parsing string like: a [0x13730100-0x1cfc68ff] */
+				string name =
+				  value.substr (0, value.find ("[") - 1);
+				stringstream sa (
+				  value.substr (value.find ("[") + 1, value.find("-") - value.find("[") - 1));
+				sa << std::hex;
+				sa >> sav;
+				stringstream ea (
+				  value.substr (value.find ("-") + 1, value.find("]") - value.find ("-") - 1));
+				ea << std::hex;
+				ea >> eav;
+	
+				ti->addDataObject (new DataObject_static (sav, eav, name));
+			}
+
 		for (unsigned int task = 0; task < vt.size(); task++)
 		{
 			unsigned nthreads = vt[task]->get_threads().size(); /* o vt[task]->get_threads()[0]->get_key() ? */
@@ -922,14 +957,39 @@ string Process::getType (unsigned type, bool &found, bool silent)
 string Process::getTypeValue (unsigned type, unsigned value, bool &found)
 {
 	found = true;
-	string s;
+	string s, cl, c;
 
 	try
-	{ s = pcf->getEventValue (type, value); }
+	{
+	  s = pcf->getEventValue (type, value);
+	  cl = pcf->getEventValue (EXTRAE_SAMPLE_CALLERLINE, value);
+	  c = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, value);
+	}
 	catch (...)
 	{
 		found = false;
 		s = "";
+	}
+
+	/* If the given type is the same as the caller or caller-line, be careful
+	   with special type description compression) */
+	if ((s == cl || s == c) && s != "")
+	{
+		if (s == cl)
+		{
+			/* Caller Line */
+			unsigned line;
+			string file;
+			stringstream ss;
+			pcfcommon::lookForCallerLineInfo (pcf, value, file, line);
+			ss << line << "_" << file;
+			s = ss.str();
+		}
+		else
+		{
+			/* Caller */
+			pcfcommon::lookForCallerInfo (pcf, value, s);
+		}
 	}
 
 	return s;
@@ -996,46 +1056,23 @@ void Process::dumpSeenAddressRegions (string filename)
 	ofstream f (filename.c_str());
 	if (f.is_open())
 	{
-		bool has_addresses;
-		string r = getType (ADDRESS_VARIABLE_ADDRESSES, has_addresses);
-
 		PTaskInformation *ptaskinfo = IH.getPTasksInformation();
 		for (int ptask = 0; ptask < 1 /* IH.getNumPTasks() */; ptask++)
 		{
 			TaskInformation *taskinfo = ptaskinfo[ptask].getTasksInformation();
 			for (int task = 0; task < 1 /* ptaskinfo[ptask].getNumTasks() */; task++)
 			{
-				ThreadInformation *threadinfo = taskinfo[task].getThreadsInformation();
-				for (int thread = 0; thread < 1 /* taskinfo[task].getNumThreads() */ ; thread++)
-				{
-					const map<unsigned long long, DataObject*> dataobjects =
-					  threadinfo[thread].getDataObjects ();
+				vector<DataObject*> dataobjects =
+				  taskinfo[task].getDataObjects ();
 
-					f << std::hex;
-					for (const auto & kv : dataobjects)
-					{
-						DataObject *d = kv.second;
-						f << d->getName() << " 0x" << d->getStartAddress() << " 0x" << d->getEndAddress() << endl;
-					}
-					f << std::dec;
-				}
-				if (has_addresses)
-				{
-					for (const auto eventvalue : pcf->getEventValues (ADDRESS_VARIABLE_ADDRESSES))
-					{
-						string value = pcf->getEventValue (ADDRESS_VARIABLE_ADDRESSES, eventvalue);
-		
-						/* Parsing string like: a [0x13730100-0x1cfc68ff] */
-						string variable =
-						  value.substr (0, value.find ("[") - 1);
-						string startaddress =
-						  value.substr (value.find ("[") + 1, value.find("-") - value.find("[") - 1);
-						string endaddress =
-						  value.substr (value.find ("-") + 1, value.find("]") - value.find ("-") - 1);
-		
-						f << variable << " " << startaddress << " " << endaddress << endl;
-					}
-				}
+				f << std::hex;
+				for (auto & d : dataobjects)
+					if (dynamic_cast<DataObject_static*>(d) != NULL)
+						f << "S " << d->getName() << " 0x" << d->getStartAddress() << " 0x" << d->getEndAddress() << endl;
+					else
+						f << "D " << d->getName() << " 0x" << d->getStartAddress() << " 0x" << d->getEndAddress() << endl;
+						
+				f << std::dec;
 			} 
 		}
 
@@ -1048,7 +1085,7 @@ void Process::dumpSeen (string fnameprefix)
 	dumpSeenObjects (fnameprefix+".objects");
 	dumpSeenCounters (fnameprefix+".counters");
 	dumpSeenRegions (fnameprefix+".regions");
-	dumpSeenAddressRegions (fnameprefix+".address_regions");
+	dumpSeenAddressRegions (fnameprefix+".dataobjects");
 }
 
 void Process::dumpMissingValuesIntoPCF (void)

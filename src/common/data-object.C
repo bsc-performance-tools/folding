@@ -20,41 +20,36 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common/common.H $
- | 
- | @last_commit: $Date: 2013-10-29 13:39:46 +0100 (mar, 29 oct 2013) $
- | @version:     $Revision: 2259 $
- | 
- | History:
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 
-#ifndef PCFCOMMON_H_INCLUDED
-#define PCFCOMMON_H_INCLUDED
+#include "common.H"
 
-#include "folding-config.h"
-#include <string>
-#include "UIParaverTraceConfig.h"
+#include "data-object.H"
 
-using namespace std;
-using namespace libparaver;
-
-class pcfcommon
+DataObject::DataObject(unsigned long long s, const string & n)
+	: size(s), name(n)
 {
-	public:
-	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
+}
 
-	static void lookForCallerInfo (UIParaverTraceConfig *pcf, unsigned id,
-		string &routine);
-	static void lookForCallerLineInfo (UIParaverTraceConfig *pcf,
-	  unsigned id, string &file, unsigned &line);
-	static void lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller,
-	  unsigned callerlineast, string &routine, string &file, unsigned &bline, unsigned &eline);
-	static void lookForCallerFullInfo (UIParaverTraceConfig *pcf, unsigned caller,
-	  unsigned callerline, unsigned callerlineast, string &routine, string &file,
-	  unsigned &line, unsigned &bline, unsigned &eline);
-	static unsigned lookForValueString (UIParaverTraceConfig *pcf, unsigned type,
-	  string str, bool &found);
-};
+DataObject::~DataObject()
+{
+}
 
-#endif
+DataObject_static::DataObject_static (unsigned long long startaddress,
+	unsigned long long endaddress, const string &varname)
+	: DataObject(endaddress-startaddress+1, varname)
+{
+	setStartAddress (startaddress);
+}
+
+DataObject_dynamic::DataObject_dynamic(unsigned long long s, const string & varname)
+	: DataObject(s, varname)
+{
+}
+
+DataObject_dynamic::DataObject_dynamic(unsigned long long startaddress,
+	unsigned long long endaddress, const string & varname)
+	: DataObject(endaddress-startaddress+1, varname)
+{
+	setStartAddress (startaddress);
+}
+

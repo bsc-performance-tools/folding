@@ -36,7 +36,7 @@
 #include <set>
 #include "object-selection.H"
 #include "instance.H"
-#include "variable-info.H"
+#include "data-object.H"
 
 using namespace std;
 
@@ -49,7 +49,7 @@ class FoldingReader
 	  vector<Instance*> &Instances, ObjectSelection *osfeed, 
 	  vector<Instance*> &feedInstances);
 	static void ReadVariables (const string & filenameextract,
-	  vector<VariableInfo*> &vi);
+	  vector<DataObject*> &dataObjects);
 };
 
 #endif /* FOLDING_READER_H_INCLUDED */

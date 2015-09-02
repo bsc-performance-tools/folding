@@ -45,7 +45,7 @@
 #endif
 
 #include "model.H"
-#include "variable-info.H"
+#include "data-object.H"
 #include "callstack-processor.H"
 
 using namespace std;
@@ -145,7 +145,7 @@ class InstanceGroup
 	  const vector<Model*> &models);
 	void gnuplot (const ObjectSelection *os, const string & prefix,
 	  const vector<Model*> &models, const string & TimeUnit,
-	  vector<VariableInfo*> & vars, UIParaverTraceConfig *pcf);
+	  vector<DataObject*> & vars, UIParaverTraceConfig *pcf);
 	string python (void);
 
 	void setCallstackTrees (vector<CallstackTree*> vtrees)

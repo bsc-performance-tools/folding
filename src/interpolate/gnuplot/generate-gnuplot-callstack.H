@@ -27,7 +27,6 @@
 #include "interpolate.H"
 #include "instance-container.H"
 #include "instance-group.H"
-#include "variable-info.H"
 
 using namespace std;
 

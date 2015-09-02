@@ -108,7 +108,9 @@ bool FoldingWriter::checkSamples (const vector<Sample*> &Samples)
 void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 	unsigned ptask, unsigned task, unsigned thread,
 	unsigned long long start, unsigned long long duration,
-	const vector<Sample*> & Samples)
+	const vector<Sample*> & Samples,
+	const vector<DataObject*> &DataObjects,
+	const set<unsigned> &livingDataObjects)
 {
 	/* At least, have a sample at the begin & end, and someone else */
 	if (Samples.size() < 2)
@@ -147,6 +149,31 @@ void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 	for (it_totals = totals.begin(); it_totals != totals.end(); ++it_totals)
 		ofile << " " << (*it_totals).first << " " << (*it_totals).second;
 	ofile << endl;
+
+	/* End of header */
+
+	/* Dump living and referenced data objects */
+	/* 1 search for living data objects that have been referenced by the
+	   samples of this instance */
+	set<unsigned> livingandreferencedDatAObjects;
+	for (const auto & s : Samples)
+		if (s->hasAddressReference())
+			for (auto DO : livingDataObjects)
+			{
+				assert (DO >= 0);
+				assert (DO < DataObjects.size());
+				if (DataObjects[DO]->addressInVariable (s->getAddressReference()))
+				{
+					livingandreferencedDatAObjects.insert (DO);
+					break;
+				}
+			}
+	/* 2 Actual dump */
+	ofile << "DO " << livingandreferencedDatAObjects.size();
+	for (auto DO : livingandreferencedDatAObjects)
+		ofile << " " << DO;
+	ofile << endl;
+	/* End of dump living and referenced data objects */
 
 	/* Do not emit samples if we only have a sample at the end */
 	if (Samples[0]->getTime() == start + duration)

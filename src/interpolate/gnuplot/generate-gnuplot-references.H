@@ -27,7 +27,7 @@
 #include "interpolate.H"
 #include "instance-container.H"
 #include "instance-group.H"
-#include "variable-info.H"
+#include "data-object.H"
 
 using namespace std;
 
@@ -43,7 +43,7 @@ class gnuplotGeneratorReferences
 	  ofstream & gplot,
 	  const string & fileDump,
 	  InstanceGroup *ig,
-	  const vector<VariableInfo*> & variables,
+	  const vector<DataObject*> & variables,
 	  UIParaverTraceConfig *pcf);
 };
 

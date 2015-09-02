@@ -53,7 +53,7 @@
 #endif
 #include "model.H"
 
-#include "variable-info.H"
+#include "data-object.H"
 
 #include <string.h>
 #include <iostream>
@@ -957,7 +957,7 @@ int main (int argc, char *argv[])
 	  presentCounters, presentRegions, vInstances, objectToFeed, feedInstances);
 
 	// Read variables info
-	vector<VariableInfo*> variables;
+	vector<DataObject*> variables;
 	FoldingReader::ReadVariables (argv[res], variables);
 
 	// Accumulate in wantedRegions the regions to be folded, ignoring the rest
@@ -1299,7 +1299,9 @@ int main (int argc, char *argv[])
 					unsigned long long pv = pcfcommon::lookForValueString (pcf,
  						feedTraceFoldType, i->getRegionName(), found);
 					if (!found)
+					{
 						cerr << "Can't find value for '" << i->getRegionName() <<"' in type " << feedTraceFoldType << endl;
+					}
 					else
 						i->setPRVvalue (pv);
 					whichInstancesToFeed.push_back (i);
@@ -1319,7 +1321,9 @@ int main (int argc, char *argv[])
 					unsigned long long pv = pcfcommon::lookForValueString (pcf,
  						feedTraceFoldType, i->getRegionName(), found);
 					if (!found)
+					{
 						cerr << "Can't find value for '" << i->getRegionName() <<"' in type " << feedTraceFoldType << endl;
+					}
 					else
 						i->setPRVvalue (pv);
 					whichInstancesToFeed.push_back (i);

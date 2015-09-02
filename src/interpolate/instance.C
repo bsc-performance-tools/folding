@@ -29,9 +29,10 @@
 
 Instance::Instance (unsigned ptask, unsigned task, unsigned thread,
 	string region, unsigned long long startTime, unsigned long long duration,
-	set<string> &counters, map<string, unsigned long long> totalcountervalues)
+	set<string> &counters, map<string, unsigned long long> totalcountervalues,
+	const set<unsigned> &dataobjects)
 	: RegionName(region), ptask(ptask), task(task), thread(thread),
-	startTime(startTime), duration(duration)
+	startTime(startTime), duration(duration), livingDataObjects(dataobjects)
 {
 	this->group = 0;
 	this->prvValue = 0;

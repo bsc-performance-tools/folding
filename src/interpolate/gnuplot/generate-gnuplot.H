@@ -27,7 +27,7 @@
 #include "interpolate.H"
 #include "instance-container.H"
 #include "instance-group.H"
-#include "variable-info.H"
+#include "data-object.H"
 
 using namespace std;
 
@@ -43,7 +43,7 @@ class gnuplotGenerator
 	  const string &counter,
 	  InterpolationResults *idata,
 	  const string & TimeUnit,
-	  const vector<VariableInfo*> & variables,
+	  const vector<DataObject*> & variables,
 	  UIParaverTraceConfig *pcf);
 	static string gnuplot_slopes (
 	  InstanceGroup *ig,
@@ -51,7 +51,7 @@ class gnuplotGenerator
 	  const string &prefix,
 	  bool per_instruction,
 	  const string & TimeUnit,
-	  const vector<VariableInfo*> & variables,
+	  const vector<DataObject*> & variables,
 	  UIParaverTraceConfig *pcf);
 	static string gnuplot_model (
 	  InstanceGroup *ig,
@@ -59,28 +59,28 @@ class gnuplotGenerator
 	  const string & prefix,
 	  const Model *m,
 	  const string & TimeUnit,
-	  const vector<VariableInfo*> & variables,
+	  const vector<DataObject*> & variables,
 	  UIParaverTraceConfig *pcf);
 	static string gnuplot_addresses_observed (
 	  InstanceGroup *ig,
 	  const ObjectSelection *os,
 	  const string & prefix,
 	  const string & TimeUnit,
-	  vector<VariableInfo*> & variables,
+	  vector<DataObject*> & variables,
 	  UIParaverTraceConfig *pcf);
 	static string gnuplot_addresses (
 	  InstanceGroup *ig,
 	  const ObjectSelection *os,
 	  const string & prefix,
 	  const string & TimeUnit,
-	  vector<VariableInfo*> & variables,
+	  vector<DataObject*> & variables,
 	  UIParaverTraceConfig *pcf);
 	static string gnuplot_addresses_cost (
 	  InstanceGroup *ig,
 	  const ObjectSelection *os,
 	  const string & prefix,
 	  const string & TimeUnit,
-	  vector<VariableInfo*> & variables,
+	  vector<DataObject*> & variables,
 	  UIParaverTraceConfig *pcf);
 	static void gnuplot_groups (
 	  InstanceContainer *ic,
@@ -102,7 +102,7 @@ class gnuplotGenerator
 	  ofstream & gplot,
 	  const string & fileDump,
 	  InstanceGroup *ig,
-	  const vector<VariableInfo*> & variables,
+	  const vector<DataObject*> & variables,
 	  UIParaverTraceConfig *pcf);
 };
 

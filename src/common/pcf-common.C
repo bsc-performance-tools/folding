@@ -23,11 +23,10 @@
 
 #include "pcf-common.H"
 #include "common.H"
+#include "prv-types.H"
 
 #include <algorithm>
-
-#define PAPI_MIN_COUNTER   42000000
-#define PAPI_MAX_COUNTER   42999999
+#include <sstream>
 
 unsigned pcfcommon::lookForCounter (string &name, UIParaverTraceConfig *pcf)
 {
@@ -50,12 +49,13 @@ unsigned pcfcommon::lookForCounter (string &name, UIParaverTraceConfig *pcf)
 	return 0;
 }
 
-unsigned pcfcommon::lookForValueString (UIParaverTraceConfig *pcf, unsigned type, string str, bool &found)
+unsigned pcfcommon::lookForValueString (UIParaverTraceConfig *pcf,
+	unsigned type, string str, bool &found)
 {
 	found = false;
 
-	vector<unsigned> vtypes = pcf->getEventTypes();
-	if (find (vtypes.begin(), vtypes.end(), type) != vtypes.end())
+	if ((type >= EXTRAE_SAMPLE_CALLER_MIN && type <= EXTRAE_SAMPLE_CALLER_MAX)
+	  || type == EXTRAE_USER_FUNCTION)
 	{
 		vector<unsigned> v;
 		try
@@ -69,16 +69,71 @@ unsigned pcfcommon::lookForValueString (UIParaverTraceConfig *pcf, unsigned type
 		}
 		for (unsigned i = 0; i < v.size(); i++)
 		{
-			string evstr = pcf->getEventValue (type, v[i]);
-			if (str == evstr)
+			string r;
+			lookForCallerInfo (pcf, v[i], r);
+			if (r == str)
 			{
 				found = true;
 				return v[i];
 			}
-			else if (str == common::removeSpaces (evstr))
+		}
+	}
+	else if ((type >= EXTRAE_SAMPLE_CALLERLINE_MIN && type <= EXTRAE_SAMPLE_CALLERLINE_MAX)
+	  || type == EXTRAE_USER_FUNCTION_LINE)
+	{
+		vector<unsigned> v;
+		try
+		{
+			v = pcf->getEventValues(type);
+		}
+		catch (...)
+		{
+			found = false;
+			return 0;
+		}
+		for (unsigned i = 0; i < v.size(); i++)
+		{
+			string file;
+			unsigned line;
+			stringstream ss;
+			lookForCallerLineInfo (pcf, v[i], file, line);
+			ss << line << "_" << file;
+			if (ss.str() == str)
 			{
 				found = true;
 				return v[i];
+			}
+		}
+	}
+	else
+	{
+		vector<unsigned> vtypes = pcf->getEventTypes();
+
+		if (find (vtypes.begin(), vtypes.end(), type) != vtypes.end())
+		{
+			vector<unsigned> v;
+			try
+			{
+				v = pcf->getEventValues(type);
+			}
+			catch (...)
+			{
+				found = false;
+				return 0;
+			}
+			for (unsigned i = 0; i < v.size(); i++)
+			{
+				string evstr = pcf->getEventValue (type, v[i]);
+				if (str == evstr)
+				{
+					found = true;
+					return v[i];
+				}
+				else if (str == common::removeSpaces (evstr))
+				{
+					found = true;
+					return v[i];
+				}
 			}
 		}
 	}
@@ -86,6 +141,23 @@ unsigned pcfcommon::lookForValueString (UIParaverTraceConfig *pcf, unsigned type
 	return 0;
 }
 
+void pcfcommon::lookForCallerInfo (UIParaverTraceConfig *pcf, unsigned id,
+	string &routine)
+{
+	/* Example: NEW CalcElem..ivatives [CalcElemShapeFunctionDerivatives]
+                    Function
+                OLD CalcElemShapeFunctionDerivatives */
+	string cl = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, id);
+
+	if (cl.find ("[") != string::npos)
+	{
+		int pos_begin = cl.find ("[");
+		int pos_end = cl.find ("]");
+		routine = cl.substr (pos_begin+1, pos_end-pos_begin-1);
+	}
+	else
+		routine = cl;
+}
 void pcfcommon::lookForCallerLineInfo (UIParaverTraceConfig *pcf, unsigned id,
 	string &file, unsigned &line)
 {
@@ -94,7 +166,7 @@ void pcfcommon::lookForCallerLineInfo (UIParaverTraceConfig *pcf, unsigned id,
                 OLD 178 (stream.simple.c) [stream.simple]
                 OR
                     END? */
-	string cl = pcf->getEventValue (30000100, id);
+	string cl = pcf->getEventValue (EXTRAE_SAMPLE_CALLERLINE, id);
 
 	if (cl.find (" ") != string::npos)
 	{
@@ -138,7 +210,7 @@ void pcfcommon::lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller
        OR
                 179-180 (stream.simple.c) */
 
-	string cl = pcf->getEventValue (30000200, callerlineast);
+	string cl = pcf->getEventValue (EXTRAE_SAMPLE_CALLERLINE_AST, callerlineast);
 
 	bline = 0;
 	eline = 0;
@@ -183,7 +255,7 @@ void pcfcommon::lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller
 	
 		file = afterspace.substr (pos_begin+1, pos_end-pos_begin-1);
 	
-		routine = pcf->getEventValue (30000000, caller);
+		routine = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, caller);
 	}
 }
 
