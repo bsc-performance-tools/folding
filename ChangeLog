@@ -1,6 +1,7 @@
 
 ChangeLog
  [ + added, - removed, * changed ]
+ * 02Sep2015 Cube4 support
  * 28Apr2015 Version 1.0.2
  *           Support for non-parenthesized labels for performance counters
              according to changes in Extrae 3.1.0
