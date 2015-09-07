@@ -12,15 +12,17 @@ noinst_LTLIBRARIES = libqcustomplot.la
 
 QCUSTOMPLOT_VERSION = 1.3.1
 
-libqcustomplot_la_SOURCES = \
-  ${QCUSTOMPLOT_VERSION}/qcustomplot/qcustomplot.cpp \
-  ${QCUSTOMPLOT_VERSION}/qcustomplot/qcustomplot.h
+## Newer versions of automake does not seem to support definitions based on
+## expanded variables... So be careful on modifying libqcustomplot_la_SOURCES
+## and BUILT_SOURCES when upgrading QCUSTOMPLOT
 
-# ${QCUSTOMPLOT_VERSION}/qcustomplot/qcustomplot.moc.cpp
+libqcustomplot_la_SOURCES = \
+  1.3.1/qcustomplot/qcustomplot.cpp \
+  1.3.1/qcustomplot/qcustomplot.h
+
+BUILT_SOURCES = 1.3.1/qcustomplot/qcustomplot.moc.cpp
 
 libqcustomplot_la_CXXFLAGS = @QT_CXXFLAGS@ @QT_INCPATH@ 
-
-BUILT_SOURCES = ${QCUSTOMPLOT_VERSION}/qcustomplot/qcustomplot.moc.cpp
 
 nodist_libqcustomplot_la_SOURCES = $(BUILT_SOURCES)
 
