@@ -49,7 +49,7 @@ AC_DEFINE_UNQUOTED([FOLDING_SVN_BRANCH], ["${SVN_branch}"], [Define SVN branch f
 AC_CANONICAL_SYSTEM
 
 # Initialize automake
-AM_INIT_AUTOMAKE([tar-ustar])
+AM_INIT_AUTOMAKE([tar-ustar subdir-objects])
 AM_SILENT_RULES([yes])
 AC_PROG_MKDIR_P
 
@@ -222,7 +222,7 @@ if test -x "${RBIN}" ; then
 		${RBIN} -f ${TMPDIR:-/tmp}/Rconftest > ${TMPDIR:-/tmp}/Rconftest.out 2> /dev/null
 		grep 1 ${TMPDIR:-/tmp}/Rconftest.out > ${TMPDIR:-/tmp}/Rconftest.out.grep
 		doparallel=`tail -2 ${TMPDIR:-/tmp}/Rconftest.out.grep | head -1 | cut -d\" -f2`
-		if test "${doparallel}" = "doParallel" ; then
+		if test "${doparallel}" = "doParallel" -o "${doparallel}" = "doParallelMC" ; then
 			R_DOPARALLEL_AVAILABLE=yes
 			AC_MSG_RESULT([yes])
 			AC_MSG_CHECKING(for the doParallel package version)
