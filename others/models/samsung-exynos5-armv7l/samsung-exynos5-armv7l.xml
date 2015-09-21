@@ -1,0 +1,67 @@
+<?xml version='1.0'?>
+
+<model name="instructionmix" title-name="Instruction mix" y1="Instruction type" y2="MIPS" y1-stacked="yes">
+
+	<component name="ld_mix" title-name="LD" where="y1" color="red">
+		<operation type='/'>
+			<value> PAPI_LD_INS </value>
+			<value> PAPI_TOT_INS </value>
+		</operation>
+	</component>
+
+	<component name="st_mix" title-name="ST" where="y1" color="blue">
+		<operation type='/'>
+			<value> PAPI_SR_INS </value>
+			<value> PAPI_TOT_INS </value>
+		</operation>
+	</component>
+
+	<component name="br_mix" title-name="BR" where="y1" color="green">
+		<operation type='/'>
+			<value> PAPI_BR_INS </value>
+			<value> PAPI_TOT_INS </value>
+		</operation>
+	</component>
+
+	<component name="fp_mix" title-name="FP" where="y1" color="orange">
+		<operation type='/'>
+			<value> PAPI_FP_INS </value>
+			<value> PAPI_TOT_INS </value>
+		</operation>
+	</component>
+
+	<component name="vec_mix" title-name="VEC" where="y1" color="purple">
+		<operation type='/'>
+			<value> PAPI_VEC_INS </value>
+			<value> PAPI_TOT_INS </value>
+		</operation>
+	</component>
+
+	<!-- others = 1-(br_ins+fp_ins+sr_ins+ld_ins+vec_ins)/tot_ins -->
+	<component name="others" title-name="Others" where="y1" color="#808080">
+		<operation type="-">
+			<value> 1 </value>
+			<operation type="/">
+				<operation type="+">
+					<operation type="+">
+						<value> PAPI_LD_INS </value>
+						<value> PAPI_SR_INS </value>
+					</operation>
+					<operation type="+">
+						<operation type="+">
+							<value> PAPI_BR_INS </value>
+							<value> PAPI_FP_INS </value>
+						</operation>
+						<value> PAPI_VEC_INS </value>
+					</operation>
+				</operation>
+				<value> PAPI_TOT_INS </value>
+			</operation>
+		</operation>
+	</component>
+
+	<component name="mips" title-name="MIPS" where="y2" color="black">
+		<value> PAPI_TOT_INS </value>
+	</component>
+
+</model>
