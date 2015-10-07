@@ -332,7 +332,9 @@ void FoldedParaverTrace::DumpGroupInfo (const Instance *in)
 
 	types.push_back (FOLDED_INSTANCE_GROUP);
 	types.push_back (FOLDED_TYPE);
+	types.push_back (FOLDED_LAUNCH_TYPE);
 	values.push_back (in->getGroup()+1);
+	values.push_back (in->getPRVvalue());
 	values.push_back (in->getPRVvalue());
 	zero_values.assign (types.size(), 0);
 

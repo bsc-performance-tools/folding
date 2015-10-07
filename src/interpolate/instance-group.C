@@ -31,6 +31,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sys/stat.h>
 #include "instance-group.H"
 #include "interpolation-results.H"
 #include "gnuplot/generate-gnuplot.H"
@@ -473,10 +474,23 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 
 void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	const vector<Model*> & models, const string &TimeUnit,
-	vector<DataObject*> & variables, UIParaverTraceConfig *pcf)
+	vector<DataObject*> & variables, UIParaverTraceConfig *pcf,
+	map<string, string> & launchers)
 {
 	bool has_instruction_counter = false;
 	map<string, InterpolationResults*>::iterator it;
+
+	string launchname = prefix + "." + os->toString (false, "any") + "." +
+	  common::removeUnwantedChars(getRegionName()) + "." + 
+	  common::removeSpaces (getGroupName()) + ".launch";
+
+	ofstream launch (launchname.c_str());
+	chmod (launchname.c_str(), 0755);
+
+	launch << "#!/bin/bash" << endl
+	  << endl
+	  << "# Automatically generated file! Be careful when editing!" << endl
+	  << endl;
 
 	/* Dump single plots first */
 	for (it = interpolated.begin(); it != interpolated.end(); it++)
@@ -497,13 +511,26 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	cout << "Summary plot for region " << regionName << " ("
 	  << ofile << ")"  << endl;
 
-	for (unsigned m = 0; m < models.size(); m++)
+	/* If we don't have models, show the slopes instead */
+	if (models.size() == 0)
 	{
-		string tmp = gnuplotGenerator::gnuplot_model (this, os, prefix,
-		  models[m], TimeUnit, variables, pcf);
-		cout << "Plot model " << models[m]->getTitleName() << " for region "
-		  << regionName << " (" << tmp << ")" << endl;
+		launch << "gnuplot -p " << ofile << endl;
+		launchers[getRegionName()] = string("./")+launchname;
 	}
+	else
+	{
+		for (const auto & m : models)
+		{
+			ofile = gnuplotGenerator::gnuplot_model (this, os, prefix,
+			  m, TimeUnit, variables, pcf);
+			cout << "Plot model " << m->getTitleName() << " for region "
+			  << regionName << " (" << ofile << ")" << endl;
+			launch << "gnuplot -p " << ofile << " &"  << endl;
+		}
+		launchers[getRegionName()] = string("./")+launchname;
+	}
+
+	launch.close();
 }
 
 string InstanceGroup::python (void)

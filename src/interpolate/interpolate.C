@@ -108,7 +108,9 @@ static CallstackProcessor_type_t CallstackProcessor_type = CALLSTACKPROCESSOR_CO
 
 FoldedParaverTrace *ftrace = NULL;
 
-string sourceDirectory;
+static unsigned long long feedTraceFoldType;
+
+static string sourceDirectory;
 
 using namespace std;
 
@@ -299,7 +301,8 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 }
 
 void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
-	set<string> &wantedCounters, unsigned foldedType)
+	set<string> &wantedCounters, unsigned foldedType,
+	const map<string, string> & launchers)
 {
 	ofstream PCFfile;
 
@@ -374,7 +377,6 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		PCFfile << endl;
 	}
 
-#if 0 /* FIX? Due to Semantics CSV passed! */
 	PCFfile << endl << "EVENT_TYPE" << endl
 	  << "0 " << FOLDED_TYPE << " Folded type : " << pcf->getEventType (foldedType)
 	  << endl << "VALUES" << endl;
@@ -383,22 +385,36 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		PCFfile << i << " " << pcf->getEventValue(foldedType, v[i]) << endl;
 	PCFfile << endl;
 
+
+	PCFfile << endl << "EVENT_TYPE" << endl
+	  << "0 " << FOLDED_LAUNCH_TYPE << " Folded launch command "
+	  << endl << "VALUES" << endl;
+	for (const auto & l : launchers)
+	{
+		bool found;
+		unsigned long long launchvalue = pcfcommon::lookForValueString (pcf,
+		  feedTraceFoldType, l.first, found);
+
+		if (!found)
+			cerr << "Can't find value for '" << l.first <<"' in type " << feedTraceFoldType << endl;
+
+		PCFfile << launchvalue << " " << l.second << endl;
+	}
+	PCFfile << endl;
+
 	PCFfile 
 	  << endl << "EVENT_TYPE" << endl
 	  << "0 " << FOLDED_INSTANCE_GROUP << " Folded instance group ID" << endl
 	  << endl << "EVENT_TYPE" << endl
 	  << "0 " << FOLDED_PHASE << " Folded phase" << endl
 	  << endl;
-#endif
 
 	PCFfile << endl << "EVENT_TYPE" << endl;
-	set<string>::iterator it = wantedCounters.begin();
-	for ( ; it != wantedCounters.end(); it++ )
+	for (const auto cname : wantedCounters)
 	{
-		string cname = *it;
 		unsigned long long tmp = pcfcommon::lookForCounter (cname, pcf);
 		if (tmp != 0)
-			PCFfile << "0 " << FOLDED_BASE + tmp << " Folded " << *it << endl;
+			PCFfile << "0 " << FOLDED_BASE + tmp << " Folded " <<  cname << endl;
 	}
 	PCFfile << endl;
 
@@ -932,6 +948,7 @@ int main (int argc, char *argv[])
 	map<string, InstanceContainer> excludedInstances;
 	vector<Instance*> vInstances;
 	vector<Instance*> feedInstances;
+	map<string, string> launchers;
 	char CWD[1024], *cwd;
 
 	cout << "Folding (interpolate) based on branch " FOLDING_SVN_BRANCH " revision " << FOLDING_SVN_REVISION << endl;
@@ -1189,7 +1206,7 @@ int main (int argc, char *argv[])
 			ig->dumpInterpolatedData (objectsSelected, cFilePrefix, models);
 			ig->dumpData (objectsSelected, cFilePrefix, pcf);
 			ig->gnuplot (objectsSelected, cFilePrefix, models, TimeUnit,
-			  variables, pcf);
+			  variables, pcf, launchers);
 		}
 
 		ic.dumpGroupData (objectsSelected, cFilePrefix, TimeUnit);
@@ -1202,7 +1219,6 @@ int main (int argc, char *argv[])
 	// Generate a new PRV & CUBE files for the folded data
 	if (feedTraceType != FEED_NONE)
 	{
-		unsigned long long feedTraceFoldType;
 		string feedTraceFoldType_Definition;
 
 		ifstream control (controlFile.c_str());
@@ -1280,12 +1296,8 @@ int main (int argc, char *argv[])
 			mainid = 0;
 
 		map<string, unsigned> counterCodes;
-		set<string>::iterator c;
-		for (c = counters.begin(); c != counters.end(); c++)
-		{
-			string cname = *c;
-			counterCodes[cname] = pcfcommon::lookForCounter (cname, pcf);
-		}
+		for (const auto & c : counters)
+			counterCodes[c] = pcfcommon::lookForCounter (c, pcf);
 	
 		vector<Instance*> whichInstancesToFeed;
 		if (feedTraceType == FEED_TIME)
@@ -1363,7 +1375,8 @@ int main (int argc, char *argv[])
 			ifs_pcf.close();
 			ofs_pcf.close();
 		}
-		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters, feedTraceFoldType);
+		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters,
+		  feedTraceFoldType, launchers);
 
 		ifstream ifs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".row")).c_str());
 		if (ifs_row.is_open())
