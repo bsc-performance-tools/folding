@@ -36,7 +36,7 @@ void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree,
 	CodeRefTriplet crt = ctree->getCodeRefTriplet();
 
 	string routine, file;
-	unsigned bline, eline;
+	unsigned bline, eline, line;
 
 	/* If this is the top of the tree and the node is a fake main,
 	   rename the routine into "main*" */
@@ -47,8 +47,11 @@ void CubeTree::generate (Cube &c, Cnode *parent, CallstackTree *ctree,
 		bline = eline = 0;
 	}
 	else
-		pcfcommon::lookForCallerASTInfo (pcf, crt.getCaller(), crt.getCallerLineAST(),
-			routine, file, bline, eline);
+	{
+		pcfcommon::lookForCallerFullInfo (pcf, crt.getCaller(),
+		  crt.getCallerLine(), crt.getCallerLineAST(), routine,
+		  file, line, bline, eline);
+	}
 
 	/* Create a node for this routine */
 	cube_region = c.def_region (routine, routine, "", "", bline, eline, "", "",

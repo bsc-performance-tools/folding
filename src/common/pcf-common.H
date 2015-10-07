@@ -42,7 +42,7 @@ using namespace libparaver;
 class pcfcommon
 {
 	public:
-	static unsigned lookForCounter (string &name, UIParaverTraceConfig *pcf);
+	static unsigned lookForCounter (const string &name, UIParaverTraceConfig *pcf);
 
 	static void lookForCallerInfo (UIParaverTraceConfig *pcf, unsigned id,
 		string &routine);

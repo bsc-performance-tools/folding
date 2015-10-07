@@ -34,7 +34,7 @@ CLANGBIN = envvars['FOLDING_CLANG_BIN'];
 
 #pall = re.compile (".*\((.*ForStmt.*|.*WhileStmt.*|.*DoStmt.*|.*SwitchStmt.*|.*CaseStmt.*|.*IfStmt.*|.*CompoundStmt.*|.*CallExpr.*|.*LabelStmt.*|.*GotoStmt.*)")
 #pall = re.compile (".*\((.*ForStmt.*|.*WhileStmt.*|.*DoStmt.*|.*SwitchStmt.*|.*CaseStmt.*|.*IfStmt.*|.*CompoundStmt.*|.*LabelStmt.*|.*GotoStmt.*)");
-pall = re.compile (".*\((.*ForStmt.*|.*WhileStmt.*|.*DoStmt.*|.*CompoundStmt.*)");
+pall = re.compile (".*(.*ForStmt.*|.*WhileStmt.*|.*DoStmt.*|.*CompoundStmt.*)");
 
 maxline = 0;
 lines = [];

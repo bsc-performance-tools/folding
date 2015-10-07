@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <sstream>
 
-unsigned pcfcommon::lookForCounter (string &name, UIParaverTraceConfig *pcf)
+unsigned pcfcommon::lookForCounter (const string &name, UIParaverTraceConfig *pcf)
 {
 	vector<unsigned> vtypes = pcf->getEventTypes();
 
@@ -212,6 +212,8 @@ void pcfcommon::lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller
 
 	string cl = pcf->getEventValue (EXTRAE_SAMPLE_CALLERLINE_AST, callerlineast);
 
+	routine = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, caller);
+
 	bline = 0;
 	eline = 0;
 	file = "";
@@ -254,8 +256,6 @@ void pcfcommon::lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller
 		}
 	
 		file = afterspace.substr (pos_begin+1, pos_end-pos_begin-1);
-	
-		routine = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, caller);
 	}
 }
 

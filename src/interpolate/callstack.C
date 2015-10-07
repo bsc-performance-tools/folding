@@ -81,7 +81,12 @@ void Callstack::generate (InstanceGroup *ig, bool hasmain, unsigned mainid)
 		cout << "generateTree for InstanceGroup " << ig << " with main? " << hasmain
 		  << " mainid = " << mainid << endl;
 
-	/* Phases must have at least two elements [0.0, 1.0] */
+#if 0
+	/* Phases must have at least two elements [0.0, 1.0] (or 0?) */
+	if (phase_ranges.size () == 0)
+		return;
+#endif
+
 	assert (phase_ranges.size() >= 2);
 
 	/* Phases must start at 0.0 and end at 1.0 */
