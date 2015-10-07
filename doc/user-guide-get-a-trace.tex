@@ -84,6 +84,14 @@ The collection of these performance counters allows the \FOLDING to calculate th
 The listing~\ref{lst:Extrae_counters_ibm_power5} indicates \EXTRAE to configure six performance counter sets with performance counters that are available on IBM Power5 (and similar) processors.
 The collection of these performance counters allows the \FOLDING to calculate the CPIStack model for the IBM Power5 processor which is contained in \texttt{\$\{FOLDING\_HOME\}/etc/models/ibm-power5}.
 
+\subsection{ARM v7l / Samsung Exynos 5 processors}
+
+\input{XML/extrae-counters-armv7l-samsung-exynos5}
+
+The listing~\ref{lst:Extrae_counters_arm7vl_sam_exy5} indicates \EXTRAE to setup three performance counter sets with counters available in Samsung Exynos 5 processors (based on ARM v7l).
+The collection of these counters allows the \FOLDING to generate instruction decomposition and architecture impact similar to Intel processors.
+The model is contained in \texttt{\$\{FOLDING\_HOME\}/etc/models/samsung-exynos5-armv7l}.
+
 \subsection{Other architectures}
 
 \input{XML/extrae-counters-basic}
