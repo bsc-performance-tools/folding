@@ -7,6 +7,8 @@ EXTRA_DIST = others examples cfgs SVN-branch SVN-revision
 install-data-hook:
 	cp -v others/folding.sh $(prefix)/bin
 	cd $(prefix)/bin; $(LN_S) -f folding.sh folding; cd -
+	cp -v others/folding-paraver-alienapp.sh $(prefix)/bin
+	cd $(prefix)/bin; $(LN_S) -f folding-paraver-alienapp.sh folding-paraver-alienapp; cd -
 	cp others/folding-cube-call-paraver.sh $(prefix)/bin
 	cp others/folding-gnuplot-compare.py $(prefix)/bin
 if WANT_GUI_FRONTEND
