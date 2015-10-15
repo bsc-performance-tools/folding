@@ -123,7 +123,7 @@ AC_PROG_CXX
 if test "${CXX}" = "" ; then
 	AC_MSG_ERROR([Cannot find C++ compiler])
 fi
-CXXFLAGS="${CXXFLAGS} -std=c++11"
+AX_CXX_COMPILE_STDCXX_11([],[optional])
 AC_PROG_FC
 if test "${FC}" = "" ; then
 	AC_MSG_ERROR([Cannot find Fortran compiler])
@@ -178,7 +178,13 @@ fi
 AC_MSG_RESULT([${LibToolsDir_HasShared}])
 AM_CONDITIONAL(LIBTOOLS_HAS_SHARED_LIBRARIES, test "${LibToolsDir_HasShared}" = "yes")
 
-AT_WITH_QT
+AC_ARG_ENABLE([qt],
+    AS_HELP_STRING([--enable-qt], [Enables GUI frontend based on QT - for CUBE mainly])
+)
+AM_CONDITIONAL(WANT_QT_GUI, test "${enable_qt}" = "yes" )
+if test "${enable_qt}" = "yes"; then
+	AT_WITH_QT
+fi
 AX_HAVE_CUBE
 
 AC_MSG_CHECKING([for R statistical package])
@@ -316,10 +322,10 @@ if test "${enable_callstack_analysis}" = "yes" ; then
 	AC_DEFINE([CALLSTACK_ANALYSIS], [1], [Define if call-stack analysis is enabled])
 fi
 
-AC_ARG_ENABLE([reference-analysis],
-	AS_HELP_STRING([--enable-reference-analysis], [Enables reference analysis]))
-if test "${enable_reference_analysis}" = "yes" ; then
-	AC_DEFINE([REFERENCE_ANALYSIS], [1], [Define if reference analysis is enabled])
+AC_ARG_ENABLE([memory-analysis],
+	AS_HELP_STRING([--enable-memory-analysis], [Enables memory analysis]))
+if test "${enable_memory_analysis}" = "yes" ; then
+	AC_DEFINE([MEMORY_ANALYSIS], [1], [Define if memory analysis is enabled])
 fi
 
 AX_PROG_BOOST
