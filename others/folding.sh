@@ -172,6 +172,7 @@ if [[ "${BASENAME_CSV}" = "" ]] ; then
 		echo ${FOLDING_HOME}/bin/extract -separator \"${2}\" \"${BASENAME_PRV}.codeblocks.fused.prv\"
 	fi
 	${FOLDING_HOME}/bin/extract -separator "${2}" "${BASENAME_PRV}.codeblocks.fused.prv" || exit
+	EXTRA_INTERPOLATE_FLAGS+=" -feed-first-occurrence any"
 else
 	if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
 		echo ${FOLDING_HOME}/bin/extract -semantic \"${BASENAME_CSV}.csv\" \"${BASENAME_PRV}.codeblocks.fused.prv\"
@@ -180,7 +181,7 @@ else
 fi
 
 if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
-	echo ${FOLDING_HOME}/bin/interpolate -max-samples-distance 2000 -sigma-times 2.0 -use-median -feed-first-occurrence any ${EXTRA_INTERPOLATE_FLAGS} ${MODELS_SUFFIX} ${SOURCE_DIRECTORY_SUFFIX} "${BASENAME_PRV}.codeblocks.fused.extract"
+	echo ${FOLDING_HOME}/bin/interpolate -max-samples-distance 2000 -sigma-times 2.0 -use-median ${EXTRA_INTERPOLATE_FLAGS} ${MODELS_SUFFIX} ${SOURCE_DIRECTORY_SUFFIX} "${BASENAME_PRV}.codeblocks.fused.extract"
 fi
 
 # Hook for Paraver
@@ -190,7 +191,6 @@ ${FOLDING_HOME}/bin/interpolate \
  -max-samples-distance 1500 \
  -sigma-times 1.5 \
  -use-median \
- -feed-first-occurrence any \
  -callstack-processor pct 15 5.0 \
  ${EXTRA_INTERPOLATE_FLAGS} \
  ${MODELS_SUFFIX} \
