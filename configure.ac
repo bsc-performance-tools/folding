@@ -346,7 +346,7 @@ AC_MSG_NOTICE([Checking for availability of C++ headers])
 AC_LANG_PUSH([C++])
 AC_CHECK_HEADERS(
 	[algorithm exception fstream iomanip iostream iterator list map set \
-	 sstream string vector deque],
+	 sstream string vector deque ctime chrono],
 	[],
 	[AC_MSG_ERROR([Cannot find required header])])
 AC_LANG_POP([C++])

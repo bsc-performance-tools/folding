@@ -38,6 +38,8 @@
 
 #include <list>
 #include <stack>
+#include <ctime>
+#include <chrono>
 
 using namespace std;
 
@@ -474,23 +476,30 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 
 void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	const vector<Model*> & models, const string &TimeUnit,
-	vector<DataObject*> & variables, UIParaverTraceConfig *pcf,
-	map<string, string> & launchers)
+	vector<DataObject*> & variables, UIParaverTraceConfig *pcf)
 {
 	bool has_instruction_counter = false;
 	map<string, InterpolationResults*>::iterator it;
 
-	string launchname = prefix + "." + os->toString (false, "any") + "." +
-	  common::removeUnwantedChars(getRegionName()) + "." + 
-	  common::removeSpaces (getGroupName()) + ".launch";
+	string launchname = prefix + "." + os->toString (false, "any") +
+	  ".folding-paraver-alienapp.bash";
 
-	ofstream launch (launchname.c_str());
+	bool existed = common::existsFile (launchname);
+
+	ofstream launch (launchname.c_str(), ofstream::app | ofstream::ate);
 	chmod (launchname.c_str(), 0755);
 
-	launch << "#!/bin/bash" << endl
-	  << endl
-	  << "# Automatically generated file! Be careful when editing!" << endl
-	  << endl;
+	if (!existed)
+	{
+		time_t now = chrono::system_clock::to_time_t(
+		  chrono::system_clock::now());
+		string date = ctime (&now);
+		launch << "#!/bin/bash" << endl
+		  << endl
+		  << "# Automatically generated file in " << date << "# Be careful when editing!" << endl
+		  << endl;
+		launch << "export parameter=${@:1}" << endl << endl;
+	}
 
 	/* Dump single plots first */
 	for (it = interpolated.begin(); it != interpolated.end(); it++)
@@ -512,23 +521,24 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	  << ofile << ")"  << endl;
 
 	/* If we don't have models, show the slopes instead */
-	if (models.size() == 0)
-	{
-		launch << "gnuplot -p " << ofile << endl;
-		launchers[getRegionName()] = string("./")+launchname;
-	}
-	else
-	{
+	vector<string> launchfiles;
+	if (models.size() > 0)
 		for (const auto & m : models)
 		{
 			ofile = gnuplotGenerator::gnuplot_model (this, os, prefix,
 			  m, TimeUnit, variables, pcf);
 			cout << "Plot model " << m->getTitleName() << " for region "
 			  << regionName << " (" << ofile << ")" << endl;
-			launch << "gnuplot -p " << ofile << " &"  << endl;
+			launchfiles.push_back (ofile);
 		}
-		launchers[getRegionName()] = string("./")+launchname;
-	}
+	else
+		launchfiles.push_back (ofile);
+
+	/* Generate the hooks to support being called from Paraver */
+	launch << "if test \"${parameter//\\ /_}\" == \"" << getRegionName() << "\"; then" << endl;
+	for (const auto & f : launchfiles)
+		launch << "  gnuplot -p " << f << " & " << endl;
+	launch << "fi" << endl << endl;
 
 	launch.close();
 }
