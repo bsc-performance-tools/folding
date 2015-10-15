@@ -704,6 +704,28 @@ void Process::processMultiEvent (struct multievent_t &e)
 				storeSample = true;
 			}
 		}
+
+		/* If we don't have semantics, honor the contents of the trace */
+		if (Semantics == NULL)
+		{
+			if (event.Type == RegionSeparatorID)
+			{
+				if (common::DEBUG())
+					cout << "Task " << task << " Thread " << thread <<
+					  " Found separator (" << RegionSeparatorID <<
+					  "," << event.Value << ") at timestamp " << e.Timestamp << endl;
+
+				FoundSeparator = true;
+				if (event.Value > 0)
+				{
+					hasValueSeparator_Start = true;
+					ValueSeparator = event.Value;
+				}
+				else if (event.Value == 0)
+					hasValueSeparator_End = true;
+			}
+		}
+
 	}
 
 	/* Honor semantics file to determine the region */
