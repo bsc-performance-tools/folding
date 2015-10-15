@@ -704,31 +704,14 @@ void Process::processMultiEvent (struct multievent_t &e)
 				storeSample = true;
 			}
 		}
-
-		if (Semantics == NULL)
-		{
-			if (event.Type == RegionSeparatorID)
-			{
-				if (common::DEBUG())
-					cout << "Task " << task << " Thread " << thread <<
-					  " Found separator (" << RegionSeparatorID <<
-					  "," << event.Value << ") at timestamp " << e.Timestamp << endl;
-
-				FoundSeparator = true;
-				if (event.Value > 0)
-				{
-					hasValueSeparator_Start = true;
-					ValueSeparator = event.Value;
-				}
-				else if (event.Value == 0)
-					hasValueSeparator_End = true;
-			}
-		}
 	}
 
+	/* Honor semantics file to determine the region */
 	if (Semantics != NULL)
 	{
-		vector<PRVSemanticValue *> vs = Semantics->getSemantics (e.ObjectID.ptask, e.ObjectID.task, e.ObjectID.thread);
+		vector<PRVSemanticValue *> vs =
+		  Semantics->getSemantics (e.ObjectID.ptask, e.ObjectID.task, e.ObjectID.thread);
+
 		for (const auto semval : vs)
 		{
 			if (semval->getFrom() == e.Timestamp + TimeOffset)
@@ -753,6 +736,14 @@ void Process::processMultiEvent (struct multievent_t &e)
 				}
 				else
 					ValueSeparator = 0;
+
+				if (ValueSeparator > 0)
+				{
+					hasValueSeparator_Start = true;
+					ValueSeparator = ValueSeparator;
+				}
+				else if (ValueSeparator == 0)
+					hasValueSeparator_End = true;
 
 				if (common::DEBUG())
 					cout << "Found semantic separator value " << semval->getValue()
@@ -1165,7 +1156,7 @@ int ProcessParameters (int argc, char *argv[])
 			if (common::existsFile(argv[i]))
 			{
 				cout << "Reading semantic file " << argv[i] << endl;
-				PRVSemanticCSVName = parameter;
+				PRVSemanticCSVName = argv[i];
 			}
 			else
 			{
@@ -1206,20 +1197,24 @@ int main (int argc, char *argv[])
 		cerr << "ERROR! Exception launched when processing the file " << tracename << ". Check that it exists and it is a Paraver tracefile..." << endl; 
 		return -1;
 	}
-	int n;
-	if ( ( n = atoi(RegionSeparator.c_str()) ) > 0)
+
+	if (!p->givenSemanticsCSV())
 	{
-		/* If we have been given an id, prepare it */
-		RegionSeparatorID = n;
-	}
-	else
-	{
-		/* If we have been given a label, look for it in the PCF */
-		RegionSeparatorID = p->lookupType (RegionSeparator);
-		if (RegionSeparatorID == 0)
+		int n;
+		if ( ( n = atoi(RegionSeparator.c_str()) ) > 0)
 		{
-			cerr << "Error! Type with name '" << RegionSeparator << "' was not found in the tracefile PCF" << endl;
-			exit (-1);
+			/* If we have been given an id, prepare it */
+			RegionSeparatorID = n;
+		}
+		else
+		{
+			/* If we have been given a label, look for it in the PCF */
+			RegionSeparatorID = p->lookupType (RegionSeparator);
+			if (RegionSeparatorID == 0)
+			{
+				cerr << "Error! Type with name '" << RegionSeparator << "' was not found in the tracefile PCF" << endl;
+				exit (-1);
+			}
 		}
 	}
 

@@ -33,11 +33,10 @@
 
 PRVSemanticCSV::PRVSemanticCSV (const char *file)
 {
-	unsigned lineno = 0;
-
-	ifstream f(file);
+	ifstream f(file, ifstream::in);
 	if (f.is_open())
 	{
+		unsigned lineno = 0;
 		succeeded = true;
 
 		string l;
@@ -47,9 +46,13 @@ PRVSemanticCSV::PRVSemanticCSV (const char *file)
 
 			istringstream iss(l);
 			vector<string> tokens;
-			copy(istream_iterator<string>(iss), istream_iterator<string>(), back_inserter<vector<string> >(tokens));
+			copy (
+			  istream_iterator<string>(iss),
+			  istream_iterator<string>(),
+			  back_inserter<vector<string> >(tokens)
+			);
 
-			if (tokens.size() != 4)
+			if (tokens.size() < 4)
 			{
 				succeeded = false;
 				cerr << "File " << file << " does not seem to be well formatted at line " << lineno << endl;
@@ -63,7 +66,11 @@ PRVSemanticCSV::PRVSemanticCSV (const char *file)
 				ObjectSelection os(ptask, task, thread);
 				unsigned long long Time = atoll (tokens[1].c_str());
 				unsigned long long Duration = atoll (tokens[2].c_str());
+
+				/* Collapse whatever comes in fields 3..X into Value */
 				string Value = tokens[3];
+				for (size_t s = 4; s < tokens.size(); s++)
+					Value += string ("_")+tokens[s];
 
 				if (Time >= 0 && Duration >= 0)
 				{
