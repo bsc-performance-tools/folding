@@ -377,14 +377,20 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		PCFfile << endl;
 	}
 
-	PCFfile << endl << "EVENT_TYPE" << endl
-	  << "0 " << FOLDED_TYPE << " Folded type : " << pcf->getEventType (foldedType)
-	  << endl << "VALUES" << endl;
-	vector<unsigned> v = pcf->getEventValues(foldedType);
-	for (unsigned i = 0; i < v.size(); i++)
-		PCFfile << i << " " << pcf->getEventValue(foldedType, v[i]) << endl;
-	PCFfile << endl;
-
+	/* We want to add special events indicating the original event value
+	   from the tracefile. Careful because getEventType may raise an excpetion
+	   if the data was generated from a CSV. */
+	try
+	{
+		PCFfile << endl << "EVENT_TYPE" << endl
+		  << "0 " << FOLDED_TYPE << " Folded type : " << pcf->getEventType (foldedType)
+		  << endl << "VALUES" << endl;
+		vector<unsigned> v = pcf->getEventValues(foldedType);
+		for (unsigned i = 0; i < v.size(); i++)
+			PCFfile << i << " " << pcf->getEventValue(foldedType, v[i]) << endl;
+		PCFfile << endl;
+	} catch (...)
+	{ }
 
 	PCFfile << endl << "EVENT_TYPE" << endl
 	  << "0 " << FOLDED_LAUNCH_TYPE << " Folded launch command "
