@@ -1162,14 +1162,14 @@ int ProcessParameters (int argc, char *argv[])
 		else if (parameter == "-semantic")
 		{
 			i++;
-			if (common::existsFile(parameter))
+			if (common::existsFile(argv[i]))
 			{
-				cout << "Reading semantic file " << parameter << endl;
+				cout << "Reading semantic file " << argv[i] << endl;
 				PRVSemanticCSVName = parameter;
 			}
 			else
 			{
-				cerr << "The file " << parameter << " does exist. Dying ... " << endl;
+				cerr << "The file " << argv[i] << " does not exist. Dying ... " << endl;
 				exit (-1);
 			}
 			continue;
