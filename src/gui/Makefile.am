@@ -1,5 +1,5 @@
-SUBDIRS = qcustomplot
+SUBDIRS =
 
 if HAVE_CUBE
-SUBDIRS += cube-plugins
+SUBDIRS += qcustomplot cube-plugins
 endif

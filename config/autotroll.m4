@@ -143,6 +143,10 @@ dnl Memo: AC_ARG_WITH(package, help-string, [if-given], [if-not-given])
   # this is a hack to get decent flow control with 'break'
   for _qt_ignored in once; do
 
+  if test "${QT_PATH}" = "no"; then
+    break
+  fi
+
   # Find Qt.
   AC_ARG_VAR([QT_PATH], [Path to the Qt installation])
   if test -d /usr/local/Trolltech; then

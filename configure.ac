@@ -178,13 +178,9 @@ fi
 AC_MSG_RESULT([${LibToolsDir_HasShared}])
 AM_CONDITIONAL(LIBTOOLS_HAS_SHARED_LIBRARIES, test "${LibToolsDir_HasShared}" = "yes")
 
-AC_ARG_ENABLE([qt],
-    AS_HELP_STRING([--enable-qt], [Enables GUI frontend based on QT - for CUBE mainly])
-)
-AM_CONDITIONAL(WANT_QT_GUI, test "${enable_qt}" = "yes" )
-if test "${enable_qt}" = "yes"; then
-	AT_WITH_QT
-fi
+AT_WITH_QT
+AM_CONDITIONAL(WANT_QT_GUI, test "${QT_PATH}" != "no" )
+
 AX_HAVE_CUBE
 
 AC_MSG_CHECKING([for R statistical package])
