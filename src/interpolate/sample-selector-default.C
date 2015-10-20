@@ -28,26 +28,21 @@
 void SampleSelectorDefault::Select (InstanceGroup *ig, const set<string> &counters)
 {
 	map<string, vector<Sample*> > used_res, unused_res;
-	set<string>::iterator c;
 
-	for (c = counters.begin(); c != counters.end(); c++)
+	for (auto const & c : counters)
 	{
-		vector<Instance*> vi = ig->getInstances();
 		vector<Sample*> used, unused;
-
-		for (unsigned i = 0; i < vi.size(); i++)
-			if (vi[i]->hasCounter (*c))
+		for (auto const & i : ig->getInstances())
+			if (i->hasCounter (c))
 			{
-				vector<Sample*> vs = vi[i]->getSamples();
-				for (unsigned s = 0; s < vs.size(); s++)
-					if (vs[s]->hasCounter(*c))
-						used.push_back (vs[s]);
+				for (auto const & s : i->getSamples())
+					if (s->hasCounter(c))
+						used.push_back (s);
 					else
-						unused.push_back (vs[s]);
+						unused.push_back (s);
 			}
-
-		used_res[*c] = used;
-		unused_res[*c] = unused;
+		used_res[c] = used;
+		unused_res[c] = unused;
 	}
 
 	ig->setSamples (used_res, unused_res);
