@@ -1,6 +1,6 @@
 #!/bin/bash
 
-where=`find $PWD -name "*.folding-paraver-alienapp.bash"`
+where=`find ${PWD}/ -name "*.folding-paraver-alienapp.bash"`
 
 if test "${where}" != "" ; then
 	cd `dirname ${where}`
