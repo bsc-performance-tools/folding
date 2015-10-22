@@ -71,7 +71,8 @@ class FoldedParaverTrace : public ParaverTrace
 	    const Instance *in);
 
 	void DumpGroupInfo (const Instance *in);
-	void DumpCallersInInstance (const Instance *in, const InstanceGroup *ig);
+	bool DumpCallersInInstance (const Instance *in, const InstanceGroup *ig);
+	bool DumpAddressesInInstance (const Instance *in, InstanceGroup *ig);
 	void DumpReverseCorrectedCallersInInstance (const Instance *in,
 	  const InstanceGroup *ig);
 	void DumpBreakpoints (const Instance *in, const InstanceGroup *ig);

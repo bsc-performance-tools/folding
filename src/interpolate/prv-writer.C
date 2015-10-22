@@ -106,28 +106,21 @@ void FoldedParaverTrace::DumpParaverLine (unsigned long long type,
 	  << ":" << time << ":" << type << ":" << value << endl;
 }
 
-void FoldedParaverTrace::DumpCallersInInstance (const Instance *in,
+bool FoldedParaverTrace::DumpCallersInInstance (const Instance *in,
 	const InstanceGroup *ig)
 {
-	vector<Instance*> vInstances = ig->getInstances();
-	unsigned numInstances = vInstances.size();
-
 	set<unsigned long long> set_zero_types;
 	vector<unsigned long long> vec_zero_types, vec_zero_values;
 
-	for (unsigned u = 0; u < numInstances; u++)
-	{
-		Instance *i = vInstances[u];
-
-		vector<Sample *> vs = i->getSamples();
-		for (unsigned v = 0; v < vs.size(); v++)
+	for (const auto & i : ig->getInstances())
+		for (const auto & s : i->getSamples())
 		{
 			unsigned long long ts = in->getStartTime() + 
-				(unsigned long long) (vs[v]->getNTime() * (double)(in->getDuration()));
+				(unsigned long long) (s->getNTime() * (double)(in->getDuration()));
 
 			vector<unsigned long long> types;
 			vector<unsigned long long> values;
-			const map<unsigned, CodeRefTriplet> & ct = vs[v]->getCodeTripletsAsConstReference();
+			const map<unsigned, CodeRefTriplet> & ct = s->getCodeTripletsAsConstReference();
 			for (auto const & it : ct)
 			{
 				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_CALLER_MIN + it.first); /* caller + depth */
@@ -139,16 +132,62 @@ void FoldedParaverTrace::DumpCallersInInstance (const Instance *in,
 				values.push_back (it.second.getCallerLineAST());
 			}
 
-#if 0
-			types.push_back (1000);
-			values.push_back (vs[v]->getCallersId());
-#endif
-
 			DumpParaverLines (types, values, ts, in);
 
 			/* Annotate these types, to emit the corresponding 0s */
 			set_zero_types.insert (types.begin(), types.end());
 		}
+
+	/* Move types into vec_zero_types */
+	vec_zero_types.insert (vec_zero_types.begin(), set_zero_types.begin(),
+	  set_zero_types.end());
+	vec_zero_values.assign (vec_zero_types.size(), 0);
+
+	DumpParaverLines (vec_zero_types, vec_zero_values,
+	  in->getStartTime() + in->getDuration(), in);
+
+	return !set_zero_types.empty();
+}
+
+bool FoldedParaverTrace::DumpAddressesInInstance (const Instance *in,
+	InstanceGroup *ig)
+{
+	set<unsigned long long> set_zero_types;
+	vector<unsigned long long> vec_zero_types, vec_zero_values;
+
+	for (const auto & s : ig->getAllSamples())
+	{
+		vector<unsigned long long> types;
+		vector<unsigned long long> values;
+		unsigned long long ts = in->getStartTime() + 
+			(unsigned long long) (s->getNTime() * (double)(in->getDuration()));
+
+		if (s->hasAddressReferenceInfo())
+		{
+			AddressReferenceType_t art = s->getReferenceType();
+			unsigned t = (art == LOAD) ? EXTRAE_SAMPLE_ADDRESS_LD : EXTRAE_SAMPLE_ADDRESS_ST;
+			types.push_back (FOLDED_BASE + t);
+			types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL);
+			types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL);
+			types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES);
+
+			values.push_back (s->getAddressReference());
+			values.push_back (s->getAddressReference_Mem_Level());
+			values.push_back (s->getAddressReference_TLB_Level());
+			values.push_back (s->getAddressReference_Cycles_Cost());
+		}
+		else if (s->hasAddressReference())
+		{
+			AddressReferenceType_t art = s->getReferenceType();
+			unsigned t = (art == LOAD) ? EXTRAE_SAMPLE_ADDRESS_LD : EXTRAE_SAMPLE_ADDRESS_ST;
+			types.push_back (FOLDED_BASE + t);
+			values.push_back (s->getAddressReference());
+		}
+
+		DumpParaverLines (types, values, ts, in);
+
+		/* Annotate these types, to emit the corresponding 0s */
+		set_zero_types.insert (types.begin(), types.end());
 	}
 
 	/* Move types into vec_zero_types */
@@ -158,6 +197,8 @@ void FoldedParaverTrace::DumpCallersInInstance (const Instance *in,
 
 	DumpParaverLines (vec_zero_types, vec_zero_values,
 	  in->getStartTime() + in->getDuration(), in);
+
+	return !set_zero_types.empty();
 }
 
 void FoldedParaverTrace::DumpReverseCorrectedCallersInInstance (
@@ -166,45 +207,42 @@ void FoldedParaverTrace::DumpReverseCorrectedCallersInInstance (
 	set<unsigned long long> set_zero_types;
 	vector<unsigned long long> vec_zero_types, vec_zero_values;
 
-	for (auto i : ig->getInstances())
+	for (const auto & s : ig->getAllSamples())
 	{
-		for (auto s : i->getSamples())
-		{
-			if (!s->getUsableCallstack())
-				continue;
+		if (!s->getUsableCallstack())
+			continue;
 
 #if defined(TIME_BASED_COUNTER)
-			string time = common::DefaultTimeUnit;
-			string time = "PAPI_TOT_INS";
-			unsigned long long ts = in->getStartTime() + 
-			  (unsigned long long) (ig->getInterpolatedNTime (time, s) * (double)(in->getDuration()));
+		string time = common::DefaultTimeUnit;
+		string time = "PAPI_TOT_INS";
+		unsigned long long ts = in->getStartTime() + 
+		  (unsigned long long) (ig->getInterpolatedNTime (time, s) * (double)(in->getDuration()));
 #else
-			unsigned long long ts = in->getStartTime() + 
-				(unsigned long long) (s->getNTime() * (double)(in->getDuration()));
+		unsigned long long ts = in->getStartTime() + 
+			(unsigned long long) (s->getNTime() * (double)(in->getDuration()));
 #endif /* TIME_BASED_COUNTER */
 
-			vector<unsigned long long> types;
-			vector<unsigned long long> values;
+		vector<unsigned long long> types;
+		vector<unsigned long long> values;
 
-			const map<unsigned, CodeRefTriplet> & ct = s->getCodeTripletsAsConstReference();
+		const map<unsigned, CodeRefTriplet> & ct = s->getCodeTripletsAsConstReference();
 
-			map<unsigned, CodeRefTriplet>::const_reverse_iterator it;
-			for (it = ct.crbegin(); it != ct.crend(); it++)
-			{
-				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLER_MIN + (*it).first);
-				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLERLINE_MIN + (*it).first);
-				types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLERLINE_AST_MIN + (*it).first);
+		map<unsigned, CodeRefTriplet>::const_reverse_iterator it;
+		for (it = ct.crbegin(); it != ct.crend(); it++)
+		{
+			types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLER_MIN + (*it).first);
+			types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLERLINE_MIN + (*it).first);
+			types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLERLINE_AST_MIN + (*it).first);
 
-				values.push_back ((*it).second.getCaller());
-				values.push_back ((*it).second.getCallerLine());
-				values.push_back ((*it).second.getCallerLineAST());
-			}
-
-			DumpParaverLines (types, values, ts, in);
-
-			/* Annotate these types, to emit the corresponding 0s */
-			set_zero_types.insert (types.begin(), types.end());
+			values.push_back ((*it).second.getCaller());
+			values.push_back ((*it).second.getCallerLine());
+			values.push_back ((*it).second.getCallerLineAST());
 		}
+
+		DumpParaverLines (types, values, ts, in);
+
+		/* Annotate these types, to emit the corresponding 0s */
+		set_zero_types.insert (types.begin(), types.end());
 	}
 
 	/* Move types into vec_zero_types */
@@ -409,11 +447,11 @@ void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in,
 #endif
 
 			vector<Sample*> tmp;
-			for (const auto s : ig->getPreparedCallstacks_Process_Samples())
+			for (const auto & s : ig->getPreparedCallstacks_Process_Samples())
 				if (s->getNTime() >= begin_time && s->getNTime() < end_time)
 					tmp.push_back (s);
 
-			for (const auto s : tmp)
+			for (const auto & s : tmp)
 			{
 				const map<unsigned, CodeRefTriplet> & callers = s->getCodeTripletsAsConstReference();
 				if (callers.count (level) > 0)

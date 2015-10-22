@@ -338,57 +338,43 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 		vector<Sample*> timingsamples;
 
 		/* Emit hwc and addresses for both used & unused sets */
-		for (auto & instance : used)
+		for (const auto & p : getSamples())
 		{
-			string counter = instance.first;
-			for (auto s : instance.second)
-			{
+			string counter = p.first;
+			for (const auto & s : p.second)
 				if (s->hasCounter(counter))
 					odata << "u" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << counter << ";"
 					  << s->getNCounterValue(counter) << endl;
-
-				if (s->hasAddressReferenceInfo() && s->getReferenceType() == LOAD)
-				{
-					odata << "a_ld" << ";" << regionName << ";" << numGroup << ";"
-					  << s->getNTime() << ";" << s->getAddressReference() << ";"
-					  << s->getAddressReference_Mem_Level() << ";"
-					  << s->getAddressReference_Cycles_Cost() << endl;
-				}
-				else if (s->hasAddressReference() && s->getReferenceType() == STORE)
-				{
-					odata << "a_st" << ";" << regionName << ";" << numGroup << ";"
-					  << s->getNTime() << ";" << s->getAddressReference() << endl;
-				}
-
-				if (s->hasCodeRefTripletSize())
-					timingsamples.push_back (s);
-			}
 		}
-		for (auto & instance : unused)
+		for (const auto & p : getUnusedSamples())
 		{
-			string counter = instance.first;
-			for (auto s : instance.second)
-			{
+			string counter = p.first;
+			for (const auto & s : p.second)
 				if (s->hasCounter(counter))
 					odata << "un" << ";" << regionName << ";" << numGroup << ";"
 					  << s->getNTime() << ";" << counter << ";"
 					  << s->getNCounterValue(counter) << endl;
 
-				if (s->hasAddressReferenceInfo() && s->getReferenceType() == LOAD)
-				{
-					odata << "a_ld" << ";" << regionName << ";" << numGroup << ";"
-					  << s->getNTime() << ";" << s->getAddressReference() << ";"
-					  << s->getAddressReference_Mem_Level() << ";"
-					  << s->getAddressReference_Cycles_Cost() << endl;
-				}
-				else if (s->hasAddressReference() && s->getReferenceType() == STORE)
-				{
-					odata << "a_st" << ";" << regionName << ";" << numGroup << ";"
-					  << s->getNTime() << ";" << s->getAddressReference() << endl;
-				}
-				if (s->hasCodeRefTripletSize())
-					timingsamples.push_back (s);
+		}
+
+		/* Now dump callstack callers and memory references */
+		for (const auto & s : getAllSamples())
+		{
+			if (s->hasCodeRefTripletSize())
+				timingsamples.push_back (s);
+
+			if (s->hasAddressReferenceInfo() && s->getReferenceType() == LOAD)
+			{
+				odata << "a_ld" << ";" << regionName << ";" << numGroup << ";"
+				  << s->getNTime() << ";" << s->getAddressReference() << ";"
+				  << s->getAddressReference_Mem_Level() << ";"
+				  << s->getAddressReference_Cycles_Cost() << endl;
+			}
+			else if (s->hasAddressReference() && s->getReferenceType() == STORE)
+			{
+				odata << "a_st" << ";" << regionName << ";" << numGroup << ";"
+				  << s->getNTime() << ";" << s->getAddressReference() << endl;
 			}
 		}
 

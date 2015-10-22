@@ -112,6 +112,8 @@ static unsigned long long feedTraceFoldType;
 
 static string sourceDirectory;
 
+static bool needAddressPCFinfo = false;
+
 using namespace std;
 
 
@@ -391,6 +393,42 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 	} catch (...)
 	{ }
 
+	if (needAddressPCFinfo)
+	{
+		PCFfile << endl << "EVENT_TYPE" << endl
+		  << "0 " << FOLDED_BASE+EXTRAE_SAMPLE_ADDRESS_LD << " Folded Sampled address (load)" << endl
+		  << "0 " << FOLDED_BASE+EXTRAE_SAMPLE_ADDRESS_ST << " Folded Sampled address (store)" << endl;
+
+		PCFfile << endl << "EVENT_TYPE" << endl
+		  << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES << " Folded memory address reference cost cycles" << endl;
+
+		vector<unsigned> v = pcf->getEventValues (EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL);
+		if (!v.empty())
+		{
+			PCFfile << endl << "EVENT_TYPE" << endl
+			  << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL
+			  << " Folded memory hierarchy location for sampled address" << endl
+			  << "VALUES" << endl;
+			for (unsigned i = 0; i < v.size(); i++)
+				PCFfile << i << " "
+				  << pcf->getEventValue (EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL, v[i])
+				  << endl;
+		}
+
+		v = pcf->getEventValues (EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL);
+		if (!v.empty())
+		{
+			PCFfile << endl << "EVENT_TYPE" << endl
+			  << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL
+			  << " Folded TLB hierarchy location for sampled address" << endl
+		  	  << "VALUES" << endl;
+			for (unsigned i = 0; i < v.size(); i++)
+				PCFfile << i << " "
+				  << pcf->getEventValue (EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL, v[i])
+				  << endl;
+		}
+
+	}
 
 	PCFfile 
 	  << endl << "EVENT_TYPE" << endl
@@ -1346,6 +1384,7 @@ int main (int argc, char *argv[])
 				ftrace->DumpGroupInfo (i);
 				ftrace->DumpInterpolationData (i, ig, counterCodes);
 				ftrace->DumpCallersInInstance (i, ig);
+				needAddressPCFinfo |= ftrace->DumpAddressesInInstance (i, ig);
 				ftrace->DumpCallstackProcessed (i, ig);
 				ftrace->DumpReverseCorrectedCallersInInstance (i, ig);
 				ftrace->DumpBreakpoints (i, ig);
