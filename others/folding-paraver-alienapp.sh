@@ -8,7 +8,7 @@
 unset LD_LIBRARY_PATH
 
 trace_path=`dirname ${PARAVER_ALIEN_TRACE_FULL_PATH}`
-where=`find ${PWD}/ -name "*.folding-paraver-alienapp.bash"`
+where=`find ${where}/ -name "*.folding-paraver-alienapp.bash"`
 
 if test "${where}" != "" ; then
 	cd `dirname ${where}`
