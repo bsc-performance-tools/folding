@@ -15,6 +15,8 @@ export LD_LIBRARY_PATH=${FOLDING_HOME}/lib
 # Process optional parameters first
 #
 
+OUTPUTDIR=""
+
 function process_model ()
 {
 	local model="$1"
@@ -70,6 +72,17 @@ do
 	elif [[ "${1}" == "-show-commands" ]] ; then
 		SHOW_COMMANDS=yes
 		shift
+	elif [[ "${1}" == "-output" ]] ; then
+		if [[ ! -d "${2}" ]] ; then
+			mkdir -p ${2}
+			if [[ ${?} -ne 0 ]] ; then
+				echo "Could not create directory ${2}. Dying..."
+				exit
+			fi
+		fi
+		OUTPUTDIR=`readlink -fn ${2}`
+		shift
+		shift
 	else
 		break
 	fi
@@ -80,7 +93,7 @@ done
 #
 
 if [[ $# -ne 2 ]] ; then
-	echo "Usage: ${0} [-model M] [-source S] [-region R] Trace InstanceSeparator/SemanticSeparator"
+	echo "Usage: ${0} [-output <dir>] [-model M] [-source S] [-region R] Trace InstanceSeparator/SemanticSeparator"
 	echo ""
 	echo "            -model M         : Uses performance model M when generating plots"
 	echo "                               Available models in $FOLDING_HOME/etc/models:"
@@ -95,6 +108,7 @@ if [[ $# -ne 2 ]] ; then
 	echo ""
 	echo "            -source S        : Indicates where the source code of the application is located"
 	echo "            -region R        : Requests to apply the folding to region R"
+	echo "            -output <dir>    : Where to generate the results (if not given, they are generated in the tracefile <dir>)"
 	echo "            Trace            : Paraver trace-file"
 	echo "            InstanceSeparator: Label or value of the event type to separate instances within tracefile"
 	echo "            SemanticSeparator: .csv file generated from Paraver to separate instances within tracefile"
@@ -105,8 +119,13 @@ if [[ ! -f ${1} ]] ; then
 	echo "Cannot access tracefile ${1}"
 	exit
 else
-	PRVDIR=`readlink -f ${1}`
-	PRVDIR=`dirname ${PRVDIR}`
+	PRVDIR=`dirname ${1}`
+	if ! [[ "${PRVDIR}" == /* ]] ; then
+		PRVDIR=${PWD}/${PRVDIR}
+	fi
+	if [[ "${OUTPUTDIR}" = "" ]] ; then
+		OUTPUTDIR=${PRVDIR}
+	fi
 	PRVFILE=${1}
 	PRVBASE=`basename ${PRVFILE} .prv`
 	PCFFILE=${PRVDIR}/${PRVBASE}.pcf
@@ -154,8 +173,8 @@ fi
 # BASENAME_PRV="${1%.*}"
 BASENAME_PRV=${PRVBASE}
 
-mkdir -p ${BASENAME_PRV} || exit
-cd ${BASENAME_PRV} || exit
+mkdir -p ${OUTPUTDIR}/${BASENAME_PRV} || exit
+cd ${OUTPUTDIR}/${BASENAME_PRV} || exit
 
 if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
 	echo Executing: ${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} \"${PRVDIR}/${BASENAME_PRV}.prv\"
