@@ -467,8 +467,7 @@ void InstanceGroup::gnuplot (const ObjectSelection *os, const string & prefix,
 	bool has_instruction_counter = false;
 	map<string, InterpolationResults*>::iterator it;
 
-	string launchname = prefix + "." + os->toString (false, "any") +
-	  ".folding-paraver-alienapp.bash";
+	string launchname = "folding-paraver-alienapp-launcher.bash";
 
 	bool existed = common::existsFile (launchname);
 

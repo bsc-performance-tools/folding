@@ -8,10 +8,19 @@
 unset LD_LIBRARY_PATH
 
 trace_path=`dirname ${PARAVER_ALIEN_TRACE_FULL_PATH}`
-where=`find ${where}/ -name "*.folding-paraver-alienapp.bash"`
+trace_file_wo_prefix=`basename ${PARAVER_ALIEN_TRACE_FULL_PATH} .prv`
+launcher=folding-paraver-alienapp-launcher.bash
 
-if test "${where}" != "" ; then
-	cd `dirname ${where}`
-	e=`basename ${where}`
-	./${e} ${@:1}
+if  [[ -x ${trace_path}/folding/${trace_file_wo_prefix}/${launcher} ]] ; then
+# Has Paraver generated the folding results? They are located within ../folding/trace/..
+	cd ${trace_path}/folding/${trace_file_wo_prefix}
+elif [[ -x ${trace_path}/${trace_file_wo_prefix}/${launcher} ]] ; then
+# Has the user manually run the folding? They must be located within ../trace/..
+	cd ${trace_path}/${trace_file_wo_prefix}
+else
+# The folding results have not been found
+	exit
 fi
+
+./${launcher} ${@:1}
+
