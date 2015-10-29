@@ -1067,7 +1067,7 @@ int main (int argc, char *argv[])
 					  " will not be calculated!" << endl;
 					first_not_found = false;
 				}
-				cout << "Warning! Counter " << *c << " pointed by model " << 
+				cout << "Warning! Counter " << *c << " requested by model " << 
 				  (*m)->getName() << " cannot be find in the extracted data!" <<
 				  endl;
 				all_found = false;
