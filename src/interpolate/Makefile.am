@@ -44,7 +44,7 @@ interpolate_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
 interpolate_LDADD = ../common/libcommon.la ../common/libpcf-common.la \
-                    -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser \
+                    -L$(LIBTOOLS_LIB_DIR) -lparavertraceconfig -lparavertraceparser \
                     service-kriger/libkriger.la service-R/libR.la \
                     model/libmodel.la gnuplot/libgnuplot.la \
                     callstack-processor/libcallstack-processor.la ../io/libfolding-io-reader.la \
@@ -53,5 +53,5 @@ if HAVE_CLUSTERING_SUITE
 interpolate_LDADD += -L$(CLUSTERING_HOME)/lib -lClustering -lBasicClasses
 endif
 if HAVE_CUBE
-interpolate_LDADD += -L$(CUBE_DIR)/lib -lcube4 -lz
+interpolate_LDADD += -L$(CUBE_DIR_LIB) -lcube4 -lz
 endif

@@ -31,20 +31,30 @@ AC_DEFUN([AX_HAVE_CUBE],[
 		else
 			AC_MSG_ERROR([Cannot determine Cube version through cube-config --version])
 		fi
-		AC_MSG_CHECKING([for Cube necessary files (headers/libraries)])
+
+		AC_MSG_CHECKING([for Cube necessary header files)])
 		if test ! -f ${CubeDir}/include/cube/Cube.h ; then
 			AC_MSG_ERROR([Cannot find cube header files of the libtools! Make sure that --with-cube is pointing to the correct place.])
 		fi
-		if test ! -f ${CubeDir}/lib/libcube4.a ; then
+		AC_MSG_RESULT([found in ${CubeDir}/include])
+
+		AC_MSG_CHECKING([for Cube necessary library files)])
+		if test -f ${CubeDir}/lib/libcube4.a ; then
+			CUBE_DIR_LIB=${CubeDir}/lib
+		elif test -f ${CubeDir}/lib64/libcube4.a ; then
+			CUBE_DIR_LIB=${CubeDir}/lib64
+		else
 			AC_MSG_ERROR([Cannot find libcube4.a! Make sure that --with-cube is pointing to the correct place.])
 		fi
-		AC_MSG_RESULT([found])
+		AC_MSG_RESULT([found in ${CUBE_DIR_LIB}])
+
 		CUBE_DIR=${CubeDir}
 		CUBE_INCLUDE_PATH=`${CubeDir}/bin/cube-config --cube-include-path`
 		CUBE_LDFLAGS=`${CubeDir}/bin/cube-config --cube-ldflags`
 		CUBE_GUI_INCLUDE_PATH=`${CubeDir}/bin/cube-config --gui-include-path`
 		CUBE_GUI_LDFLAGS=`${CubeDir}/bin/cube-config --gui-ldflags`
 		AC_SUBST(CUBE_DIR)
+		AC_SUBST(CUBE_DIR_LIB)
 		AC_SUBST(CUBE_INCLUDE_PATH)
 		AC_SUBST(CUBE_GUI_INCLUDE_PATH)
 		AC_SUBST(CUBE_LDFLAGS)
