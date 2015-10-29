@@ -11,7 +11,7 @@ if NEED_BOOST_HOME
 foldingtypes_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
-foldingtypes_LDADD = -L../common -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig
+foldingtypes_LDADD = -L../common -lcommon -L$(LIBTOOLS_LIB_DIR) -lparavertraceconfig
 
 max_diff_interpolation_points_LDADD = -lm
 mean_diff_interpolation_points_LDADD = -lm

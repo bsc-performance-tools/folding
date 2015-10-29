@@ -7,5 +7,5 @@ if NEED_BOOST_HOME
 fuse_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
-fuse_LDADD = -L../common -lcommon -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
+fuse_LDADD = -L../common -lcommon -L$(LIBTOOLS_LIB_DIR) -lparavertraceconfig -lparavertraceparser
 

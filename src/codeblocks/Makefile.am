@@ -8,4 +8,4 @@ codeblocks_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
 codeblocks_LDADD = ../common/libcommon.la ../common/libpcf-common.la \
-                   -L$(LIBTOOLS_DIR)/lib -lparavertraceconfig -lparavertraceparser
+                   -L$(LIBTOOLS_LIB_DIR) -lparavertraceconfig -lparavertraceparser
