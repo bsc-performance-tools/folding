@@ -43,11 +43,15 @@ if NEED_BOOST_HOME
 interpolate_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
-interpolate_LDADD = ../common/libcommon.la ../common/libpcf-common.la \
+interpolate_LDADD = ../common/libpcf-common.la \
                     -L$(LIBTOOLS_LIB_DIR) -lparavertraceconfig -lparavertraceparser \
-                    service-kriger/libkriger.la service-R/libR.la \
-                    model/libmodel.la gnuplot/libgnuplot.la \
-                    callstack-processor/libcallstack-processor.la ../io/libfolding-io-reader.la \
+                    service-kriger/libkriger.la \
+                    service-R/libR.la \
+                    model/libmodel.la \
+                    gnuplot/libgnuplot.la \
+                    callstack-processor/libcallstack-processor.la \
+                    ../io/libfolding-io-reader.la \
+                    ../common/libcommon.la \
                     $(XML_LIBS) -lrt -lgfortran -lm
 if HAVE_CLUSTERING_SUITE
 interpolate_LDADD += -L$(CLUSTERING_HOME)/lib -lClustering -lBasicClasses
