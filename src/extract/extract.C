@@ -123,6 +123,9 @@ class TaskInformation
 	set<unsigned> livingDataObjects;
 
 	public:
+	TaskInformation();
+	~TaskInformation();
+
 	int getNumThreads (void) const
 	{ return numThreads; };
 
@@ -130,7 +133,6 @@ class TaskInformation
 	{ return ThreadsInfo; };
 
 	void AllocateThreads (int nThreads);
-	~TaskInformation();
 
 	void addDataObject (DataObject *_do)
 	  {
@@ -159,6 +161,12 @@ class TaskInformation
 	set<unsigned> getLivingDataObjects (void) const
 	  { return livingDataObjects; }
 };
+
+TaskInformation::TaskInformation()
+{
+	ThreadsInfo = NULL;
+	tmpdataobject = NULL;
+}
 
 TaskInformation::~TaskInformation()
 {
@@ -565,6 +573,9 @@ void Process::processMultiEvent (struct multievent_t &e)
 	map<unsigned, unsigned long long> Caller;        /* Map depth of caller */
 	map<unsigned, unsigned long long> CallerLine;    /* Map depth of caller line */
 	map<unsigned, unsigned long long> CallerLineAST; /* Map depth of caller line AST */
+
+	if (common::DEBUG())
+		cout << "Processing events at " << e.Timestamp << endl;
 
 	/* Is there a memory-related call? */
 	bool memory_call_alloc = false, memory_call_free = false;
