@@ -981,7 +981,6 @@ string Process::getType (unsigned type, bool &found, bool silent)
 
 string Process::getTypeValue (unsigned type, unsigned value, bool &found)
 {
-	found = false;
 	string s, cl, c;
 
 	try { s = pcf->getEventValue (type, value); }
@@ -997,8 +996,6 @@ string Process::getTypeValue (unsigned type, unsigned value, bool &found)
 	   with special type description compression) */
 	if ((s == cl || s == c) && s != "")
 	{
-		found = true;
-
 		if (s == cl)
 		{
 			/* Caller Line */
@@ -1015,6 +1012,8 @@ string Process::getTypeValue (unsigned type, unsigned value, bool &found)
 			pcfcommon::lookForCallerInfo (pcf, value, s);
 		}
 	}
+
+	found = (s != "");
 
 	return s;
 }
