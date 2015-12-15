@@ -64,6 +64,7 @@
 #include <iomanip>
 
 #include <assert.h>
+#include <time.h>
 
 static string TimeUnit;
 
@@ -1195,10 +1196,17 @@ int main (int argc, char *argv[])
 			  "] (region = " << *it << "), #out steps = 1000" << endl;
 			for (unsigned u = 0; u < ic.numGroups(); u++)
 			{
+				struct timespec time_start, time_end;
+
 				cout << " Processing " << instanceseparator->nameGroup (u)
-				  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
+				  << " (" << u+1 << " of " << ic.numGroups() << ")" << flush;
+
+				clock_gettime (CLOCK_REALTIME, &time_start);
 				interpolation->pre_interpolate (NumOfSigmaTimes, ic.getInstanceGroup(u),
 				  counters);
+				clock_gettime (CLOCK_REALTIME, &time_end);
+				time_t delta = time_end.tv_sec - time_start.tv_sec;
+				cout << ", elapsed time " << delta / 60 << "m " << delta % 60 << "s" << endl;
 			}
 		}
 
@@ -1206,10 +1214,18 @@ int main (int argc, char *argv[])
 		  *it << "), #out steps = " << interpolation->getSteps() << endl;
 		for (unsigned u = 0; u < ic.numGroups(); u++)
 		{
+			struct timespec time_start, time_end;
 			InstanceGroup *ig = ic.getInstanceGroup(u);
+
 			cout << " Processing " << instanceseparator->nameGroup (u)
-			  << " (" << u+1 << " of " << ic.numGroups() << ")" << endl;
+			  << " (" << u+1 << " of " << ic.numGroups() << ")" << flush;
+			
+			clock_gettime (CLOCK_REALTIME, &time_start);
 			ss->Select (ig, counters);
+			clock_gettime (CLOCK_REALTIME, &time_end);
+			time_t delta = time_end.tv_sec - time_start.tv_sec;
+			cout << ", elapsed time " << delta / 60 << "m " << delta % 60 << "s" << endl;
+
 			interpolation->interpolate (ig, counters, TimeUnit);
 
 #if defined(CALLSTACK_ANALYSIS)
