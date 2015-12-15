@@ -28,7 +28,7 @@
 #include <fstream>
 #include <assert.h>
 
-bool FoldingWriter::equalTypes (set<string> &m1, set<string> m2)
+bool FoldingWriter::equalTypes (const set<string> &m1, const set<string> m2)
 {
 	if (m1.size() != m2.size())
 		return false;
@@ -45,17 +45,19 @@ bool FoldingWriter::equalTypes (set<string> &m1, set<string> m2)
 	return true;
 }
 
-bool FoldingWriter::containTypes (set<string> &m1, set<string> m2)
+bool FoldingWriter::containTypes (const set<string> &m1, const set<string> m2)
 {
 	if (m1.size() > m2.size())
 		return false;
 
-	set<string>::iterator i1 = m1.begin();
-
 	/* Check all types in M1 are in M2 */
-	for (i1 = m1.begin(); i1 != m1.end(); i1++)
-		if (m2.find (*i1) == m2.end())
+	for (const auto & s1 : m1)
+		if (m2.find (s1) == m2.end())
+		{
+			if (common::DEBUG())
+				cout << "Cannot find counter " << s1 << " in second set" << endl;
 			return false;
+		}
 
 	/* If we are here, then types(M1) = types(M2) */
 	return true;
@@ -98,7 +100,13 @@ bool FoldingWriter::checkSamples (const vector<Sample*> &Samples)
 			/* Compare counters */
 			//if (!equalTypes (reference_counters, counters))
 			if (!containTypes (reference_counters, counters))
+			{
+				if (common::DEBUG())
+				{
+					cout << "FoldingWriter::checkSamples divergence between reference counters on timestamp " << Samples[reference]->getTime() << " and " << Samples[u]->getTime() << endl;
+				}
 				return false;
+			}
 		}
 	}
 
@@ -114,10 +122,24 @@ void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 {
 	/* At least, have a sample at the begin & end, and someone else */
 	if (Samples.size() < 2)
+	{
+		if (common::DEBUG())
+		{
+			cout << "FoldingWriter::Write Region (" << RegionName << ")" <<
+			  " Exiting! Less than 2 samples" << endl;
+		}
 		return;
+	}
 
 	if (!checkSamples (Samples))
+	{
+		if (common::DEBUG())
+		{
+			cout << "FoldingWriter::Write Region (" << RegionName << ")" <<
+			  " Exiting due to checkSamples" << endl;
+		}
 		return;
+	}
 
 	/* Write the total time spent in this region */
 

@@ -45,8 +45,8 @@ using namespace std;
 class FoldingWriter
 {
 	private:
-	static bool equalTypes (set<string> &m1, set<string> m2);
-	static bool containTypes (set<string> &m1, set<string> m2);
+	static bool equalTypes (const set<string> &m1, const set<string> m2);
+	static bool containTypes (const set<string> &m1, const set<string> m2);
 	static bool checkSamples (const vector<Sample*> &Samples);
 	static unsigned getReferenceSample (const vector<Sample*> &Samples);
 
