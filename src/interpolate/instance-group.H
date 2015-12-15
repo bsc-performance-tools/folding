@@ -64,6 +64,8 @@ class InstanceGroup
 	const string groupName;
 
 	bool preparedCallstacks;
+	bool hasEmittedCallstackSamples;
+	bool hasEmittedAddressSamples;
 
 	vector<Instance*> Instances;
 	vector<Instance*> excludedInstances;
@@ -175,6 +177,16 @@ class InstanceGroup
 
 	bool hasPreparedCallstacks (void) const
 	  { return preparedCallstacks; }
+
+	void setHasEmittedCallstackSamples (bool b)
+	  { hasEmittedCallstackSamples = b; }
+	bool getHasEmittedCallstackSamples (void) const
+	  { return hasEmittedCallstackSamples; }
+
+	void setHasEmittedAddressSamples (bool b)
+	  { hasEmittedAddressSamples = b; }
+	bool getHasEmittedAddressSamples (void) const
+	  { return hasEmittedAddressSamples; }
 };
 
 #endif

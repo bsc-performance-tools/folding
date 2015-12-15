@@ -112,18 +112,24 @@ void gnuplotGenerator::gnuplot_single (
 
 #if defined(CALLSTACK_ANALYSIS)
 #define CALLSTACK_ANALYSIS_PART 0.15
-	gnuplotGeneratorCallstack::generate (CALLSTACK_ANALYSIS_PART,
-	  0.95-CALLSTACK_ANALYSIS_PART, gplot, fdname, ig, pcf);
-	occupied_in_multiplot += CALLSTACK_ANALYSIS_PART;
+	if (ig->getHasEmittedCallstackSamples())
+	{
+		gnuplotGeneratorCallstack::generate (CALLSTACK_ANALYSIS_PART,
+		  0.95-CALLSTACK_ANALYSIS_PART, gplot, fdname, ig, pcf);
+		occupied_in_multiplot += CALLSTACK_ANALYSIS_PART;
+	}
 #undef CALLSTACK_ANALYSIS_PART
 #endif
 
 #if defined(MEMORY_ANALYSIS)
 #define CALLSTACK_REFERENCE_PART 0.25
-	gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
-	  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
-	  variables, pcf);
-	occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
+	if (ig->getHasEmittedAddressSamples())
+	{
+		gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
+		  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
+		  variables, pcf);
+		occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
+	}
 #undef CALLSTACK_REFERENCE_PART
 #endif
 

@@ -47,6 +47,8 @@ InstanceGroup::InstanceGroup (string name, unsigned id, string groupname) :
 	regionName (name), numGroup (id), groupName (groupname)
 {
 	preparedCallstacks = false;
+	hasEmittedCallstackSamples = false;
+	hasEmittedAddressSamples = false;
 }
 
 void InstanceGroup::add (Instance *i)
@@ -359,6 +361,7 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 		}
 
 		/* Now dump callstack callers and memory references */
+		bool hasAddressSamples = false;
 		for (const auto & s : getAllSamples())
 		{
 			if (s->hasCodeRefTripletSize())
@@ -370,13 +373,18 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 				  << s->getNTime() << ";" << s->getAddressReference() << ";"
 				  << s->getAddressReference_Mem_Level() << ";"
 				  << s->getAddressReference_Cycles_Cost() << endl;
+
+				hasAddressSamples = true;
 			}
 			else if (s->hasAddressReference() && s->getReferenceType() == STORE)
 			{
 				odata << "a_st" << ";" << regionName << ";" << numGroup << ";"
 				  << s->getNTime() << ";" << s->getAddressReference() << endl;
+
+				hasAddressSamples = true;
 			}
 		}
+		setHasEmittedAddressSamples (hasAddressSamples);
 
 		/* Dump caller lines within processed routines from callerstime_processSamples */
 		if (hasPreparedCallstacks())
@@ -388,6 +396,8 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 
 			if (routines.size() > 0)
 				it_ahead++;
+
+			bool hasCallstackSamples = false;
 
 			while (it_ahead != routines.cend())
 			{
@@ -432,9 +442,12 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 							  codeline);
 	
 							if (codeline > 0)
+							{
 								odata << "cl" << ";" << regionName << ";" << numGroup << ";"
 								  << s->getNTime() << ";" << codeline << ";" << crt.getCaller()
 								  << endl;
+								hasCallstackSamples = true;
+							}
 						}
 					}
 	
@@ -444,6 +457,7 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 				it++; it_ahead++;
 			}
 
+			setHasEmittedCallstackSamples (hasCallstackSamples);
 		}
 
 	}
