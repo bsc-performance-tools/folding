@@ -632,6 +632,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 		if (dynamic_memory_size != 0 && has_minimum_call)
 		{
 			bool found = false;
+
 			string name, tmp = getTypeValue (minimum_call_type, minimum_call_value, found);
 			if (found)
 				name = common::removeUnwantedChars (tmp.substr (0, tmp.find (')')));
@@ -980,25 +981,24 @@ string Process::getType (unsigned type, bool &found, bool silent)
 
 string Process::getTypeValue (unsigned type, unsigned value, bool &found)
 {
-	found = true;
+	found = false;
 	string s, cl, c;
 
-	try
-	{
-	  s = pcf->getEventValue (type, value);
-	  cl = pcf->getEventValue (EXTRAE_SAMPLE_CALLERLINE, value);
-	  c = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, value);
-	}
-	catch (...)
-	{
-		found = false;
-		s = "";
-	}
+	try { s = pcf->getEventValue (type, value); }
+	catch (...) { s = ""; }
+
+	try { cl = pcf->getEventValue (EXTRAE_SAMPLE_CALLERLINE, value); }
+	catch (...) { cl = ""; }
+
+	try { c = pcf->getEventValue (EXTRAE_SAMPLE_CALLER, value); }
+	catch (...) { c = ""; }
 
 	/* If the given type is the same as the caller or caller-line, be careful
 	   with special type description compression) */
 	if ((s == cl || s == c) && s != "")
 	{
+		found = true;
+
 		if (s == cl)
 		{
 			/* Caller Line */
