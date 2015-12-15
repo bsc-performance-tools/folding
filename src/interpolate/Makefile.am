@@ -7,6 +7,7 @@ interpolate_SOURCES = \
  sample-selector.H \
  sample-selector-first.H sample-selector-first.C \
  sample-selector-distance.H sample-selector-distance.C \
+ sample-selector-distance-fast.H sample-selector-distance-fast.C \
  sample-selector-default.H sample-selector-default.C \
  instance-separator.H instance-separator.C \
  instance-separator-auto.H instance-separator-auto.C \

@@ -157,7 +157,7 @@ void gnuplotGeneratorReferences::generate (
 							
 							has_times = true;
 						}
-
+#if 0
 			if (vtmp.size() > 0)
 			{
 				double slope, intercept, correlation_coefficient;
@@ -203,6 +203,7 @@ void gnuplotGeneratorReferences::generate (
 
 				vtmp.clear();
 			}
+#endif
 		}
 	}
 

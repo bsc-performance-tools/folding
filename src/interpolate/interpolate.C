@@ -33,6 +33,7 @@
 
 #include "sample-selector-first.H"
 #include "sample-selector-distance.H"
+#include "sample-selector-distance-fast.H"
 #include "sample-selector-default.H"
 
 #include "instance-separator-none.H"
@@ -718,6 +719,25 @@ int ProcessParameters (int argc, char *argv[])
 			SampleSelectorDistance *ssd = new SampleSelectorDistance (numsamples);
 			ss = ssd;
 		}
+		else if (strcmp ("-max-samples-distance-fast", argv[i]) == 0)
+		{
+			if (!CHECK_ENOUGH_ARGS(1, argc, i))
+			{
+				cerr << "Insufficient arguments for -max-samples-distance-fast parameter" << endl;
+				exit (-1);
+			}
+
+			i++;
+			int numsamples;
+			if ((numsamples = atoi (argv[i])) == 0)
+			{
+				cerr << "Invalid -max-samples-distance-fast" << argv[i] << endl;
+				exit (-1);
+			}
+
+			SampleSelectorDistanceFast *ssdf = new SampleSelectorDistanceFast (numsamples);
+			ss = ssdf;
+		}
 		else if (strcmp ("-feed-time", argv[i]) == 0)
 		{
 			if (!CHECK_ENOUGH_ARGS(3, argc, i))
@@ -1198,7 +1218,7 @@ int main (int argc, char *argv[])
 			{
 				struct timespec time_start, time_end;
 
-				cout << " Processing " << instanceseparator->nameGroup (u)
+				cout << " Selecting samples from " << instanceseparator->nameGroup (u)
 				  << " (" << u+1 << " of " << ic.numGroups() << ")" << flush;
 
 				clock_gettime (CLOCK_REALTIME, &time_start);
@@ -1217,7 +1237,7 @@ int main (int argc, char *argv[])
 			struct timespec time_start, time_end;
 			InstanceGroup *ig = ic.getInstanceGroup(u);
 
-			cout << " Processing " << instanceseparator->nameGroup (u)
+			cout << " Selecting samples from " << instanceseparator->nameGroup (u)
 			  << " (" << u+1 << " of " << ic.numGroups() << ")" << flush;
 			
 			clock_gettime (CLOCK_REALTIME, &time_start);
