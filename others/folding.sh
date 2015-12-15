@@ -207,7 +207,7 @@ fi
 echo Output directory: ${PWD}
 
 ${FOLDING_HOME}/bin/interpolate \
- -max-samples-distance 1500 \
+ -max-samples-distance-fast 1500 \
  -sigma-times 1.5 \
  -use-median \
  -callstack-processor pct 15 5.0 \
