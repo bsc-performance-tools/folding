@@ -66,6 +66,7 @@
 
 #include <assert.h>
 #include <time.h>
+#include <stdlib.h>
 
 static string TimeUnit;
 
@@ -998,6 +999,8 @@ int main (int argc, char *argv[])
 	vector<Instance*> vInstances;
 	vector<Instance*> feedInstances;
 	char CWD[1024], *cwd;
+
+	srand(time(NULL));
 
 	cout << "Folding (interpolate) based on branch " FOLDING_SVN_BRANCH " revision " << FOLDING_SVN_REVISION << endl;
 

@@ -132,6 +132,26 @@ void SampleSelectorDistanceFast::Select (InstanceGroup *ig,
 				}
 			}
 
+			/* At this point, it is possible that the number of selected samples
+			   is not the same as requested samples. Choose remaining samples
+			   randomly */
+			if (limit > used.size())
+			{
+				vector<Sample*> tmp2;
+				for (const auto s : tmp)
+					if (find (used.begin(), used.end(), s) == used.end())
+						tmp2.push_back (s);
+
+				/* Choose randomly elements from tmp2 until used reaches 'limit'
+				   size. */
+				while (limit > used.size())
+				{
+					long int R = (random())%tmp2.size();
+					used.push_back (tmp2[R]);
+					tmp2.erase (tmp2.begin()+R);
+				}
+			}
+
 			/* All the samples not in used, should go into unused */
 			for (const auto s : tmp)
 				if (find (used.begin(), used.end(), s) == used.end())
