@@ -325,12 +325,10 @@ void FoldedParaverTrace::DumpInterpolationData (const Instance *in,
 	vector<unsigned long long> zero_types, zero_values;
 	unsigned steps = 0;
 
-	map<string,InterpolationResults*> ir = ig->getInterpolated();
-	map<string,InterpolationResults*>::iterator it;
-	for (it = ir.begin(); it != ir.end(); it++)
+	for (const auto &ir : ig->getInterpolated())
 	{
-		zero_types.push_back (FOLDED_BASE + counterCodes[(*it).first]);
-		steps = ((*it).second)->getCount();
+		zero_types.push_back (FOLDED_BASE + counterCodes[ir.first]);
+		steps = (ir.second)->getCount();
 	}
 	zero_values.assign (zero_types.size(), 0);
 
@@ -344,9 +342,9 @@ void FoldedParaverTrace::DumpInterpolationData (const Instance *in,
 
 		values.clear();
 		types.clear();
-		for (it = ir.begin(); it != ir.end(); it++)
+		for (const auto &ir : ig->getInterpolated())
 		{
-			InterpolationResults *irr = (*it).second;
+			InterpolationResults *irr = ir.second;
 			double hwc_values = irr->getInterpolationAt(u) * irr->getAvgCounterValue(); 
 			if (u > 0)
 			{
@@ -355,7 +353,7 @@ void FoldedParaverTrace::DumpInterpolationData (const Instance *in,
 					hwc_values = 0.;
 			}
 			values.push_back ((unsigned long long) hwc_values);
-			types.push_back (FOLDED_BASE + counterCodes[(*it).first]);
+			types.push_back (FOLDED_BASE + counterCodes[ir.first]);
 		}
 		DumpParaverLines (types, values, ts, in);
 	}
