@@ -260,8 +260,14 @@ void InstanceGroup::dumpInterpolatedData (ObjectSelection *os,
 			for (unsigned u = 1; u < nsteps; u++)
 			{
 				double d_j = (double) u;
+
+				double integral_value = ir->getInterpolationAt(u) * ir->getAvgCounterValue(); 
+				if (integral_value < 0.)
+					integral_value = 0.;
+
 				sl_data << regionName << ";" << numGroup << ";" << counter <<
-				  ";" << d_j / d_steps << ";" << ir->getSlopeAt(u) << endl;
+				  ";" << d_j / d_steps << ";" << ir->getSlopeAt(u) << ";" <<
+				  integral_value << endl;
 			}
 		}
 
