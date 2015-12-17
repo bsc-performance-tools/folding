@@ -90,7 +90,7 @@ void gnuplotGenerator::gnuplot_single (
 	  "# set term postscript eps solid color;" << endl <<
 	  "# set term pdfcairo solid color lw 2;" << endl <<
 	  "# set term png size 800,600;" << endl << 
-	  "set term wxt size 800,600;" << endl << endl;
+	  "# set term wxt size 800,600;" << endl << endl;
 
 	string TITLE;
 	stringstream ssDuration, ssCounterAvg;
@@ -298,7 +298,7 @@ string gnuplotGenerator::gnuplot_slopes (
 	  "# set term postscript eps solid color;" << endl <<
 	  "# set term pdfcairo solid color lw 2;" << endl <<
 	  "# set term png size 800,600;" << endl <<
-	  "set term wxt size 800,600;" << endl << endl;
+	  "# set term wxt size 800,600;" << endl << endl;
 
 	string TITLE = string("\"") + os->toString (true) + " - " + groupName + " - " +
 	  regionName + "\"";
@@ -498,7 +498,7 @@ string gnuplotGenerator::gnuplot_model (
 	  "# set term postscript eps solid color;" << endl <<
 	  "# set term pdfcairo solid color lw 2;" << endl <<
 	  "# set term png size 800,600;" << endl <<
-	  "set term wxt size 800,600;" << endl << endl;
+	  "# set term wxt size 800,600;" << endl << endl;
 
 	string TITLE = string("\"") + "Evolution for " + m->getTitleName()
 	  + " model\\n" + os->toString (true) + " - " + groupName + " - " + regionName
@@ -657,7 +657,7 @@ void gnuplotGenerator::gnuplot_groups (
 	gplot << fixed <<
 	  "# set term postscript eps enhaced solid color" << endl <<
 	  "# set term png size 800,600" << endl <<
-	  "set term wxt size 800,600;" << endl << endl <<
+	  "# set term wxt size 800,600;" << endl << endl <<
 	  "set datafile separator \";\"" << endl <<
 	  "set key bottom outside center horizontal samplen 1;" << endl <<
 	  "set yrange [-1:1];" << endl <<
