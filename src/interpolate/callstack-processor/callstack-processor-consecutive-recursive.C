@@ -32,7 +32,7 @@
 #include <iostream>
 #include <iomanip>
 
-//#define DEBUG
+// #define DEBUG
 
 CallstackProcessor_ConsecutiveRecursive_ProcessedInfo::
   CallstackProcessor_ConsecutiveRecursive_ProcessedInfo (unsigned l,
