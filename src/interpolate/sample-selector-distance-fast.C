@@ -26,7 +26,6 @@
 #include <algorithm>
 #include <math.h>
 #include <assert.h>
-#include <iomanip>
 
 #include "sample-selector-distance-fast.H"
 
@@ -90,8 +89,6 @@ void SampleSelectorDistanceFast::Select (InstanceGroup *ig,
 				double d_limit = limit;
 				double d_step = step;
 				double centerposition = d_step * (1.0 / d_limit) + (1.0 / (2*d_limit) );
-
-				cout << setprecision (6);
 
 				if (it != tmp.end() && it_next != tmp.end())
 				{
