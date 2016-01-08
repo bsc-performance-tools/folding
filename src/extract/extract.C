@@ -54,6 +54,11 @@ static bool has_max_callstack_depth = false;
 static bool has_malloc_level = false;
 static unsigned malloc_level = 0;
 
+static bool has_extract_to_time = false;
+static unsigned long long extract_to_time = 0;
+static bool has_extract_from_time = false;
+static unsigned long long extract_from_time = 0;
+
 using namespace std;
 
 double NormalizeValue (double value, double min, double max)
@@ -813,7 +818,6 @@ void Process::processMultiEvent (struct multievent_t &e)
 		}
 
 		Sample *s = NULL;
-
 		if (AR.isCompleted())
 		{
 			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].getStartRegion(),
@@ -874,13 +878,22 @@ void Process::processMultiEvent (struct multievent_t &e)
 				else
 					RegionName = SemanticIndex[Region-1];
 
-				/* Write the information */
-				FoldingWriter::Write (IH.outputfile, RegionName, ptask, task,
-				  thread, thi[thread].getStartRegion(),
-				  e.Timestamp - thi[thread].getStartRegion(),
-				  thi[thread].getSamples(),
-				  ti[task].getDataObjects(),
-				  ti[task].getLivingDataObjects());
+				bool storeInstance_within_upperlimit = 
+					has_extract_to_time && thi[thread].getStartRegion() <= extract_to_time ||
+				   !has_extract_to_time;
+				bool storeInstance_within_lowerlimit = 
+					has_extract_from_time && thi[thread].getStartRegion() >= extract_from_time ||
+				   !has_extract_from_time;
+
+				/* Write the information if within limits */
+				if (storeInstance_within_lowerlimit &&
+				    storeInstance_within_upperlimit)
+					FoldingWriter::Write (IH.outputfile, RegionName, ptask, task,
+					  thread, thi[thread].getStartRegion(),
+					  e.Timestamp - thi[thread].getStartRegion(),
+					  thi[thread].getSamples(),
+					  ti[task].getDataObjects(),
+					  ti[task].getLivingDataObjects());
 			}
 
 			/* Clean */
@@ -1151,7 +1164,9 @@ int ProcessParameters (int argc, char *argv[])
 		     << "-separator S" << endl
 		     << "-semantic F" << endl
              << "-malloc-level L" << endl
-		     << "-max-callstack-depth D" << endl;
+		     << "-max-callstack-depth D" << endl
+		     << "-extract-to timestamp" << endl
+		     << "-extract-from timestamp" << endl;
 		exit (-1);
 	}
 
@@ -1180,6 +1195,26 @@ int ProcessParameters (int argc, char *argv[])
 				cerr << "The malloc-level parameter '" << argv[i] << "' was not parsed into a numerical value!" << endl;
 			else
 				has_malloc_level = malloc_level > 0;
+			continue;
+		}
+		else if (parameter == "-extract-from")
+		{
+			i++;
+			extract_from_time = atoll (argv[i]);
+			if (extract_from_time == 0)
+				cerr << "The -extract-from parameter '" << argv[i] << "' was not parsed into a numerical value!" << endl;
+			else
+				has_extract_from_time = extract_from_time > 0;
+			continue;
+		}
+		else if (parameter == "-extract-to")
+		{
+			i++;
+			extract_to_time = atoll (argv[i]);
+			if (extract_to_time == 0)
+				cerr << "The -extract-to parameter '" << argv[i] << "' was not parsed into a numerical value!" << endl;
+			else
+				has_extract_to_time = extract_to_time > 0;
 			continue;
 		}
 		else if (parameter == "-semantic")
