@@ -313,7 +313,9 @@ AC_ARG_ENABLE([gui],
 AM_CONDITIONAL(WANT_GUI_FRONTEND, test "${enable_gui}" = "yes" )
 
 AC_ARG_ENABLE([callstack-analysis],
-	AS_HELP_STRING([--enable-callstack-analysis], [Enables Call-stack analysis]))
+	AS_HELP_STRING([--disable-callstack-analysis], [Disables call-stack analysis (enabled by default)]),
+	[enable_callstack_analysis="${enableval}"],
+	[enable_callstack_analysis="yes"])
 if test "${enable_callstack_analysis}" = "yes" ; then
 	AC_DEFINE([CALLSTACK_ANALYSIS], [1], [Define if call-stack analysis is enabled])
 fi

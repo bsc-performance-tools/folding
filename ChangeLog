@@ -1,6 +1,7 @@
 
 ChangeLog
  [ + added, - removed, * changed ]
+ * 08Jan2016 Enable callstack analysis by default
  * 02Sep2015 Cube4 support
              Include data objects analysis
  * 28Apr2015 Version 1.0.2
