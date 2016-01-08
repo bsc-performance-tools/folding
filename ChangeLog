@@ -2,8 +2,9 @@
 ChangeLog
  [ + added, - removed, * changed ]
  * 08Jan2016 Enable callstack analysis by default
-              Add -extract-from and -extract-to options into folding.sh and
-              extract
+             Add -extract-from and -extract-to options into folding.sh and
+               extract
+             Improved boost search in configure
  * 02Sep2015 Cube4 support
              Include data objects analysis
  * 28Apr2015 Version 1.0.2
