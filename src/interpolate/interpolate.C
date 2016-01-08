@@ -313,7 +313,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 	PCFfile.open (file.c_str(), ios_base::out|ios_base::app);
 	if (!PCFfile.is_open())
 	{
-		cerr << "Unable to append to: " << PCFfile << endl;
+		cerr << "Unable to append to: " << file << endl;
 		exit (-1);
 	}
 
