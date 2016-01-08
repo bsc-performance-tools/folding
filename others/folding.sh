@@ -69,6 +69,14 @@ do
 		REQUESTED_REGIONS_TO_FOLD+=" -region ${2}"
 		shift
 		shift
+	elif [[ "${1}" == "-extract-from" ]] ; then
+		EXTRACT_ADDITIONAL_PARAMETERS+=" -extract-from ${2}"
+		shift
+		shift
+	elif [[ "${1}" == "-extract-to" ]] ; then
+		EXTRACT_ADDITIONAL_PARAMETERS+=" -extract-to ${2}"
+		shift
+		shift
 	elif [[ "${1}" == "-show-commands" ]] ; then
 		SHOW_COMMANDS=yes
 		shift
@@ -188,15 +196,15 @@ ${FOLDING_HOME}/bin/fuse "${BASENAME_PRV}.codeblocks.prv" || exit
 
 if [[ "${BASENAME_CSV}" = "" ]] ; then
 	if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
-		echo ${FOLDING_HOME}/bin/extract -separator \"${2}\" \"${BASENAME_PRV}.codeblocks.fused.prv\"
+		echo ${FOLDING_HOME}/bin/extract ${EXTRACT_ADDITIONAL_PARAMETERS} -separator \"${2}\" \"${BASENAME_PRV}.codeblocks.fused.prv\"
 	fi
-	${FOLDING_HOME}/bin/extract -separator "${2}" "${BASENAME_PRV}.codeblocks.fused.prv" || exit
+	${FOLDING_HOME}/bin/extract ${EXTRACT_ADDITIONAL_PARAMETERS} -separator "${2}" "${BASENAME_PRV}.codeblocks.fused.prv" || exit
 	EXTRA_INTERPOLATE_FLAGS+=" -feed-first-occurrence any"
 else
 	if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
-		echo ${FOLDING_HOME}/bin/extract -semantic \"${BASENAME_CSV}.csv\" \"${BASENAME_PRV}.codeblocks.fused.prv\"
+		echo ${FOLDING_HOME}/bin/extract ${EXTRACT_ADDITIONAL_PARAMETERS} -semantic \"${BASENAME_CSV}.csv\" \"${BASENAME_PRV}.codeblocks.fused.prv\"
 	fi
-	${FOLDING_HOME}/bin/extract -semantic "${BASENAME_CSV}.csv" "${BASENAME_PRV}.codeblocks.fused.prv" || exit
+	${FOLDING_HOME}/bin/extract ${EXTRACT_ADDITIONAL_PARAMETERS} -semantic "${BASENAME_CSV}.csv" "${BASENAME_PRV}.codeblocks.fused.prv" || exit
 fi
 
 if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
