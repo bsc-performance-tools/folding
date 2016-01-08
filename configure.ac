@@ -304,6 +304,8 @@ if test "${CLUSTERING_HOME}" != "none" ; then
    if test ${CLUSTERING_SUITE_FOUND} != "yes" ; then
       AC_MSG_ERROR([Cannot find the headers or the libraries for the Clustering suite])
    fi
+else
+	AC_MSG_RESULT(not given)
 fi
 AM_CONDITIONAL(HAVE_CLUSTERING_SUITE, test "${CLUSTERING_SUITE_FOUND}" = "yes" )
 
