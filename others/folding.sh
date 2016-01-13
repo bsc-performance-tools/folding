@@ -65,6 +65,10 @@ do
 		SOURCE_DIRECTORY_SUFFIX="-source `readlink -fn ${2}`"
 		shift
 		shift
+	elif [[ "${1}" == "-counter" ]] ; then
+		REQUESTED_COUNTERS_TO_FOLD+=" -counter ${2}"
+		shift
+		shift
 	elif [[ "${1}" == "-region" ]] ; then
 		REQUESTED_REGIONS_TO_FOLD+=" -region ${2}"
 		shift
@@ -175,8 +179,10 @@ if [[ -z ${REQUESTED_REGIONS_TO_FOLD+x} ]] ; then
 		fi
 	fi
 else
-	EXTRA_INTERPOLATE_FLAGS=${REQUESTED_REGIONS_TO_FOLD}
+	EXTRA_INTERPOLATE_FLAGS="${REQUESTED_REGIONS_TO_FOLD}"
 fi
+
+EXTRA_INTERPOLATE_FLAGS+="${REQUESTED_COUNTERS_TO_FOLD}"
 
 # BASENAME_PRV="${1%.*}"
 BASENAME_PRV=${PRVBASE}
