@@ -46,7 +46,7 @@
 \providecommand{\FOLDING}{\textsf{{F}olding}} 
 
 %
-\providecommand{\FOLDINGVERSION}{1.0.1} 
+\providecommand{\FOLDINGVERSION}{1.1.0rc} 
 
 
 \urlstyle{leostyle}
@@ -209,8 +209,13 @@
 \stepcounter{section}
 \stepcounter{subsection}
 \stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsection}
 {\newpage\clearpage
-\lthtmlfigureA{lstlisting750}%
+\lthtmlfigureA{lstlisting929}%
 \begin{lstlisting}[
  float=h,
  language=XML,
@@ -222,31 +227,24 @@
  firstnumber=1,
  numberstyle=\tiny\color{gray},
  captionpos=t,
- caption={Counter definition sets for the Extrae configuration file when used on Intel SandyBridge procesors.},
- label=lst:Extrae_counters_intel_nehalem,
+ caption={Basic counter definition sets for ARMv7l / Samsung Exynos5.},
+ label=lst:Extrae_counters_arm7vl_sam_exy5
 ]
 <cpu enabled="yes" starting-set-distribution="cyclic">
   <set enabled="yes" domain="all" changeat-time="500000us">
-    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM,PAPI_L2_DCM,PAPI_L3_TCM,PAPI_BR_MSP,
-    PAPI_BR_UCN,PAPI_BR_CN
+  PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_FP_INS,PAPI_LD_INS,PAPI_SR_INS,PAPI_VEC_INS
   </set>
   <set enabled="yes" domain="all" changeat-time="500000us">
-    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_VEC_SP,PAPI_LD_INS,PAPI_SR_INS,
-    RESOURCE_STALLS,RESOURCE_STALLS:RS,RESOURCE_STALLS:ROB
+  PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_BR_INS,PAPI_BR_MSP,PAPI_L2_DCM
   </set>
   <set enabled="yes" domain="all" changeat-time="500000us">
-    PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_VEC_DP,PAPI_FP_INS,RESOURCE_STALLS:SB,
-    RESOURCE_STALLS:LB
+  PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM
   </set>
 </cpu>
 \end{lstlisting}%
 \lthtmlfigureZ
 \lthtmlcheckvsize\clearpage}
 
-\stepcounter{subsection}
-\stepcounter{subsection}
-\stepcounter{subsection}
-\stepcounter{subsection}
 \stepcounter{subsection}
 \stepcounter{section}
 \stepcounter{chapter}
