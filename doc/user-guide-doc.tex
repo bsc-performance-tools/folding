@@ -190,8 +190,17 @@ These are the available options for the folding command:
 
 \begin{itemize}
 
+	\item \texttt{-counter C} \textit{(optional)}\\
+	The folding mechanism is applied to the performance counter C. By default, the folding mechanism is applied to all the performance counters available within the trace-file.
+
+	\item \texttt{-extract-from T} \textit{(optional)}\\
+	Applies the folding mechanism starting at time T since the origin of the trace-file. By default, the folding mechanism is applied to the whole trace.
+
+	\item \texttt{-extract-to T} \textit{(optional)}\\
+	Applies the folding mechanism ending at time T since the origin of the trace-file. By default, the folding mechanism is applied to the whole trace.
+
 	\item \texttt{-model M} \textit{(optional)}\\
-	Requests to use the performance model M when generating plots. Currently, available models include: basic, ibm-power5, ibm-power7, intel-haswell, intel-sandybridge and intel-nehalem.
+	Requests to use the performance model M when generating plots. Currently, available models include: basic, ibm-power5, ibm-power7, intel-haswell, intel-sandybridge and intel-nehalem. By default, the folding mechanism is applied to all the performance counters available within the trace-file.
 
 	\item \texttt{-source S} \textit{(optional)}\\
 	Indicates where the source code of the application is located. This is used to detect routines and loops when using the piece-wise linear regression method through the R/strucchange packages.
