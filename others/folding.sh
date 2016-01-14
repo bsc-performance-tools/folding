@@ -118,6 +118,9 @@ if [[ $# -ne 2 ]] ; then
 	done
 	echo ""
 	echo ""
+	echo "            -counter C       : Applies the folding to the hardware counter C instead to all available counters"
+	echo "            -extract-from T  : Applies the folding only after time T within the trace-file"
+	echo "            -extract-to   T  : Applies the folding only up to time T within the trace-file"
 	echo "            -source S        : Indicates where the source code of the application is located"
 	echo "            -region R        : Requests to apply the folding to region R"
 	echo "            -output <dir>    : Where to generate the results (if not given, they are generated in the tracefile <dir>)"
