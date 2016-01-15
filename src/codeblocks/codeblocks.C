@@ -23,6 +23,7 @@
 
 #include "common.H"
 #include "pcf-common.H"
+#include "prv-types.H"
 
 #include "ParaverTrace.h"
 #include "ParaverTraceThread.h"
@@ -40,7 +41,9 @@
 
 using namespace std;
 
-string sourceDir = string ("/dev/null");
+static string sourceDir = string ("/dev/null");
+
+#define CODE_BLOCK_LBL "Code block for sampled line"
 
 namespace libparaver {
 
@@ -87,13 +90,14 @@ codeblock& codeblock::operator=( const codeblock& other )
 class Process : public ParaverTrace
 {
 	private:
-	string sourceDir;
+	const string sourceDir;
+	bool onlyCopy;
 	ofstream traceout;
 	map <string, vector< codeblock > > fileblocks;
 	UIParaverTraceConfig *pcf;
 
 	public:
-	Process (const string & prvFile, const string & sourceDir,
+	Process (const string & prvFile, const string & srcDir,
 	  bool multievents, string tracename);
 	~Process ();
 
@@ -110,6 +114,8 @@ class Process : public ParaverTrace
 	void processCommunication (struct comm_t &c);
 	void processCommunicator (string &c);
 	void processComment (string &c);
+	bool get_onlyCopy() const
+	  { return onlyCopy; }
 };
 
 bool Process::is_f90 (const string &f) const
@@ -143,8 +149,9 @@ bool Process::is_c (const string &f) const
 	return false;
 }
 
-Process::Process (const string & prvFile, const string & sourceDir,
-	bool multievents, string tracename) : ParaverTrace (prvFile, multievents)
+Process::Process (const string & prvFile, const string & srcDir,
+	bool multievents, string tracename)
+	: sourceDir(srcDir), ParaverTrace (prvFile, multievents), onlyCopy(false)
 {
 	traceout.open (tracename.c_str());
 	if (!traceout.is_open())
@@ -153,15 +160,34 @@ Process::Process (const string & prvFile, const string & sourceDir,
 		exit (-1);
 	}
 
-	this->sourceDir = sourceDir;
-
 	pcf = new UIParaverTraceConfig;
 	pcf->parse (prvFile.substr (0, prvFile.length()-3) + string ("pcf"));
 
 	try {
-		vector<unsigned> SampleLocations = pcf->getEventValues (30000000);
+		vector<unsigned> SampleLocations = pcf->getEventValues (EXTRAE_SAMPLE_CALLER);
 	} catch ( ... ) {
 		cerr << "Unable to get sample locations. Did you miss adding source code references when generating the tracefile (-e flag in mpi2prv)?" << endl;
+		exit (-1);
+	}
+
+	vector<unsigned> test_v;
+	string test_s;
+	try {
+		test_s = pcf->getEventType (EXTRAE_SAMPLE_CALLERLINE_AST);
+		test_v = pcf->getEventValues (EXTRAE_SAMPLE_CALLER);
+	} catch ( ... ) { }
+
+	if (test_s == CODE_BLOCK_LBL)
+	{
+		cerr << "Warning! The given trace-file seems to have been already processed by codeblocks." << endl
+		     << "This execution will skip this step and only copy the trace-file." << endl;
+		onlyCopy = true;
+	}
+	else if (test_v.size() > 0 || !test_s.empty())
+	{
+		cerr << "Error! The trace-file already contains an event type"
+		  << EXTRAE_SAMPLE_CALLERLINE_AST << "!" << endl
+		  << "We cannot proceed from this point." << endl;
 		exit (-1);
 	}
 }
@@ -177,7 +203,7 @@ void Process::prepare (void)
 {
 	assert (pcf!=NULL);
 
-	vector<unsigned> SampleLocations = pcf->getEventValues (30000100);
+	vector<unsigned> SampleLocations = pcf->getEventValues (EXTRAE_SAMPLE_CALLERLINE);
 	set <string> testedFiles;
 	unsigned total_id = SampleLocations.size(); 
 
@@ -260,50 +286,60 @@ void Process::processMultiEvent (struct multievent_t &e)
            << e.ObjectID.cpu << ":" << e.ObjectID.ptask << ":" << e.ObjectID.task << ":" << e.ObjectID.thread << ":"
            << e.Timestamp;
 
-	for (const auto & event : e.events)
+	if (!onlyCopy)
 	{
-		traceout << ":" << event.Type << ":" << event.Value;
-		if (event.Type >= 30000100 && event.Type <= 30000199)
+		for (const auto & event : e.events)
 		{
-			string file;
-			unsigned line;
-
-			pcfcommon::lookForCallerLineInfo (pcf, event.Value, file, line);
-
-			if (common::DEBUG())
-				cout << "Looking for CallerLine info for value " << event.Value << " file = "
-				  << file << " at line " << line << " at timestamp " << e.Timestamp << endl;
-
-			int newvalue;
-			if (fileblocks.count(file) > 0)
+			traceout << ":" << event.Type << ":" << event.Value;
+			if (event.Type >= EXTRAE_SAMPLE_CALLERLINE &&
+			    event.Type <= EXTRAE_SAMPLE_CALLERLINE_MAX)
 			{
-				bool within_astblock = false;
-				vector< codeblock > v = fileblocks[file];
-				for (unsigned u = 0; u < v.size(); u++)
+				string file;
+				unsigned line;
+	
+				pcfcommon::lookForCallerLineInfo (pcf, event.Value, file, line);
+	
+				if (common::DEBUG())
+					cout << "Looking for CallerLine info for value " << event.Value << " file = "
+					  << file << " at line " << line << " at timestamp " << e.Timestamp << endl;
+	
+				int newvalue;
+				if (fileblocks.count(file) > 0)
 				{
-					codeblock c = v[u];
-					if (line >= c.getBeginLine() && line <= c.getEndLine() )
+					bool within_astblock = false;
+					vector< codeblock > v = fileblocks[file];
+					for (unsigned u = 0; u < v.size(); u++)
 					{
-						newvalue = c.getID();
-						c.setinUse (true);
-
-						/* Store any change back into vector & map */
-						v[u] = c;
-						fileblocks[file] = v;
-
-						within_astblock = true;
-						break;
+						codeblock c = v[u];
+						if (line >= c.getBeginLine() && line <= c.getEndLine() )
+						{
+							newvalue = c.getID();
+							c.setinUse (true);
+	
+							/* Store any change back into vector & map */
+							v[u] = c;
+							fileblocks[file] = v;
+	
+							within_astblock = true;
+							break;
+						}
 					}
+					if (!within_astblock)
+						newvalue = 0;
 				}
-				if (!within_astblock)
-					newvalue = 0;
+				else
+					newvalue = event.Value;
+	
+				int delta = event.Type - EXTRAE_SAMPLE_CALLERLINE;
+				traceout << ":" << EXTRAE_SAMPLE_CALLERLINE_AST + delta << ":" << newvalue;
 			}
-			else
-				newvalue = event.Value;
-
-			int delta = event.Type - 30000100;
-			traceout << ":" << 30000200 + delta << ":" << newvalue;
 		}
+	}
+	else
+	{
+		/* If we're here, we only have to copy the events into out */
+		for (const auto & event : e.events)
+			traceout << ":" << event.Type << ":" << event.Value;
 	}
 	traceout << endl;
 }
@@ -335,7 +371,7 @@ void Process::appendtoPCF (string file)
 
 	bool finish = false;
 	unsigned ndepth = 0;
-	for (unsigned u = 30000100; !finish && u < 30000199; u++)
+	for (unsigned u = EXTRAE_SAMPLE_CALLERLINE; !finish && u < EXTRAE_SAMPLE_CALLERLINE_MAX; u++)
 	{
 		try
 		{
@@ -348,7 +384,7 @@ void Process::appendtoPCF (string file)
 		}
 	}
 
-	vector<unsigned> SampleLocations = pcf->getEventValues (30000100);
+	vector<unsigned> SampleLocations = pcf->getEventValues (EXTRAE_SAMPLE_CALLERLINE);
 	PCFfile << endl <<  "EVENT_TYPE" << endl;
 	for (unsigned u = 0; u < ndepth; u++)
 	{
@@ -359,11 +395,12 @@ void Process::appendtoPCF (string file)
 			ss << u;
 			extra = " (depth " + ss.str() + ")";
 		}
-		PCFfile << "0 " << 30000200 + u << " " << "Code block for sampled line" << extra << endl;
+		PCFfile << "0 " << EXTRAE_SAMPLE_CALLERLINE_AST + u << " "
+		  << CODE_BLOCK_LBL << extra << endl;
 	}
 	PCFfile << "VALUES" << endl;
 	for (unsigned i = 0; i < SampleLocations.size(); i++)
-		PCFfile << i << " " << pcf->getEventValue(30000100, i) << endl;
+		PCFfile << i << " " << pcf->getEventValue(EXTRAE_SAMPLE_CALLERLINE, i) << endl;
 
 	for (const auto & fb : fileblocks)
 	{
@@ -443,7 +480,8 @@ int main (int argc, char *argv[])
 
 	string bfileprefix = common::basename (tracename.substr (0, tracename.rfind(".prv")));
 
-	Process *p = new Process (tracename, sourceDir, true, (bfileprefix + string(".codeblocks.prv")).c_str() );
+	Process *p = new Process (tracename, sourceDir, true,
+	  (bfileprefix + string(".codeblocks.prv")).c_str() );
 
 	vector<ParaverTraceApplication *> va = p->get_applications();
 	if (va.size() != 1)
@@ -466,7 +504,8 @@ int main (int argc, char *argv[])
 		ifs_pcf.close();
 		ofs_pcf.close();
 	}
-	p->appendtoPCF (bfileprefix + string(".codeblocks.pcf"));
+	if (!p->get_onlyCopy())
+		p->appendtoPCF (bfileprefix + string(".codeblocks.pcf"));
 
 	ifstream ifs_row ((tracename.substr (0, tracename.rfind(".prv"))+string(".row")).c_str());
 	if (ifs_row.is_open())
