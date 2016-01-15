@@ -691,7 +691,7 @@ void gnuplotGenerator::gnuplot_groups (
 		unsigned lstyle = (u % MAXLINECOLOR)+1;
 		InstanceGroup *ig = ic->getInstanceGroup (u);
 		unsigned long long s = (type == STATISTIC_MEAN) ? ig->mean() : ig->median();
-		gplot << "set label \"\" at " << s << ".0/1000000.0,0 point lt " << lstyle << " ps 2 lc rgb \"" << lightcolors[lstyle-1] << "\";" << endl;
+		gplot << "set label \"\" at " << s << ".0/1000000.0,0 point lt " << lstyle << " ps 3 lc rgb \"" << lightcolors[lstyle-1] << "\";" << endl;
 	}
 	gplot << endl;
 
@@ -711,8 +711,7 @@ void gnuplotGenerator::gnuplot_groups (
 		  << ")' w points ls " << lstyle << ",\\" << endl;
 		gplot << "'" << fname << "' using ((strcol(1) eq 'e') && (strcol(2) eq '" 
 		  << regionName 
-		  << "' && $3 == " << u+1 << ") ? $4 / 1000000.0: NaN) : $0 notitle w points ls " 
-		  << lstyle+MAXLINECOLOR;
+		  << "' && $3 == " << u+1 << ") ? $4 / 1000000.0: NaN) : $0 notitle w points lc rgbcolor \"#808080\" ";
 	}
 	gplot << ";" << endl << endl
 	  << "unset label;" << endl
