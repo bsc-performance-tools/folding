@@ -2,6 +2,12 @@
 
 SCRIPT_PATH=`readlink -f $0`
 FOLDING_HOME=`dirname ${SCRIPT_PATH}`
+
+CS=15
+FMD=5
+MSDF=1500
+ST=1.5
+
 if [[ ! -d ${FOLDING_HOME} ]] ; then
 	echo "Cannot locate FOLDING_HOME (should be ${FOLDING_HOME} ?)"
 	exit
@@ -81,6 +87,12 @@ do
 		EXTRACT_ADDITIONAL_PARAMETERS+=" -extract-to ${2}"
 		shift
 		shift
+	elif [[ "${1}" == "-pct" ]] ; then
+		CS=${2}
+		FMD=${3}
+		shift
+		shift
+		shift
 	elif [[ "${1}" == "-show-commands" ]] ; then
 		SHOW_COMMANDS=yes
 		shift
@@ -105,7 +117,7 @@ done
 #
 
 if [[ $# -ne 2 ]] ; then
-	echo "Usage: ${0} [-output <dir>] [-model M] [-source S] [-region R] Trace InstanceSeparator/SemanticSeparator"
+	echo "Usage: ${0} [-counter C] [-extract-from T] [-extract-to T] [-output <dir>] [-model M] [-source S] [-region R] [-pct CS FMD] Trace InstanceSeparator/SemanticSeparator"
 	echo ""
 	echo "            -model M         : Uses performance model M when generating plots"
 	echo "                               Available models in $FOLDING_HOME/etc/models:"
@@ -124,6 +136,7 @@ if [[ $# -ne 2 ]] ; then
 	echo "            -source S        : Indicates where the source code of the application is located"
 	echo "            -region R        : Requests to apply the folding to region R"
 	echo "            -output <dir>    : Where to generate the results (if not given, they are generated in the tracefile <dir>)"
+	echo "            -pct CS FMD         : Callstack processor parameters: number of consecutive samples CS, minimum duration (in percentage) FMD"
 	echo "            Trace            : Paraver trace-file"
 	echo "            InstanceSeparator: Label or value of the event type to separate instances within tracefile"
 	echo "            SemanticSeparator: .csv file generated from Paraver to separate instances within tracefile"
@@ -217,17 +230,17 @@ else
 fi
 
 if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
-	echo ${FOLDING_HOME}/bin/interpolate -max-samples-distance 2000 -sigma-times 2.0 -use-median ${EXTRA_INTERPOLATE_FLAGS} ${MODELS_SUFFIX} ${SOURCE_DIRECTORY_SUFFIX} "${BASENAME_PRV}.codeblocks.fused.extract"
+	echo ${FOLDING_HOME}/bin/interpolate -max-samples-distance ${MSDF} -sigma-times ${ST} -callstack-processor pct ${CS} ${FMD} -use-median ${EXTRA_INTERPOLATE_FLAGS} ${MODELS_SUFFIX} ${SOURCE_DIRECTORY_SUFFIX} "${BASENAME_PRV}.codeblocks.fused.extract"
 fi
 
 # Hook for Paraver
 echo Output directory: ${PWD}
 
 ${FOLDING_HOME}/bin/interpolate \
- -max-samples-distance-fast 1500 \
- -sigma-times 1.5 \
+ -max-samples-distance-fast ${MSDF} \
+ -sigma-times ${ST} \
  -use-median \
- -callstack-processor pct 15 5.0 \
+ -callstack-processor pct ${CS} ${FMD} \
  ${EXTRA_INTERPOLATE_FLAGS} \
  ${MODELS_SUFFIX} \
  ${SOURCE_DIRECTORY_SUFFIX} \
