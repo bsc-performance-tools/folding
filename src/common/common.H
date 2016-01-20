@@ -78,11 +78,11 @@ class common
 	static bool decomposePtaskTaskThread (const string &s, unsigned &ptask,
 	  unsigned &task, unsigned &thread);
 	static bool decomposePtaskTaskThreadWithAny (const string &s, unsigned &ptask,
-	  bool &ptaskany, unsigned &task, bool &taskany, unsigned &thread, bool &threadany);
+	  bool &ptaskany, unsigned &task, bool &taskany, unsigned &thread,
+	  bool &threadany);
 	static string basename (const string & s);
 
-	static bool addressInStack (unsigned long long address)
-	  { return address >= 0x80000000; }
+	static bool addressInStack (unsigned long long address);
 };
 
 #endif
