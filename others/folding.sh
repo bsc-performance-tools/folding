@@ -64,35 +64,27 @@ do
 			echo "Cannot process model ${2}"
 			exit
 		fi
-		shift
-		shift
+		shift 2
 	elif  [[ "${1}" == "-source" ]] ; then
 		echo Given source directory: `readlink -fn ${2}`
 		SOURCE_DIRECTORY_SUFFIX="-source `readlink -fn ${2}`"
-		shift
-		shift
+		shift 2
 	elif [[ "${1}" == "-counter" ]] ; then
 		REQUESTED_COUNTERS_TO_FOLD+=" -counter ${2}"
-		shift
-		shift
+		shift 2
 	elif [[ "${1}" == "-region" ]] ; then
 		REQUESTED_REGIONS_TO_FOLD+=" -region ${2}"
-		shift
-		shift
+		shift 2
 	elif [[ "${1}" == "-extract-from" ]] ; then
 		EXTRACT_ADDITIONAL_PARAMETERS+=" -extract-from ${2}"
-		shift
-		shift
+		shift 2
 	elif [[ "${1}" == "-extract-to" ]] ; then
 		EXTRACT_ADDITIONAL_PARAMETERS+=" -extract-to ${2}"
-		shift
-		shift
+		shift 2
 	elif [[ "${1}" == "-pct" ]] ; then
 		CS=${2}
 		FMD=${3}
-		shift
-		shift
-		shift
+		shift 3
 	elif [[ "${1}" == "-show-commands" ]] ; then
 		SHOW_COMMANDS=yes
 		shift
@@ -105,8 +97,7 @@ do
 			fi
 		fi
 		OUTPUTDIR=`readlink -fn ${2}`
-		shift
-		shift
+		shift 2
 	else
 		break
 	fi
