@@ -350,3 +350,9 @@ unsigned common::numHexadecimalDigits (unsigned long long v)
 {
 	return numDigits (v, 16);
 }
+
+bool common::addressInStack (unsigned long long address)
+{
+	return address & (0xfffULL << 32);
+}
+

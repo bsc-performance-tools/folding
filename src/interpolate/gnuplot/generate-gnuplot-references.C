@@ -119,8 +119,41 @@ void gnuplotGeneratorReferences::generate (
 				}
 			}
 		}
+
 	}
 
+	for (const auto s : ig->getAllSamples())
+		if (s->hasAddressReference())
+			if (!common::addressInStack (s->getAddressReference()))
+			{
+				if (hassomeaddress_nonstack)
+				{
+					minaddress_nonstack = MIN(minaddress_nonstack, s->getAddressReference());
+					maxaddress_nonstack = MAX(maxaddress_nonstack, s->getAddressReference());
+				}
+				else
+				{
+					minaddress_nonstack = s->getAddressReference();
+					maxaddress_nonstack = s->getAddressReference();
+					hassomeaddress_nonstack = true;
+				}
+			}
+			else
+			{
+				if (hassomeaddress_stack)
+				{
+					minaddress_stack = MIN(minaddress_stack, s->getAddressReference());
+					maxaddress_stack = MAX(maxaddress_stack, s->getAddressReference());
+				}
+				else
+				{
+					minaddress_stack = s->getAddressReference();
+					maxaddress_stack = s->getAddressReference();
+					hassomeaddress_stack = true;
+				}
+			}
+
+#if 0
 	/* Study locality per code region for each variable */
 	vector<string> stack_labels, nonstack_labels;
 
@@ -206,6 +239,7 @@ void gnuplotGeneratorReferences::generate (
 #endif
 		}
 	}
+#endif
 
 	double StackPlotProportion;
 	if (hassomeaddress_stack && hassomeaddress_nonstack)
@@ -223,6 +257,8 @@ void gnuplotGeneratorReferences::generate (
 		maxaddress_nonstack = 0x1000;
 		hassomeaddress_nonstack = true;
 	}
+
+	StackPlotProportion = 0.5f;
 
 	unsigned numhexdigits_maxaddress =
 	  common::numHexadecimalDigits(maxaddress_stack);
@@ -256,7 +292,7 @@ void gnuplotGeneratorReferences::generate (
 		gplot << "set label 'Addresses referenced' at screen 0.975, screen 0.65 rotate by -90 center;" << endl <<
 		  "set size 1, " << verticalspace*StackPlotProportion << ";" << endl <<
 		  "set origin 0, " << verticalorigin+verticalspace*(1.-StackPlotProportion) << ";" << endl << 
-		  "set border 14;" << endl <<
+		  "set border 15; # set border 14;" << endl <<
 		  "set xrange [0:X_LIMIT*1./FACTOR];" << endl;
 	
 		gplot << "MIN_ADDRESS_STACK=" << minaddress_stack << "." << endl;
@@ -270,7 +306,7 @@ void gnuplotGeneratorReferences::generate (
 		gplot << ");" << endl;
 	
 		gplot << "set y2range [MIN_ADDRESS_STACK:MAX_ADDRESS_STACK];" << endl;
-	
+
 		for (const auto & v : seenVariables)
 		{
 			DataObject* DO = v.second;
@@ -288,9 +324,10 @@ void gnuplotGeneratorReferences::generate (
 			}
 		}
 		gplot << endl;
-	
+#if 0	
 		for (auto const & s : stack_labels)
 			gplot << s << endl;
+#endif
 	
 		gplot << "if (plot_address_cycles == 1) {" << endl
 			  << "plot \\" << endl
@@ -315,8 +352,8 @@ void gnuplotGeneratorReferences::generate (
 		gplot << "unset label;" << endl <<
 		  "set size 1, " << verticalspace*(1.-StackPlotProportion) << ";" << endl <<
 		  "set origin 0, " << verticalorigin << ";" << endl <<
-		  "set border 11;" << endl;
-	
+		  "set border 15;# set border 11;" << endl;
+
 		for (const auto & v : seenVariables)
 		{
 			DataObject* DO = v.second;
@@ -332,6 +369,7 @@ void gnuplotGeneratorReferences::generate (
 				vv++;
 			}
 		}
+
 		gplot << endl;
 	
 		gplot << "MIN_ADDRESS_NONSTACK=" << minaddress_nonstack << "." << endl;
@@ -346,9 +384,11 @@ void gnuplotGeneratorReferences::generate (
 	
 		gplot << "set y2range [MIN_ADDRESS_NONSTACK:MAX_ADDRESS_NONSTACK];" << endl
 		      << "unset x2tics;" << endl ;
-	
+
+#if 0	
 		for (auto const & s : nonstack_labels)
 			gplot << s << endl;
+#endif
 
 		gplot << "if (plot_address_cycles == 1) {" << endl
 			  << "plot \\" << endl
