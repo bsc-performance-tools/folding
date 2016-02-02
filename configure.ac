@@ -13,10 +13,10 @@ AC_CONFIG_HEADERS([folding-config.h:folding-config.h.in])
 #AC_CONFIG_SRCDIR(src/mpitrace.c)
 
 # GNU Autotools intermediate files are stored in the following directory
-AC_CONFIG_AUX_DIR(config)
+AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 
-SVN=`which svn`
+SVN=`which svn 2> /dev/null`
 
 # If SVN command exists and .svn directory also exists, check for the versioning
 if test $? -eq 0 -a -d .svn ; then
@@ -33,9 +33,10 @@ if test $? -eq 0 -a -d .svn ; then
 	fi
 fi
 
-if test -f SVN-branch -a -f SVN-revision ; then
-	SVN_branch=`cat SVN-branch`
-	SVN_revision=`cat SVN-revision`
+TOPDIR=`dirname ${0}`
+if test -f ${TOPDIR}/SVN-branch -a -f ${TOPDIR}/SVN-revision ; then
+	SVN_branch=`cat ${TOPDIR}/SVN-branch`
+	SVN_revision=`cat ${TOPDIR}/SVN-revision`
 else
 	SVN_branch=unknown
 	SVN_revision=0
