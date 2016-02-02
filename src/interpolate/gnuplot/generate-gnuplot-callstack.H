@@ -35,7 +35,6 @@ using namespace std;
 class gnuplotGeneratorCallstack
 {
 	public:
-
 	static string getStackStringDepth (
 	  unsigned depth,
 	  stack<CodeRefTriplet> scrt,

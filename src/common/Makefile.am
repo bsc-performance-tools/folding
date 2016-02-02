@@ -10,6 +10,7 @@ libcommon_la_SOURCES = \
  callstack-codereftriplet.H callstack-codereftriplet.C \
  data-object.H data-object.C \
  sample.H sample.C \
+ prv-colors.H prv-colors.C \
  prv-types.H
 
 libpcf_common_la_SOURCES = \

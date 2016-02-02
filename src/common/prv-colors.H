@@ -21,29 +21,25 @@
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
 
-#ifndef GNUPLOTGENERATORREFERENCES_H_INCLUDED
-#define GNUPLOTGENERATORREFERENCES_H_INCLUDED
+#ifndef PRV_COLORS_H_INCLUDED
+#define PRV_COLORS_H_INCLUDED
 
-#include "interpolate.H"
-#include "instance-container.H"
-#include "instance-group.H"
-#include "data-object.H"
+#include <string>
 
 using namespace std;
 
-#include <stack>
+typedef struct RGBcolor_st
+{
+	unsigned short R;
+	unsigned short G;
+	unsigned short B;
+} RGBcolor_t;
 
-class gnuplotGeneratorReferences
+class PRVcolors
 {
 	public:
-
-	static void generate (
-	  double verticalspace,
-	  double verticalorigin,
-	  ofstream & gplot,
-	  const string & fileDump,
-	  InstanceGroup *ig,
-	  const vector<DataObject*> & variables);
+	static RGBcolor_t getRGB (unsigned long long);
+	static string getString (unsigned long long);
 };
 
-#endif /* GNUPLOTGENERATORREFERENCES_H_INCLUDED */
+#endif /* PRV_COLORS_H_INCLUDED */
