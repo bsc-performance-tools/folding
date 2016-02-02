@@ -1,6 +1,7 @@
 
 ChangeLog
  [ + added, - removed, * changed ]
+ * 02Feb2016 Support for lib and lib64 installation directories in folding.sh
  * 08Jan2016 Enable callstack analysis by default
              Add -extract-from and -extract-to options into folding.sh and
                extract
