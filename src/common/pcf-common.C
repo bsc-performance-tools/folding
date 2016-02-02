@@ -225,9 +225,8 @@ void pcfcommon::lookForCallerASTInfo (UIParaverTraceConfig *pcf, unsigned caller
 		string beforespace = cl.substr (0, cl.find (" "));
 		string afterspace = cl.substr (cl.find(" "));
 	
-		int pos_begin, pos_end;
-		int sep_position = beforespace.find ("-");
-		int par_position = afterspace.find (" ");
+		size_t pos_begin, pos_end;
+		size_t sep_position = beforespace.find ("-");
 		bool has_range = sep_position != string::npos;
 		if (has_range)
 		{
