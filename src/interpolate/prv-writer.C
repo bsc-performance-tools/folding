@@ -436,11 +436,11 @@ void FoldedParaverTrace::DumpCallstackProcessed (const Instance *in,
 		{
 			CallstackProcessor_Result *r = callers.top();	
 			unsigned level = r->getLevel();
-			unsigned caller = r->getCodeRef().getCaller();
 			double end_time = (*it_ahead)->getNTime();
 			double begin_time = (*it)->getNTime();
 
 #if defined(DEBUG)
+			unsigned caller = r->getCodeRef().getCaller();
 			cout << "Routine " << caller << " at level " << level << " from " << begin_time << " to " << end_time << endl;
 #endif
 

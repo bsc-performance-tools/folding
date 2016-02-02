@@ -55,8 +55,8 @@ void gnuplotGeneratorReferences::generate (
 	      << "set tmargin 0; set bmargin 0; set lmargin 14; set rmargin 17;" << endl << endl
 	      << "plot_address_cycles = 1; # Set to 0 if want to see accesses to memory hierarchy" << endl << endl;
 
-	unsigned long long minaddress_stack, maxaddress_stack;
-	unsigned long long minaddress_nonstack, maxaddress_nonstack;
+	unsigned long long minaddress_stack = 0, maxaddress_stack = 0;
+	unsigned long long minaddress_nonstack = 0, maxaddress_nonstack = 0;
 	bool hassomeaddress_stack = false, hassomeaddress_nonstack = false;
 
 	/* From all data objects, use only those that are alive */
@@ -67,7 +67,6 @@ void gnuplotGeneratorReferences::generate (
 			livingVariableIndices.insert (l);
 	for (const auto l : livingVariableIndices)
 	{
-		assert (l >= 0);
 		assert (l < variables.size());
 		livingVariables.push_back (variables[l]);
 	}
@@ -122,6 +121,7 @@ void gnuplotGeneratorReferences::generate (
 
 	for (const auto s : ig->getAllSamples())
 		if (s->hasAddressReference())
+		{
 			if (!common::addressInStack (s->getAddressReference()))
 			{
 				if (hassomeaddress_nonstack)
@@ -150,6 +150,7 @@ void gnuplotGeneratorReferences::generate (
 					hassomeaddress_stack = true;
 				}
 			}
+		}
 
 #if 0
 	/* Study locality per code region for each variable */

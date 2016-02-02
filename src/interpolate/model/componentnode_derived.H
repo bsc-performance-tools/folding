@@ -37,7 +37,7 @@
 class ComponentNode_derived : public ComponentNode
 {
 	public:
-	enum Operator { ADD, SUB, MUL, DIV };
+	enum Operator { ADD, SUB, MUL, DIV, NOP };
 
 	private:
 	const Operator op;

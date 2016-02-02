@@ -89,7 +89,7 @@ CallstackProcessor_ConsecutiveRecursive::processSamples (
 	   this should be at max_depth, but just in case */
 	unsigned depth = max_depth;
 	bool found = false;
-	while (depth >= 0 && !found)
+	while (!found)
 	{
 		for (auto s : samples)
 		{
@@ -304,7 +304,7 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 	map<CodeRefTriplet,unsigned> CodeRefFrequency;
 
 	bool in_region = false;
-	double entry_time_in_region;
+	double entry_time_in_region = 0;
 	CodeRefTriplet crt_in_region;
 
 	for (const auto & ct : vCallerTime)
@@ -511,7 +511,7 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 	  new CallstackProcessor_ConsecutiveRecursive_ConsecutiveCtrl (nConsecutiveSamples);
 
 	bool in_region = false;
-	double entry_time_in_region;
+	double entry_time_in_region = 0;
 	CodeRefTriplet crt_in_region;
 
 	CodeRefFrequency.clear();

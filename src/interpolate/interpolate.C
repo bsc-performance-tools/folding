@@ -123,7 +123,6 @@ using namespace std;
 void GroupFilterAndDumpStatistics (set<string> &regions,
 	const vector<Instance*> &vInstances,
 	map<string, InstanceContainer> &Instances,
-	map<string, InstanceContainer> &excludedInstances,
 	vector<Instance*> &feedInstances)
 {
 	map<string, InstanceContainer*> ptrInstances;
@@ -995,7 +994,6 @@ int main (int argc, char *argv[])
 	set<string> presentCounters, counters;
 	set<string> presentRegions, regions;
 	map<string, InstanceContainer> Instances;
-	map<string, InstanceContainer> excludedInstances;
 	vector<Instance*> vInstances;
 	vector<Instance*> feedInstances;
 	char CWD[1024], *cwd;
@@ -1170,7 +1168,7 @@ int main (int argc, char *argv[])
 
 	// Filter read data and show some statistics
 	GroupFilterAndDumpStatistics (regions, vInstances, Instances,
-	  excludedInstances, feedInstances);
+	  feedInstances);
 
 	string cFile = argv[res];
 	string cFilePrefix = cFile.substr (0, cFile.rfind (".extract"));

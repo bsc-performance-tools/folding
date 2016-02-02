@@ -29,7 +29,7 @@
 #include <iostream>
 #include <unistd.h>
 
-void R::launch (string fname, string commands, string helpiffail)
+void R::launch (string fname, string commands)
 {
 	ofstream temporal;
 	temporal.open (fname.c_str());

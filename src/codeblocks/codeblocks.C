@@ -151,7 +151,7 @@ bool Process::is_c (const string &f) const
 
 Process::Process (const string & prvFile, const string & srcDir,
 	bool multievents, string tracename)
-	: sourceDir(srcDir), ParaverTrace (prvFile, multievents), onlyCopy(false)
+	: ParaverTrace (prvFile, multievents), sourceDir(srcDir), onlyCopy(false)
 {
 	traceout.open (tracename.c_str());
 	if (!traceout.is_open())

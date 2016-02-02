@@ -63,11 +63,9 @@ double InterpolationKriger::Distance_Point_To_Interpolate (double inpoint_x,
 }
 
 unsigned InterpolationKriger::do_interpolate (unsigned inpoints, double *ix,
-	double *iy, InterpolationResults *ir, const string & counter, 
-	const string & region, unsigned group)
+	double *iy, InterpolationResults *ir, const string & /* counter */, 
+	const string & /* region */, unsigned /* group */)
 {
-	UNREFERENCED(group);
-
 	unsigned o_count = ir->getCount();
 	double *o_ptr = ir->getInterpolationResultsPtr();
 

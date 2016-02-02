@@ -507,7 +507,7 @@ void Process::processAddressReference (const struct event_t &evt,
 bool Process::processCaller (const struct event_t &evt, unsigned base,
 	map<unsigned, unsigned long long> &C)
 {
-	unsigned depth = evt.Type - base;
+	int depth = evt.Type - base;
 
 	if (!has_max_callstack_depth ||
 	    (has_max_callstack_depth && depth <= max_callstack_depth))
@@ -550,7 +550,6 @@ void Process::processCounter (const struct event_t &evt,
 
 void Process::processMultiEvent (struct multievent_t &e)
 {
-	bool FoundSeparator = false;
 	unsigned long long ValueSeparator = 0;
 	bool hasValueSeparator_Start = false;
 	bool hasValueSeparator_End   = false;
@@ -586,6 +585,7 @@ void Process::processMultiEvent (struct multievent_t &e)
 	bool memory_call_alloc = false, memory_call_free = false;
 	for (const auto & event : e.events)
 		if (event.Type == EXTRAE_DYNAMIC_MEMORY_TYPE)
+		{
 			if (event.Value == EXTRAE_DYNAMIC_MEMORY_MALLOC ||
 			    event.Value == EXTRAE_DYNAMIC_MEMORY_CALLOC ||
 			    event.Value == EXTRAE_DYNAMIC_MEMORY_REALLOC)
@@ -598,12 +598,13 @@ void Process::processMultiEvent (struct multievent_t &e)
 				memory_call_free = true;
 				break;
 			}
+		}
 
 	if (memory_call_alloc)
 	{
 		bool has_minimum_call = false;
-		unsigned minimum_call_type;
-		unsigned minimum_call_value;
+		unsigned minimum_call_type = 0;
+		unsigned minimum_call_value = 0;
 		unsigned long long dynamic_memory_size = 0;
 		for (const auto & event : e.events)
 		{
@@ -732,7 +733,6 @@ void Process::processMultiEvent (struct multievent_t &e)
 					  " Found separator (" << RegionSeparatorID <<
 					  "," << event.Value << ") at timestamp " << e.Timestamp << endl;
 
-				FoundSeparator = true;
 				if (event.Value > 0)
 				{
 					hasValueSeparator_Start = true;
@@ -755,7 +755,6 @@ void Process::processMultiEvent (struct multievent_t &e)
 		{
 			if (semval->getFrom() == e.Timestamp + TimeOffset)
 			{
-				FoundSeparator = true;
 				string tmp = semval->getValue().substr (0, semval->getValue().find("."));
 				ValueSeparator = atoi (tmp.c_str());
 				if (semval->getValue() != "End")
@@ -879,11 +878,11 @@ void Process::processMultiEvent (struct multievent_t &e)
 					RegionName = SemanticIndex[Region-1];
 
 				bool storeInstance_within_upperlimit = 
-					has_extract_to_time && thi[thread].getStartRegion() <= extract_to_time ||
-				   !has_extract_to_time;
+					(has_extract_to_time && thi[thread].getStartRegion() <= extract_to_time)
+				   || !has_extract_to_time;
 				bool storeInstance_within_lowerlimit = 
-					has_extract_from_time && thi[thread].getStartRegion() >= extract_from_time ||
-				   !has_extract_from_time;
+					(has_extract_from_time && thi[thread].getStartRegion() >= extract_from_time)
+				   || !has_extract_from_time;
 
 				/* Write the information if within limits */
 				if (storeInstance_within_lowerlimit &&
