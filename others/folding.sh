@@ -15,7 +15,16 @@ else
 	export FOLDING_HOME=${FOLDING_HOME%/bin}
 fi
 
-export LD_LIBRARY_PATH=${FOLDING_HOME}/lib
+#
+# Depending on the compilation system, the libraries are either found in lib/
+# or lib64/
+#
+
+if test -d ${FOLDING_HOME}/lib ; then
+	export LD_LIBRARY_PATH+=:${FOLDING_HOME}/lib
+elif test -d ${FOLDING_HOME}/lib64 ; then
+	export LD_LIBRARY_PATH+=:${FOLDING_HOME}/lib64
+fi
 
 #
 # Process optional parameters first
