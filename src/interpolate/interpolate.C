@@ -1426,6 +1426,10 @@ int main (int argc, char *argv[])
 				needAddressPCFinfo |= ftrace->DumpAddressesInInstance (i, ig);
 				ftrace->DumpCallstackProcessed (i, ig);
 				ftrace->DumpReverseCorrectedCallersInInstance (i, ig);
+#if defined(DAMIEN_EXPERIMENTS)
+				ig->DumpReverseCorrectedCallersInInstance (
+				  common::basename (traceFile.substr (0, traceFile.rfind(".prv"))));
+#endif
 				ftrace->DumpBreakpoints (i, ig);
 			}
 		}
