@@ -328,6 +328,12 @@ if test "${enable_memory_analysis}" = "yes" ; then
 	AC_DEFINE([MEMORY_ANALYSIS], [1], [Define if memory analysis is enabled])
 fi
 
+AC_ARG_ENABLE([damien-experiments],
+	AS_HELP_STRING([--enable-damien-experiments], [Several Damien experimentation]))
+if test "${enable_damien_experiments}" = "yes" ; then
+	AC_DEFINE([DAMIEN_EXPERIMENTS], [1], [Define if enable Damien experiments in Folding])
+fi
+
 AX_PROG_BOOST
 
 AC_CHECK_FUNC(stat, [AC_DEFINE([HAVE_STAT],[1],[Define if have stat])])

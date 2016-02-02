@@ -924,3 +924,54 @@ double InstanceGroup::getInterpolatedNTime (const string &counter, Sample *s) co
 		return s->getNTime();
 }
 
+
+#if defined(DAMIEN_EXPERIMENTS)
+void InstanceGroup::DumpReverseCorrectedCallersInInstance (const string &fprefix) const
+{
+	unsigned id;
+	unsigned sid;
+	ofstream f;
+
+	string file = fprefix + "." + regionName + ".callerdata";
+	f.open (file.c_str());
+	if (!f.is_open())
+	{
+		cerr << "Error! Cannot open file " << file << endl;
+		return;
+	}
+
+	vector<Sample*> workSamples;
+	for (const auto s : getAllSamples())
+		if (s->hasCodeRefTripletSize())
+			workSamples.push_back (s);
+
+	sort (workSamples.begin(), workSamples.end(), ::compare_SampleTimings);
+
+	id = 1;
+	sid = 1;
+	for (const auto & s : workSamples)
+	{
+		if (!s->getUsableCallstack())
+			continue;
+
+		const map<unsigned, CodeRefTriplet> & ct = s->getCodeTripletsAsConstReference();
+
+		map<unsigned, CodeRefTriplet>::const_reverse_iterator it;
+		for (it = ct.crbegin(); it != ct.crend(); it++)
+		{
+			f << id << ":" << sid << ":" << 
+			  s->getNTime() << ":" <<
+			  (unsigned long long)(s->getNTime() * (double)(mean())) << ":" <<
+			  (*it).first << ":" <<
+			  (*it).second.getCaller() << ":" <<
+			  (*it).second.getCallerLine() <<
+			  endl;
+
+			id++;
+		}
+		sid++;
+	}
+
+	f.close();
+}
+#endif /* DAMIEN_EXPERIMENTS */

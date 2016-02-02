@@ -187,6 +187,10 @@ class InstanceGroup
 	  { hasEmittedAddressSamples = b; }
 	bool getHasEmittedAddressSamples (void) const
 	  { return hasEmittedAddressSamples; }
+
+#if defined(DAMIEN_EXPERIMENTS)
+	void DumpReverseCorrectedCallersInInstance (const string &fprefix) const;
+#endif
 };
 
 #endif
