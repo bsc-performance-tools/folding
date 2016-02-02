@@ -124,7 +124,6 @@ int Callstack_CodeRefTriplet::prefix_match (
 void Callstack_CodeRefTriplet::show (bool oneline) const
 {
 	map<unsigned, CodeRefTriplet>::const_reverse_iterator it1;
-	unsigned last_depth = 0;
 
 	for (it1 = crt.crbegin(); it1 != crt.crend(); it1++)
 	{
@@ -133,8 +132,6 @@ void Callstack_CodeRefTriplet::show (bool oneline) const
 		  << (*it1).second.getCallerLineAST() << "> ]";
 		if (!oneline)
 			cout << endl;
-
-		last_depth = (*it1).first;
 	}
 
 	if (oneline)
