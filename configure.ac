@@ -130,6 +130,9 @@ if test "${FC}" = "" ; then
 	AC_MSG_ERROR([Cannot find Fortran compiler])
 fi
 
+AX_CFLAGS_WARN_ALL
+AX_CXXFLAGS_WARN_ALL
+
 AM_PATH_XML2(
 	[2.5.0],
 	[AC_DEFINE([HAVE_XML2], [1], [Defined if libxml2 exists])],

@@ -34,7 +34,6 @@
 #include <math.h>
 
 #include "prv-types.H"
-#include "pcf-common.H"
 
 void gnuplotGeneratorReferences::generate (
 	  double verticalspace,
@@ -42,8 +41,7 @@ void gnuplotGeneratorReferences::generate (
 	  ofstream & gplot,
 	  const string & fileDump,
 	  InstanceGroup *ig,
-	  const vector<DataObject*> & variables,
-	  UIParaverTraceConfig *pcf)
+	  const vector<DataObject*> & variables)
 {
 	assert (gplot.is_open());
 

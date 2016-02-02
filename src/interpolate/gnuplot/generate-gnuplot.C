@@ -127,7 +127,7 @@ void gnuplotGenerator::gnuplot_single (
 	{
 		gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
 		  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
-		  variables, pcf);
+		  variables);
 		occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
 	}
 #undef CALLSTACK_REFERENCE_PART
@@ -319,7 +319,7 @@ string gnuplotGenerator::gnuplot_slopes (
 #define CALLSTACK_REFERENCE_PART 0.25
 	gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
 	  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
-	  variables, pcf);
+	  variables);
 	occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
 #undef CALLSTACK_REFERENCE_PART
 #endif
@@ -520,7 +520,7 @@ string gnuplotGenerator::gnuplot_model (
 #define CALLSTACK_REFERENCE_PART 0.25
 	gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
 	  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
-	  variables, pcf);
+	  variables);
 	occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
 #undef CALLSTACK_REFERENCE_PART
 #endif

@@ -32,6 +32,7 @@
 
 #include "prv-types.H"
 #include "pcf-common.H"
+#include "prv-colors.H"
 
 string gnuplotGeneratorCallstack::getStackStringDepth (unsigned depth,
 	stack<CodeRefTriplet> scrt, UIParaverTraceConfig *pcf)
@@ -86,7 +87,8 @@ void gnuplotGeneratorCallstack::generate (
 	gplot << "##############################" << endl
 	      << "## Routines part " << endl
 	      << "##############################" << endl << endl
-	      << "samplecls(ret,r,g,t) = (r eq '" << ig->getRegionName() << "' && g == " << ig->getNumGroup() << "  && t eq 'cl') ? ret : NaN;" << endl << endl
+	      << "samplecls(ret,r,g,t) = (r eq '" << ig->getRegionName()
+		    << "' && g == " << ig->getNumGroup() << "  && t eq 'cl') ? ret : NaN;" << endl << endl
 	      << "set size 1," << verticalsize << ";" << endl
 	      << "set origin 0," << verticalorigin << ";" << endl << endl
 	      << "set bmargin 0; set lmargin 14; set rmargin 17;" << endl << endl
@@ -110,15 +112,12 @@ void gnuplotGeneratorCallstack::generate (
 	      << endl;
 
 	double last = 0.;
-	vector<string> bgcolors = { "#ff0000", "#00ff00", "#0000ff", "#ffa000", "#00ffff", "#606060" };
 
 #define X_WIDTH_THRESHOLD 0.025
 
 	gplot << fixed << setprecision(3);
 
 	map<string, double> routines_time;
-	map<unsigned, string> routines_colors;
-	unsigned idx = 0;
 	stack<CodeRefTriplet> routine_stack;
 	for (const auto & r : routines)
 	{
@@ -133,22 +132,12 @@ void gnuplotGeneratorCallstack::generate (
 
 		if (duration >= X_WIDTH_THRESHOLD)
 		{
-			string color;
-			if (routines_colors.count (top) == 0)
-			{
-				color = bgcolors[idx];
-				idx = (idx+1)%bgcolors.size();
-			}
-			else
-				color = routines_colors.at (top);
-
+			string color = PRVcolors::getString (top);
 			gplot << "set obj rect from graph " << last << "*FACTOR, graph 0 to graph "
 			      << r->getNTime() << "*FACTOR, graph 1 "
-			      << "fs transparent solid 0.33 noborder fc rgbcolor '" << color
+			      << "fs transparent solid 0.33 noborder fc rgbcolor '#" << color
 			      << "' behind # Routine: " << routine << " "
 			      << duration * 100.f << "%" << endl;
-
-			routines_colors[top] = color;
 		}
 
 		if (!routine_stack.empty())
