@@ -72,7 +72,7 @@ PRVSemanticCSV::PRVSemanticCSV (const char *file)
 				for (size_t s = 4; s < tokens.size(); s++)
 					Value += string ("_")+tokens[s];
 
-				if (Time >= 0 && Duration >= 0)
+				if (Duration > 0)
 				{
 					PRVSemanticValue *sv = new PRVSemanticValue (Time, Duration, Value);
 

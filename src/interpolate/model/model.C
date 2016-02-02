@@ -32,9 +32,6 @@
 
 #include <assert.h>
 
-static const xmlChar *xmlCOMMENT = (xmlChar*) "COMMENT";
-static const xmlChar *xmlTEXT = (xmlChar*) "text";
-
 #define TAG_MODEL ((xmlChar*) "model")
 #define TAG_COMPONENT ((xmlChar*) "component")
 #define TAG_MODEL_NAME ((xmlChar*) "name")
@@ -116,8 +113,6 @@ bool Model::loadXML (char *f)
 {
 	if (!common::existsFile (f))
 		return false;
-
-	bool model_found = false;
 
 	/*
 	* This initialize the library and check potential ABI mismatche
@@ -279,6 +274,8 @@ ComponentNode * Model::loadXML_component_componentnode (xmlDocPtr xmldoc,
 				case '*': OP = ComponentNode_derived::MUL;
 				break;
 				case '/': OP = ComponentNode_derived::DIV;
+				break;
+				default:  OP = ComponentNode_derived::NOP;
 				break;
 			}
 		}

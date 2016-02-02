@@ -33,8 +33,8 @@ Interpolation::Interpolation (unsigned steps, bool prefilter) : steps(steps),
 {
 }
 
-void Interpolation::pre_interpolate (double sigmaTimes, InstanceGroup *ig, 
-	const set<string> &counters)
+void Interpolation::pre_interpolate (double /* sigmaTimes*/,
+	InstanceGroup* /* ig */, const set<string> & /* counters */)
 {
 	/* By default, do nothing */
 	return;

@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include "kriger_wrapper.h"
 
-int main (int argc, char *argv[])
+int main (void)
 {
 	int i;
 	double X1, Y1, X2, Y2, X3, Y3, X4, Y4;
 	double px[2000], py[2000];
-	double ox[2000], oy[2000];
+	double oy[2000];
 
 px[0]=0.000342478; py[0]=9813;
 px[1]=0.00109769; py[1]=36237;

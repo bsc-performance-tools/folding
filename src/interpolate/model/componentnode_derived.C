@@ -56,6 +56,8 @@ double ComponentNode_derived::evaluate (map<string,InterpolationResults*> &ir,
 		break;
 		case DIV: res = v1/v2;
 		break;
+		case NOP:
+		break;
 	}
 
 	return res;
@@ -76,6 +78,8 @@ void ComponentNode_derived::show (unsigned depth) const
 		case MUL: cout << "*" << endl;
 		break;
 		case DIV: cout << "/" << endl;
+		break;
+		case NOP: cout << "NOP" << endl;
 		break;
 	}
 

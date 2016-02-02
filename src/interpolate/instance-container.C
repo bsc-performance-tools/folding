@@ -75,7 +75,7 @@ void InstanceContainer::splitInGroups (void)
 }
 
 void InstanceContainer::dumpGroupData (const ObjectSelection *os,
-	const string & prefix, const string & TimeUnit)
+	const string & prefix, const string & /* TimeUnit */)
 {
 	string fname = prefix + "." + os->toString(false, "any") + ".groups.csv";
 
@@ -168,9 +168,7 @@ void InstanceContainer::removePreviousDataFiles (const ObjectSelection *os,
 
 InstanceGroup* InstanceContainer::getInstanceGroup (unsigned g)
 {
-	assert (g >= 0);
 	assert (g < ngroups);
-
 	return InstanceGroups[g];
 }
 

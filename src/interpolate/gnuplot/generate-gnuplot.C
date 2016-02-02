@@ -461,7 +461,7 @@ string gnuplotGenerator::gnuplot_model (
 	const ObjectSelection *os,
 	const string & prefix,
 	const Model *m,
-	const string & TimeUnit,
+	const string & /* TimeUnit */,
 	const vector<DataObject*> & variables,
 	UIParaverTraceConfig *pcf
 )

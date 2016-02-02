@@ -196,8 +196,8 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 
 			unsigned hasaddress;
 			string referencetype;
-			unsigned long long ar;
-			unsigned hasaddressinfo;
+			unsigned long long ar = 0;
+			unsigned hasaddressinfo = 0;
 			unsigned ar_mem_level = 0;
 			unsigned ar_tlb_level = 0;
 			unsigned cycles_cost = 0;
@@ -219,10 +219,8 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 			/* Ignore addresses from the high part of the address space (48 bit out of 64) */
 			if (hasaddress && !(ar & 0xFFFF800000000000))
 			{
-				AddressReferenceType_t rt;
-				if (referencetype == "LD")
-					rt = LOAD;
-				else if (referencetype == "ST")
+				AddressReferenceType_t rt = LOAD;
+				if (referencetype == "ST")
 					rt = STORE;
 
 				if (hasaddressinfo)
