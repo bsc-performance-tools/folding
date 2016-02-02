@@ -182,7 +182,6 @@ void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 		if (s->hasAddressReference())
 			for (auto DO : livingDataObjects)
 			{
-				assert (DO >= 0);
 				assert (DO < DataObjects.size());
 				if (DataObjects[DO]->addressInVariable (s->getAddressReference()))
 				{
