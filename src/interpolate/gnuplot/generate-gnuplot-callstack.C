@@ -82,6 +82,8 @@ void gnuplotGeneratorCallstack::generate (
 {
 	assert (gplot.is_open());
 
+	PRVcolors colors;
+
 	const vector<CallstackProcessor_Result*> routines = ig->getPreparedCallstacks();
 
 	gplot << "##############################" << endl
@@ -132,10 +134,11 @@ void gnuplotGeneratorCallstack::generate (
 
 		if (duration >= X_WIDTH_THRESHOLD)
 		{
-			string color = PRVcolors::getString (top);
+			string color = colors.getString (top);
+			cout << "TOP = " << top << " " << color << endl;
 			gplot << "set obj rect from graph " << last << "*FACTOR, graph 0 to graph "
 			      << r->getNTime() << "*FACTOR, graph 1 "
-			      << "fs transparent solid 0.33 noborder fc rgbcolor '#" << color
+			      << "fs transparent solid 0.50 noborder fc rgbcolor '#" << color
 			      << "' behind # Routine: " << routine << " "
 			      << duration * 100.f << "%" << endl;
 		}
