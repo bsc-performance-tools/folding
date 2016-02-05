@@ -2,6 +2,7 @@
 ChangeLog
  [ + added, - removed, * changed ]
  * 05Feb2016 Callstack routines match Paraver colors
+             Shorten counters (PAPI_x and RESOURCE_STALLS:y into x and STALLS:y)
  * 02Feb2016 Support for lib and lib64 installation directories in folding.sh
              Add Damien's experiments
  * 08Jan2016 Enable callstack analysis by default
