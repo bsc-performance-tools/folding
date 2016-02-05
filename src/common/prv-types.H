@@ -27,7 +27,7 @@
 #define FOLDED_BASE                               600000000
 #define FOLDED_INSTANCE_GROUP                     600000001
 #define FOLDED_PHASE                              600000002
-#define FOLDED_TYPE                               600000003
+// #define FOLDED_TYPE                               600000003
 #define FOLDED_CALLER                             600000004
 #define FOLDED_CALLERLINE                         600000005
 #define FOLDED_LAUNCH_TYPE                        600000006

@@ -111,7 +111,8 @@ static CallstackProcessor_type_t CallstackProcessor_type = CALLSTACKPROCESSOR_CO
 
 FoldedParaverTrace *ftrace = NULL;
 
-static unsigned long long feedTraceFoldType;
+static unsigned feedTraceFoldType;
+static string feedTraceFoldType_Definition;
 
 static string sourceDirectory;
 
@@ -305,7 +306,7 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 }
 
 void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
-	set<string> &wantedCounters, unsigned foldedType)
+	set<string> &wantedCounters)
 {
 	ofstream PCFfile;
 
@@ -380,6 +381,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		PCFfile << endl;
 	}
 
+#if 0
 	/* We want to add special events indicating the original event value
 	   from the tracefile. Careful because getEventType may raise an excpetion
 	   if the data was generated from a CSV. */
@@ -394,6 +396,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		PCFfile << endl;
 	} catch (...)
 	{ }
+#endif
 
 	if (needAddressPCFinfo)
 	{
@@ -1186,8 +1189,12 @@ int main (int argc, char *argv[])
 			exit (-1);
 		}
 		else
+		{
 			control >> traceFile;
-		control.close();
+			control >> feedTraceFoldType;
+			control >> feedTraceFoldType_Definition;
+			control.close();
+		}
 	}
 
 	string pcfFile = traceFile.substr (0, traceFile.rfind (".prv")) + ".pcf";
@@ -1283,21 +1290,6 @@ int main (int argc, char *argv[])
 	// Generate a new PRV & CUBE files for the folded data
 	if (feedTraceType != FEED_NONE)
 	{
-		string feedTraceFoldType_Definition;
-
-		ifstream control (controlFile.c_str());
-		if (!control.is_open())
-		{
-			cerr << "Error! Cannot open file " << controlFile << " which is needed to feed the tracefile" << endl;
-			exit (-1);
-		}
-		else
-		{
-			control >> traceFile;
-			control >> feedTraceFoldType;
-			control >> feedTraceFoldType_Definition;
-		}
-
 		ifstream objects (objectsFile.c_str());
 		if (!objects.is_open())
 		{
@@ -1418,7 +1410,7 @@ int main (int argc, char *argv[])
 			{
 				InstanceContainer ic = Instances.at (i->getRegionName());
 				InstanceGroup *ig = ic.getInstanceGroup(i->getGroup());
-				ftrace->DumpGroupInfo (i);
+				ftrace->DumpGroupInfo (i, feedTraceFoldType);
 				ftrace->DumpInterpolationData (i, ig, counterCodes);
 				ftrace->DumpCallersInInstance (i, ig);
 				needAddressPCFinfo |= ftrace->DumpAddressesInInstance (i, ig);
@@ -1443,8 +1435,7 @@ int main (int argc, char *argv[])
 			ifs_pcf.close();
 			ofs_pcf.close();
 		}
-		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters,
-		  feedTraceFoldType);
+		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters);
 
 		ifstream ifs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".row")).c_str());
 		if (ifs_row.is_open())

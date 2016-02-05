@@ -362,12 +362,13 @@ void FoldedParaverTrace::DumpInterpolationData (const Instance *in,
 }
 
 
-void FoldedParaverTrace::DumpGroupInfo (const Instance *in)
+void FoldedParaverTrace::DumpGroupInfo (const Instance *in,
+	unsigned PRVfoldedtype)
 {
 	vector<unsigned long long> types, values, zero_values;
 
 	types.push_back (FOLDED_INSTANCE_GROUP);
-	types.push_back (FOLDED_TYPE);
+	types.push_back (PRVfoldedtype);
 	types.push_back (FOLDED_LAUNCH_TYPE);
 	values.push_back (in->getGroup()+1);
 	values.push_back (in->getPRVvalue());

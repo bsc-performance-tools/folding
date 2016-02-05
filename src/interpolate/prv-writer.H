@@ -70,7 +70,7 @@ class FoldedParaverTrace : public ParaverTrace
 		unsigned long long value, unsigned long long time,
 	    const Instance *in);
 
-	void DumpGroupInfo (const Instance *in);
+	void DumpGroupInfo (const Instance *in, unsigned PRVfoldedtype);
 	bool DumpCallersInInstance (const Instance *in, const InstanceGroup *ig);
 	bool DumpAddressesInInstance (const Instance *in, InstanceGroup *ig);
 	void DumpReverseCorrectedCallersInInstance (const Instance *in,
