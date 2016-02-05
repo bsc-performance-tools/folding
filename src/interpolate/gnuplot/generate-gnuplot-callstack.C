@@ -135,7 +135,6 @@ void gnuplotGeneratorCallstack::generate (
 		if (duration >= X_WIDTH_THRESHOLD)
 		{
 			string color = colors.getString (top);
-			cout << "TOP = " << top << " " << color << endl;
 			gplot << "set obj rect from graph " << last << "*FACTOR, graph 0 to graph "
 			      << r->getNTime() << "*FACTOR, graph 1 "
 			      << "fs transparent solid 0.50 noborder fc rgbcolor '#" << color
