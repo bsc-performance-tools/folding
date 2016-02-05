@@ -1,6 +1,7 @@
 
 ChangeLog
  [ + added, - removed, * changed ]
+ * 05Feb2016 Callstack routines match Paraver colors
  * 02Feb2016 Support for lib and lib64 installation directories in folding.sh
              Add Damien's experiments
  * 08Jan2016 Enable callstack analysis by default

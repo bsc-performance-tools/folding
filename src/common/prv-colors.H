@@ -25,21 +25,33 @@
 #define PRV_COLORS_H_INCLUDED
 
 #include <string>
+#include <vector>
 
 using namespace std;
 
 typedef struct RGBcolor_st
 {
-	unsigned short R;
-	unsigned short G;
-	unsigned short B;
+	unsigned char R;
+	unsigned char G;
+	unsigned char B;
+
+	bool operator==( const RGBcolor_st& b ) const
+	{ return R == b.R && G == b.G && B == b.B; }
+	
+	bool operator!=( const RGBcolor_st& b ) const
+	{ return !( R == b.R && G == b.G && B == b.B ); }
+
 } RGBcolor_t;
 
 class PRVcolors
 {
+	private:
+	vector<RGBcolor_st> colors;
+
 	public:
-	static RGBcolor_t getRGB (unsigned long long);
-	static string getString (unsigned long long);
+	PRVcolors();
+	RGBcolor_t getRGB (unsigned long long);
+	string getString (unsigned long long);
 };
 
 #endif /* PRV_COLORS_H_INCLUDED */

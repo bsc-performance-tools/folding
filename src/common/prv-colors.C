@@ -26,10 +26,12 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <ext/hash_set>
 
 /* This was given by Paraver developers */
 
 #define MAX_PRV_COLORS 49
+#define MAX_COLORS     32000
 
 static RGBcolor_t __PRVcolors[MAX_PRV_COLORS] = {
   { 117, 195, 255 }, //  0 - Idle
@@ -83,17 +85,95 @@ static RGBcolor_t __PRVcolors[MAX_PRV_COLORS] = {
   {   0, 138, 119 }  // 48 - Not used
 };
 
+struct eqrgb
+{
+  bool operator()( RGBcolor_st c1, RGBcolor_st c2 ) const
+  { return c1 == c2; }
+};
+
+struct hashrgb
+{
+  size_t operator()( RGBcolor_st c ) const
+  { return c.R + ( c.B * 256 ) + ( c.G * 65536 ); }
+};
+
+// typedef unsigned char ParaverColor;
+
+// enum colorIndex { RED, GREEN, BLUE };
+
+PRVcolors::PRVcolors()
+{
+	for (auto u = 0; u < MAX_PRV_COLORS; u++)
+	{
+		RGBcolor_st c;
+		c.R = __PRVcolors[u].R;
+		c.G = __PRVcolors[u].G;
+		c.B = __PRVcolors[u].B;
+		colors.push_back(c);
+	}
+
+	unsigned iterations = MAX_COLORS / colors.size() / 3;
+	unsigned numBaseColors = colors.size();
+
+	__gnu_cxx::hash_set<RGBcolor_st, hashrgb, eqrgb> insertedColors;
+	insertedColors.insert (colors.begin(), colors.end());
+
+	unsigned baseColor = 0;
+	for( unsigned i = 0; i < iterations; ++i )
+	{
+		while( baseColor > colors.size() - 1 )
+			--baseColor;
+		for( unsigned redBaseColor = baseColor; redBaseColor < numBaseColors + baseColor; ++redBaseColor )
+		{
+			if( redBaseColor > colors.size() - 1 )
+				break;
+			RGBcolor_st tmp = colors[ redBaseColor ];
+			++tmp.R;
+			auto result = insertedColors.insert( tmp );
+			if( result.second )
+				colors.push_back( tmp );
+		}
+		
+		for( unsigned greenBaseColor = baseColor; greenBaseColor < numBaseColors + baseColor; ++greenBaseColor )
+		{
+			if( greenBaseColor > colors.size() - 1)
+				break;
+			RGBcolor_st tmp = colors[ greenBaseColor ];
+			++tmp.G;
+			auto result = insertedColors.insert( tmp );
+			if( result.second )
+				colors.push_back( tmp );
+		}
+		
+		for( unsigned blueBaseColor = baseColor; blueBaseColor < numBaseColors + baseColor; ++blueBaseColor )
+		{
+			if( blueBaseColor > colors.size() - 1 )
+				break;
+			RGBcolor_st tmp = colors[ blueBaseColor ];
+			++tmp.B;
+			auto result = insertedColors.insert( tmp );
+			if( result.second )
+				colors.push_back( tmp );
+		}
+	
+		baseColor += numBaseColors;
+	}
+}
+
 RGBcolor_t PRVcolors::getRGB (unsigned long long v)
 {
-	unsigned long long index = (v % MAX_PRV_COLORS);
-	return __PRVcolors[index];
+	unsigned long long index = v % colors.size();
+	return colors[index];
 }
 
 string PRVcolors::getString (unsigned long long v)
 {
 	RGBcolor_t c = PRVcolors::getRGB (v);
 	stringstream ss;
-	ss << uppercase << setfill('0') << setw(2) << hex << c.R << c.G << c.B;
+	ss << uppercase << setfill('0') << setw(2) << hex <<
+	  (unsigned)c.R << setw(2) << (unsigned)c.G << setw(2) << (unsigned)c.B;
+	cout << "R = " << (unsigned) c.R << endl;
+	cout << "G = " << (unsigned) c.G << endl;
+	cout << "B = " << (unsigned) c.B << endl;
 	return ss.str();
 }
-
