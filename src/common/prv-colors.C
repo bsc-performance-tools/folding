@@ -172,8 +172,5 @@ string PRVcolors::getString (unsigned long long v)
 	stringstream ss;
 	ss << uppercase << setfill('0') << setw(2) << hex <<
 	  (unsigned)c.R << setw(2) << (unsigned)c.G << setw(2) << (unsigned)c.B;
-	cout << "R = " << (unsigned) c.R << endl;
-	cout << "G = " << (unsigned) c.G << endl;
-	cout << "B = " << (unsigned) c.B << endl;
 	return ss.str();
 }
