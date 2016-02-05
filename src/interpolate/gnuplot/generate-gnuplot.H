@@ -35,6 +35,9 @@ using namespace std;
 
 class gnuplotGenerator
 {
+	private:
+	static string ShortenCounterString (const string &ctr);
+
 	public:
 	static void gnuplot_single (
 	  InstanceGroup *ig,

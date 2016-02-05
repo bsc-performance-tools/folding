@@ -32,8 +32,26 @@
 #include <iomanip>
 #include <stack>
 
+#include <string.h>
+
 #include "prv-types.H"
 #include "pcf-common.H"
+
+string gnuplotGenerator::ShortenCounterString (const string &ctr)
+{
+	if (ctr.substr (0, strlen("RESOURCE_STALLS")) == string("RESOURCE_STALLS"))
+	{
+		// Skip RESOURCE_ PART
+		return ctr.substr (strlen("RESOURCE_"));
+	}
+	else if (ctr.substr (0, strlen("PAPI_")) == string ("PAPI_"))
+	{
+		// Skip PAPI_
+		return ctr.substr (strlen("PAPI_"));
+	}
+	else
+		return ctr;
+}
 
 void gnuplotGenerator::gnuplot_single (
 	InstanceGroup *ig,
@@ -436,11 +454,11 @@ string gnuplotGenerator::gnuplot_slopes (
 			{
 				if (per_instruction)
 					gplot << "'" << fslname << "' u ($4*FACTOR):(ratio_" << counter_gnuplot
-					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
+					  << "($5, strcol(3), strcol(1), $2)) ti '" << ShortenCounterString((*it).first)
 					  << "/ins' axes x2y1 w lines lw 3";
 				else
 					gplot << "'" << fslname << "' u ($4*FACTOR):(slope_" << counter_gnuplot
-					  << "($5, strcol(3), strcol(1), $2)) ti '" << (*it).first
+					  << "($5, strcol(3), strcol(1), $2)) ti '" << ShortenCounterString((*it).first)
 					  << "' axes x2y1 w lines lw 3";
 			}
 			count++;
