@@ -20,15 +20,6 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/interpolate/sample-selector-distance.H $
- | 
- | @last_commit: $Date: 2014-01-13 16:25:23 +0100 (Mon, 13 Jan 2014) $
- | @version:     $Revision: 2411 $
- | 
- | History:
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #ifndef SAMPLESELECTOR_DISTANCE_FAST_H_INCLUDED
 #define SAMPLESELECTOR_DISTANCE_FAST_H_INCLUDED
 

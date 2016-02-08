@@ -20,15 +20,6 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/instance-group.H $
- | 
- | @last_commit: $Date: 2013-10-29 13:39:46 +0100 (Tue, 29 Oct 2013) $
- | @version:     $Revision: 2259 $
- | 
- | History:
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #ifndef MODEL_H_INCLUDED
 #define MODEL_H_INCLUDED
 
