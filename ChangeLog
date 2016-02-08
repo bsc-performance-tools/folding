@@ -2,6 +2,8 @@
 ChangeLog
  [ + added, - removed, * changed ]
  - 08Feb2016 Remove @file@ @id@ ... SVN keywords from files
+             Emit userfunction event type instead of folded event type
+             Emit the folded type as it was originally given, not in a new type
  * 05Feb2016 Callstack routines match Paraver colors
              Shorten counters (PAPI_x and RESOURCE_STALLS:y into x and STALLS:y)
              Emit the folded type as it was originally given, not in a new type
