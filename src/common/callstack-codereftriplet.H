@@ -20,15 +20,6 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- *\
- | @file: $HeadURL: https://svn.bsc.es/repos/ptools/folding/trunk/src/common/codereftriplet.H $
- | 
- | @last_commit: $Date: 2014-01-02 15:55:10 +0100 (jue, 02 ene 2014) $
- | @version:     $Revision: 2387 $
- | 
- | History:
-\* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-
 #ifndef CALLSTACK_CODEREFTRIPLET_H_INCLUDED
 #define CALLSTACK_CODEREFTRIPLET_H_INCLUDED
 
