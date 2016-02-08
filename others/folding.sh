@@ -152,7 +152,7 @@ else
 		PRVDIR=${PWD}/${PRVDIR}
 	fi
 	if [[ "${OUTPUTDIR}" = "" ]] ; then
-		OUTPUTDIR=${PRVDIR}
+		OUTPUTDIR=${PRVDIR}.folding
 	fi
 	PRVFILE=${1}
 	PRVBASE=`basename ${PRVFILE} .prv`
