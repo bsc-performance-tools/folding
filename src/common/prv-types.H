@@ -24,7 +24,7 @@
 #ifndef PRV_TYPES_H_INCLUDED
 #define PRV_TYPES_H_INCLUDED
 
-#define FOLDED_BASE                               600000000
+#define FOLDED_BASE                               0 // 600000000
 #define FOLDED_INSTANCE_GROUP                     600000001
 #define FOLDED_PHASE                              600000002
 // #define FOLDED_TYPE                               600000003

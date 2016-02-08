@@ -52,10 +52,10 @@ int main (int argc, char *argv[])
 	vector<unsigned> vtypes = pcf->getEventTypes();
 	for (const auto & t : vtypes)
 	{
+		//  ( t >= FOLDED_BASE ) ||
 		bool unusable =
 		  ( t >= PAPI_MIN_COUNTER && t <= PAPI_MAX_COUNTER ) ||
 		  ( t == PAPI_CHANGE_COUNTER_SET ) ||
-		  ( t >= FOLDED_BASE ) ||
 		  ( t >= EXTRAE_SAMPLE_CALLER_MIN && t <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX) ||
 		  ( t == EXTRAE_SAMPLE_ADDRESS_LD ) ||
 		  ( t == EXTRAE_SAMPLE_ADDRESS_ST ) ||

@@ -1435,7 +1435,7 @@ int main (int argc, char *argv[])
 			ifs_pcf.close();
 			ofs_pcf.close();
 		}
-		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters);
+		// AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters);
 
 		ifstream ifs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".row")).c_str());
 		if (ifs_row.is_open())
