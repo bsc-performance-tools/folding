@@ -940,6 +940,8 @@ void InstanceGroup::DumpReverseCorrectedCallersInInstance (const string &fprefix
 		return;
 	}
 
+	f << "# global-id; sample-id; normalized time; integral time; depth; caller-id; caller-line-id" << endl;
+
 	vector<Sample*> workSamples;
 	for (const auto s : getAllSamples())
 		if (s->hasCodeRefTripletSize())
@@ -947,8 +949,8 @@ void InstanceGroup::DumpReverseCorrectedCallersInInstance (const string &fprefix
 
 	sort (workSamples.begin(), workSamples.end(), ::compare_SampleTimings);
 
-	id = 1;
-	sid = 1;
+	id = 0;
+	sid = 0;
 	for (const auto & s : workSamples)
 	{
 		if (!s->getUsableCallstack())
@@ -959,11 +961,11 @@ void InstanceGroup::DumpReverseCorrectedCallersInInstance (const string &fprefix
 		map<unsigned, CodeRefTriplet>::const_reverse_iterator it;
 		for (it = ct.crbegin(); it != ct.crend(); it++)
 		{
-			f << id << ":" << sid << ":" << 
-			  s->getNTime() << ":" <<
-			  (unsigned long long)(s->getNTime() * (double)(mean())) << ":" <<
-			  (*it).first << ":" <<
-			  (*it).second.getCaller() << ":" <<
+			f << id << ";" << sid << ";" << 
+			  s->getNTime() << ";" <<
+			  (unsigned long long)(s->getNTime() * (double)(mean())) << ";" <<
+			  (*it).first << ";" <<
+			  (*it).second.getCaller() << ";" <<
 			  (*it).second.getCallerLine() <<
 			  endl;
 
