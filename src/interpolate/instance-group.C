@@ -926,7 +926,8 @@ double InstanceGroup::getInterpolatedNTime (const string &counter, Sample *s) co
 
 
 #if defined(DAMIEN_EXPERIMENTS)
-void InstanceGroup::DumpReverseCorrectedCallersInInstance (const string &fprefix) const
+void InstanceGroup::DumpReverseCorrectedCallersInInstance (const string &fprefix,
+	UIParaverTraceConfig *pcf) const
 {
 	unsigned id;
 	unsigned sid;
@@ -940,7 +941,7 @@ void InstanceGroup::DumpReverseCorrectedCallersInInstance (const string &fprefix
 		return;
 	}
 
-	f << "# global-id; sample-id; normalized time; integral time; depth; caller-id; caller-line-id" << endl;
+	f << "# global-id; sample-id; normalized time; integral time; depth; caller-id; <routine-name>; caller-line-id; <file>; <line>" << endl;
 
 	vector<Sample*> workSamples;
 	for (const auto s : getAllSamples())
@@ -961,12 +962,21 @@ void InstanceGroup::DumpReverseCorrectedCallersInInstance (const string &fprefix
 		map<unsigned, CodeRefTriplet>::const_reverse_iterator it;
 		for (it = ct.crbegin(); it != ct.crend(); it++)
 		{
+			unsigned codeline;
+			string file;
+			pcfcommon::lookForCallerLineInfo (pcf, (*it).second.getCallerLine(),
+			  file, codeline);
+
+			string routine;
+			pcfcommon::lookForCallerInfo (pcf, (*it).second.getCaller(),
+			  routine);
+
 			f << id << ";" << sid << ";" << 
 			  s->getNTime() << ";" <<
 			  (unsigned long long)(s->getNTime() * (double)(mean())) << ";" <<
 			  (*it).first << ";" <<
-			  (*it).second.getCaller() << ";" <<
-			  (*it).second.getCallerLine() <<
+			  (*it).second.getCaller() << ";" << routine << ";" <<
+			  (*it).second.getCallerLine() << ";" << file << ";" << codeline <<
 			  endl;
 
 			id++;
