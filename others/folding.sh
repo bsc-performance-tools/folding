@@ -152,7 +152,7 @@ else
 		PRVDIR=${PWD}/${PRVDIR}
 	fi
 	if [[ "${OUTPUTDIR}" = "" ]] ; then
-		OUTPUTDIR=${PRVDIR}.folding
+		OUTPUTDIR=${PRVDIR}
 	fi
 	PRVFILE=${1}
 	PRVBASE=`basename ${PRVFILE} .prv`
@@ -203,8 +203,8 @@ EXTRA_INTERPOLATE_FLAGS+="${REQUESTED_COUNTERS_TO_FOLD}"
 # BASENAME_PRV="${1%.*}"
 BASENAME_PRV=${PRVBASE}
 
-mkdir -p ${OUTPUTDIR}/${BASENAME_PRV} || exit
-cd ${OUTPUTDIR}/${BASENAME_PRV} || exit
+mkdir -p ${OUTPUTDIR}/${BASENAME_PRV}.folding || exit
+cd ${OUTPUTDIR}/${BASENAME_PRV}.folding || exit
 
 if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
 	echo Executing: ${FOLDING_HOME}/bin/codeblocks ${SOURCE_DIRECTORY_SUFFIX} \"${PRVDIR}/${BASENAME_PRV}.prv\"
