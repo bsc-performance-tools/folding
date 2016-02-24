@@ -40,6 +40,7 @@ class FoldingWriter
 	static bool containTypes (const set<string> &m1, const set<string> m2);
 	static bool checkSamples (const vector<Sample*> &Samples);
 	static unsigned getReferenceSample (const vector<Sample*> &Samples);
+	static set<string> minimumCounterSet (const vector<Sample*> &Samples);
 
 	public:
 	static void Write (ofstream & ofile, const string & RegionName,

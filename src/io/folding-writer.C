@@ -104,6 +104,14 @@ bool FoldingWriter::checkSamples (const vector<Sample*> &Samples)
 				if (common::DEBUG())
 				{
 					cout << "FoldingWriter::checkSamples divergence between reference counters on timestamp " << Samples[reference]->getTime() << " and " << Samples[u]->getTime() << endl;
+					cout << "Reference HWC:";
+					for (const auto & c : reference_counters)
+						cout << c << " ";
+					cout << endl;
+					cout << "Sample HWC   :";
+					for (const auto & c : counters)
+						cout << c << " ";
+					cout << endl;
 				}
 				return false;
 			}
@@ -111,6 +119,46 @@ bool FoldingWriter::checkSamples (const vector<Sample*> &Samples)
 	}
 
 	return true;
+}
+
+set<string> FoldingWriter::minimumCounterSet (const vector<Sample*> &Samples)
+{
+	set<string> result;
+
+	/* Triplets are not valid at the edges (first and last) */
+	if (Samples.size() > 2)
+	{
+		result = Samples[getReferenceSample (Samples)]->getCounters();
+
+		/* Just check for counter types, that are the same across the instance.
+		   We don't need to check for the callers because they may vary from
+		   execution to execution (i.e. one sample may get 10 callers but the
+		   following can take less). */
+		for (unsigned u = 2; u < Samples.size(); u++)
+		{
+			/* Remove from result (reference) those counters that do not appear
+			   intersect counters from this sample */
+			set<string> counters = Samples[u]->getCounters();
+
+			set<string> toremove;
+			for (auto const &c : result)
+			{
+				if (counters.find (c) == counters.end())
+					toremove.insert (c);
+			}
+			for (auto const &c : counters)
+			{
+				if (result.find (c) == result.end())
+					toremove.insert (c);
+			}
+
+			/* Now remove entries from reference counters */
+			for (auto const &c : toremove)
+				result.erase (c);
+		}
+	}
+
+	return result;
 }
 
 void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
@@ -131,22 +179,28 @@ void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 		return;
 	}
 
+	set<string> Counters;
 	if (!checkSamples (Samples))
 	{
+		// If samples do not have the same counters, look for the minimum counter set
 		if (common::DEBUG())
 		{
 			cout << "FoldingWriter::Write Region (" << RegionName << ")" <<
-			  " Exiting due to checkSamples" << endl;
+			  " Falling to minimumCounterSet due to checkSamples" << endl;
 		}
-		return;
+		Counters = minimumCounterSet (Samples);
+		if (Counters.size() == 0)
+			return;
+	}
+	else
+	{
+		Counters = Samples[getReferenceSample (Samples)]->getCounters();
 	}
 
 	/* Write the total time spent in this region */
 
 	/* Calculate totals */
 	map<string, unsigned long long> totals;
-	unsigned reference = getReferenceSample (Samples);
-	set<string> Counters = Samples[reference]->getCounters();
 	for (const auto & c : Counters)
 		totals[c] = 0; // has to accumulate
 
