@@ -1,6 +1,8 @@
 
 ChangeLog
  [ + added, - removed, * changed ]
+ * 24Feb2016 If counters in sample do not match, at least extract the minimum
+               shared counters across samples.
  - 08Feb2016 Remove @file@ @id@ ... SVN keywords from files
              Emit userfunction event type instead of folded event type
              Emit the folded type as it was originally given, not in a new type
