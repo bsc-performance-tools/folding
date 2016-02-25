@@ -60,7 +60,11 @@ void gnuplotGenerator::gnuplot_single (
 	const string &counter,
 	InterpolationResults *idata,
 	const string & TimeUnit,
+#if defined(MEMORY_ANALYSIS)
 	const vector<DataObject*> & variables,
+#else
+	const vector<DataObject*> & ,
+#endif
 	UIParaverTraceConfig *pcf
 )
 {
@@ -281,7 +285,11 @@ string gnuplotGenerator::gnuplot_slopes (
 	const string &prefix,
 	bool per_instruction,
 	const string & TimeUnit,
+#if defined(MEMORY_ANALYSIS)
 	const vector<DataObject*> & variables,
+#else
+	const vector<DataObject*> & ,
+#endif
 	UIParaverTraceConfig *pcf
 )
 {
@@ -480,7 +488,11 @@ string gnuplotGenerator::gnuplot_model (
 	const string & prefix,
 	const Model *m,
 	const string & /* TimeUnit */,
+#if defined(MEMORY_ANALYSIS)
 	const vector<DataObject*> & variables,
+#else
+	const vector<DataObject*> & ,
+#endif
 	UIParaverTraceConfig *pcf
 )
 {
