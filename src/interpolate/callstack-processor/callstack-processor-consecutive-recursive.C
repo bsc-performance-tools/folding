@@ -72,7 +72,7 @@ CallstackProcessor_ConsecutiveRecursive::processSamples (
 	cout << std::setprecision(10) << endl;
 
 #if defined(DEBUG)
-	cout << "looking for max depth in samples" << endl;
+	cout << "Looking for max depth in samples" << endl;
 #endif
 
 	/* Look for the max depth of the samples */
@@ -82,7 +82,7 @@ CallstackProcessor_ConsecutiveRecursive::processSamples (
 
 #if defined(DEBUG)
 	cout << "max depth = " << max_depth << endl;
-	cout << "looking for first all-non-zeros" << endl;
+	cout << "Looking for first all-non-zeros" << endl;
 #endif
 
 	/* Look for the first level that has non-all zeros at the bottom level,
@@ -134,7 +134,7 @@ CallstackProcessor_ConsecutiveRecursive::processSamples (
 	{
 		if (rinfo->getCodeRef().getCaller() > 0)
 			d++;
-		for (int i = 0; i < d; i++)
+		for (unsigned i = 0; i < d; i++)
 			cout << "  ";
 	  	cout << "[" << rinfo->getLevel() << "," << rinfo->getCodeRef().getCaller() <<
 		     "," << rinfo->getNTime() << "] " << endl;
@@ -196,7 +196,7 @@ vector < CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * >
 			if (end_region - start_region > openRecursion)
 			{
 #if defined(DEBUG)
-				cout << stackdepth << " LOOKING For subregions in " << start_region << "," << end_region << endl;
+				cout << "Depth " << stackdepth << " LOOKING For subregions in " << start_region << "," << end_region << endl;
 #endif
 
 				vector< CallstackProcessor_ConsecutiveRecursive_ProcessedInfo * > tmp = 
