@@ -69,7 +69,7 @@ CallstackProcessor_ConsecutiveRecursive::processSamples (
 	cout << "processSamples (or = " << openRecursion << ", samples.size = " << samples.size() << ")" << endl;
 #endif
 
-	cout << std::setprecision(10) << endl;
+	cout << std::setprecision(10);
 
 #if defined(DEBUG)
 	cout << "Looking for max depth in samples" << endl;

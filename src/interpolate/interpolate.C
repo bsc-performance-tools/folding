@@ -1268,7 +1268,14 @@ int main (int argc, char *argv[])
 					  CallstackProcessor_nconsecutivesamples, CallstackProcessor_pct / 100.f);
 
 				if (cp != NULL)
+				{
+					cout << " Processing callstacks for region " << *it << flush;
+					clock_gettime (CLOCK_REALTIME, &time_start);
 					ig->prepareCallstacks (cp);
+					clock_gettime (CLOCK_REALTIME, &time_end);
+					time_t delta = time_end.tv_sec - time_start.tv_sec;
+					cout << ", elapsed time " << delta / 60 << "m " << delta % 60 << "s" << endl;
+				}
 
 				delete cp;
 			}
