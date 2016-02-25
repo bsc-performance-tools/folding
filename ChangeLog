@@ -2,6 +2,7 @@
 ChangeLog
  [ + added, - removed, * changed ]
  * 25Feb2016 Fix emission of callerlines into dump .csv for plotting 
+             Emit timing for callstack processing
  * 24Feb2016 If counters in sample do not match, at least extract the minimum
                shared counters across samples.
  - 08Feb2016 Remove @file@ @id@ ... SVN keywords from files
