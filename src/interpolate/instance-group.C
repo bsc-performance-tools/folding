@@ -447,13 +447,10 @@ void InstanceGroup::dumpData (ObjectSelection *os, const string & prefix,
 							pcfcommon::lookForCallerLineInfo (pcf, crt.getCallerLine(), file,
 							  codeline);
 	
-							if (codeline > 0)
-							{
-								odata << "cl" << ";" << regionName << ";" << numGroup << ";"
-								  << s->getNTime() << ";" << codeline << ";" << crt.getCaller()
-								  << endl;
-								hasCallstackSamples = true;
-							}
+							odata << "cl" << ";" << regionName << ";" << numGroup << ";"
+							  << s->getNTime() << ";" << codeline << ";" << crt.getCaller()
+							  << endl;
+							hasCallstackSamples = true;
 						}
 					}
 	
@@ -697,8 +694,6 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 			else
 				it++;
 		}
-
-// #define DEBUG
 
 #if defined(DEBUG)
 		cout << endl;
