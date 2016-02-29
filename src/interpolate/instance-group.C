@@ -921,8 +921,8 @@ double InstanceGroup::getInterpolatedNTime (const string &counter, Sample *s) co
 
 
 #if defined(DAMIEN_EXPERIMENTS)
-void InstanceGroup::DumpReverseCorrectedCallersInInstance (const string &fprefix,
-	UIParaverTraceConfig *pcf) const
+void InstanceGroup::DumpReverseCorrectedCallersInInstance (const Instance *in,
+	bool first, const string &fprefix, UIParaverTraceConfig *pcf) const
 {
 	unsigned id;
 	unsigned sid;
@@ -978,6 +978,26 @@ void InstanceGroup::DumpReverseCorrectedCallersInInstance (const string &fprefix
 		}
 		sid++;
 	}
+	f.close();
+
+	file = fprefix + ".callerdata.regions";
+	if (first)
+		f.open (file.c_str(), ofstream::out | ofstream::trunc);
+	else
+		f.open (file.c_str(), ofstream::out | ofstream::app);
+
+	if (!f.is_open())
+	{
+		cerr << "Error! Cannot open file " << file << endl;
+		return;
+	}
+
+	if (first)
+		f << "# region-name; appl; task; thread; start-time; end-time" << endl;
+
+	f << regionName << ";" <<
+	  in->getptask() << ";" << in->gettask() << ";" << in->getthread() << ";" <<
+	  in->getStartTime() << ";" << in->getStartTime() + in->getDuration() << endl;
 
 	f.close();
 }

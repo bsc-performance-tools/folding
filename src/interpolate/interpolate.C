@@ -1424,7 +1424,7 @@ int main (int argc, char *argv[])
 				ftrace->DumpCallstackProcessed (i, ig);
 				ftrace->DumpReverseCorrectedCallersInInstance (i, ig);
 #if defined(DAMIEN_EXPERIMENTS)
-				ig->DumpReverseCorrectedCallersInInstance (
+				ig->DumpReverseCorrectedCallersInInstance (i, u == 0,
 				  common::basename (traceFile.substr (0, traceFile.rfind(".prv"))),
 				  pcf);
 #endif

@@ -1,6 +1,7 @@
 
 ChangeLog
  [ + added, - removed, * changed ]
+ * 29Feb2016 Generate callerdata.regions file
  * 25Feb2016 Fix emission of callerlines into dump .csv for plotting 
              Emit timing for callstack processing
  * 24Feb2016 If counters in sample do not match, at least extract the minimum
