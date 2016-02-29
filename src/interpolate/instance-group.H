@@ -180,8 +180,8 @@ class InstanceGroup
 	  { return hasEmittedAddressSamples; }
 
 #if defined(DAMIEN_EXPERIMENTS)
-	void DumpReverseCorrectedCallersInInstance (const string &fprefix,
-	  UIParaverTraceConfig *pcf) const;
+	void DumpReverseCorrectedCallersInInstance (const Instance *in, bool first,
+	  const string &fprefix, UIParaverTraceConfig *pcf) const;
 #endif
 };
 
