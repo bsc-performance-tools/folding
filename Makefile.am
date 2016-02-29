@@ -25,7 +25,11 @@ endif
 	$(MKDIR_P) $(datarootdir)/cfg
 	cp -r cfgs/histograms cfgs/views $(datarootdir)/cfg
 if LIBTOOLS_HAS_SHARED_LIBRARIES
-	cp $(LIBTOOLS_LIB_DIR)/libparavertraceconfig.so.0 $(LIBTOOLS_LIB_DIR)/libparavertraceparser.so.0 $(libdir)
+if !LIBTOOLS_DIR_SAME_AS_LIBDIR
+	cp $(LIBTOOLS_LIB_DIR)/libparavertraceconfig.so.0 \
+       $(LIBTOOLS_LIB_DIR)/libparavertraceparser.so.0 \
+       $(libdir)
+endif
 	$(LN_S) -f $(libdir)/libparavertraceconfig.so.0 $(libdir)/libparavertraceconfig.so
 	$(LN_S) -f $(libdir)/libparavertraceparser.so.0 $(libdir)/libparavertraceparser.so
 endif

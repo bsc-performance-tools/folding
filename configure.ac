@@ -373,6 +373,10 @@ AC_CHECK_PROGS(latex2html,[latex2html],no)
 AM_CONDITIONAL(BUILD_DOCS_PDF, test "${pdflatex}" != "no")
 AM_CONDITIONAL(BUILD_HTML_DOCS, test "${pdflatex}" != "no" -a "${latex2html}" != "no")
 
+# Avoid problems reinstalling libtools .so libraries into target
+# directory if they are the same
+AM_CONDITIONAL(LIBTOOLS_DIR_SAME_AS_LIBDIR, test "${LIBTOOLS_LIB_DIR}" == "${libdir}")
+
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
