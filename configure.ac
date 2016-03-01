@@ -375,7 +375,12 @@ AM_CONDITIONAL(BUILD_HTML_DOCS, test "${pdflatex}" != "no" -a "${latex2html}" !=
 
 # Avoid problems reinstalling libtools .so libraries into target
 # directory if they are the same
-AM_CONDITIONAL(LIBTOOLS_DIR_SAME_AS_LIBDIR, test "${LIBTOOLS_LIB_DIR}" == "${libdir}")
+if test "${prefix}" = "NONE"; then
+  myprefix=${ac_default_prefix}
+else
+  myprefix=${prefix}
+fi
+AM_CONDITIONAL(LIBTOOLS_DIR_SAME_AS_LIBDIR, test "${LIBTOOLS_LIB_DIR}" == "${myprefix}/lib")
 
 AC_CONFIG_FILES([
  Makefile
