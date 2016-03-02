@@ -850,9 +850,16 @@ int ProcessParameters (int argc, char *argv[])
 					exit (-1);
 				}
 				i++;
-				string strprefilter = "no";
+				string strprefilter;
 				if (strcasecmp (argv[i], "yes") == 0)
 					strprefilter = "yes";
+				else if (strcasecmp (argv[i], "no") == 0)
+					strprefilter = "no";
+				else
+				{
+					cerr << "Invalid prefilter value (yes/no) for KRIGER interpolation" << endl;
+					exit (-1);
+				}
 
 				cout << "Selected interpolation algorithm: Kriger (steps = " << NSTEPS << ", nuget = " << NUGET << ", prefilter = " << strprefilter << ")" << endl;
 				InterpolationKriger *in = new InterpolationKriger (NSTEPS, NUGET, strprefilter == "yes");
