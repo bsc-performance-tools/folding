@@ -456,6 +456,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 	PCFfile << endl;
 #endif
 
+	/* We only emit the user function information, if it is not already in the pcf */
 	vector<unsigned> vtypes = pcf->getEventTypes();
 	if (find (vtypes.begin(), vtypes.end(), EXTRAE_USER_FUNCTION) == vtypes.end())
 	{
