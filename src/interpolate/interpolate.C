@@ -306,7 +306,7 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 }
 
 void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
-	set<string> &wantedCounters)
+	set<string> & /* wantedCounters */)
 {
 	ofstream PCFfile;
 
@@ -316,6 +316,10 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		cerr << "Unable to append to: " << file << endl;
 		exit (-1);
 	}
+
+#if 0 
+	/* All these are unneeded since latest changes in folded types. Now,
+	   types are reused from the original tracefile */
 
 	vector<unsigned> vtypes = pcf->getEventTypes();
 	vector<unsigned> caller;
@@ -450,6 +454,42 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 			PCFfile << "0 " << FOLDED_BASE + tmp << " Folded " <<  cname << endl;
 	}
 	PCFfile << endl;
+#endif
+
+	vector<unsigned> vtypes = pcf->getEventTypes();
+	if (find (vtypes.begin(), vtypes.end(), EXTRAE_USER_FUNCTION) == vtypes.end())
+	{
+		vector<unsigned> caller;
+		vector<unsigned> callerline;
+		for (unsigned u = 0; u < vtypes.size(); u++)
+			if ( vtypes[u] >= EXTRAE_SAMPLE_CALLER_MIN &&
+			     vtypes[u] <= EXTRAE_SAMPLE_CALLER_MAX )
+				caller.push_back (vtypes[u]);
+			else if ( vtypes[u] >= EXTRAE_SAMPLE_CALLERLINE_MIN &&
+			          vtypes[u] <= EXTRAE_SAMPLE_CALLERLINE_MAX )
+				callerline.push_back (vtypes[u]);
+	
+		if (caller.size() > 0)
+		{
+			PCFfile << endl << "EVENT_TYPE" << endl;
+			PCFfile << "0 " << EXTRAE_USER_FUNCTION << " User function" << endl;
+			PCFfile << "VALUES" << endl;
+			vector<unsigned> v = pcf->getEventValues(caller[0]);
+			for (unsigned i = 0; i < v.size(); i++)
+				PCFfile << i << " " << pcf->getEventValue(caller[0], v[i]) << endl;
+			PCFfile << endl;
+		}
+		if (callerline.size() > 0)
+		{
+			PCFfile << endl << "EVENT_TYPE" << endl;
+			PCFfile << "0 " << EXTRAE_USER_FUNCTION_LINE << " User function line" << endl;
+			PCFfile << "VALUES" << endl;
+			vector<unsigned> v = pcf->getEventValues(callerline[0]);
+			for (unsigned i = 0; i < v.size(); i++)
+				PCFfile << i << " " << pcf->getEventValue(callerline[0], v[i]) << endl;
+			PCFfile << endl;
+		}
+	}
 
 	PCFfile.close();
 }
@@ -1450,7 +1490,7 @@ int main (int argc, char *argv[])
 			ifs_pcf.close();
 			ofs_pcf.close();
 		}
-		// AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters);
+		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters);
 
 		ifstream ifs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".row")).c_str());
 		if (ifs_row.is_open())
