@@ -850,7 +850,7 @@ int ProcessParameters (int argc, char *argv[])
 					exit (-1);
 				}
 				i++;
-				string strprefilter;
+				string strprefilter = "no";
 				if (strcasecmp (argv[i], "yes") == 0)
 					strprefilter = "yes";
 
