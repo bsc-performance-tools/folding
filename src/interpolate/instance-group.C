@@ -59,8 +59,8 @@ void InstanceGroup::add (Instance *i)
 unsigned InstanceGroup::numSamples (void) const
 {
 	unsigned tmp = 0;
-	for (unsigned u = 0; u < Instances.size(); u++)
-		tmp += Instances[u]->getNumSamples();
+	for (const auto &i : Instances)
+		tmp += i->getNumSamples();
 
 	return tmp;
 }
@@ -87,13 +87,10 @@ unsigned InstanceGroup::numExcludedSamples (string counter) const
 {
 	unsigned total = 0;
 
-	for (unsigned i = 0; i < excludedInstances.size(); i++)
-	{
-		vector<Sample*> vs = excludedInstances[i]->getSamples();
-		for (unsigned u = 0; u < vs.size(); u++)
-			if (vs[u]->hasCounter (counter))
+	for (const auto & ei : excludedInstances)
+		for (const auto & s : ei->getSamples())
+			if (s->hasCounter (counter))
 				total++;
-	}
 
 	return total;
 }
@@ -101,8 +98,8 @@ unsigned InstanceGroup::numExcludedSamples (string counter) const
 unsigned InstanceGroup::numExcludedSamples (void) const
 {
 	unsigned tmp = 0;
-	for (unsigned u = 0; u < excludedInstances.size(); u++)
-		tmp += excludedInstances[u]->getNumSamples();
+	for (const auto & ei : excludedInstances)
+		tmp += ei->getNumSamples();
 
 	return tmp;
 }
@@ -117,10 +114,10 @@ unsigned long long InstanceGroup::mean (const string &counter) const
 
 	unsigned long long tmp = 0;
 	unsigned long long count = 0;
-	for (unsigned u = 0; u < Instances.size(); u++)
-		if (Instances[u]->hasCounter (counter))
+	for (const auto &i : Instances)
+		if (i->hasCounter (counter))
 		{
-			tmp += Instances[u]->getTotalCounterValue (counter);
+			tmp += i->getTotalCounterValue (counter);
 			count++;
 		}
 
@@ -136,8 +133,8 @@ unsigned long long InstanceGroup::mean (void) const
 		return 0;
 
 	unsigned long long tmp = 0;
-	for (unsigned u = 0; u < Instances.size(); u++)
-		tmp += Instances[u]->getDuration();
+	for (const auto & i : Instances)
+		tmp += i->getDuration();
 
 	return tmp / Instances.size();
 }
@@ -148,8 +145,8 @@ unsigned long long InstanceGroup::median (void) const
 		return 0;
 
 	vector<unsigned long long> durations;
-	for (unsigned u = 0; u < Instances.size(); u++)
-		durations.push_back (Instances[u]->getDuration());
+	for (const auto & i : Instances)
+		durations.push_back (i->getDuration());
 
 	sort (durations.begin(), durations.end());
 
@@ -165,9 +162,9 @@ double InstanceGroup::stdev (void) const
 	double _mean;
 
 	_mean = this->mean();
-	for (unsigned u = 0; u < Instances.size(); u++)
+	for (const auto &i : Instances)
 	{
-		double d = Instances[u]->getDuration();
+		double d = i->getDuration();
 		tmp += ( (d-_mean) * (d-_mean) );
 	}
 
@@ -183,8 +180,8 @@ unsigned long long InstanceGroup::MAD (void) const
 	unsigned long long _median;
 
 	_median = this->median();
-	for (unsigned u = 0; u < Instances.size(); u++)
-		absmediandiff.push_back (llabs (Instances[u]->getDuration() - _median));
+	for (const auto &i : Instances)
+		absmediandiff.push_back (llabs (i->getDuration() - _median));
 
 	sort (absmediandiff.begin(), absmediandiff.end());
 

@@ -44,8 +44,8 @@ InstanceContainer::InstanceContainer (string s, InstanceSeparator *iseparator)
 unsigned InstanceContainer::numSamples (void)
 {
 	unsigned tmp = 0;
-	for (unsigned u = 0; u < Instances.size(); u++)
-		tmp += Instances[u]->getNumSamples();
+	for (const auto & i : Instances)
+		tmp += i->getNumSamples();
 	return tmp;
 }
 
@@ -86,12 +86,10 @@ void InstanceContainer::dumpGroupData (const ObjectSelection *os,
 	{
 		for (unsigned g = 0; g < ngroups; g++)
 		{
-			vector<Instance*> v = InstanceGroups[g]->getInstances();
-			for (unsigned u = 0; u < v.size(); u++)
-				odata << "u;" << regionName << ";" << g+1 << ";" << v[u]->getDuration() << endl;
-			v = InstanceGroups[g]->getExcludedInstances();
-			for (unsigned u = 0; u < v.size(); u++)
-				odata << "e;" << regionName << ";" << g+1 << ";" << v[u]->getDuration() << endl;
+			for (const auto & i : InstanceGroups[g]->getInstances())
+				odata << "u;" << regionName << ";" << g+1 << ";" << i->getDuration() << endl;
+			for (const auto & ei : InstanceGroups[g]->getExcludedInstances())
+				odata << "e;" << regionName << ";" << g+1 << ";" << ei->getDuration() << endl;
 		}
 	}
 
