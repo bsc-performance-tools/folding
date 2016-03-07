@@ -8,6 +8,9 @@ FMD=5
 MSDF=1500
 ST=1.5
 
+INTERPOLATION_KRIGER_NUGET=0.0001
+INTERPOLATION_OUTPOINTS=1000
+
 if [[ ! -d ${FOLDING_HOME} ]] ; then
 	echo "Cannot locate FOLDING_HOME (should be ${FOLDING_HOME} ?)"
 	exit
@@ -94,6 +97,12 @@ do
 		CS=${2}
 		FMD=${3}
 		shift 3
+	elif [[ "${1}" == "-nuget" ]] ; then
+		INTERPOLATION_KRIGER_NUGET=${2}
+		shift 2
+	elif [[ "${1}" == "-out-points" ]] ; then
+		INTERPOLATION_OUTPOINTS=${2}
+		shift 2
 	elif [[ "${1}" == "-show-commands" ]] ; then
 		SHOW_COMMANDS=yes
 		shift
@@ -116,8 +125,8 @@ done
 # Check for mandatory parameters
 #
 
-if [[ $# -ne 2 ]] ; then
-	echo "Usage: ${0} [-counter C] [-extract-from T] [-extract-to T] [-output <dir>] [-model M] [-source S] [-region R] [-pct CS FMD] Trace InstanceSeparator/SemanticSeparator"
+if [[ $# -lt 2 ]] ; then
+	echo "Usage: ${0} (options) Trace InstanceSeparator/SemanticSeparator"
 	echo ""
 	echo "            -model M         : Uses performance model M when generating plots"
 	echo "                               Available models in $FOLDING_HOME/etc/models:"
@@ -133,10 +142,12 @@ if [[ $# -ne 2 ]] ; then
 	echo "            -counter C       : Applies the folding to the hardware counter C instead to all available counters"
 	echo "            -extract-from T  : Applies the folding only after time T within the trace-file"
 	echo "            -extract-to   T  : Applies the folding only up to time T within the trace-file"
-	echo "            -source S        : Indicates where the source code of the application is located"
-	echo "            -region R        : Requests to apply the folding to region R"
+	echo "            -nuget N         : Specifies the value for the nuget value for the Kriging interpolation (default: ${INTERPOLATION_KRIGER_NUGET})"
 	echo "            -output <dir>    : Where to generate the results (if not given, they are generated in the tracefile <dir>)"
+	echo "            -out-points N    : Specifies the number of output interpolation points (default: ${INTERPOLATION_OUTPOINTS})"
 	echo "            -pct CS FMD         : Callstack processor parameters: number of consecutive samples CS, minimum duration (in percentage) FMD"
+	echo "            -region R        : Requests to apply the folding to region R"
+	echo "            -source S        : Indicates where the source code of the application is located"
 	echo "            Trace            : Paraver trace-file"
 	echo "            InstanceSeparator: Label or value of the event type to separate instances within tracefile"
 	echo "            SemanticSeparator: .csv file generated from Paraver to separate instances within tracefile"
@@ -237,6 +248,7 @@ fi
 echo Output directory: ${PWD}
 
 ${FOLDING_HOME}/bin/interpolate \
+ -interpolation kriger ${INTERPOLATION_OUTPOINTS} ${INTERPOLATION_KRIGER_NUGET} no \
  -max-samples-distance-fast ${MSDF} \
  -sigma-times ${ST} \
  -use-median \
