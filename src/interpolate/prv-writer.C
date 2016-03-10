@@ -201,9 +201,10 @@ bool FoldedParaverTrace::DumpAddressesInInstance (const Instance *in,
 	return !set_zero_types.empty();
 }
 
-void FoldedParaverTrace::DumpReverseCorrectedCallersInInstance (
+unsigned FoldedParaverTrace::DumpReverseCorrectedCallersInInstance (
 	const Instance *in, const InstanceGroup *ig)
 {
+	unsigned maxlevel = 0;
 	set<unsigned long long> set_zero_types;
 	vector<unsigned long long> vec_zero_types, vec_zero_values;
 
@@ -237,6 +238,9 @@ void FoldedParaverTrace::DumpReverseCorrectedCallersInInstance (
 			values.push_back ((*it).second.getCaller());
 			values.push_back ((*it).second.getCallerLine());
 			values.push_back ((*it).second.getCallerLineAST());
+
+			if ((*it).first > maxlevel)
+				maxlevel = (*it).first;
 		}
 
 		DumpParaverLines (types, values, ts, in);
@@ -252,6 +256,8 @@ void FoldedParaverTrace::DumpReverseCorrectedCallersInInstance (
 
 	DumpParaverLines (vec_zero_types, vec_zero_values,
 	  in->getStartTime() + in->getDuration(), in);
+
+	return maxlevel;
 }
 
 void FoldedParaverTrace::DumpInterpolationData (const Instance *in,
