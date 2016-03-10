@@ -306,7 +306,7 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 }
 
 void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
-	set<string> & /* wantedCounters */)
+	set<string> & /* wantedCounters */, unsigned maxReverseLevel)
 {
 	ofstream PCFfile;
 
@@ -316,10 +316,6 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 		cerr << "Unable to append to: " << file << endl;
 		exit (-1);
 	}
-
-#if 0 
-	/* All these are unneeded since latest changes in folded types. Now,
-	   types are reused from the original tracefile */
 
 	vector<unsigned> vtypes = pcf->getEventTypes();
 	vector<unsigned> caller;
@@ -333,6 +329,11 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 			callerline.push_back (vtypes[u]);
 		else if ( vtypes[u] >= EXTRAE_SAMPLE_CALLERLINE_AST_MIN && vtypes[u] <= EXTRAE_SAMPLE_CALLERLINE_AST_MAX )
 			callerlineast.push_back (vtypes[u]);
+
+#if 0 
+
+	/* All these are unneeded since latest changes in folded types. Now,
+	   types are reused from the original tracefile */
 
 	PCFfile << endl << "EVENT_TYPE" << endl;
 	PCFfile << "0 " << FOLDED_BASE << " Folded phase" << endl;
@@ -457,7 +458,7 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 #endif
 
 	/* We only emit the user function information, if it is not already in the pcf */
-	vector<unsigned> vtypes = pcf->getEventTypes();
+	vtypes = pcf->getEventTypes();
 	if (find (vtypes.begin(), vtypes.end(), EXTRAE_USER_FUNCTION) == vtypes.end())
 	{
 		vector<unsigned> caller;
@@ -490,6 +491,45 @@ void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
 				PCFfile << i << " " << pcf->getEventValue(callerline[0], v[i]) << endl;
 			PCFfile << endl;
 		}
+	}
+	if (caller.size() > 0)
+	{
+		PCFfile << endl << "EVENT_TYPE" << endl;
+		for (unsigned u = 0; u <= maxReverseLevel; u++)
+		{
+			PCFfile << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLER_MIN + u << " Folded sampling raligned caller level " << u << endl;
+		}
+		PCFfile << "VALUES" << endl;
+		vector<unsigned> v = pcf->getEventValues(EXTRAE_SAMPLE_CALLER_MIN);
+		for (unsigned i = 0; i < v.size(); i++)
+			PCFfile << i << " " << pcf->getEventValue(EXTRAE_SAMPLE_CALLER_MIN, v[i]) << endl;
+		PCFfile << endl;
+	}
+	if (callerline.size() > 0)
+	{
+		PCFfile << endl << "EVENT_TYPE" << endl;
+		for (unsigned u = 0; u <= maxReverseLevel; u++)
+		{
+			PCFfile << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLERLINE_MIN + u << " Folded sampling aligned caller line level " << u << endl;
+		}
+		PCFfile << "VALUES" << endl;
+		vector<unsigned> v = pcf->getEventValues(EXTRAE_SAMPLE_CALLERLINE_MIN);
+		for (unsigned i = 0; i < v.size(); i++)
+			PCFfile << i << " " << pcf->getEventValue(EXTRAE_SAMPLE_CALLERLINE_MIN, v[i]) << endl;
+		PCFfile << endl;
+	}
+	if (callerlineast.size() > 0)
+	{
+		PCFfile << endl << "EVENT_TYPE" << endl;
+		for (unsigned u = 0; u <= maxReverseLevel; u++)
+		{
+			PCFfile << "0 " << FOLDED_BASE + EXTRAE_SAMPLE_REVERSE_CALLERLINE_AST_MIN + u << " Folded sampling aligned caller line AST level " << u << endl;
+		}
+		PCFfile << "VALUES" << endl;
+		vector<unsigned> v = pcf->getEventValues(EXTRAE_SAMPLE_CALLERLINE_AST_MIN);
+		for (unsigned i = 0; i < v.size(); i++)
+			PCFfile << i << " " << pcf->getEventValue(EXTRAE_SAMPLE_CALLERLINE_AST_MIN, v[i]) << endl;
+		PCFfile << endl;
 	}
 
 	PCFfile.close();
@@ -1457,6 +1497,7 @@ int main (int argc, char *argv[])
 		/* Emit callstack into the new tracefile */
 		cout << "Generating folded trace for Paraver (" << cwd << "/" << common::basename (oFilePRV.c_str()) << ")" << endl;
 
+		unsigned maxReverseLevel = 0;
 		for (unsigned u = 0; u < whichInstancesToFeed.size(); u++)
 		{
 			Instance *i = whichInstancesToFeed[u];
@@ -1470,7 +1511,9 @@ int main (int argc, char *argv[])
 				ftrace->DumpCallersInInstance (i, ig);
 				needAddressPCFinfo |= ftrace->DumpAddressesInInstance (i, ig);
 				ftrace->DumpCallstackProcessed (i, ig);
-				ftrace->DumpReverseCorrectedCallersInInstance (i, ig);
+				unsigned tmp = ftrace->DumpReverseCorrectedCallersInInstance (i, ig);
+				if (tmp > maxReverseLevel)
+					maxReverseLevel = tmp;
 #if defined(DAMIEN_EXPERIMENTS)
 				ig->DumpReverseCorrectedCallersInInstance (i, u == 0,
 				  common::basename (traceFile.substr (0, traceFile.rfind(".prv"))),
@@ -1491,7 +1534,8 @@ int main (int argc, char *argv[])
 			ifs_pcf.close();
 			ofs_pcf.close();
 		}
-		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters);
+		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters,
+		  maxReverseLevel);
 
 		ifstream ifs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".row")).c_str());
 		if (ifs_row.is_open())
