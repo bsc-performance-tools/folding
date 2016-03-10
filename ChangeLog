@@ -1,6 +1,7 @@
 
 ChangeLog
  [ + added, - removed, * changed ]
+ * 10Mar2016 Add option -in-points to folding script
  * 29Feb2016 Generate callerdata.regions file
  * 25Feb2016 Fix emission of callerlines into dump .csv for plotting 
              Emit timing for callstack processing

@@ -5,11 +5,11 @@ FOLDING_HOME=`dirname ${SCRIPT_PATH}`
 
 CS=15
 FMD=5
-MSDF=1500
 ST=1.5
 
 INTERPOLATION_KRIGER_NUGET=0.0001
 INTERPOLATION_OUTPOINTS=1000
+INTERPOLATION_INPOINTS=1500
 
 if [[ ! -d ${FOLDING_HOME} ]] ; then
 	echo "Cannot locate FOLDING_HOME (should be ${FOLDING_HOME} ?)"
@@ -100,6 +100,9 @@ do
 	elif [[ "${1}" == "-nuget" ]] ; then
 		INTERPOLATION_KRIGER_NUGET=${2}
 		shift 2
+	elif [[ "${1}" == "-in-points" ]] ; then
+		INTERPOLATION_INPOINTS=${2}
+		shift 2
 	elif [[ "${1}" == "-out-points" ]] ; then
 		INTERPOLATION_OUTPOINTS=${2}
 		shift 2
@@ -142,10 +145,11 @@ if [[ $# -lt 2 ]] ; then
 	echo "            -counter C       : Applies the folding to the hardware counter C instead to all available counters"
 	echo "            -extract-from T  : Applies the folding only after time T within the trace-file"
 	echo "            -extract-to   T  : Applies the folding only up to time T within the trace-file"
+	echo "            -in-points N     : Specifies the number of input interpolation points (default: ${INTERPOLATION_INPOINTS})"
 	echo "            -nuget N         : Specifies the value for the nuget value for the Kriging interpolation (default: ${INTERPOLATION_KRIGER_NUGET})"
 	echo "            -output <dir>    : Where to generate the results (if not given, they are generated in the tracefile <dir>)"
 	echo "            -out-points N    : Specifies the number of output interpolation points (default: ${INTERPOLATION_OUTPOINTS})"
-	echo "            -pct CS FMD         : Callstack processor parameters: number of consecutive samples CS, minimum duration (in percentage) FMD"
+	echo "            -pct CS FMD      : Callstack processor parameters: number of consecutive samples CS, minimum duration (in percentage) FMD"
 	echo "            -region R        : Requests to apply the folding to region R"
 	echo "            -source S        : Indicates where the source code of the application is located"
 	echo "            Trace            : Paraver trace-file"
@@ -241,7 +245,7 @@ else
 fi
 
 if [[ "${SHOW_COMMANDS}" = "yes" ]] ; then
-	echo ${FOLDING_HOME}/bin/interpolate -max-samples-distance ${MSDF} -sigma-times ${ST} -callstack-processor pct ${CS} ${FMD} -use-median ${EXTRA_INTERPOLATE_FLAGS} ${MODELS_SUFFIX} ${SOURCE_DIRECTORY_SUFFIX} "${BASENAME_PRV}.codeblocks.fused.extract"
+	echo ${FOLDING_HOME}/bin/interpolate -interpolation kriger ${INTERPOLATION_OUTPOINTS} ${INTERPOLATION_KRIGER_NUGET} no -max-samples-distance ${INTERPOLATION_INPOINTS} -sigma-times ${ST} -callstack-processor pct ${CS} ${FMD} -use-median ${EXTRA_INTERPOLATE_FLAGS} ${MODELS_SUFFIX} ${SOURCE_DIRECTORY_SUFFIX} "${BASENAME_PRV}.codeblocks.fused.extract"
 fi
 
 # Hook for Paraver
@@ -249,7 +253,7 @@ echo Output directory: ${PWD}
 
 ${FOLDING_HOME}/bin/interpolate \
  -interpolation kriger ${INTERPOLATION_OUTPOINTS} ${INTERPOLATION_KRIGER_NUGET} no \
- -max-samples-distance-fast ${MSDF} \
+ -max-samples-distance-fast ${INTERPOLATION_INPOINTS} \
  -sigma-times ${ST} \
  -use-median \
  -callstack-processor pct ${CS} ${FMD} \
