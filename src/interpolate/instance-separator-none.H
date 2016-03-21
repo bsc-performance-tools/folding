@@ -25,6 +25,8 @@
 
 #include "instance-separator.H"
 
+/* This is a subclass from InstanceSeparator. It does not separate instances */
+
 class InstanceSeparatorNone : public InstanceSeparator
 {
 	public:

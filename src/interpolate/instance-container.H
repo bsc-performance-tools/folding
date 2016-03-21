@@ -32,40 +32,76 @@
 
 using namespace std;
 
+/* This class represents a container for all the instances. */
+
 class InstanceContainer
 {
 	private:
+	/* Number of group detected */
 	unsigned ngroups;
+
+	/* Which instance separator to be used */
 	InstanceSeparator *is;
+
+	/* Name of the region */
 	string regionName;
+
+	/* Container of all instances */
 	vector<Instance*> Instances;
+
+	/* Container of instances grouped, that is each position contains a 
+	   instance group according to the separator 'is' */
 	vector<InstanceGroup*> InstanceGroups;
 
 	public:
 	InstanceContainer (string, InstanceSeparator *is);
 
+	/* Add a new instance */
 	void add (Instance *i)
 	  { Instances.push_back(i); }
+
+	/* Get all instances */
 	const vector<Instance *> getInstances (void) const
 	  { return Instances; }
+
+	/* Get # of instances */
 	unsigned numInstances (void) const
 	  { return Instances.size(); }
+
+	/* Get # of samples within instances */
 	unsigned numSamples (void);
+
+	/* Split instances into groups */
 	void splitInGroups (void);
+
+	/* Return the # of groups */
 	unsigned numGroups (void) const
 	  { return ngroups; }
+
+	/* Get the name of the instance */
 	string getRegionName (void) const
 	  { return regionName; }
+
+	/* Get a particular instance group (g) */
 	InstanceGroup* getInstanceGroup (unsigned g);
+
+	/* Get the intance separator */
 	InstanceSeparator* getInstanceSeparator(void) const
 	  { return is; }
 
+	/* Remove previously existing files. Do some cleanup. */
 	void removePreviousDataFiles (const ObjectSelection *os,
 	  const string & fileprefix);
+
+	/* Dumps instance information into CSV files for gnuplot plotting */
 	void dumpGroupData (const ObjectSelection *os,
 	  const string & fileprefix, const string & TimeUnit);
+
+	/* Generate gnuplot scripts */
 	void gnuplot (const ObjectSelection *os, const string & fileprefix,
 	  StatisticType_t type);
+
+	/* Generate python script info */
 	void python (const ObjectSelection *os, const string & prefix, 
 	  const set<string> & counters);
 };

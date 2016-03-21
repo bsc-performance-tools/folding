@@ -47,39 +47,81 @@ using namespace cube;
 class InterpolationResults;
 class CallstackTree;
 
+/* This class contains information regarding the instances read from the
+   extract tool but grouped according to an InstanceSeparator. The InstanceGroup
+   is the main collection of instances used through the interpolate  from the
+   folding tool as each analysis is typically done per InstanceGroup rather than
+   per Instance. Note that it contains both used and excluded instances. The
+   separation between the two depends on the user requests */
+
 class InstanceGroup
 {
 	private:
+	/* Name of the instance */
 	const string regionName;
+	/* Assigned group number */
 	const unsigned numGroup;
+	/* Assigned group name */
 	const string groupName;
 
+	/* Have we processed the callstack information? */
 	bool preparedCallstacks;
+	/* Have we emitted the callstack information into the CSV file? */
 	bool hasEmittedCallstackSamples;
+	/* Have we emitted the address information into the CSV file? */
 	bool hasEmittedAddressSamples;
 
+	/* The container of the used instances */
 	vector<Instance*> Instances;
+
+	/* The container of the excluded instances. Excluded as the user requests
+	   given the outliers / sigma values */
 	vector<Instance*> excludedInstances;
 
-	map<string, InterpolationResults*> interpolated; /* map of InterpolationResults* indexed by counter */
+	/* Map (key = counter, value = interpolation results) provides the result
+	   of the interpolation per counter within this instance group using the
+	   not excluded instances */
+	map<string, InterpolationResults*> interpolated;
 
+	/* Selection of used samples according to the user parametrization for
+	   each counter (key) */
 	map<string, vector<Sample*> > used;
+
+	/* Selection of unused samples according to the user parametrization for
+	   each counter (key) */
 	map<string, vector<Sample*> > unused;
+
+	/* Set of all samples for the instances */
 	set<Sample*> allSamples;
 
+	/* If using R breakpoints, this will contain the # of breakpoints found in
+	   the interpolation */
 	vector<double> Breakpoints; /* nb (breakpoints) = nphases+1 */
+
+	/* Constructs a callstack-tree based on the callstack information. This is
+	   valuable to generate the CUBE output */
 	vector<CallstackTree *> trees; /* one per phase */
+
+	/* Attributes to each phase derived from the breakpoints the number of visits */
 	vector< map<unsigned, CodeRefTripletAccounting*> > accountsPerLine;/* one per phase */
 
+	/* Results of the callstack processor, using the bio-inspired approach */
 	vector< CallstackProcessor_Result* > callerstime_Results;
+
+	/* Here we store the processed samples using the bio-inspired approach to
+	   later dump the information into the Paraver trace-file */
 	vector< Sample * > callerstime_processSamples;
 
 #if defined(HAVE_CUBE)
+	/* Cube hook */
 	Cnode *cubeTree;
 #endif
 
+	/* Generate the gnuplot using a performance architecture model */
 	string gnuplot_model (const ObjectSelection *os, const string & prefix,
 	  const Model *m, const string & TimeUnit);
+
+	/* Generate the gnuplot for the access to the address space */
 	string gnuplot_addresses (const ObjectSelection *os, const string & prefix,
 	  const string & TimeUnit, unsigned long long minaddress,
 	  unsigned long long maxaddress); 

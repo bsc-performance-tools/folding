@@ -25,6 +25,11 @@
 
 #include "instance-separator.H"
 
+/* This is a subclass from InstanceSeparator. It tries to automatically group
+   the instances according to their duration. It uses a very simplistic
+   algorithm according to the duration using a bucketing system that
+   ranges time. */
+
 class InstanceSeparatorAuto : public InstanceSeparator
 {
 	private:
