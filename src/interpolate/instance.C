@@ -27,6 +27,8 @@
 #include <algorithm>
 #include <assert.h>
 
+
+/* Class constructor */
 Instance::Instance (unsigned ptask, unsigned task, unsigned thread,
 	string region, unsigned long long startTime, unsigned long long duration,
 	set<string> &counters, map<string, unsigned long long> totalcountervalues,
@@ -40,6 +42,7 @@ Instance::Instance (unsigned ptask, unsigned task, unsigned thread,
 	this->TotalCounterValues = totalcountervalues;
 }
 
+/* Class destructor */
 Instance::~Instance (void)
 {
 	for (unsigned s = 0; s < Samples.size(); s++)
@@ -47,6 +50,7 @@ Instance::~Instance (void)
 	Samples.clear();
 }
 
+/* Show instance, for debugging purposes */
 void Instance::Show (void)
 {
 	cout << "instance info: " << endl;

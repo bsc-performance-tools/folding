@@ -25,6 +25,9 @@
 
 #include "instance-separator.H"
 
+/* This is a subclass from InstanceSeparator. It uses DBSCAN algorithm of the
+   ClusteringSuite to group the instances according to their duration. */
+
 class InstanceSeparatorDBSCAN : public InstanceSeparator
 {
 	private:

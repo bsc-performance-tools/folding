@@ -39,7 +39,7 @@ unsigned InstanceSeparatorAuto::separateInGroups (vector<Instance*> &vi)
 {
 	unsigned ngroups;
 
-	/* Less than 8 instances is a very small number to group */
+	/* Less than 8 (arbitrary?) instances is a very small number to group */
 	if (vi.size() >= 8)
 	{
 		unsigned buckets = MIN(vi.size()/4, 100);

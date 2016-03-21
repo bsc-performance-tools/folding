@@ -29,6 +29,8 @@
 
 using namespace std;
 
+/* This is an abstract class for instance separators. Instance separators allow
+   to select some instances according to their characteristics. */
 class InstanceSeparator
 {
 	protected:
@@ -36,9 +38,18 @@ class InstanceSeparator
 
 	public:
 	InstanceSeparator (bool keepallgroups);
+
+	/* Main function. Separates the given instances according to the
+	   parametrization of the subclass */
 	virtual unsigned separateInGroups (vector<Instance*> &vi) = 0;
+
+	/* Provides some details into a string for debugging purposes */
 	virtual string details(void) const = 0;
+
+	/* Provides the name of the subgroup */
 	virtual string nameGroup (unsigned) const = 0;
+
+	/* Keeps the selected group as a single group with id 0 */
 	void KeepLeadingGroup (vector<Instance*> &Instances, unsigned ngroups);
 };
 
