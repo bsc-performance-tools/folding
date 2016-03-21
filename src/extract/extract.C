@@ -73,12 +73,24 @@ double DenormalizeValue (double normalized, double min, double max)
 
 namespace libparaver {
 
+/* ThreadInformation class
+   this class holds the needed information per-thread. Mainly, it contains
+   an array of samples since the last entry to a region, the current active
+   region and when the thread entered it.
+*/
 class ThreadInformation
 {
 	private:
+	/* Have we seen this thread? */
 	bool seen;
+
+	/* Samples within the active instance */
 	vector<Sample*> Samples;
+
+	/* Which is the current region? */
 	unsigned long long CurrentRegion;
+
+	/* When did the region start? */
 	unsigned long long StartRegion;
 
 	public:
@@ -118,13 +130,25 @@ ThreadInformation::~ThreadInformation ()
 {
 }
 
+/* TaskInformation class
+   this class holds the needed information per-task. It mainly contains
+   information per thread, the dataObjects that are alive (i.e. the
+   address space and its variables).
+*/
 class TaskInformation
 {
 	private:
+	/* Number of threads, that is the # of entries within ThreadsInfo */
 	int numThreads;
 	ThreadInformation *ThreadsInfo;
+
+	/* All the data objects seen, even if they have become freed */
 	vector<DataObject*> dataObjects;
+
+	/* Information to construct an in-flight dynamic memory object */
 	DataObject_dynamic *tmpdataobject;
+
+	/* From dataObjects, this set indicates which are alive at every time */
 	set<unsigned> livingDataObjects;
 
 	public:
@@ -184,6 +208,8 @@ void TaskInformation::AllocateThreads (int nThreads)
 	ThreadsInfo = new ThreadInformation[nThreads];
 }
 
+/* The PTaskInformation contains information regarding the application
+   tasks (TaskInformation) as defined above. It is a simple container. */
 class PTaskInformation
 {
 	private:
@@ -259,6 +285,10 @@ void InformationHolder::AllocatePTasks (int numPTasks)
 	PTasksInfo = new PTaskInformation[this->numPTasks];
 }
 
+/* AddressReference
+   contains information regarding PEBS references captured in the tracefile.
+   It contains the address, as well as the access cost and which part of the
+   hierarchy solved the reference */
 class AddressReference
 {
 	private:
@@ -301,6 +331,12 @@ class AddressReference
 	  { return ReferenceType; }
 };
 
+
+/* Process,
+   this class inherits from ParaverTrace and is used to parse the Paraver
+   trace using the processState, processMultiEvent, processEvent,
+   processCommunicator, and processComunication */
+
 class Process : public ParaverTrace
 {
 	private:
@@ -341,6 +377,8 @@ class Process : public ParaverTrace
 	string getTypeValue (unsigned type, unsigned value, bool &found);
 	void allocateBuffers (void);
 	void closeFile (void);
+
+	/* These methods are used to parse the trace-file */
 	void processState (struct state_t &s);
 	void processMultiEvent (struct multievent_t &e);
 	void processEvent (struct singleevent_t &e);
@@ -1255,6 +1293,7 @@ int main (int argc, char *argv[])
 		return -2;
 	}
 
+	/* This will create the PRV processor */
 	Process *p;
 	try
 	{ p = new Process (tracename, true); }
@@ -1284,6 +1323,7 @@ int main (int argc, char *argv[])
 		}
 	}
 
+	/* Here we check whether the minimal information is available within the PRV/PCF files */
 	bool found;
 	cout << "Checking for basic caller information" << flush;
 	string t1 = p->getType (EXTRAE_SAMPLE_CALLER_MIN, found);
@@ -1327,7 +1367,10 @@ int main (int argc, char *argv[])
 		cout << "Extracting data for semantic values" << endl;
 
 	p->allocateBuffers ();
+
+	/* This code actually invokes the parse of the PRV file */
 	p->parseBody();
+
 	p->closeFile();
 
 	if (!p->anySeenObjects())
