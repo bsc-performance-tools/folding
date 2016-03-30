@@ -260,9 +260,8 @@ void Process::processLastEvents (void)
 		}
 }
 
-void Process::processEvent (struct singleevent_t &e)
+void Process::processEvent (struct singleevent_t &)
 {
-	e = e;
 }
 
 void Process::processCommunication (struct comm_t &c)
