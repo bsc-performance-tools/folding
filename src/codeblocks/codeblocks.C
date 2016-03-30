@@ -344,9 +344,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 	traceout << endl;
 }
 
-void Process::processEvent (struct singleevent_t &e)
+void Process::processEvent (struct singleevent_t &)
 {
-	e = e;
 }
 
 void Process::processCommunication (struct comm_t &c)

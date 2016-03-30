@@ -511,14 +511,12 @@ void Process::processComment (string &c)
 	}
 }
 
-void Process::processCommunicator (string &c)
+void Process::processCommunicator (string &)
 {
-	UNREFERENCED(c);
 }
 
-void Process::processState (struct state_t &s)
+void Process::processState (struct state_t &)
 {
-	UNREFERENCED(s);
 }
 
 void Process::processAddressReference (const struct event_t &evt,
@@ -943,14 +941,12 @@ void Process::processMultiEvent (struct multievent_t &e)
 	}
 }
 
-void Process::processEvent (struct singleevent_t &e)
+void Process::processEvent (struct singleevent_t &)
 {
-	UNREFERENCED(e);
 }
 
-void Process::processCommunication (struct comm_t &c)
+void Process::processCommunication (struct comm_t &)
 {
-	UNREFERENCED(c);
 }
 
 void Process::allocateBuffers (void)
