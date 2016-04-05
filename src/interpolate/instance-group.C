@@ -617,6 +617,8 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 	unsigned tenpct = workSamples.size() / 10;
 	unsigned level = 0;
 
+	/* Apply the 1st step of the MSA alignment */
+
 	while (level < 1 && workSamples.size() > tenpct)
 	{
 		vector<Sample*> selectedSamples;
@@ -630,6 +632,8 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 		bool hasMaxMinCaller = false;
 		unsigned MaxCaller = 0;
 
+		/* Search for the routine / caller that appears the most in the
+		   given samples. This caller will be stored in MaxCaller. */
 		for (auto s : workSamples)
 		{
 			const Callstack_CodeRefTriplet & current_ct = s->getCallstackCodeRefTriplet();
@@ -742,7 +746,8 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 		cout << "Matching remaining samples" << endl;
 #endif
 
-		/* try to match remaining samples */
+		/* try to match remaining samples. Do only one pass in order to avoid
+		   taking so much time to process. */
 		it = workSamples.begin();
 		while (it != workSamples.end())
 		{
@@ -791,26 +796,6 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 					else
 					{
 						match = false;
-
-#if 0
-#if defined(DEBUG)
-						cout << "REV_MATCH_B distance = " << distance << endl;
-						cout << "S1)"; work_ct.show (false);
-						cout << "S2)"; s_ct.show (false);
-
-						cout << "CORRECTION PHASE! (distance = " << distance << ")" << endl;
-#endif
-						for (auto ss : selectedSamples)
-						{
-#if defined(DEBUG)
-							ss->show();
-#endif
-							ss->addCallstackBubbles (distance);								
-#if defined(DEBUG)
-							ss->show();
-#endif
-						}
-#endif
 					}
 					break;
 				}
@@ -861,7 +846,8 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 		level++;
 	}
 
-	/* Do process the samples to locate user functions */
+	/* Do process the samples to locate user functions, by selecting the samples
+	   according the numebr of consecutice samples, their duration, ...  */
 	if (processSamples.size() > 0)
 	{
 		sort (processSamples.begin(), processSamples.end(), ::compare_SampleTimings);
