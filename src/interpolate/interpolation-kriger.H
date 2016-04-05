@@ -25,6 +25,8 @@
 
 #include "interpolation.H"
 
+/* Implementation of the interpolation class using the Kriger interpolation */
+
 class InterpolationKriger : public Interpolation
 {
 	private:
@@ -38,7 +40,13 @@ class InterpolationKriger : public Interpolation
 	  int outcount, const double *outpoints);
 
 	public:
+
+	/* Constructor for InterpolationKriger. steps refer to the number of output
+	   samples. nuget is about the Kriging interpolation (the smaller the value,
+	   the more fitted but also more noisy). prefilter = true if you want
+	   prefiltering the data using the Kriger interpolation */
 	InterpolationKriger (unsigned steps, double nuget, bool prefilter);
+
 	void pre_interpolate (double sigmaTimes, InstanceGroup *ig, 
 	  const set<string> & counters);
 	string details (void) const;
