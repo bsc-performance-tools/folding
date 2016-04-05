@@ -1,0 +1,15 @@
+
+As of CUBE 4.3.2, to use the plugins, you need to setup the CUBE_PLUGIN_DIR to the location where the plugins are installed, e.g CUBE_PLUGIN_DIR=/home/harald/aplic/folding/1.1.0rc/lib
+
+When running cube, you'll get the list of loaded plugins by using -verbose:
+
+~/aplic/cube/4.3.2/bin/cube -verbose *.cube
+PluginList: plugin search path: 
+PluginList:  /home/harald/install/folding/lib
+PluginList:  /home/harald/aplic/cube/4.3.2/bin
+PluginList:  /home/harald/aplic/cube/4.3.2/lib/plugins
+PluginList:  /home/harald/aplic/cube/4.3.2/lib/cube-plugins
+PluginList: plugin loaded:/home/harald/install/folding/lib/cubeplugin-folding-source-code.so
+PluginList: plugin loaded:/home/harald/install/folding/lib/cubeplugin-folding-time-line.so
+...
+
