@@ -121,6 +121,9 @@ static bool needAddressPCFinfo = false;
 using namespace std;
 
 
+/* GroupFilterAndDumpStatistics
+   Filters the instances according to the user requests in sigma-times */
+
 void GroupFilterAndDumpStatistics (set<string> &regions,
 	const vector<Instance*> &vInstances,
 	map<string, InstanceContainer> &Instances,
@@ -1264,7 +1267,11 @@ int main (int argc, char *argv[])
 	string cFile = argv[res];
 	string cFilePrefix = cFile.substr (0, cFile.rfind (".extract"));
 
-
+	/* Recover information regarding 
+	    - the tracefile used to interpolate
+	    - the event type
+	    - the name of the event type
+	*/
 	string controlFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".control");
 	string objectsFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".objects");
 	string traceFile;
@@ -1289,7 +1296,9 @@ int main (int argc, char *argv[])
 	UIParaverTraceConfig *pcf = new UIParaverTraceConfig;
 	pcf->parse (pcfFile);
 
-	// Apply the folding to each region
+	// MAIN LOOP!
+	// Apply the folding (performance counters, callstack, memory references)
+	// to each region
 	set<string>::iterator it;
 	bool first = true;
 	for (it = regions.begin(); it != regions.end(); it++)
@@ -1326,6 +1335,7 @@ int main (int argc, char *argv[])
 			}
 		}
 
+		/* Applies the normal interpolation to the pair <region / counter > */
 		cout << "Interpolation [" << interpolation->details() << "] (region = " <<
 		  *it << "), #out steps = " << interpolation->getSteps() << endl;
 		for (unsigned u = 0; u < ic.numGroups(); u++)
@@ -1336,12 +1346,14 @@ int main (int argc, char *argv[])
 			cout << " Selecting samples from " << instanceseparator->nameGroup (u)
 			  << " (" << u+1 << " of " << ic.numGroups() << ")" << flush;
 			
+			/* Selects which are the samples to be used */
 			clock_gettime (CLOCK_REALTIME, &time_start);
 			ss->Select (ig, counters);
 			clock_gettime (CLOCK_REALTIME, &time_end);
 			time_t delta = time_end.tv_sec - time_start.tv_sec;
 			cout << ", elapsed time " << delta / 60 << "m " << delta % 60 << "s" << endl;
 
+			/* Applies the actual interpolation to the region / counter pair. */
 			interpolation->interpolate (ig, counters, TimeUnit);
 
 #if defined(CALLSTACK_ANALYSIS)
@@ -1415,11 +1427,14 @@ int main (int argc, char *argv[])
 			}
 		}
 
+		/* Processing the trace-file */
 		string oFilePRV = traceFile.substr (0, traceFile.rfind (".prv")) + ".folded.prv";
 		ftrace = new FoldedParaverTrace (oFilePRV, traceFile, true);
 
+		/* Process the trace-file body, looking for instances where to store later */
 		ftrace->parseBody();
 
+		/* Creating the new synthetic trace-file */
 		ftrace->DumpStartingParaverLine ();
 
 		UIParaverTraceConfig *pcf = NULL;
@@ -1445,13 +1460,21 @@ int main (int argc, char *argv[])
 		if (!mainid_found)
 			mainid = 0;
 
+		/* Creates a map name counterCodes with keys = counter codes, and value
+		   is the event type found in the paraver trace-file.
+		   Eg. PAPI_TOT_INS => 42000050. */
 		map<string, unsigned> counterCodes;
 		for (const auto & c : counters)
 			counterCodes[c] = pcfcommon::lookForCounter (c, pcf);
 	
 		vector<Instance*> whichInstancesToFeed;
+		/* Check how the user wants to feed the new synthetic trace-file. At this point
+		   we will fill the whichInstancesToFeed vector in order to later fill the
+		   selected instances with the folded metrics (all of them: counter, callstack, memory) */
 		if (feedTraceType == FEED_TIME)
 		{
+			/* Here, the user wants to fill the new synthetic trace-file from a given
+			   interval of time  [ feedTraceTimes_Begin, feedTraceTimes_End ]. */
 			for (unsigned u = 0; u < feedInstances.size(); u++)
 			{
 				Instance *i = feedInstances[u];
@@ -1472,6 +1495,7 @@ int main (int argc, char *argv[])
 		}
 		else if (feedTraceType == FEED_FIRST_OCCURRENCE)
 		{
+			/* Here, the user wants to fill just the first occurrence of every instance */
 			set< pair<string, unsigned> > usedRegions;
 			for (unsigned u = 0; u < feedInstances.size(); u++)
 			{
@@ -1494,10 +1518,12 @@ int main (int argc, char *argv[])
 			}
 		}
 
-		/* Emit callstack into the new tracefile */
+		/* Generating the new trace-file according to the previous selected
+		   instances (either by time, or the first occurrence).  */
 		cout << "Generating folded trace for Paraver (" << cwd << "/" << common::basename (oFilePRV.c_str()) << ")" << endl;
 
 		unsigned maxReverseLevel = 0;
+		/* For every instance we had selected before, dump the information there */
 		for (unsigned u = 0; u < whichInstancesToFeed.size(); u++)
 		{
 			Instance *i = whichInstancesToFeed[u];
@@ -1506,10 +1532,18 @@ int main (int argc, char *argv[])
 			{
 				InstanceContainer ic = Instances.at (i->getRegionName());
 				InstanceGroup *ig = ic.getInstanceGroup(i->getGroup());
+
 				ftrace->DumpGroupInfo (i, feedTraceFoldType);
+
+				/* Dump performance counters */
 				ftrace->DumpInterpolationData (i, ig, counterCodes);
+
+				/* Dump call-stack informatin in instances */
 				ftrace->DumpCallersInInstance (i, ig);
+
+				/* Dump addresses in instances */
 				needAddressPCFinfo |= ftrace->DumpAddressesInInstance (i, ig);
+
 				ftrace->DumpCallstackProcessed (i, ig);
 				unsigned tmp = ftrace->DumpReverseCorrectedCallersInInstance (i, ig);
 				if (tmp > maxReverseLevel)
@@ -1525,7 +1559,7 @@ int main (int argc, char *argv[])
 
 		string bfileprefix = common::basename (traceFile.substr (0, traceFile.rfind(".prv")));
 
-		/* Copy .pcf and .row files */
+		/* Copy .pcf files from the original paraver trace-file */
 		ifstream ifs_pcf ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".pcf")).c_str());
 		if (ifs_pcf.is_open())
 		{
@@ -1537,6 +1571,7 @@ int main (int argc, char *argv[])
 		AppendInformationToPCF (bfileprefix + string (".folded.pcf"), pcf, counters,
 		  maxReverseLevel);
 
+		/* Copy .row files from the original paraver trace-file */
 		ifstream ifs_row ((traceFile.substr (0, traceFile.rfind(".prv"))+string(".row")).c_str());
 		if (ifs_row.is_open())
 		{

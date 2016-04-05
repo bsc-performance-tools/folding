@@ -34,21 +34,34 @@ class Interpolation
 	const unsigned steps;
 	const bool prefilter;
 
+	/* This is to invoke the interpolation */
 	InterpolationResults * interpolate_kernel (vector<Sample*> vs,
 	  const string & counter, const string & region, unsigned group);
 
+	/* Actual interpolation :: need to be redefined in the child class */ 
 	virtual unsigned do_interpolate (unsigned inpoints, double *ix,
 	  double *iy, InterpolationResults *ir, const string & counter,
 	  const string & region, unsigned group) = 0;
 
 	public:
+
+	/* Constructor, steps refers to the number of output points and prefilter
+	   whether we want to do some prefiltering */
 	Interpolation (unsigned steps, bool prefilter);
+
+	/* Applies the actual interpolation */
 	void interpolate (InstanceGroup *ig, const set<string> & counters,
 	  const string & TimeUnit);
+
+	/* Applies interpolation for prefiltering */
 	virtual void pre_interpolate (double sigmaTimes, InstanceGroup *ig,
 		const set<string> & counters);
+
+	/* Return whether the user wants to prefilter */
 	bool preFilter (void) const
 	  { return prefilter; }
+
+	/* Return the number of output points */
 	unsigned getSteps (void) const
 	  { return steps; }
 
