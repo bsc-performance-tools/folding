@@ -7,15 +7,13 @@ scriptpath=$(dirname "$script")
 apppath=$scriptpath/../..
 version=`$scriptpath/version`
 target=$APPDIR/$APP/$version/src
-temp=$scriptpath/deploy.tmp
-echo "target=$target" > $temp
-scp $temp $SSHTARGET:/tmp/
-ssh $SSHTARGET 'bash -c "`source /tmp/deploy.tmp && rm -fr $target && mkdir -p $target`"'
+module=$MODULEDIR/$MODULE
+cmd=`ssh $SSHTARGET "rm -fr $target && mkdir -p $target"`
+$command
 cd $apppath
 repo=${PWD##*/}
 cd $scriptpath
-echo "repo=$repo" >> $temp
 scp -r $apppath/../$repo $SSHTARGET:$target/
-scp $temp $SSHTARGET:/tmp/
-ssh $SSHTARGET 'bash -c "`source /tmp/deploy.tmp && cd $target/$repo/.packaging/marenostrum/ && ./deploy && rm /tmp/deploy.tmp`"' 2>/dev/null
-rm $temp
+cmd=`ssh $SSHTARGET "cd $target/$repo/.packaging/marenostrum/ && ./deploy"`
+scp module $SSHTARGET:$module/$version
+cmd=`ssh $SSHTARGET "rm -f $module/defaut && ln -s $module/$version $module/defaut"`

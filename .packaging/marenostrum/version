@@ -3,4 +3,4 @@
 script=$(readlink -f "$0")
 scriptpath=$(dirname "$script")
 configure=$scriptpath/../../configure.ac
-grep AC_INIT $configure | sed 's/AC_INIT(libtools, //' | sed 's/, tools@bsc.es)//'
+grep AC_INIT $configure | sed 's/AC_INIT(folding, //' | sed 's/, tools@bsc.es)//'
