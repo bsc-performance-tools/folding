@@ -6,7 +6,7 @@
 
 # Initialize autoconf & define package name, version and bug-report address 
 #  -- keep version in sync with src/common/extrae_version.h
-AC_INIT(folding, 1.1.0rc, tools@bsc.es)
+AC_INIT(folding, 1.2.0, tools@bsc.es)
 AC_CONFIG_HEADERS([folding-config.h:folding-config.h.in])
 
 # Safety check to ensure that the directory told with `--srcdir` contains the source code
@@ -332,10 +332,12 @@ if test "${enable_memory_analysis}" = "yes" ; then
 	AC_DEFINE([MEMORY_ANALYSIS], [1], [Define if memory analysis is enabled])
 fi
 
-AC_ARG_ENABLE([damien-experiments],
-	AS_HELP_STRING([--enable-damien-experiments], [Several Damien experimentation]))
-if test "${enable_damien_experiments}" = "yes" ; then
-	AC_DEFINE([DAMIEN_EXPERIMENTS], [1], [Define if enable Damien experiments in Folding])
+AC_ARG_ENABLE([rri],
+	AS_HELP_STRING([--disable-rri], [Disable RRI files generation (enabled by default)]),
+	[enable_rri="${enableval}"],
+	[enable_rri="yes"])
+if test "${enable_rri}" = "yes" ; then
+	AC_DEFINE([RRI], [1], [Define if enable RRI in folding])
 fi
 
 AX_PROG_BOOST

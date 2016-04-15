@@ -1,0 +1,3 @@
+SSHTARGET=mn1
+APPDIR=/apps/CEPBATOOLS/deps
+APP=libtools

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+source settings
+
+script=$(readlink -f "$0")
+scriptpath=$(dirname "$script")
+apppath=$scriptpath/../..
+version=`$scriptpath/version`
+target=$APPDIR/$APP/$version/src
+temp=$scriptpath/deploy.tmp
+echo "target=$target" > $temp
+scp $temp $SSHTARGET:/tmp/
+ssh $SSHTARGET 'bash -c "`source /tmp/deploy.tmp && rm -fr $target && mkdir -p $target`"'
+cd $apppath
+repo=${PWD##*/}
+cd $scriptpath
+echo "repo=$repo" >> $temp
+scp -r $apppath/../$repo $SSHTARGET:$target/
+scp $temp $SSHTARGET:/tmp/
+ssh $SSHTARGET 'bash -c "`source /tmp/deploy.tmp && cd $target/$repo/.packaging/marenostrum/ && ./deploy && rm /tmp/deploy.tmp`"' 2>/dev/null
+rm $temp
