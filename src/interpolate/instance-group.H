@@ -221,7 +221,7 @@ class InstanceGroup
 	bool getHasEmittedAddressSamples (void) const
 	  { return hasEmittedAddressSamples; }
 
-#if defined(DAMIEN_EXPERIMENTS)
+#if defined(RRI)
 	void DumpReverseCorrectedCallersInInstance (const Instance *in, bool first,
 	  const string &fprefix, UIParaverTraceConfig *pcf) const;
 #endif

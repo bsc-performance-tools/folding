@@ -903,7 +903,7 @@ double InstanceGroup::getInterpolatedNTime (const string &counter, Sample *s) co
 }
 
 
-#if defined(DAMIEN_EXPERIMENTS)
+#if defined(RRI)
 void InstanceGroup::DumpReverseCorrectedCallersInInstance (const Instance *in,
 	bool first, const string &fprefix, UIParaverTraceConfig *pcf) const
 {
@@ -984,4 +984,4 @@ void InstanceGroup::DumpReverseCorrectedCallersInInstance (const Instance *in,
 
 	f.close();
 }
-#endif /* DAMIEN_EXPERIMENTS */
+#endif /* RRI */

@@ -1548,7 +1548,7 @@ int main (int argc, char *argv[])
 				unsigned tmp = ftrace->DumpReverseCorrectedCallersInInstance (i, ig);
 				if (tmp > maxReverseLevel)
 					maxReverseLevel = tmp;
-#if defined(DAMIEN_EXPERIMENTS)
+#if defined(RRI)
 				ig->DumpReverseCorrectedCallersInInstance (i, u == 0,
 				  common::basename (traceFile.substr (0, traceFile.rfind(".prv"))),
 				  pcf);
