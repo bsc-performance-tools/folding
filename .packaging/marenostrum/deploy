@@ -1,9 +1,8 @@
 #!/bin/bash
 
-BOOST=/apps/BOOST/1.52.0 
+BOOST=/apps/BOOST/1.52.0
+LIBTOOLS=/apps/CEPBATOOLS/deps/LIBTOOLS/default/default
 
-module load boost
-module load python
 script=$(readlink -f "$0")
 scriptpath=$(dirname "$script")
 srcpath=$scriptpath/../..
@@ -15,7 +14,7 @@ mkdir -p $dest
 cd $srcpath
 log=$srcpath/log
 ./bootstrap > $log 2>&1
-./configure --prefix=$dest --with-boost=$BOOST >> $log 2>&1
+./configure --prefix=$dest --with-libtools=$LIBTOOLS --with-boost=$BOOST >> $log 2>&1
 make >> $log 2>&1 
 make install >> $log 2>&1
 path=$versionpath/..
