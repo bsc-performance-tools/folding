@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BOOST=/apps/BOOST/1.52.0
-LIBTOOLS=/apps/CEPBATOOLS/deps/libtools/1.0.3/
+LIBTOOLS=/apps/CEPBATOOLS/deps/libtools/1.0.4/default
 
 module load GCC
 module load AUTOCONF
@@ -15,12 +15,11 @@ version=${PWD##*/}
 dest=$versionpath/default
 mkdir -p $dest
 cd $srcpath
-log=$srcpath/log
 make distclean
-./bootstrap > $log 2>&1
-./configure --prefix=$dest --with-libtools=$LIBTOOLS --with-boost=$BOOST >> $log 2>&1
-make >> $log 2>&1 
-make install >> $log 2>&1
+./bootstrap
+./configure --prefix=$dest --with-libtools=$LIBTOOLS --with-boost=$BOOST
+make
+make install
 path=$versionpath/..
 if [ -d $path/default ]
 then
