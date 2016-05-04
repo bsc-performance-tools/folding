@@ -118,6 +118,9 @@ static string sourceDirectory;
 
 static bool needAddressPCFinfo = false;
 
+static string statsFileHeaderMedian =
+        "#Region, Group, Total Instance Number, Total Sample Number (ms), Total Median (ms), Total Mad (ms), Sigma Time Factor, Selection Interval Min (ms), Selection Interval Max (ms), Selected Instance Number, Selected Instance Proportion (\%), Selected Instance Median (ms), Selected Instance Mad (ms)";
+
 using namespace std;
 
 
@@ -127,8 +130,19 @@ using namespace std;
 void GroupFilterAndDumpStatistics (set<string> &regions,
 	const vector<Instance*> &vInstances,
 	map<string, InstanceContainer> &Instances,
-	vector<Instance*> &feedInstances)
+    vector<Instance*> &feedInstances, string statsFileName)
 {
+    ofstream statsFile;
+
+    statsFile.open (statsFileName.c_str());
+    if (!statsFile.is_open())
+    {
+        cerr << "Error! Cannot open file " << statsFileName << endl;
+        return;
+    }
+    if (StatisticType == STATISTIC_MEDIAN){
+        statsFile<<statsFileHeaderMedian<<endl;
+    }
 	map<string, InstanceContainer*> ptrInstances;
 
 	cout << "Allocating instances into instance container (" << vInstances.size() << ") ... " << flush;
@@ -241,13 +255,14 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 			}
 			else if (StatisticType == STATISTIC_MEDIAN)
 			{
+                statsFile<<region<<","<<instanceseparator->nameGroup (u)<<","<<ig->numInstances()<<","<<ig->numSamples()<<",";
 				double median = ig->median(), mad = ig->MAD();
 				double uplimit = median + NumOfSigmaTimes * mad;
 				double lolimit = median - NumOfSigmaTimes * mad;
 
 				cout << ", median = " << (median / 1000000.f) << "ms mad = " 
 				  << (mad / 1000000.f) << "ms" << endl;
-
+                statsFile<<(median / 1000000.f)<<","<<(mad / 1000000.f)<<",";
 				unsigned total = ig->numInstances();
 				if (total > 0)
 				{
@@ -277,7 +292,10 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 					  << (uplimit / 1000000.f)<< "ms ] = " << within << " ~ "
 					  << (within*100)/total << "% of the population, median = "
 					  << (median / 1000000.f) << "ms mad = " << (mad / 1000000.f) << "ms" << endl;
+                    statsFile<<NumOfSigmaTimes<<","<<(lolimit / 1000000.f)<<","<<(uplimit / 1000000.f)
+                            <<","<<within<<","<<(within*100)/total<<","<<(median / 1000000.f)<<","<<(mad / 1000000.f)<<endl;
 				}
+
 			}
 		}
 		cout << "-----" << endl;
@@ -306,6 +324,7 @@ void GroupFilterAndDumpStatistics (set<string> &regions,
 		else
 			fiterator++;
 	}
+    statsFile.close();
 }
 
 void AppendInformationToPCF (string file, UIParaverTraceConfig *pcf,
@@ -1261,8 +1280,6 @@ int main (int argc, char *argv[])
 	}
 
 	// Filter read data and show some statistics
-	GroupFilterAndDumpStatistics (regions, vInstances, Instances,
-	  feedInstances);
 
 	string cFile = argv[res];
 	string cFilePrefix = cFile.substr (0, cFile.rfind (".extract"));
@@ -1274,7 +1291,11 @@ int main (int argc, char *argv[])
 	*/
 	string controlFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".control");
 	string objectsFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".objects");
+    string statsFile = common::basename (cFile.substr (0, cFile.rfind (".extract")) + ".stats");
 	string traceFile;
+
+    GroupFilterAndDumpStatistics (regions, vInstances, Instances,
+      feedInstances, statsFile);
 
 	{
 		ifstream control (controlFile.c_str());
