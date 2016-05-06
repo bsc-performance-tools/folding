@@ -1,0 +1,28 @@
+#!/bin/bash
+
+BOOST=/apps/BOOST/1.52.0
+LIBTOOLS=/apps/CEPBATOOLS/deps/libtools/1.0.4/default
+
+module load GCC
+module load AUTOCONF
+module load AUTOTOOLS
+script=$(readlink -f "$0")
+scriptpath=$(dirname "$script")
+srcpath=$scriptpath/../..
+versionpath=$srcpath/../..
+cd $versionpath
+version=${PWD##*/}
+dest=$versionpath/default
+mkdir -p $dest
+cd $srcpath
+make distclean
+./bootstrap
+./configure --prefix=$dest --with-libtools=$LIBTOOLS --with-boost=$BOOST
+make
+make install
+path=$versionpath/..
+if [ -d $path/default ]
+then
+  rm $path/default
+fi
+ln -s $path/$version $path/default
