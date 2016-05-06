@@ -1,0 +1,41 @@
+#%Module1.0
+########################################################
+# 
+# Authors:    Harald Servat
+#             Damien Dosimont 
+#
+########################################################
+
+set PROG_NAME       FOLDING
+set PROG_VERSION    1.2.0
+set FOLDING_LOCATION /apps/CEPBATOOLS/folding/${PROG_VERSION}
+
+proc ModulesHelp { } {
+	puts stderr "$PROG_NAME version $PROG_VERSION"
+}
+
+module-whatis   "loads the $PROG_NAME $PROG_VERSION"
+
+module-verbosity {on}
+
+# Tests of consistency
+# --------------------
+# This application cannot be loaded if another $PROG_NAME modulefile was previously loaded
+
+conflict ${PROG_NAME}
+
+### This shows info about loaded/unloaded module
+if { [module-info mode] != "whatis" } {
+   puts stderr "[module-info mode] [module-info name] (PATH)"
+}
+
+prepend-path	PATH	        ${FOLDING_LOCATION}/bin
+prepend-path	LD_LIBRARY_PATH	${FOLDING_LOCATION}/lib	
+prepend-path    PATH            /apps/WXPYTHON/2.8.12/bin
+prepend-path    LD_LIBRARY_PATH /apps/WXPYTHON/2.8.12/lib
+
+### extra env variables which need to be set
+
+setenv FOLDING_HOME ${FOLDING_LOCATION}
+
+
