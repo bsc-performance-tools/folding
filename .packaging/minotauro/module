@@ -7,7 +7,7 @@
 ########################################################
 
 set PROG_NAME       FOLDING
-set PROG_VERSION    1.2.1
+set PROG_VERSION    X.X.X
 set FOLDING_LOCATION /apps/CEPBATOOLS/folding/${PROG_VERSION}/default
 
 proc ModulesHelp { } {
