@@ -8,7 +8,7 @@
 
 set PROG_NAME       FOLDING
 set PROG_VERSION    1.2.1
-set FOLDING_LOCATION /apps/CEPBATOOLS/folding/${PROG_VERSION}
+set FOLDING_LOCATION /apps/CEPBATOOLS/folding/${PROG_VERSION}/default
 
 proc ModulesHelp { } {
 	puts stderr "$PROG_NAME version $PROG_VERSION"
