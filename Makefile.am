@@ -2,7 +2,8 @@ SUBDIRS = src doc
 
 ACLOCAL_AMFLAGS=-I config
 
-EXTRA_DIST = others examples cfgs SVN-branch SVN-revision
+EXTRA_DIST = others examples cfgs 
+#SVN-branch SVN-revision
 
 install-data-hook:
 	cp -v others/folding.sh $(prefix)/bin
