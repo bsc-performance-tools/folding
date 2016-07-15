@@ -6,7 +6,7 @@ libcallstack_processor_la_SOURCES = \
  callstack-processor-consecutive-recursive.C callstack-processor-consecutive-recursive.H \
  callstack-processor-consecutive-recursive-ctrl.C callstack-processor-consecutive-recursive-ctrl.H
 libcallstack_processor_la_CXXFLAGS = \
- -I. -I.. -I../model -I../../common -I$(LIBTOOLS_DIR)/include $(XML_CPPFLAGS) -O -g
+ -I. -I.. -I../model -I../../common -I$(LIBSCBTOOLS_DIR)/include $(XML_CPPFLAGS) -O -g
 if HAVE_CUBE
 libcallstack_processor_la_CXXFLAGS += -I$(CUBE_DIR)/include
 endif

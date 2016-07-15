@@ -8,8 +8,8 @@ libfolding_io_reader_la_SOURCES = \
 libfolding_io_writer_la_SOURCES = \
  folding-writer.C folding-writer.H
 
-libfolding_io_reader_la_CXXFLAGS = -I. -I.. -I../common -I../interpolate -I$(LIBTOOLS_DIR)/include
-libfolding_io_writer_la_CXXFLAGS = -I. -I.. -I../common -I$(LIBTOOLS_DIR)/include
+libfolding_io_reader_la_CXXFLAGS = -I. -I.. -I../common -I../interpolate -I$(LIBBSCTOOLS_DIR)/include
+libfolding_io_writer_la_CXXFLAGS = -I. -I.. -I../common -I$(LIBBSCTOOLS_DIR)/include
 
 if NEED_BOOST_HOME
 libfolding_io_reader_la_CXXFLAGS += -I$(BOOST_HOME)/include

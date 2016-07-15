@@ -33,7 +33,7 @@ interpolate_SOURCES += \
  cube-tree.C cube-tree.H 
 endif
 
-interpolate_CXXFLAGS = -I. -I../common -I../io -I$(LIBTOOLS_DIR)/include -Iservice-kriger -Iservice-R -Imodel -Icallstack-processor -Ignuplot $(XML_CPPFLAGS) -g -O 
+interpolate_CXXFLAGS = -I. -I../common -I../io -I$(LIBBSCTOOLS_DIR)/include -Iservice-kriger -Iservice-R -Imodel -Icallstack-processor -Ignuplot $(XML_CPPFLAGS) -g -O 
 if HAVE_CLUSTERING_SUITE
 interpolate_CXXFLAGS += -I$(CLUSTERING_HOME)/include
 endif
@@ -45,7 +45,7 @@ interpolate_CXXFLAGS += -I$(BOOST_HOME)/include
 endif
 
 interpolate_LDADD = ../common/libpcf-common.la \
-                    -L$(LIBTOOLS_LIB_DIR) -lparavertraceconfig -lparavertraceparser \
+                    -L$(LIBBSCTOOLS_LIB_DIR) -lparavertraceconfig -lparavertraceparser \
                     service-kriger/libkriger.la \
                     service-R/libR.la \
                     model/libmodel.la \

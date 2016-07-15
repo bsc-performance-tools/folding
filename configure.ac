@@ -139,48 +139,7 @@ AM_PATH_XML2(
 	[AC_MSG_ERROR(Cannot find xml2-config of libXML 2.5.0 (or above))]
 )
 
-AC_MSG_CHECKING([for libtools])
-AC_ARG_WITH(libtools,
-	AC_HELP_STRING(
-		[--with-libtools@<:@=ARG@:>@],
-		[Specify where libtools (libparaverconfig and libparavertraceparser) are installed]
-	),
-	[LibToolsDir="$withval"],
-	[LibToolsDir=""]
-)
-if test ! -d ${LibToolsDir} ; then
-	AC_MSG_ERROR([Invalid directory specified in --with-libtools])
-fi
-if test ! -f ${LibToolsDir}/include/ParaverRecord.h -o ! -f ${LibToolsDir}/include/ParaverTrace.h ; then
-	AC_MSG_ERROR([Cannot find some header files of the libtools! Make sure that --with-libtools is pointing to the correct place.])
-fi
-AC_MSG_RESULT([found in ${LibToolsDir}])
-LIBTOOLS_DIR=${LibToolsDir}
-AC_SUBST(LIBTOOLS_DIR)
-
-AC_MSG_CHECKING([for libtools libraries placement])
-if test -f ${LibToolsDir}/lib/libparavertraceconfig.a -a \
-        -f ${LibToolsDir}/lib/libparavertraceparser.a ; then
-	LibToolsDir_Lib=${LibToolsDir}/lib
-elif test -f ${LibToolsDir}/lib64/libparavertraceconfig.a -a \
-          -f ${LibToolsDir}/lib64/libparavertraceparser.a; then
-	LibToolsDir_Lib=${LibToolsDir}/lib64
-else
-	AC_MSG_ERROR([Cannot find libparavertraceconfig.a! Make sure that --with-libtools is pointing to the correct place.])
-fi
-LIBTOOLS_LIB_DIR=${LibToolsDir_Lib}
-AC_MSG_RESULT([found in ${LibToolsDir_Lib}])
-AC_SUBST(LIBTOOLS_LIB_DIR)
-
-AC_MSG_CHECKING([whether libtools libraries have shared versions])
-if test -f ${LibToolsDir_Lib}/libparavertraceconfig.so -a \
-        -f ${LibToolsDir_Lib}/libparavertraceparser.so ; then
-	LibToolsDir_HasShared="yes"
-else
-	LibToolsDir_HasShared="no"
-fi
-AC_MSG_RESULT([${LibToolsDir_HasShared}])
-AM_CONDITIONAL(LIBTOOLS_HAS_SHARED_LIBRARIES, test "${LibToolsDir_HasShared}" = "yes")
+AX_LIBBSCTOOLS
 
 AT_WITH_QT
 AM_CONDITIONAL(WANT_QT_GUI, test "${QT_PATH}" != "no" )
@@ -382,7 +341,7 @@ if test "${prefix}" = "NONE"; then
 else
   myprefix=${prefix}
 fi
-AM_CONDITIONAL(LIBTOOLS_DIR_SAME_AS_LIBDIR, test "${LIBTOOLS_LIB_DIR}" == "${myprefix}/lib")
+AM_CONDITIONAL(LIBBSCTOOLS_DIR_SAME_AS_LIBDIR, test "${LIBBSCTOOLS_LIB_DIR}" == "${myprefix}/lib")
 
 AC_CONFIG_FILES([
  Makefile

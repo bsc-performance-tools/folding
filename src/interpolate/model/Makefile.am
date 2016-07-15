@@ -9,7 +9,7 @@ libmodel_la_SOURCES = \
  componentmodel.C componentmodel.H \
  model.C model.H 
 libmodel_la_CXXFLAGS = \
- -I. -I.. -I../../common -I$(LIBTOOLS_DIR)/include $(XML_CPPFLAGS) -O -g
+ -I. -I.. -I../../common -I$(LIBBSCTOOLS_DIR)/include $(XML_CPPFLAGS) -O -g
 if NEED_BOOST_HOME
 libmodel_la_CXXFLAGS += -I$(BOOST_HOME)/include
 endif

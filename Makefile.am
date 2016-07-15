@@ -24,10 +24,10 @@ endif
 	cp -fr examples $(datarootdir)
 	$(MKDIR_P) $(datarootdir)/cfg
 	cp -r cfgs/histograms cfgs/views $(datarootdir)/cfg
-if LIBTOOLS_HAS_SHARED_LIBRARIES
-if !LIBTOOLS_DIR_SAME_AS_LIBDIR
-	cp $(LIBTOOLS_LIB_DIR)/libparavertraceconfig.so.0 \
-       $(LIBTOOLS_LIB_DIR)/libparavertraceparser.so.0 \
+if LIBBSCTOOLS_HAS_SHARED_LIBRARIES
+if !LIBBSCTOOLS_DIR_SAME_AS_LIBDIR
+	cp $(LIBSCBTOOLS_LIB_DIR)/libparavertraceconfig.so.0 \
+       $(LIBBSCTOOLS_LIB_DIR)/libparavertraceparser.so.0 \
        $(libdir)
 endif
 	$(LN_S) -f $(libdir)/libparavertraceconfig.so.0 $(libdir)/libparavertraceconfig.so
