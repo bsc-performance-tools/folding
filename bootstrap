@@ -3,5 +3,6 @@
 autoreconf -fiI config
 
 if test `basename ${0}` = "bootstrap-and-dist" ; then
-	./configure --with-libtools=$HOME/aplic/libtools && make dist-bzip2
+	./configure --without-qt 
+        make dist-bzip2
 fi
