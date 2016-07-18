@@ -27,7 +27,7 @@ endif
 	cp -r cfgs/histograms cfgs/views $(datarootdir)/cfg
 if LIBBSCTOOLS_HAS_SHARED_LIBRARIES
 if !LIBBSCTOOLS_DIR_SAME_AS_LIBDIR
-	cp $(LIBSCBTOOLS_LIB_DIR)/libparavertraceconfig.so.0 \
+	cp $(LIBBSCTOOLS_LIB_DIR)/libparavertraceconfig.so.0 \
        $(LIBBSCTOOLS_LIB_DIR)/libparavertraceparser.so.0 \
        $(libdir)
 endif
