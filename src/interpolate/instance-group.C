@@ -642,6 +642,9 @@ void InstanceGroup::prepareCallstacks (CallstackProcessor *processor)
 			for (auto const triplet : triplets)
 			{
 				unsigned caller = triplet.second.getCaller();
+                if (caller == 1){
+                    continue;
+                }
 				if (CallerQuantity.count(caller) == 0)
 				{
 					CallerQuantity[caller] = 1;
