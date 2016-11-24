@@ -1,5 +1,0 @@
-SSHTARGET=mt1
-APPDIR=/apps/CEPBATOOLS
-MODULEDIR=/apps/modules/modulefiles/tools
-APP=folding
-MODULE=FOLDING
