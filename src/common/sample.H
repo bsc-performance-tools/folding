@@ -42,6 +42,7 @@ class Sample
 	const bool bhasAddressReferenceInfo;       /* Does this sample contain information from data reference? */
 	const AddressReferenceType_t ReferenceType; /* Load or Store? */
 	const unsigned long long AddressReference; /* which address? */
+	const unsigned long long AddressReference_AllocatedObject; /* Allocated object id */
 	const unsigned AddressReference_Mem_Level; /* where was it found in mem hierarchy ? */
 	const unsigned AddressReference_TLB_Level; /* where was it found in tlb hierarchy ? */
 	const unsigned AddressReference_Cycles_Cost; /* how many cycles to resolve this reference */
@@ -64,12 +65,14 @@ class Sample
 	  map<string, unsigned long long> & icountervalue,
 	  map<unsigned, CodeRefTriplet> & codetriplet,
 	  AddressReferenceType_t rt, unsigned long long address,
+	  unsigned long long ar_allocatedobject,
 	  unsigned ar_mem_level, unsigned ar_tlb_level, unsigned cycles_cost);
 
 	Sample (unsigned long long sTime, unsigned long long iTime,
 	  map<string, unsigned long long> & icountervalue,
 	  map<unsigned, CodeRefTriplet> & codetriplet,
-	  AddressReferenceType_t rt, unsigned long long address);
+	  AddressReferenceType_t rt, unsigned long long address,
+	  unsigned long long ar_allocatedobject);
 
 	~Sample (void);
 
@@ -123,6 +126,8 @@ class Sample
 	  { return bhasAddressReferenceInfo; }
 	unsigned long long getAddressReference(void) const
 	  { return AddressReference; }
+	unsigned long long getAddressReference_AllocatedObject(void) const
+	  { return AddressReference_AllocatedObject; }
 	unsigned getAddressReference_Mem_Level(void) const
 	  { return AddressReference_Mem_Level; }
 	unsigned getAddressReference_TLB_Level(void) const

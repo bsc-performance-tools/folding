@@ -167,11 +167,13 @@ bool FoldedParaverTrace::DumpAddressesInInstance (const Instance *in,
 			AddressReferenceType_t art = s->getReferenceType();
 			unsigned t = (art == LOAD) ? EXTRAE_SAMPLE_ADDRESS_LD : EXTRAE_SAMPLE_ADDRESS_ST;
 			types.push_back (FOLDED_BASE + t);
+			types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_ADDRESS_ALLOCATED_OBJECT_EV);
 			types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL);
 			types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL);
 			types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES);
 
 			values.push_back (s->getAddressReference());
+			values.push_back (s->getAddressReference_AllocatedObject());
 			values.push_back (s->getAddressReference_Mem_Level());
 			values.push_back (s->getAddressReference_TLB_Level());
 			values.push_back (s->getAddressReference_Cycles_Cost());
@@ -181,7 +183,10 @@ bool FoldedParaverTrace::DumpAddressesInInstance (const Instance *in,
 			AddressReferenceType_t art = s->getReferenceType();
 			unsigned t = (art == LOAD) ? EXTRAE_SAMPLE_ADDRESS_LD : EXTRAE_SAMPLE_ADDRESS_ST;
 			types.push_back (FOLDED_BASE + t);
+			types.push_back (FOLDED_BASE + EXTRAE_SAMPLE_ADDRESS_ALLOCATED_OBJECT_EV);
+
 			values.push_back (s->getAddressReference());
+			values.push_back (s->getAddressReference_AllocatedObject());
 		}
 
 		DumpParaverLines (types, values, ts, in);

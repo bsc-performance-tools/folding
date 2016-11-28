@@ -149,8 +149,8 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 			/* S 36145340222 36433223 5 UNHALTED_CORE_CYCLES 94368325 INSTRUCTION_RETIRED 66006147 RESOURCE_STALLS:FCSW 0 2 0 3 9 9 1 4 3 3 0 */
 			/* S time #counters <counter name, counter value> #code triplets <depth, caller, caller line, caller line AST 0*/
 			/* Example of Sample with address*/
-			/* S 36145340222 36433223 5 UNHALTED_CORE_CYCLES 94368325 INSTRUCTION_RETIRED 66006147 RESOURCE_STALLS:FCSW 0 2 0 3 9 9 1 4 3 3 1 1000 2 1*/
-			/* S time #counters <counter name, counter value> #code triplets <depth, caller, caller line, caller line AST 0 address mem-level tlb-level*/
+			/* S 36145340222 36433223 5 UNHALTED_CORE_CYCLES 94368325 INSTRUCTION_RETIRED 66006147 RESOURCE_STALLS:FCSW 0 2 0 3 9 9 1 4 3 3 Y 1000 2 2 1*/
+			/* S time #counters <counter name, counter value> #code triplets <depth, caller, caller line, caller line AST 0 address object mem-level tlb-level*/
 
 			assert (i != NULL);
 
@@ -194,21 +194,23 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 				ncrt--;
 			}
 
-			unsigned hasaddress;
+			char hasaddress;
 			string referencetype;
 			unsigned long long ar = 0;
-			unsigned hasaddressinfo = 0;
+			unsigned long long ar_allocatedobject = 0;
+			char hasaddressinfo = 0;
 			unsigned ar_mem_level = 0;
 			unsigned ar_tlb_level = 0;
 			unsigned cycles_cost = 0;
 			file >> hasaddress;
 
-			if (hasaddress)
+			if (hasaddress == 'Y')
 			{
 				file >> referencetype;
 				file >> ar;
+				file >> ar_allocatedobject;
 				file >> hasaddressinfo;
-				if (hasaddressinfo)
+				if (hasaddressinfo == 'Y')
 				{
 					file >> ar_mem_level;
 					file >> ar_tlb_level;
@@ -225,9 +227,11 @@ void FoldingReader::ReadSamples (const string & filenameextract,
 
 				if (hasaddressinfo)
 					s = new Sample (sTime, iTime, icv, ct, rt, ar,
-					  ar_mem_level, ar_tlb_level, cycles_cost);
+					  ar_allocatedobject, ar_mem_level, ar_tlb_level,
+					  cycles_cost);
 				else
-					s = new Sample (sTime, iTime, icv, ct, rt, ar);
+					s = new Sample (sTime, iTime, icv, ct, rt, ar,
+					  ar_allocatedobject);
 			}
 			else
 				s = new Sample (sTime, iTime, icv, ct);

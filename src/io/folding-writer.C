@@ -316,16 +316,21 @@ void FoldingWriter::Write (ofstream &ofile, const string & RegionName,
 
 			if (Samples[u]->hasAddressReferenceInfo())
 			{
-				ofile << " 1 " << rt << " "
-				  << Samples[u]->getAddressReference() << " 1 "
+				ofile << " Y " << rt << " "
+				  << Samples[u]->getAddressReference() << " "
+				  << Samples[u]->getAddressReference_AllocatedObject() << " "
+				  << "Y "
 				  << Samples[u]->getAddressReference_Mem_Level() << " "
 				  << Samples[u]->getAddressReference_TLB_Level() << " "
 				  << Samples[u]->getAddressReference_Cycles_Cost();
 			}
 			else
 			{
-				ofile << " 1 " << rt << " "
-				  << Samples[u]->getAddressReference() << " 0 ";
+				ofile << " Y " << rt << " "
+				  << Samples[u]->getAddressReference() << " "
+				  << Samples[u]->getAddressReference() << " "
+				  << Samples[u]->getAddressReference_AllocatedObject() << " "
+				  << "N" << endl;
 			}
 		}
 		else

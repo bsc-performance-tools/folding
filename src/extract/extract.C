@@ -301,10 +301,12 @@ class AddressReference
 	unsigned core_cycles;
 	bool has_core_cycles;
 	AddressReferenceType_t ReferenceType;
+	unsigned long long allocatedObject;
 
 	public:
 	AddressReference ()
-	  { has_address = has_reference_mem_level = has_reference_tlb_level = false; }
+	  { has_address = has_reference_mem_level = has_reference_tlb_level = false;
+	    allocatedObject = 0; }
 	void setAddress (unsigned long long Address)
 	  { address = Address; has_address = true; }
 	void setReferenceMemLevel (unsigned MemLevel)
@@ -329,6 +331,10 @@ class AddressReference
 	  { return core_cycles; }
 	AddressReferenceType_t getReferenceType (void) const
 	  { return ReferenceType; }
+	void setAllocatedObject(unsigned long long obj)
+	  { allocatedObject = obj; }
+	unsigned long long getAllocatedObject(void) const
+	  { return allocatedObject; }
 };
 
 
@@ -538,6 +544,8 @@ void Process::processAddressReference (const struct event_t &evt,
 		ar.setReferenceTLBLevel (evt.Value);
 	else if (evt.Type == EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES)
 		ar.setReferenceCoreCycles (evt.Value);
+	else if (evt.Type == EXTRAE_SAMPLE_ADDRESS_ALLOCATED_OBJECT_EV)
+		ar.setAllocatedObject (evt.Value);
 }
 
 bool Process::processCaller (const struct event_t &evt, unsigned base,
@@ -750,7 +758,8 @@ void Process::processMultiEvent (struct multievent_t &e)
 			    event.Type == EXTRAE_SAMPLE_ADDRESS_ST ||
 			    event.Type == EXTRAE_SAMPLE_ADDRESS_MEM_LEVEL || 
 			    event.Type == EXTRAE_SAMPLE_ADDRESS_TLB_LEVEL ||
-			    event.Type == EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES )
+			    event.Type == EXTRAE_SAMPLE_ADDRESS_REFERENCE_CYCLES ||
+			    event.Type == EXTRAE_SAMPLE_ADDRESS_ALLOCATED_OBJECT_EV)
 			{
 				if (common::DEBUG())
 					cout << "Processing sampled address info (" << event.Type << ")" << endl;
@@ -857,13 +866,14 @@ void Process::processMultiEvent (struct multievent_t &e)
 		{
 			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].getStartRegion(),
 			  CV, CodeRefs, AR.getReferenceType(), AR.getAddress(),
-			  AR.getReferenceMemLevel(), AR.getReferenceTLBLevel(),
-			  AR.setReferenceCoreCycles());
+			  AR.getAllocatedObject(), AR.getReferenceMemLevel(),
+			  AR.getReferenceTLBLevel(), AR.setReferenceCoreCycles());
 		}
 		else if (AR.hasAddress()) /* does not contain all info but address is present*/
 		{
 			s = new Sample (e.Timestamp, e.Timestamp - thi[thread].getStartRegion(),
-			  CV, CodeRefs, AR.getReferenceType(), AR.getAddress());
+			  CV, CodeRefs, AR.getReferenceType(), AR.getAddress(),
+			  AR.getAllocatedObject());
 		}
 		else
 		{
