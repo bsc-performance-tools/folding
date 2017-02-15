@@ -81,7 +81,9 @@ string common::removeUnwantedChars (const string &in)
 {
 	string tmp = in;
 	for (auto & c : tmp)
-		if (c == ' ' || c == '[' || c == ']' || c == '(' || c == ')')
+		if (c == ' ' || c == '[' || c == ']' || c == '(' || c == ')'
+		 || c == '"' || c == '*' || c == '/' || c == ':' || c == '<' || c == '>' || c == '?' || c == '?' || c == '\\' || c == '|' // NTFS
+		)
 			c = '_';
 	return tmp;
 }
