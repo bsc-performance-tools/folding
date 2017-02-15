@@ -366,4 +366,37 @@ AC_CONFIG_FILES([
  doc/Makefile
 ])
 
+AC_CONFIG_LINKS([
+ src/common/common.H:src/common/common.H
+ src/common/object-selection.H:src/common/object-selection.H
+ src/common/sample.H:src/common/sample.H
+ src/common/callstack-codereftriplet.H:src/common/callstack-codereftriplet.H
+ src/common/codereftriplet.H:src/common/codereftriplet.H
+ src/common/data-object.H:src/common/data-object.H
+ src/common/pcf-common.H:src/common/pcf-common.H
+ src/common/prv-types.H:src/common/prv-types.H
+ src/common/common-math.H:src/common/common-math.H
+ src/common/prv-colors.H:src/common/prv-colors.H
+ src/interpolate/instance.H:src/interpolate/instance.H
+ src/interpolate/interpolation-results.H:src/interpolate/interpolation-results.H
+ src/interpolate/instance-group.H:src/interpolate/instance-group.H
+ src/interpolate/codereftriplet-accounting.H:src/interpolate/codereftriplet-accounting.H
+ src/interpolate/model/model.H:src/interpolate/model/model.H
+ src/interpolate/model/componentmodel.H:src/interpolate/model/componentmodel.H
+ src/interpolate/model/componentnode.H:src/interpolate/model/componentnode.H
+ src/interpolate/model/componentnode_constant.H:src/interpolate/model/componentnode_constant.H
+ src/interpolate/model/componentnode_data.H:src/interpolate/model/componentnode_data.H
+ src/interpolate/model/componentnode_derived.H:src/interpolate/model/componentnode_derived.H
+ src/interpolate/interpolate.H:src/interpolate/interpolate.H
+ src/interpolate/instance-container.H:src/interpolate/instance-container.H
+ src/interpolate/callstack-processor/callstack-processor.H:src/interpolate/callstack-processor/callstack-processor.H
+ src/interpolate/instance-separator.H:src/interpolate/instance-separator.H
+ src/interpolate/gnuplot/generate-gnuplot.H:src/interpolate/gnuplot/generate-gnuplot.H
+ src/interpolate/service-R/execute-R.H:src/interpolate/service-R/execute-R.H
+ src/interpolate/service-kriger/kriger_wrapper.h:src/interpolate/service-kriger/kriger_wrapper.h
+ src/interpolate/callstack-processor/callstack-processor-consecutive-recursive.H:src/interpolate/callstack-processor/callstack-processor-consecutive-recursive.H
+ src/io/folding-writer.H:src/io/folding-writer.H
+ src/io/folding-reader.H:src/io/folding-reader.H
+])
+
 AC_OUTPUT

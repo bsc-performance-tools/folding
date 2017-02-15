@@ -1,6 +1,7 @@
 
 ChangeLog
  [ + added, - removed, * changed ]
+ * 15Feb2017 Allows building from a separate folder
  * 10Mar2016 Add option -in-points to folding script
              Fix alignment (reverse) labels in PCF
  * 29Feb2016 Generate callerdata.regions file
