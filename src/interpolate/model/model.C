@@ -203,7 +203,7 @@ ComponentModel * Model::loadXML_component (xmlDocPtr xmldoc, xmlNodePtr tag)
 		exit (-1);
 	}
 	string componenttitlename = string((const char*)titlename);
-	XML_FREE(cname);
+	XML_FREE(titlename);
 
 	xmlChar *position = xmlGetProp (tag, TAG_COMPONENT_WHERE);
 	if (position == NULL)
