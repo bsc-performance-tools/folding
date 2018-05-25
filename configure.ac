@@ -4,9 +4,14 @@
 #    Initializations    #
 #########################
 
+m4_define([folding_major], [1])
+m4_define([folding_minor], [3])
+m4_define([folding_micro], [1])
+
+m4_define([folding_version], [folding_major.folding_minor.folding_micro])
+
 # Initialize autoconf & define package name, version and bug-report address 
-#  -- keep version in sync with src/common/extrae_version.h
-AC_INIT(folding, 1.3.1, tools@bsc.es)
+AC_INIT(folding, [folding_version], tools@bsc.es)
 AC_CONFIG_HEADERS([folding-config.h:folding-config.h.in])
 
 # Safety check to ensure that the directory told with `--srcdir` contains the source code
