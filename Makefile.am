@@ -31,7 +31,6 @@ if !LIBBSCTOOLS_DIR_SAME_AS_LIBDIR
        $(LIBBSCTOOLS_LIB_DIR)/libparavertraceparser.so.0 \
        $(libdir)
 endif
-	$(LN_S) -f $(libdir)/libparavertraceconfig.so.0 $(libdir)/libparavertraceconfig.so
-	$(LN_S) -f $(libdir)/libparavertraceparser.so.0 $(libdir)/libparavertraceparser.so
+	cd $(libdir); $(LN_S) -f libparavertraceconfig.so.0 libparavertraceconfig.so; $(LN_S) -f libparavertraceparser.so.0 libparavertraceparser.so
 endif
 

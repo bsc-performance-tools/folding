@@ -1,6 +1,7 @@
 
 ChangeLog
  [ + added, - removed, * changed ]
+ * 31Jul2018 Fixes libparavertrace* soft links in lib folder
  * 25May2018 Standardise versioning
  * 18May2018 Fixed double free in xml parsing
  * 15Feb2017 Replaces unsupported filename characters for underscore (_)
