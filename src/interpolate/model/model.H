@@ -27,6 +27,7 @@
 #include <string>
 
 #include "componentmodel.H"
+#include "componentnode_alias.H"
 #include "componentnode_constant.H"
 #include "componentnode_data.H"
 #include "componentnode_derived.H"

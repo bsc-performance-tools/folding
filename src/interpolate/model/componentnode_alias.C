@@ -20,44 +20,36 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-#ifndef COMPONENTMODEL_H_INCLUDED
-#define COMPONENTMODEL_H_INCLUDED
 
-#include <string>
-#include <set>
+#include "common.H"
+#include "componentnode_alias.H"
+#include <assert.h>
+#include <iostream>
 
-#include "componentnode.H"
-
-class ComponentModel
+ComponentNode_alias::ComponentNode_alias (ComponentModel *alias) : alias(alias)
 {
-	private:
-	const string Name;
-	const string Color;
-	const string TitleName;
-	const string PlotLocation;
-	const ComponentNode *CNode;
-        const bool Hidden;
+  assert(alias != NULL);
+}
 
-	public:
-	ComponentModel (const string &Name, const string &TitleName, 
-	  const string &PlotLocation, const string &Color, ComponentNode *CN, bool Hidden);
-	~ComponentModel ();
+ComponentNode_alias::~ComponentNode_alias ()
+{
+}
 
-	string getName (void) const
-	  { return Name; }
-	string getPlotLocation (void) const
-	  { return PlotLocation; }
-	const ComponentNode *getComponentNode (void) const
-	  { return CNode; }
-	set<string> requiredCounters (void) const;
-	string getTitleName (void) const
-	  { return TitleName; }
-	string getColor (void) const
-	  { return Color; }
-	bool hasColor (void) const
-	  { return Color.length() > 0; }
-        bool isHidden (void) const
-          { return Hidden; }
-};
+double ComponentNode_alias::evaluate (map<string,InterpolationResults*> &ir,
+	unsigned pos) const
+{
+	return alias->getComponentNode()->evaluate(ir, pos);;
+}
 
-#endif /* COMPONENTMODEL_H_INCLUDED */
+void ComponentNode_alias::show (unsigned depth) const
+{
+	for (unsigned u = 0; u < depth; u++)
+		cout << "  ";
+	cout << "ALIAS - " << alias->getName() << endl;
+}
+
+set<string> ComponentNode_alias::requiredCounters (void) const
+{
+	return alias->getComponentNode()->requiredCounters();
+}
+

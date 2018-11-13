@@ -3,6 +3,7 @@ noinst_LTLIBRARIES = libmodel.la
 
 libmodel_la_SOURCES = \
  componentnode.H componentnode.C \
+ componentnode_alias.C componentnode_alias.H \
  componentnode_constant.C componentnode_constant.H \
  componentnode_data.C componentnode_data.H \
  componentnode_derived.C componentnode_derived.H \

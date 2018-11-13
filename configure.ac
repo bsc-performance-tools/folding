@@ -389,6 +389,7 @@ AC_CONFIG_LINKS([
  src/interpolate/model/model.H:src/interpolate/model/model.H
  src/interpolate/model/componentmodel.H:src/interpolate/model/componentmodel.H
  src/interpolate/model/componentnode.H:src/interpolate/model/componentnode.H
+ src/interpolate/model/componentnode_alias.H:src/interpolate/model/componentnode_alias.H
  src/interpolate/model/componentnode_constant.H:src/interpolate/model/componentnode_constant.H
  src/interpolate/model/componentnode_data.H:src/interpolate/model/componentnode_data.H
  src/interpolate/model/componentnode_derived.H:src/interpolate/model/componentnode_derived.H

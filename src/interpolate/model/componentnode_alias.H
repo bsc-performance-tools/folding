@@ -20,44 +20,24 @@
  *                                 ---------                                 *
  *   Barcelona Supercomputing Center - Centro Nacional de Supercomputacion   *
 \*****************************************************************************/
-#ifndef COMPONENTMODEL_H_INCLUDED
-#define COMPONENTMODEL_H_INCLUDED
-
-#include <string>
-#include <set>
+#ifndef COMPONENTNODE_ALIAS_H_INCLUDED
+#define COMPONENTNODE_ALIAS_H_INCLUDED
 
 #include "componentnode.H"
+#include "componentmodel.H"
 
-class ComponentModel
+class ComponentNode_alias : public ComponentNode
 {
 	private:
-	const string Name;
-	const string Color;
-	const string TitleName;
-	const string PlotLocation;
-	const ComponentNode *CNode;
-        const bool Hidden;
+	const ComponentModel *alias;
 
 	public:
-	ComponentModel (const string &Name, const string &TitleName, 
-	  const string &PlotLocation, const string &Color, ComponentNode *CN, bool Hidden);
-	~ComponentModel ();
+	ComponentNode_alias (ComponentModel *alias);
+	~ComponentNode_alias ();
 
-	string getName (void) const
-	  { return Name; }
-	string getPlotLocation (void) const
-	  { return PlotLocation; }
-	const ComponentNode *getComponentNode (void) const
-	  { return CNode; }
+	double evaluate (map<string,InterpolationResults*> &ir, unsigned pos) const;
+	void show (unsigned depth) const;
 	set<string> requiredCounters (void) const;
-	string getTitleName (void) const
-	  { return TitleName; }
-	string getColor (void) const
-	  { return Color; }
-	bool hasColor (void) const
-	  { return Color.length() > 0; }
-        bool isHidden (void) const
-          { return Hidden; }
 };
 
-#endif /* COMPONENTMODEL_H_INCLUDED */
+#endif /* COMPONENTNODE_ALIAS_H_INCLUDED */

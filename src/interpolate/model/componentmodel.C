@@ -26,9 +26,9 @@
 #include "componentmodel.H"
 
 ComponentModel::ComponentModel (const string &Name, const string &TitleName,
-  const string &PlotLocation, const string &Color, ComponentNode *CN)
+  const string &PlotLocation, const string &Color, ComponentNode *CN, bool Hidden)
   : Name(Name), Color(Color), TitleName(TitleName), PlotLocation(PlotLocation),
-  CNode(CN)
+  CNode(CN), Hidden(Hidden)
 {
 }
 

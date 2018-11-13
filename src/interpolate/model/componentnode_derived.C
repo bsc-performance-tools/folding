@@ -30,7 +30,7 @@
 ComponentNode_derived::ComponentNode_derived (Operator o, ComponentNode *c1,
 	ComponentNode *c2) : op(o), child1(c1), child2(c2)
 {
-	assert (op == ADD || op == SUB || op == MUL || op == DIV);
+	assert (op == ADD || op == SUB || op == MUL || op == DIV || op == MIN || op == MAX || op == NOP);
 }
 
 ComponentNode_derived::~ComponentNode_derived ()
@@ -56,6 +56,10 @@ double ComponentNode_derived::evaluate (map<string,InterpolationResults*> &ir,
 		break;
 		case DIV: res = v1/v2;
 		break;
+		case MIN: res = (v1 < v2 ? v1 : v2);
+		break;
+		case MAX: res = (v1 > v2 ? v1 : v2);
+		break;
 		case NOP:
 		break;
 	}
@@ -79,6 +83,10 @@ void ComponentNode_derived::show (unsigned depth) const
 		break;
 		case DIV: cout << "/" << endl;
 		break;
+		case MIN: cout << "MIN" << endl;
+		break;
+		case MAX: cout << "MAX" << endl;
+		break;		
 		case NOP: cout << "NOP" << endl;
 		break;
 	}

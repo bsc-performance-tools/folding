@@ -35,6 +35,7 @@
 #define TAG_MODEL ((xmlChar*) "model")
 #define TAG_COMPONENT ((xmlChar*) "component")
 #define TAG_MODEL_NAME ((xmlChar*) "name")
+#define TAG_COMPONENT_HIDDEN ((xmlChar*) "hidden")
 #define TAG_COMPONENT_NAME TAG_MODEL_NAME
 #define TAG_COMPONENT_WHERE ((xmlChar*) "where")
 #define TAG_OPERATION ((xmlChar*) "operation")
@@ -238,8 +239,16 @@ ComponentModel * Model::loadXML_component (xmlDocPtr xmldoc, xmlNodePtr tag)
 		cn->show();
 	}
 
+	bool isHidden = false;
+	xmlChar *hidden = xmlGetProp (tag, TAG_COMPONENT_HIDDEN);
+	if (hidden != NULL)
+	{
+		isHidden = !xmlStrcasecmp (hidden, (const xmlChar*)"yes");
+		XML_FREE(hidden);
+	}
+
 	return new ComponentModel (componentname, componenttitlename, plotlocation,
-	  plotcolor, cn);
+	  plotcolor, cn, isHidden);
 }
 
 ComponentNode * Model::loadXML_component_componentnode (xmlDocPtr xmldoc,
@@ -258,7 +267,7 @@ ComponentNode * Model::loadXML_component_componentnode (xmlDocPtr xmldoc,
 		}
 
 		ComponentNode_derived::Operator OP;
-		if (op[0] != '+' && op[0] != '-' && op[0] != '*' && op[0] != '/')
+		if (op[0] != '+' && op[0] != '-' && op[0] != '*' && op[0] != '/' && op[0] != 'm' && op[0] != 'M')
 		{
 			cerr << "Invalid operation type in <" << TAG_OPERATION << ">." << endl;
 			exit (-1);
@@ -274,6 +283,10 @@ ComponentNode * Model::loadXML_component_componentnode (xmlDocPtr xmldoc,
 				case '*': OP = ComponentNode_derived::MUL;
 				break;
 				case '/': OP = ComponentNode_derived::DIV;
+				break;
+				case 'm': OP = ComponentNode_derived::MIN;
+				break;
+				case 'M': OP = ComponentNode_derived::MAX;
 				break;
 				default:  OP = ComponentNode_derived::NOP;
 				break;
@@ -295,15 +308,47 @@ ComponentNode * Model::loadXML_component_componentnode (xmlDocPtr xmldoc,
 		assert (v.size() == 0);
 
 		xmlChar *str = xmlChar_strip(xmlNodeListGetString (xmldoc, tag->xmlChildrenNode, 1));
+		if (str == NULL)
+		{
+			cerr << "Missing value name in '" << TAG_VALUE << "'" << std::endl;
+			exit(-1);
+		}
 		string s = (const char*) str;
+		if (s.length() == 0)
+		{
+			cerr << "Missing value name in '" << TAG_VALUE << "'" << std::endl;
+			exit(-1);
+		}
 
 		// Ok this is a value, but is this a number or anything else (counter)?
 		char *pend;
 		double d = strtod (s.c_str(), &pend);
 		if (pend == &(s.c_str())[s.length()])
+		{
 			res = new ComponentNode_constant (d);
+		}
 		else
-			res = new ComponentNode_data (s);
+		{
+			// Check whether the given value corresponds to an existing component.
+			// In case of a positive match, we create an alias.
+			ComponentModel *cn = NULL;
+			for (const auto c : components)
+			{
+				if (c->getName() == s)
+				{
+					cn = c;
+					break;
+				}
+			}
+			if (cn != NULL)
+			{
+				res = new ComponentNode_alias (cn);
+			}
+			else
+			{
+				res = new ComponentNode_data (s);
+			}
+		}
 
 		XML_FREE(str);
 	}

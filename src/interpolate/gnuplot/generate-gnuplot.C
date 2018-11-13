@@ -620,6 +620,10 @@ string gnuplotGenerator::gnuplot_model (
 	vector<ComponentModel*> vcm = m->getComponents();
 	for (unsigned cm = 0; cm < vcm.size(); cm++)
 	{
+		if (vcm[cm]->isHidden())
+		{
+			gplot << "# Hidden ";
+		}
 		gplot << "slope_" << m->getName() << "_" << vcm[cm]->getName() << 
 		  "(ret,c,r,g) = (c eq '" << m->getName() << "_" << vcm[cm]->getName() <<
 		  "' && r eq '" << regionName << "' && g == " << numGroup << " ) ? ret : NaN;" << endl;
@@ -627,12 +631,20 @@ string gnuplotGenerator::gnuplot_model (
 	gplot << endl;
 
 	/* Generate the plot command */
+	bool first = true;
 	for (unsigned cm = 0; cm < vcm.size(); cm++)
 	{
-		if (cm == 0)
+		if (vcm[cm]->isHidden()) continue;
+
+		if (first)
+		{
 			gplot << "plot \\" << endl;
+			first = false;
+		}
 		else
+		{
 			gplot << ",\\" << endl;
+		}
 
 		string Yaxis = vcm[cm]->getPlotLocation();
 

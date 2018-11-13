@@ -28,7 +28,7 @@
 class ComponentNode_derived : public ComponentNode
 {
 	public:
-	enum Operator { ADD, SUB, MUL, DIV, NOP };
+	enum Operator { ADD, SUB, MUL, DIV, MIN, MAX, NOP };
 
 	private:
 	const Operator op;
