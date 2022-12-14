@@ -5,8 +5,8 @@
 #########################
 
 m4_define([folding_major], [1])
-m4_define([folding_minor], [3])
-m4_define([folding_micro], [2])
+m4_define([folding_minor], [4])
+m4_define([folding_micro], [0])
 
 m4_define([folding_version], [folding_major.folding_minor.folding_micro])
 
