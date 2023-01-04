@@ -1,6 +1,7 @@
 
 ChangeLog
  [ + added, - removed, * changed ]
+ * 04Jan2023 Fixes model's GNUplot scripts when address references are not present
  * 31Jul2018 Fixes libparavertrace* soft links in lib folder
  * 25May2018 Standardise versioning
  * 18May2018 Fixed double free in xml parsing

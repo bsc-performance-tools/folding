@@ -273,8 +273,7 @@ void gnuplotGenerator::gnuplot_single (
 	}
 	gplot << ";" << endl << endl
 	  << "unset label;" << endl
-	  << "unset arrow;" << endl << endl
-	  << "unset multiplot;" << endl;
+	  << "unset arrow;" << endl << endl;
 
 	gplot.close();
 }
@@ -335,18 +334,24 @@ string gnuplotGenerator::gnuplot_slopes (
 
 #if defined(CALLSTACK_ANALYSIS)
 #define CALLSTACK_ANALYSIS_PART 0.20
-	gnuplotGeneratorCallstack::generate (CALLSTACK_ANALYSIS_PART,
-	  0.95-CALLSTACK_ANALYSIS_PART, gplot, fdname, ig, pcf);
-	occupied_in_multiplot += CALLSTACK_ANALYSIS_PART;
+	if (ig->getHasEmittedCallstackSamples())
+	{
+		gnuplotGeneratorCallstack::generate (CALLSTACK_ANALYSIS_PART,
+		  0.95-CALLSTACK_ANALYSIS_PART, gplot, fdname, ig, pcf);
+		occupied_in_multiplot += CALLSTACK_ANALYSIS_PART;
+	}
 #undef CALLSTACK_ANALYSIS_PART
 #endif
 
 #if defined(MEMORY_ANALYSIS)
 #define CALLSTACK_REFERENCE_PART 0.25
-	gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
-	  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
-	  variables);
-	occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
+	if (ig->getHasEmittedAddressSamples())
+	{
+		gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
+		  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
+		  variables);
+		occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
+	}
 #undef CALLSTACK_REFERENCE_PART
 #endif
 
@@ -474,8 +479,7 @@ string gnuplotGenerator::gnuplot_slopes (
 	}
 	gplot << ";" << endl << endl
 	  << "unset label;" << endl
-	  << "unset arrow;" << endl << endl
-	  << "unset multiplot;" << endl;
+	  << "unset arrow;" << endl << endl;
 
 	gplot.close();
 
@@ -540,18 +544,24 @@ string gnuplotGenerator::gnuplot_model (
 
 #if defined(CALLSTACK_ANALYSIS)
 #define CALLSTACK_ANALYSIS_PART 0.20
-	gnuplotGeneratorCallstack::generate (CALLSTACK_ANALYSIS_PART,
-	  0.95-CALLSTACK_ANALYSIS_PART, gplot, fdname, ig, pcf);
-	occupied_in_multiplot += CALLSTACK_ANALYSIS_PART;
+	if (ig->getHasEmittedCallstackSamples())
+	{
+		gnuplotGeneratorCallstack::generate (CALLSTACK_ANALYSIS_PART,
+		  0.95-CALLSTACK_ANALYSIS_PART, gplot, fdname, ig, pcf);
+		occupied_in_multiplot += CALLSTACK_ANALYSIS_PART;
+	}
 #undef CALLSTACK_ANALYSIS_PART
 #endif
 
 #if defined(MEMORY_ANALYSIS)
 #define CALLSTACK_REFERENCE_PART 0.25
-	gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
-	  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
-	  variables);
-	occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
+	if (ig->getHasEmittedAddressSamples())
+	{
+		gnuplotGeneratorReferences::generate (CALLSTACK_REFERENCE_PART,
+		  0.95-CALLSTACK_REFERENCE_PART-occupied_in_multiplot, gplot, fdname, ig,
+		  variables);
+		occupied_in_multiplot += CALLSTACK_REFERENCE_PART;
+	}
 #undef CALLSTACK_REFERENCE_PART
 #endif
 
@@ -664,8 +674,7 @@ string gnuplotGenerator::gnuplot_model (
 	}
 	gplot << ";" << endl << endl
 	  << "unset label;" << endl
-	  << "unset arrow;" << endl << endl
-	  << "unset multiplot;" << endl;
+	  << "unset arrow;" << endl << endl;
 
 	gplot.close();
 
@@ -746,14 +755,14 @@ void gnuplotGenerator::gnuplot_groups (
 		if (u != 0)
 			gplot << ",\\" << endl;
 
-		gplot << "'" << fname << "' using (strcol(1) eq 'u' && (strcol(2) eq '" 
-		  << regionName << "' && $3 == " << u+1
-		  << ") ? $4 / 1000000.0: NaN) : $0 ti '" << is->nameGroup (u)
+		gplot << "'" << fname << "' using ((strcol(1) eq 'u') && (strcol(2) eq '" 
+		  << regionName << "') && ($3 == " << u+1
+		  << ") ? ($4 / 1000000.0): NaN) : (0) ti '" << is->nameGroup (u)
 		  << " (" << ig->numInstances() << "/" << ig->numExcludedInstances() 
 		  << ")' w points ls " << lstyle << ",\\" << endl;
 		gplot << "'" << fname << "' using ((strcol(1) eq 'e') && (strcol(2) eq '" 
-		  << regionName 
-		  << "' && $3 == " << u+1 << ") ? $4 / 1000000.0: NaN) : $0 notitle w points lc rgbcolor \"#808080\" ";
+		  << regionName << "') && ($3 == " << u+1 
+		  << ") ? ($4 / 1000000.0): NaN) : (0) notitle w points lc rgbcolor \"#808080\" ";
 	}
 	gplot << ";" << endl << endl
 	  << "unset label;" << endl
