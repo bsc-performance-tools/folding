@@ -31,12 +31,12 @@ if BUILD_HTML_DOCS
 	cd ..
 endif
 
-install-exec-hook: $(manual_ug).pdf
-	$(MKDIR_P) $(DESTDIR)$(datadir)/doc
-	cp $(manual_ug).pdf $(DESTDIR)$(datadir)/doc
-	$(MKDIR_P) $(DESTDIR)$(datadir)/doc/html
-	cp user-guide/user-guide.html user-guide/user-guide.css user-guide/*.png $(DESTDIR)$(datadir)/doc/html
-	ln -f $(DESTDIR)$(datadir)/doc/html/user-guide.html $(DESTDIR)$(datadir)/doc/html/index.html
+doc_DATA = $(manual_ug).pdf
+myhtmldir = $(docdir)/html
+myhtml_DATA = user-guide/user-guide.html user-guide/user-guide.css user-guide/img1.png user-guide/img2.png user-guide/img3.png user-guide/img4.png user-guide/img5.png user-guide/img6.png user-guide/img7.png user-guide/img8.png user-guide/img9.png user-guide/img10.png user-guide/img11.png user-guide/img12.png user-guide/img13.png user-guide/img14.png user-guide/img15.png
+
+install-data-hook:
+	ln -f $(myhtmldir)/user-guide.html $(myhtmldir)/index.html
 
 clean:
 	@echo Nothing to be done by default. If you want to clean the documentation issue make clean-documentation.

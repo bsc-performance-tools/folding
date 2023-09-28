@@ -31,5 +31,6 @@ libkriger_la_CFLAGS = -I.
 libkriger_la_DEPENDENCIES = def_kinrea.mod def_kinrea.o def_kriger.mod def_kriger.o
 
 kriger_test_SOURCES = test.c
-kriger_test_LDFLAGS = -lkriger -lgfortran -lm
+kriger_test_LDADD = -lkriger -lgfortran -lm
+kriger_test_DEPENDENCIES = libkriger.la
 
