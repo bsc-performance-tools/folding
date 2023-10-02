@@ -34,7 +34,7 @@
 #define ADDRESS_VARIABLE_ADDRESSES                 41000000
 #define PAPI_CHANGE_COUNTER_SET                    41999999
 #define PAPI_MIN_COUNTER                           42000000
-#define PAPI_MAX_COUNTER                           42999999
+#define PAPI_MAX_COUNTER                           49999999
 #define EXTRAE_USER_FUNCTION                       60000019
 #define EXTRAE_USER_FUNCTION_LINE                  60000119
 #define EXTRAE_SAMPLE_CALLER                       30000000
